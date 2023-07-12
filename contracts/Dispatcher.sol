@@ -33,6 +33,12 @@ struct Channel {
     bytes32 counterpartyChannelId;
 }
 
+struct CounterParty {
+    string portId;
+    string channelId;
+    string version;
+}
+
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -275,17 +281,33 @@ contract Dispatcher is IbcDispatcher, Ownable {
         string calldata version,
         ChannelOrder ordering,
         string[] calldata connectionHops,
-        string calldata counterpartyPortId,
-        string calldata counterpartyChannelId,
-        string calldata counterpartyVersion
+        CounterParty calldata counterparty,
+        Proof calldata proof
     ) external {
+        require(bytes(counterparty.portId).length != 0, 'Empty counterparty.portId');
+
+        // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
+        // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
+        if (bytes(counterparty.channelId).length != 0 || bytes(counterparty.version).length != 0 || proof.proofHeight != 0 || proof.proof.length != 0) {
+            // TODO: fill below proof path
+            require(
+                verifier.verifyMembership(
+                    latestConsensusState,
+                    proof,
+                    'channel/path/to/be/added/here',
+                    bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}')
+                ),
+                'Fail to prove channel state'
+            );
+        }
+
         string memory selectedVersion = portAddress.onOpenIbcChannel(
             version,
             ordering,
             connectionHops,
-            counterpartyPortId,
-            counterpartyChannelId,
-            counterpartyVersion
+            counterparty.portId,
+            counterparty.channelId,
+            counterparty.version
         );
 
         emit OpenIbcChannel(
@@ -293,8 +315,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
             selectedVersion,
             ordering,
             connectionHops,
-            counterpartyPortId,
-            counterpartyChannelId
+            counterparty.portId,
+            counterparty.channelId
         );
     }
 

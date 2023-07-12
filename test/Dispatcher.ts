@@ -89,18 +89,21 @@ describe('IBC Core Smart Contract', function () {
     EmptyVersion: '',
     V1: '1.0',
     V2: '2.0',
-    BEmptyVersion: toBytes32(''), // TODO: will be deleted after API re-design
-    BV1: toBytes32('1.0'),// TODO: will be deleted after API re-design
-    BV2: toBytes32('2.0'),// TODO: will be deleted after API re-design
     InvalidVersion: toBytes32('invalid-version'),
     Unordered: 0,
     Ordered: 1,
     InvalidProof: { proofHeight: 42, proof: ethers.utils.toUtf8Bytes('') },
     ValidProof: { proofHeight: 42, proof: ethers.utils.toUtf8Bytes('valid proof') },
+    EmptyProof: { proofHeight: 0, proof: ethers.utils.toUtf8Bytes('') },
     ChannelIds: ['channel-0', 'channel-1'].map(toBytes32),
     RemoteChannelIds: ['channel-100', 'channel-101'].map(toBytes32),
-    EmptyChannelId: toBytes32(''),
-    BscPortId: toBytes32('polyibc.bsc.9876543210'),
+    EmptyChannelId: '',
+    BscPortId: 'polyibc.bsc.9876543210',
+    BEmptyVersion: toBytes32(''), // TODO: will be deleted after API re-design
+    BV1: toBytes32('1.0'),// TODO: will be deleted after API re-design
+    BV2: toBytes32('2.0'),// TODO: will be deleted after API re-design
+    BEmptyChannelId: toBytes32(''), // TODO: will be deleted after API re-design
+    BBscPortId: toBytes32('polyibc.bsc.9876543210'), // TODO: will be deleted after API re-design
     Packets: [
       {
         msg: 'hello ibc',
@@ -257,7 +260,18 @@ describe('IBC Core Smart Contract', function () {
       await expect(
         dispatcher
           .connect(accounts.relayer)
-          .openIbcChannel(mars.address, C.V1, C.Unordered, C.ConnHops1, C.BscPortId, C.EmptyChannelId, C.EmptyVersion)
+          .openIbcChannel(
+            mars.address,
+            C.V1,
+            C.Unordered,
+            C.ConnHops1,
+            {
+              portId: C.BscPortId,
+              channelId: C.EmptyChannelId,
+              version: C.EmptyVersion
+            },
+            C.EmptyProof
+          )
       )
         .to.emit(dispatcher, 'OpenIbcChannel')
         .withArgs(mars.address, C.V1, C.Unordered, C.ConnHops1, C.BscPortId, C.EmptyChannelId)
@@ -274,9 +288,12 @@ describe('IBC Core Smart Contract', function () {
             C.EmptyVersion,
             C.Ordered,
             C.ConnHops2,
-            C.BscPortId,
-            C.RemoteChannelIds[0],
-            C.V2
+            {
+              portId: C.BscPortId,
+              channelId: C.RemoteChannelIds[0],
+              version: C.V2
+            },
+            C.ValidProof
           )
       )
         .to.emit(dispatcher, 'OpenIbcChannel')
@@ -295,9 +312,12 @@ describe('IBC Core Smart Contract', function () {
             C.InvalidVersion,
             C.Unordered,
             C.ConnHops1,
-            C.EmptyChannelId,
-            C.BscPortId,
-            C.EmptyVersion
+            {
+              portId: C.BscPortId,
+              channelId: C.EmptyChannelId,
+              version: C.EmptyVersion
+            },
+            C.EmptyProof
           )
       ).to.be.revertedWith('Unsupported version')
 
@@ -310,9 +330,12 @@ describe('IBC Core Smart Contract', function () {
             C.EmptyVersion,
             C.Unordered,
             C.ConnHops2,
-            C.RemoteChannelIds[0],
-            C.BscPortId,
-            C.InvalidVersion
+            {
+              portId: C.BscPortId,
+              channelId: C.RemoteChannelIds[0],
+              version: C.InvalidVersion
+            },
+            C.ValidProof
           )
       ).to.be.revertedWith('Unsupported version')
     })
@@ -323,7 +346,18 @@ describe('IBC Core Smart Contract', function () {
       await expect(
         dispatcher
           .connect(accounts.relayer)
-          .openIbcChannel(mars.address, C.V1, C.Unordered, C.ConnHops1, 'portX', C.RemoteChannelIds[0], C.EmptyVersion)
+          .openIbcChannel(
+            mars.address,
+            C.V1,
+            C.Unordered,
+            C.ConnHops1,
+            {
+              portId: `portX`,
+              channelId: C.RemoteChannelIds[0],
+              version: C.EmptyVersion
+            },
+            C.ValidProof
+          )
       ).to.be.revertedWith('Invalid counterpartyPortId')
     })
 
