@@ -12,3 +12,5 @@ artifacts
 
 *.tgz
 src/contracts.template.ts
+
+.idea/
