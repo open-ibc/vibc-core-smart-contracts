@@ -23,5 +23,5 @@
     "outDir": "dist",
     "lib": ["es2020"]
   },
-  "include": ["./generated"]
+  "include": ["./src"]
 }

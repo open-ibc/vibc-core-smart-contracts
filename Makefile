@@ -3,11 +3,10 @@ npm-install:
 
 build: npm-install
 	npx hardhat compile --force
-	mkdir -p generated
 	tar -c -z -f - artifacts/contracts | \
 		base64 | \
 		awk 'BEGIN {print "export const contractsTemplate = `"} {print} END {print "`"}' > \
-		generated/index.ts
+		src/contracts.template.ts
 	npx tsc -p tsconfig.json
 
 test: npm-install
