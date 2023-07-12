@@ -9,7 +9,7 @@ build: npm-install
 		src/contracts.template.ts
 	npx tsc -p tsconfig.json
 
-test: npm-install
+test: build
 	npx hardhat test
 
 clean:
