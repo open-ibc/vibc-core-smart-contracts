@@ -23,7 +23,7 @@ contract GasAudit {
     function callWithBytes32(
         address portAddress,
         bytes32 channelId,
-        string memory counterpartyPortId,
+        string calldata counterpartyPortId,
         bytes32 coutnerpartyChannelId
     ) external {
         channelIds1[channelId] = true;
@@ -32,9 +32,9 @@ contract GasAudit {
 
     function callWithString(
         address portAddress,
-        string memory channelId,
-        string memory counterpartyPortId,
-        string memory coutnerpartyChannelId
+        string calldata channelId,
+        string calldata counterpartyPortId,
+        string calldata coutnerpartyChannelId
     ) external {
         channelIds2[channelId] = true;
         emit OpenIbcChannel2(portAddress, channelId, counterpartyPortId, coutnerpartyChannelId);

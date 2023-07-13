@@ -42,8 +42,8 @@ async function main() {
   /**
    * Output
     GasAudit deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-    tx [callWithBytes32] gas cost: 48331
-    tx [callWithString] gas cost: 51390
+    tx [callWithBytes32] gas cost: 48046
+    tx [callWithString] gas cost: 50396
    */
 }
 
