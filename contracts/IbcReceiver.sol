@@ -31,7 +31,7 @@ interface IbcReceiver {
         ChannelOrder ordering,
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
-        string calldata counterPartyChannelId,
+        bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
     ) external returns (string memory selectedVersion);
 
