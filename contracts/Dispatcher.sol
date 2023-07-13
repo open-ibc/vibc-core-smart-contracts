@@ -126,15 +126,16 @@ contract Dispatcher is IbcDispatcher, Ownable {
     uint32 portPrefixLen;
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) nextSendPacketSequence;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
+    // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceRecv;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceAck;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
     // Keep track of sent packets
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) sendPacketCommitment;
     // keep track of received packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) recvPacketReceipt;
-    // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) nextRecvPacketSequence;
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
 
@@ -374,6 +375,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
             counterpartyPortId,
             counterpartyChannelId
         );
+
+        // initialize channel sequences
+        nextSequenceSend[address(portAddress)][channelId] = 1;
+        nextSequenceRecv[address(portAddress)][channelId] = 1;
+        nextSequenceAck[address(portAddress)][channelId] = 1;
+
         emit ConnectIbcChannel(
             address(portAddress),
             channelId,
@@ -461,11 +468,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by sender');
 
         // current packet sequence
-        uint64 sequence = nextSendPacketSequence[msg.sender][channelId];
-        if (sequence == 0) {
-            // To be ibc-compliant, first packet sent on channel has a sequence of 1
-            sequence = 1;
-        }
+        uint64 sequence = nextSequenceSend[msg.sender][channelId];
+        require(sequence > 0, 'Invalid packet sequence');
 
         // escescrow packet fee
         uint256 escrowedFeeee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
@@ -479,7 +483,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // packet commitment
         sendPacketCommitment[msg.sender][channelId][sequence] = true;
         // increment nextSendPacketSequence
-        nextSendPacketSequence[msg.sender][channelId] = sequence + 1;
+        nextSequenceSend[msg.sender][channelId] = sequence + 1;
 
         emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp, fee);
     }
@@ -616,10 +620,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
             require(
-                packet.sequence == nextRecvPacketSequence[address(receiver)][packet.dest.channelId],
+                packet.sequence == nextSequenceRecv[address(receiver)][packet.dest.channelId],
                 'Unexpected packet sequence'
             );
-            nextRecvPacketSequence[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
         AckPacket memory ack = receiver.onRecvPacket(packet);
