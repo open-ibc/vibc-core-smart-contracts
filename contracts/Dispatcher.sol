@@ -499,7 +499,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         PacketFee calldata fee
     ) external payable {
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = sendPacketCommitment[address(portAddress)][channelId][sequence];
+        bool hasCommitment = sendPacketCommitment[portAddress][channelId][sequence];
         require(hasCommitment, 'Packet commitment not found');
 
         // escrow packet fee
