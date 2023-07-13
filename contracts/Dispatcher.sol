@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import 'hardhat/console.sol';
 
+import './Ibc.sol';
 import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
 import './IbcVerifier.sol';
@@ -83,7 +84,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // delivered after this timestamp on the receiving chain.
         // Timeout semantics is compliant to IBC spec and ibc-go implementation
         uint64 timeoutTimestamp,
-        uint256 fee
+        PacketFee fee
     );
 
     event Acknowledgement(
@@ -125,17 +126,21 @@ contract Dispatcher is IbcDispatcher, Ownable {
     uint32 portPrefixLen;
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) nextSendPacketSequence;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
+    // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceRecv;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceAck;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
     // Keep track of sent packets
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) sendPacketCommitment;
     // keep track of received packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) recvPacketReceipt;
-    // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) nextRecvPacketSequence;
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
+
+    // keep track of packet fees. PortAddress => ChannelId => PacketSequence => IbcFee
+    mapping(address => mapping(bytes32 => mapping(uint64 => PacketFee))) packetFees;
 
     //
     // methods
@@ -262,12 +267,21 @@ contract Dispatcher is IbcDispatcher, Ownable {
     }
 
     //
-    // IBC Channel methods
+    // Utility functions
     //
 
-    function concatStrings(string memory str1, string memory str2) private pure returns (bytes memory) {
+    // return the concatenation of two strings in bytes
+    function concatStrings(string memory str1, string memory str2) internal pure returns (bytes memory) {
         return abi.encodePacked(str1, str2);
     }
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? a : b;
+    }
+
+    //
+    // IBC Channel methods
+    //
 
     /**
      * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcReceiver.
@@ -288,7 +302,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-        if (bytes(counterparty.channelId).length != 0 || bytes(counterparty.version).length != 0 || proof.proofHeight != 0 || proof.proof.length != 0) {
+        if (
+            bytes(counterparty.channelId).length != 0 ||
+            bytes(counterparty.version).length != 0 ||
+            proof.proofHeight != 0 ||
+            proof.proof.length != 0
+        ) {
             // TODO: fill below proof path
             require(
                 verifier.verifyMembership(
@@ -356,6 +375,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
             counterpartyPortId,
             counterpartyChannelId
         );
+
+        // initialize channel sequences
+        nextSequenceSend[address(portAddress)][channelId] = 1;
+        nextSequenceRecv[address(portAddress)][channelId] = 1;
+        nextSequenceAck[address(portAddress)][channelId] = 1;
+
         emit ConnectIbcChannel(
             address(portAddress),
             channelId,
@@ -427,30 +452,68 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @param channelId The ID of the channel on which to send the packet.
      * @param packet The packet data to send.
      * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
-     * @param fee The fee serves as the packet incentive for relayers. It's escrowed on the running chain and will be
-       claimed by relayer later once the packet is delivered and ack'ed.
+     * @param fee The fee serves as the packet incentive for forward relay. It's escrowed on the running chain and will be
+       claimed by relayer later once the packet is delivered and ack'ed or timed out.
+       recvFee is always paid, but only ackFee or timeoutFee is paid, depending on packet path.
+       Total fee for packet roundtrip is determined by recvFee + max(ackFee, timeoutFee).
      */
     function sendPacket(
         bytes32 channelId,
         bytes calldata packet,
         uint64 timeoutTimestamp,
-        uint256 fee
+        PacketFee calldata fee
     ) external payable {
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
         require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by sender');
-        // escrow packet fee
+
+        // current packet sequence
+        uint64 sequence = nextSequenceSend[msg.sender][channelId];
+        require(sequence > 0, 'Invalid packet sequence');
+
+        // escescrow packet fee
+        uint256 escrowedFeeee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
         // ignore returned data from `call`
-        // (bool sent, bytes memory _data) = escrow.call{value: fee}('');
-        (bool sent, ) = escrow.call{value: fee}('');
+        // (bool sent, bytes memory _data) = escrow.call{value: escrowedFeeee}('');
+        (bool sent, ) = escrow.call{value: escrowedFeeee}('');
         require(sent, 'Failed to escrow packet fee');
-        // packet sequence
-        uint64 sequence = nextSendPacketSequence[msg.sender][channelId] + 1;
-        nextSendPacketSequence[msg.sender][channelId] = sequence;
+        // record packet fees
+        packetFees[msg.sender][channelId][sequence] = fee;
+
         // packet commitment
         sendPacketCommitment[msg.sender][channelId][sequence] = true;
+        // increment nextSendPacketSequence
+        nextSequenceSend[msg.sender][channelId] = sequence + 1;
 
         emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp, fee);
+    }
+
+    /**
+     * Pay extra fees for a packet that has already been sent.
+     * Dapps should call this function to incentivize packet relay if the packet is not ack'ed or timed out yet.
+     */
+    function payPacketFeeAsync(
+        address portAddress,
+        bytes32 channelId,
+        uint64 sequence,
+        PacketFee calldata fee
+    ) external payable {
+        // verify packet has been committed and not yet ack'ed or timed out
+        bool hasCommitment = sendPacketCommitment[portAddress][channelId][sequence];
+        require(hasCommitment, 'Packet commitment not found');
+
+        // escrow packet fee
+        uint256 maxFee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
+        (bool sent, ) = escrow.call{value: maxFee}('');
+        require(sent, 'Failed to escrow packet fee');
+
+        // Record accumulated packet fees
+        PacketFee storage packetFee = packetFees[portAddress][channelId][sequence];
+        packetFees[portAddress][channelId][sequence] = PacketFee(
+            packetFee.recvFee + fee.recvFee,
+            packetFee.ackFee + fee.ackFee,
+            packetFee.timeoutFee + fee.timeoutFee
+        );
     }
 
     /**
@@ -557,10 +620,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
             require(
-                packet.sequence == nextRecvPacketSequence[address(receiver)][packet.dest.channelId],
+                packet.sequence == nextSequenceRecv[address(receiver)][packet.dest.channelId],
                 'Unexpected packet sequence'
             );
-            nextRecvPacketSequence[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
         AckPacket memory ack = receiver.onRecvPacket(packet);
@@ -606,5 +669,17 @@ contract Dispatcher is IbcDispatcher, Ownable {
         );
 
         emit WriteTimeoutPacket(receiver, packet.dest.channelId, packet.sequence);
+    }
+
+    /**
+     * Return escrowed fees for a packet.
+     * Relayers can query this to determine if a packet is worth relaying.
+     */
+    function getTotalPacketFees(
+        address packetSender,
+        bytes32 channelId,
+        uint64 sequence
+    ) external view returns (PacketFee memory) {
+        return packetFees[packetSender][channelId][sequence];
     }
 }

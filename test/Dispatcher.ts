@@ -100,16 +100,20 @@ describe('IBC Core Smart Contract', function () {
     EmptyChannelId: '',
     BscPortId: 'polyibc.bsc.9876543210',
     BEmptyVersion: toBytes32(''), // TODO: will be deleted after API re-design
-    BV1: toBytes32('1.0'),// TODO: will be deleted after API re-design
-    BV2: toBytes32('2.0'),// TODO: will be deleted after API re-design
+    BV1: toBytes32('1.0'), // TODO: will be deleted after API re-design
+    BV2: toBytes32('2.0'), // TODO: will be deleted after API re-design
     BEmptyChannelId: toBytes32(''), // TODO: will be deleted after API re-design
     BBscPortId: toBytes32('polyibc.bsc.9876543210'), // TODO: will be deleted after API re-design
     Packets: [
       {
         msg: 'hello ibc',
-        sequence: 0,
+        sequence: 1, // packet sequence number starts from 1
         timeout: ethers.BigNumber.from(123456789),
-        fee: ethers.utils.parseEther('0.123')
+        fee: {
+          recvFee: ethers.utils.parseEther('0.1'),
+          ackFee: ethers.utils.parseEther('0.023'),
+          timeoutFee: ethers.utils.parseEther('0.003')
+        }
       }
     ]
   }
@@ -132,6 +136,27 @@ describe('IBC Core Smart Contract', function () {
       escrow: signers[4],
       otherUsers: signers.slice(5)
     }
+  }
+
+  type Packet = (typeof C.Packets)[0]
+  type PacketFee = Packet['fee']
+
+  const calcEscrowFee = (fee: PacketFee): BigNumber => {
+    const maxFee = fee.ackFee.gt(fee.timeoutFee) ? fee.ackFee : fee.timeoutFee
+    return fee.recvFee.add(maxFee)
+  }
+
+  const mergePacketFees = (...fees: PacketFee[]): PacketFee => {
+    const recvFee = fees.reduce((acc, cur) => acc.add(cur.recvFee), ethers.constants.Zero)
+    const ackFee = fees.reduce((acc, cur) => acc.add(cur.ackFee), ethers.constants.Zero)
+    const timeoutFee = fees.reduce((acc, cur) => acc.add(cur.timeoutFee), ethers.constants.Zero)
+    return { recvFee, ackFee, timeoutFee }
+  }
+
+  const copyPacket = (packet: Packet): Packet => {
+    const copy = Object.assign({}, packet)
+    copy.fee = Object.assign({}, packet.fee)
+    return copy
   }
 
   /**
@@ -258,20 +283,18 @@ describe('IBC Core Smart Contract', function () {
       const { dispatcher, mars, accounts } = await loadFixture(setupCoreClientFixture)
 
       await expect(
-        dispatcher
-          .connect(accounts.relayer)
-          .openIbcChannel(
-            mars.address,
-            C.V1,
-            C.Unordered,
-            C.ConnHops1,
-            {
-              portId: C.BscPortId,
-              channelId: C.EmptyChannelId,
-              version: C.EmptyVersion
-            },
-            C.EmptyProof
-          )
+        dispatcher.connect(accounts.relayer).openIbcChannel(
+          mars.address,
+          C.V1,
+          C.Unordered,
+          C.ConnHops1,
+          {
+            portId: C.BscPortId,
+            channelId: C.EmptyChannelId,
+            version: C.EmptyVersion
+          },
+          C.EmptyProof
+        )
       )
         .to.emit(dispatcher, 'OpenIbcChannel')
         .withArgs(mars.address, C.V1, C.Unordered, C.ConnHops1, C.BscPortId, C.EmptyChannelId)
@@ -281,20 +304,18 @@ describe('IBC Core Smart Contract', function () {
       const { dispatcher, mars, accounts } = await loadFixture(setupCoreClientFixture)
 
       await expect(
-        dispatcher
-          .connect(accounts.relayer)
-          .openIbcChannel(
-            mars.address,
-            C.EmptyVersion,
-            C.Ordered,
-            C.ConnHops2,
-            {
-              portId: C.BscPortId,
-              channelId: C.RemoteChannelIds[0],
-              version: C.V2
-            },
-            C.ValidProof
-          )
+        dispatcher.connect(accounts.relayer).openIbcChannel(
+          mars.address,
+          C.EmptyVersion,
+          C.Ordered,
+          C.ConnHops2,
+          {
+            portId: C.BscPortId,
+            channelId: C.RemoteChannelIds[0],
+            version: C.V2
+          },
+          C.ValidProof
+        )
       )
         .to.emit(dispatcher, 'OpenIbcChannel')
         .withArgs(mars.address, C.V2, C.Ordered, C.ConnHops2, C.BscPortId, C.RemoteChannelIds[0])
@@ -305,38 +326,34 @@ describe('IBC Core Smart Contract', function () {
 
       // invalid version in ChanOpenInit
       await expect(
-        dispatcher
-          .connect(accounts.relayer)
-          .openIbcChannel(
-            mars.address,
-            C.InvalidVersion,
-            C.Unordered,
-            C.ConnHops1,
-            {
-              portId: C.BscPortId,
-              channelId: C.EmptyChannelId,
-              version: C.EmptyVersion
-            },
-            C.EmptyProof
-          )
+        dispatcher.connect(accounts.relayer).openIbcChannel(
+          mars.address,
+          C.InvalidVersion,
+          C.Unordered,
+          C.ConnHops1,
+          {
+            portId: C.BscPortId,
+            channelId: C.EmptyChannelId,
+            version: C.EmptyVersion
+          },
+          C.EmptyProof
+        )
       ).to.be.revertedWith('Unsupported version')
 
       // invalid version in ChanOpenTry
       await expect(
-        dispatcher
-          .connect(accounts.relayer)
-          .openIbcChannel(
-            mars.address,
-            C.EmptyVersion,
-            C.Unordered,
-            C.ConnHops2,
-            {
-              portId: C.BscPortId,
-              channelId: C.RemoteChannelIds[0],
-              version: C.InvalidVersion
-            },
-            C.ValidProof
-          )
+        dispatcher.connect(accounts.relayer).openIbcChannel(
+          mars.address,
+          C.EmptyVersion,
+          C.Unordered,
+          C.ConnHops2,
+          {
+            portId: C.BscPortId,
+            channelId: C.RemoteChannelIds[0],
+            version: C.InvalidVersion
+          },
+          C.ValidProof
+        )
       ).to.be.revertedWith('Unsupported version')
     })
 
@@ -344,20 +361,18 @@ describe('IBC Core Smart Contract', function () {
       const { dispatcher, mars, accounts } = await loadFixture(setupCoreClientFixture)
 
       await expect(
-        dispatcher
-          .connect(accounts.relayer)
-          .openIbcChannel(
-            mars.address,
-            C.V1,
-            C.Unordered,
-            C.ConnHops1,
-            {
-              portId: `portX`,
-              channelId: C.RemoteChannelIds[0],
-              version: C.EmptyVersion
-            },
-            C.ValidProof
-          )
+        dispatcher.connect(accounts.relayer).openIbcChannel(
+          mars.address,
+          C.V1,
+          C.Unordered,
+          C.ConnHops1,
+          {
+            portId: `portX`,
+            channelId: C.RemoteChannelIds[0],
+            version: C.EmptyVersion
+          },
+          C.ValidProof
+        )
       ).to.be.revertedWith('Invalid counterpartyPortId')
     })
 
@@ -471,7 +486,11 @@ describe('IBC Core Smart Contract', function () {
       ...packet,
       msg: `packet.msg-${sequence}`,
       sequence: sequence,
-      fee: ethers.utils.parseEther('0.123').mul(sequence + 1)
+      fee: {
+        recvFee: ethers.utils.parseEther('0.12').mul(sequence + 1),
+        ackFee: ethers.utils.parseEther('0.003').mul(sequence + 1),
+        timeoutFee: ethers.utils.parseEther('0.001').mul(sequence + 1)
+      }
     }
   }
 
@@ -488,18 +507,15 @@ describe('IBC Core Smart Contract', function () {
         mars
           .connect(accounts.user1)
           .greet(dispatcher.address, packet.msg, channel.channelId, packet.timeout, packet.fee, {
-            value: packet.fee
+            value: calcEscrowFee(packet.fee)
           })
       )
         .to.emit(dispatcher, 'SendPacket')
-        .withArgs(
-          channel.portAddress,
-          channel.channelId,
-          toBytes(packet.msg),
-          packet.sequence,
-          packet.timeout,
-          packet.fee
-        )
+        .withArgs(channel.portAddress, channel.channelId, toBytes(packet.msg), packet.sequence, packet.timeout, [
+          packet.fee.recvFee,
+          packet.fee.ackFee,
+          packet.fee.timeoutFee
+        ])
     }
     return { accounts, dispatcher, mars, channel, packets }
   }
@@ -546,31 +562,86 @@ describe('IBC Core Smart Contract', function () {
   describe('sendPacket', function () {
     it('succeeds', async function () {
       const { dispatcher, mars, accounts, channel, packets } = await loadFixture(setupChannelFixture)
-      const packet = Object.assign({}, packets[0]) // make a copy
       const escrowBalance = () => accounts.escrow.getBalance().then((b) => b.toBigInt())
 
-      const assertSendPacket = async (packet: (typeof C.Packets)[0]) => {
+      const assertSendPacket = async (packet: Packet) => {
         const msg = `packet.msg-${packet.sequence}`
         const starttingEscrowBalance = await escrowBalance()
         await expect(
           mars.connect(accounts.user1).greet(dispatcher.address, msg, channel.channelId, packet.timeout, packet.fee, {
             // only fee is escrowed, if msg.value > fee. The overage is lost to miner.
             // So as a dApp dev, you should always set msg.value to the exact packet fee.
-            value: packet.fee
+            value: calcEscrowFee(packet.fee)
           })
         )
           .to.emit(dispatcher, 'SendPacket')
-          .withArgs(channel.portAddress, channel.channelId, toBytes(msg), packet.sequence, packet.timeout, packet.fee)
+          .withArgs(channel.portAddress, channel.channelId, toBytes(msg), packet.sequence, packet.timeout, [
+            packet.fee.recvFee,
+            packet.fee.ackFee,
+            packet.fee.timeoutFee
+          ])
         // confirm Escrow balance changed
         const escrowIncrease = (await escrowBalance()) - starttingEscrowBalance
-        expect(escrowIncrease).to.equal(packet.fee.toBigInt())
+        expect(escrowIncrease).to.equal(calcEscrowFee(packet.fee))
+        // confirm query packet fees
+        const packetFees = await dispatcher.getTotalPacketFees(channel.portAddress, channel.channelId, packet.sequence)
+        expect(packetFees).to.deep.equal([packet.fee.recvFee, packet.fee.ackFee, packet.fee.timeoutFee])
       }
 
       for (let i = 1; i <= 3; i++) {
+        const packet = copyPacket(packets[0])
         packet.sequence = i
-        packet.fee = ethers.utils.parseEther('0.123').mul(i + 1)
+        packet.fee = {
+          recvFee: packet.fee.recvFee.mul(i + 1),
+          ackFee: packet.fee.ackFee.mul(i + 1),
+          timeoutFee: packet.fee.timeoutFee.mul(i + 1)
+        }
         await assertSendPacket(packet)
       }
+    })
+
+    it('pay packet fee async', async function () {
+      const { dispatcher, mars, accounts, channel, packets } = await loadFixture(setupChannelFixture)
+      const escrowBalance = () => accounts.escrow.getBalance().then((b) => b.toBigInt())
+      const packet = copyPacket(packets[0])
+      const fee1 = packet.fee
+      const fee2 = {
+        recvFee: ethers.utils.parseEther('0.2'),
+        ackFee: ethers.utils.parseEther('0.15'),
+        timeoutFee: ethers.utils.parseEther('0.1')
+      }
+      const feeTotal = mergePacketFees(fee1, fee2)
+
+      const initialEscrowBalance = await escrowBalance()
+      await expect(
+        mars.connect(accounts.user1).greet(dispatcher.address, packet.msg, channel.channelId, packet.timeout, fee1, {
+          value: calcEscrowFee(fee1)
+        })
+      ).to.not.reverted
+
+      // pay extra packet fee. can be called by anyone
+      await expect(
+        dispatcher
+          .connect(accounts.otherUsers[0])
+          .payPacketFeeAsync(channel.portAddress, channel.channelId, packet.sequence, fee2, {
+            value: calcEscrowFee(fee2)
+          })
+      ).to.not.reverted
+
+      // cannot pay packet fee for non-existing packet, or a packet that has been acked or timed out
+      await expect(
+        dispatcher.payPacketFeeAsync(channel.portAddress, channel.channelId, packet.sequence + 100, fee2, {
+          value: calcEscrowFee(fee2)
+        })
+      ).to.be.revertedWith('Packet commitment not found')
+
+      // confirm Escrow balance changed
+      const escrowIncrease = (await escrowBalance()) - initialEscrowBalance
+      expect(escrowIncrease).to.equal(calcEscrowFee(feeTotal))
+
+      // confirm query returns correct packet fees
+      const packetFees = await dispatcher.getTotalPacketFees(channel.portAddress, channel.channelId, packet.sequence)
+      expect(packetFees).to.deep.equal([feeTotal.recvFee, feeTotal.ackFee, feeTotal.timeoutFee])
     })
 
     it('fails if tx value < packet fee', async function () {
@@ -586,7 +657,7 @@ describe('IBC Core Smart Contract', function () {
         mars
           .connect(accounts.user1)
           .greet(dispatcher.address, packet.msg, channel.channelId, packet.timeout, packet.fee, {
-            value: packet.fee.sub(1)
+            value: calcEscrowFee(packet.fee).sub(1)
           })
       ).to.be.reverted
     })
@@ -603,7 +674,7 @@ describe('IBC Core Smart Contract', function () {
         mars
           .connect(accounts.user1)
           .greet(dispatcher.address, packet.msg, C.RemoteChannelIds[0], packet.timeout, packet.fee, {
-            value: packet.fee
+            value: calcEscrowFee(packet.fee)
           })
       ).to.be.revertedWith('Channel not owned by sender')
     })
