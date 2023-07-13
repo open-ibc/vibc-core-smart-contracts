@@ -97,12 +97,11 @@ describe('IBC Core Smart Contract', function () {
     EmptyProof: { proofHeight: 0, proof: ethers.utils.toUtf8Bytes('') },
     ChannelIds: ['channel-0', 'channel-1'].map(toBytes32),
     RemoteChannelIds: ['channel-100', 'channel-101'].map(toBytes32),
-    EmptyChannelId: '',
+    EmptyChannelId: toBytes32(''),
     BscPortId: 'polyibc.bsc.9876543210',
     BEmptyVersion: toBytes32(''), // TODO: will be deleted after API re-design
     BV1: toBytes32('1.0'), // TODO: will be deleted after API re-design
     BV2: toBytes32('2.0'), // TODO: will be deleted after API re-design
-    BEmptyChannelId: toBytes32(''), // TODO: will be deleted after API re-design
     BBscPortId: toBytes32('polyibc.bsc.9876543210'), // TODO: will be deleted after API re-design
     Packets: [
       {
