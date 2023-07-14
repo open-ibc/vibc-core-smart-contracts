@@ -63,10 +63,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
     event ConnectIbcChannel(
         address indexed portAddress,
-        bytes32 indexed channelId,
-        string counterpartyPortId,
-        bytes32 indexed counterpartyChannelId,
-        string[] connectionHops
+        bytes32 channelId
     );
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
@@ -368,8 +365,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // Register port and channel mapping
         // TODO: check duplicated channel registration?
+        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
+        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
         portChannelMap[address(portAddress)][channelId] = Channel(
-            counterpartyVersion,
+            counterpartyVersion,    // TODO: this should be self version instead of counterparty version
             ordering,
             connectionHops,
             counterpartyPortId,
@@ -383,10 +382,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         emit ConnectIbcChannel(
             address(portAddress),
-            channelId,
-            counterpartyPortId,
-            counterpartyChannelId,
-            connectionHops
+            channelId
         );
     }
 

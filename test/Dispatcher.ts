@@ -394,7 +394,7 @@ describe('IBC Core Smart Contract', function () {
             )
         )
           .to.emit(dispatcher, 'ConnectIbcChannel')
-          .withArgs(mars.address, C.ChannelIds[0], C.BscPortId, C.RemoteChannelIds[0], C.ConnHops1)
+          .withArgs(mars.address, C.ChannelIds[0])
 
         // confirm channel is owned by the port address
         const channel = await dispatcher.getChannel(mars.address, C.ChannelIds[0])
