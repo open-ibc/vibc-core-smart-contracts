@@ -33,7 +33,7 @@ contract Mars is IbcReceiver, Ownable {
         ChannelOrder ordering,
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
-        string calldata counterpartyChannelId,
+        bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
     ) external returns (string memory selectedVersion) {
         require(bytes(counterpartyPortId).length > 8, 'Invalid counterpartyPortId');

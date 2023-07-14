@@ -36,7 +36,7 @@ struct Channel {
 
 struct CounterParty {
     string portId;
-    string channelId;
+    bytes32 channelId;
     string version;
 }
 
@@ -58,7 +58,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         ChannelOrder ordering,
         string[] connectionHops,
         string counterpartyPortId,
-        string counterpartyChannelId
+        bytes32 counterpartyChannelId
     );
 
     event ConnectIbcChannel(
@@ -303,7 +303,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
         if (
-            bytes(counterparty.channelId).length != 0 ||
+            counterparty.channelId != 0 ||
             bytes(counterparty.version).length != 0 ||
             proof.proofHeight != 0 ||
             proof.proof.length != 0
