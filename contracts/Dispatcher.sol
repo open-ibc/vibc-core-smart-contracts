@@ -87,7 +87,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     event Acknowledgement(
         address indexed sourcePortAddress,
         bytes32 indexed sourceChannelId,
-        AckPacket AckPacket,
         uint64 sequence
     );
 
@@ -550,7 +549,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // delete packet commitment to avoid double ack
         delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
 
-        emit Acknowledgement(address(receiver), packet.src.channelId, ackPacket, packet.sequence);
+        emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
     }
 
     /**
