@@ -546,8 +546,6 @@ describe('IBC Core Smart Contract', function () {
         .withArgs(
           mars.address,
           ibcPacket.dest.channelId,
-          ibcPacket.src.portId,
-          ibcPacket.src.channelId,
           ibcPacket.sequence
         )
         .to.emit(dispatcher, 'WriteAckPacket')
