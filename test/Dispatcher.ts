@@ -722,7 +722,6 @@ describe('IBC Core Smart Contract', function () {
             .withArgs(
               channel.portAddress,
               channel.channelId,
-              [ack.success, ethers.utils.hexlify(ack.data)],
               packet.sequence
             )
         } else {
