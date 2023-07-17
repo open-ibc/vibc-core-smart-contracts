@@ -95,8 +95,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     event RecvPacket(
         address indexed destPortAddress,
         bytes32 indexed destChannelId,
-        string srcPortId,
-        bytes32 indexed srcChannelId,
         uint64 sequence
     );
 
@@ -630,8 +628,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
         emit RecvPacket(
             address(receiver),
             packet.dest.channelId,
-            packet.src.portId,
-            packet.src.channelId,
             packet.sequence
         );
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
