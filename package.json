@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "vIBC Core Smart Contracts",
   "main": "dist/index.js",
   "engines": {
