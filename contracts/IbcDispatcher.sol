@@ -5,13 +5,6 @@ pragma solidity ^0.8.9;
 import './Ibc.sol';
 import './IbcReceiver.sol';
 
-struct Proof {
-    // block height at which the proof is valid for a membership or non-membership at the given keyPath
-    uint64 proofHeight;
-    // ics23 merkle proof
-    bytes proof;
-}
-
 /**
  * @title IbcDispatcher
  * @author Polymer Labs

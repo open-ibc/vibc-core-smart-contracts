@@ -54,8 +54,8 @@
       }
     },
     "contracts/Dispatcher.sol": {
-      "lastModificationDate": 1689773818140,
-      "contentHash": "4c4ddc6bf663bfac0c4b65c6c4016627",
+      "lastModificationDate": 1689792108319,
+      "contentHash": "54cbcd016c17e40ed73e1ac4123f88c3",
       "sourceName": "contracts/Dispatcher.sol",
       "solcConfig": {
         "settings": {
@@ -236,8 +236,8 @@
       }
     },
     "contracts/Ibc.sol": {
-      "lastModificationDate": 1689280964155,
-      "contentHash": "f3cf90edd0c88adf51edb7d7e7c58d7b",
+      "lastModificationDate": 1689792265595,
+      "contentHash": "e2477be21963f3bd8db5b917b1b625df",
       "sourceName": "contracts/Ibc.sol",
       "solcConfig": {
         "settings": {
@@ -277,8 +277,8 @@
       }
     },
     "contracts/IbcDispatcher.sol": {
-      "lastModificationDate": 1689280964155,
-      "contentHash": "06ec7925aedf574ec043d2433c5edc1b",
+      "lastModificationDate": 1689792250205,
+      "contentHash": "e4b08b07033ce66d26f59010705f9c5f",
       "sourceName": "contracts/IbcDispatcher.sol",
       "solcConfig": {
         "settings": {
@@ -1678,8 +1678,8 @@
       }
     },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689790755266,
-      "contentHash": "922214398f48e6b5226d965f24b0c5b1",
+      "lastModificationDate": 1689797912916,
+      "contentHash": "2d40e5f59f7fd80a681e03ec8baac4b1",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {
@@ -1717,6 +1717,7 @@
         "contracts/IbcDispatcher.sol",
         "contracts/IbcReceiver.sol",
         "contracts/IbcVerifier.sol",
+        "contracts/Mars.sol",
         "contracts/Verifier.sol",
         "lib/forge-std/lib/ds-test/src/test.sol",
         "lib/forge-std/src/Base.sol",
@@ -1749,6 +1750,9 @@
         },
         "DispatcherCreateClientTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherCreateClientTest.json"
+        },
+        "DispatcherOpenIbcChannelTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherOpenIbcChannelTest.json"
         },
         "DispatcherTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherTest.json"

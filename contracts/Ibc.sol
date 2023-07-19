@@ -34,6 +34,19 @@ enum ChannelOrder {
     UNORDERED,
     ORDERED
 }
+struct Channel {
+    bytes32 version;
+    ChannelOrder ordering;
+    string[] connectionHops;
+    string counterpartyPortId;
+    bytes32 counterpartyChannelId;
+}
+
+struct CounterParty {
+    string portId;
+    bytes32 channelId;
+    string version;
+}
 
 struct IbcEndpoint {
     string portId;
@@ -44,4 +57,11 @@ struct PacketFee {
     uint256 recvFee;
     uint256 ackFee;
     uint256 timeoutFee;
+}
+
+struct Proof {
+    // block height at which the proof is valid for a membership or non-membership at the given keyPath
+    uint64 proofHeight;
+    // ics23 merkle proof
+    bytes proof;
 }

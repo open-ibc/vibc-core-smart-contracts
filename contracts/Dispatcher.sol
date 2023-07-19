@@ -26,20 +26,6 @@ struct UpgradeClientMsg {
     ConsensusState consensusState;
 }
 
-struct Channel {
-    string version;
-    ChannelOrder ordering;
-    string[] connectionHops;
-    string counterpartyPortId;
-    bytes32 counterpartyChannelId;
-}
-
-struct CounterParty {
-    string portId;
-    bytes32 channelId;
-    string version;
-}
-
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -61,10 +47,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bytes32 counterpartyChannelId
     );
 
-    event ConnectIbcChannel(
-        address indexed portAddress,
-        bytes32 channelId
-    );
+    event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
 
@@ -84,19 +67,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
         PacketFee fee
     );
 
-    event Acknowledgement(
-        address indexed sourcePortAddress,
-        bytes32 indexed sourceChannelId,
-        uint64 sequence
-    );
+    event Acknowledgement(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 sequence);
 
     event Timeout(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 indexed sequence);
 
-    event RecvPacket(
-        address indexed destPortAddress,
-        bytes32 indexed destChannelId,
-        uint64 sequence
-    );
+    event RecvPacket(address indexed destPortAddress, bytes32 indexed destChannelId, uint64 sequence);
 
     event WriteAckPacket(
         address indexed writerPortAddress,
@@ -371,7 +346,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
         //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
         portChannelMap[address(portAddress)][channelId] = Channel(
-            counterpartyVersion,    // TODO: this should be self version instead of counterparty version
+            counterpartyVersion, // TODO: this should be self version instead of counterparty version
             ordering,
             connectionHops,
             counterpartyPortId,
@@ -383,10 +358,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         nextSequenceRecv[address(portAddress)][channelId] = 1;
         nextSequenceAck[address(portAddress)][channelId] = 1;
 
-        emit ConnectIbcChannel(
-            address(portAddress),
-            channelId
-        );
+        emit ConnectIbcChannel(address(portAddress), channelId);
     }
 
     /**
@@ -627,15 +599,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
-        emit RecvPacket(
-            address(receiver),
-            packet.dest.channelId,
-            packet.sequence
-        );
+        emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
 
         // If pkt is timeout, the do timeout handling
-        if ((packet.timeout.timestamp != 0 && block.timestamp >= packet.timeout.timestamp)
-            || (packet.timeout.blockHeight != 0 && block.number >= packet.timeout.blockHeight)
+        if (
+            (packet.timeout.timestamp != 0 && block.timestamp >= packet.timeout.timestamp) ||
+            (packet.timeout.blockHeight != 0 && block.number >= packet.timeout.blockHeight)
         ) {
             address writerPortAddress = address(receiver);
 
@@ -657,6 +626,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(!hasAckPacketCommitment, 'Ack packet commitment already exists');
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
+        emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
 
