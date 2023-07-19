@@ -38,7 +38,7 @@ interface IbcReceiver {
     function onConnectIbcChannel(
         bytes32 channelId,
         bytes32 counterpartyChannelId,
-        bytes32 counterpartyVersion
+        string calldata counterpartyVersion
     ) external;
 
     function onCloseIbcChannel(

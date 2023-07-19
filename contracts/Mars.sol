@@ -13,7 +13,6 @@ contract Mars is IbcReceiver, Ownable {
     bytes32[] public connectedChannels;
 
     string[] supportedVersions = ['1.0', '2.0'];
-    bytes32[] supportedVersionsBytes = [bytes32('1.0'), bytes32('2.0')]; // Temp solution, will be removed.
 
     function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
@@ -61,12 +60,12 @@ contract Mars is IbcReceiver, Ownable {
     function onConnectIbcChannel(
         bytes32 channelId,
         bytes32 counterpartyChannelId,
-        bytes32 counterpartyVersion
+        string calldata counterpartyVersion
     ) external {
         // ensure negotiated version is supported
         bool foundVersion = false;
         for (uint i = 0; i < supportedVersions.length; i++) {
-            if (counterpartyVersion == supportedVersionsBytes[i]) {
+            if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
                 foundVersion = true;
                 break;
             }
