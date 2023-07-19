@@ -89,7 +89,7 @@ describe('IBC Core Smart Contract', function () {
     EmptyVersion: '',
     V1: '1.0',
     V2: '2.0',
-    InvalidVersion: toBytes32('invalid-version'),
+    InvalidVersion: 'invalid-version',
     Unordered: 0,
     Ordered: 1,
     InvalidProof: { proofHeight: 42, proof: ethers.utils.toUtf8Bytes('') },
@@ -99,9 +99,6 @@ describe('IBC Core Smart Contract', function () {
     RemoteChannelIds: ['channel-100', 'channel-101'].map(toBytes32),
     EmptyChannelId: toBytes32(''),
     BscPortId: 'polyibc.bsc.9876543210',
-    BEmptyVersion: toBytes32(''), // TODO: will be deleted after API re-design
-    BV1: toBytes32('1.0'), // TODO: will be deleted after API re-design
-    BV2: toBytes32('2.0'), // TODO: will be deleted after API re-design
     BBscPortId: toBytes32('polyibc.bsc.9876543210'), // TODO: will be deleted after API re-design
     Packets: [
       {
@@ -194,7 +191,7 @@ describe('IBC Core Smart Contract', function () {
     const channel = {
       portAddress: mars.address,
       channelId: C.ChannelIds[0],
-      version: C.BV1,
+      version: C.V1,
       ordering: C.Unordered,
       connectionHops: C.ConnHops1,
       counterpartyPortId: C.BscPortId,
@@ -389,7 +386,7 @@ describe('IBC Core Smart Contract', function () {
               C.Ordered,
               C.BscPortId,
               C.RemoteChannelIds[0],
-              C.BV1,
+              C.V1,
               C.ValidProof
             )
         )
@@ -398,7 +395,7 @@ describe('IBC Core Smart Contract', function () {
 
         // confirm channel is owned by the port address
         const channel = await dispatcher.getChannel(mars.address, C.ChannelIds[0])
-        expect(channel).deep.equal([C.BV1, C.Ordered, C.ConnHops1, C.BscPortId, C.RemoteChannelIds[0]])
+        expect(channel).deep.equal([C.V1, C.Ordered, C.ConnHops1, C.BscPortId, C.RemoteChannelIds[0]])
       })
 
       it('invalid proof', async function () {
@@ -413,7 +410,7 @@ describe('IBC Core Smart Contract', function () {
               C.Ordered,
               C.BscPortId,
               C.RemoteChannelIds[0],
-              C.BV1,
+              C.V1,
               C.InvalidProof
             )
         ).to.be.revertedWith('Fail to prove channel state')
