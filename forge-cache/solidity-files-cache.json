@@ -12,50 +12,9 @@
     ]
   },
   "files": {
-    "contracts/Counter.sol": {
-      "lastModificationDate": 1689774551980,
-      "contentHash": "ae6c800a2b4c57768024d6e9423d39e8",
-      "sourceName": "contracts/Counter.sol",
-      "solcConfig": {
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "metadata": {
-            "useLiteralContent": false,
-            "bytecodeHash": "ipfs",
-            "appendCBOR": true
-          },
-          "outputSelection": {
-            "*": {
-              "": [
-                "ast"
-              ],
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ]
-            }
-          },
-          "evmVersion": "paris",
-          "libraries": {}
-        }
-      },
-      "imports": [],
-      "versionRequirement": "^0.8.13",
-      "artifacts": {
-        "Counter": {
-          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Counter.sol/Counter.json"
-        }
-      }
-    },
     "contracts/Dispatcher.sol": {
-      "lastModificationDate": 1689792108319,
-      "contentHash": "54cbcd016c17e40ed73e1ac4123f88c3",
+      "lastModificationDate": 1689802150206,
+      "contentHash": "eeb062da34cd82a4be5c844e9f633bc1",
       "sourceName": "contracts/Dispatcher.sol",
       "solcConfig": {
         "settings": {
@@ -1616,70 +1575,9 @@
         }
       }
     },
-    "test/Counter.t.sol": {
-      "lastModificationDate": 1689775948450,
-      "contentHash": "3d49db99ff6f9c25d0391155aef35aa0",
-      "sourceName": "test/Counter.t.sol",
-      "solcConfig": {
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "metadata": {
-            "useLiteralContent": false,
-            "bytecodeHash": "ipfs",
-            "appendCBOR": true
-          },
-          "outputSelection": {
-            "*": {
-              "": [
-                "ast"
-              ],
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ]
-            }
-          },
-          "evmVersion": "paris",
-          "libraries": {}
-        }
-      },
-      "imports": [
-        "contracts/Counter.sol",
-        "lib/forge-std/lib/ds-test/src/test.sol",
-        "lib/forge-std/src/Base.sol",
-        "lib/forge-std/src/StdAssertions.sol",
-        "lib/forge-std/src/StdChains.sol",
-        "lib/forge-std/src/StdCheats.sol",
-        "lib/forge-std/src/StdError.sol",
-        "lib/forge-std/src/StdInvariant.sol",
-        "lib/forge-std/src/StdJson.sol",
-        "lib/forge-std/src/StdMath.sol",
-        "lib/forge-std/src/StdStorage.sol",
-        "lib/forge-std/src/StdStyle.sol",
-        "lib/forge-std/src/StdUtils.sol",
-        "lib/forge-std/src/Test.sol",
-        "lib/forge-std/src/Vm.sol",
-        "lib/forge-std/src/console.sol",
-        "lib/forge-std/src/console2.sol",
-        "lib/forge-std/src/interfaces/IMulticall3.sol",
-        "lib/forge-std/src/safeconsole.sol"
-      ],
-      "versionRequirement": "^0.8.13",
-      "artifacts": {
-        "CounterTest": {
-          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Counter.t.sol/CounterTest.json"
-        }
-      }
-    },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689797912916,
-      "contentHash": "2d40e5f59f7fd80a681e03ec8baac4b1",
+      "lastModificationDate": 1689803652305,
+      "contentHash": "ee2775f52e675e98a0b8cf43bedcd3be",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {

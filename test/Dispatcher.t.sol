@@ -168,21 +168,47 @@ struct VersionSet {
 
 contract DispatcherOpenIbcChannelTest is Test, Base {
     Mars mars = new Mars();
-    Proof polymerProof = Proof(42, bytes('valid proof'));
+    Proof polymerProof;
     string[] connectionHops;
     VersionSet version;
     ChannelOrder ordering;
     CounterParty cp;
+
+    Proof emptyProof;
+    Proof invalidProof = Proof(42, bytes('')); // invalid proof with empty proof bytes
+    Proof validProof = Proof(42, bytes('valid proof'));
+
+    CounterParty cpBsc = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
 
     function setUp() public {
         connectionHops = new string[](2);
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
+        polymerProof = validProof;
+
         dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+
         vm.startPrank(vm.addr(0x1));
+    }
+
+    function setTestParams(VersionSet memory _version, CounterParty memory _cp, ChannelOrder _ordering) internal {
+        version = _version;
+        _cp.version = version.counterparty;
+        cp = _cp;
+        ordering = _ordering;
+
+        // 1st handshake call with unknown counterparty version or channelId
+        if (
+            cp.channelId == bytes32(0x0) && keccak256(abi.encodePacked(cp.version)) == keccak256(abi.encodePacked(''))
+        ) {
+            polymerProof = emptyProof;
+        } else {
+            // all other handshake calls requires a polymer proof
+            polymerProof = validProof;
+        }
     }
 
     modifier goodCases() {
@@ -193,9 +219,7 @@ contract DispatcherOpenIbcChannelTest is Test, Base {
         VersionSet[2] memory versions = [VersionSet('1.0', '', '1.0'), VersionSet('2.0', '', '2.0')];
         for (uint i = 0; i < versions.length; i++) {
             for (uint j = 0; j < orderings.length; j++) {
-                version = versions[i];
-                cp.version = version.counterparty;
-                ordering = orderings[j];
+                setTestParams(versions[i], cp, orderings[j]);
                 _;
             }
         }
@@ -204,9 +228,7 @@ contract DispatcherOpenIbcChannelTest is Test, Base {
         versions = [VersionSet('', '1.0', '1.0'), VersionSet('', '2.0', '2.0')];
         for (uint i = 0; i < versions.length; i++) {
             for (uint j = 0; j < orderings.length; j++) {
-                version = versions[i];
-                cp.version = version.counterparty;
-                ordering = orderings[j];
+                setTestParams(versions[i], cp, orderings[j]);
                 _;
             }
         }
@@ -218,17 +240,54 @@ contract DispatcherOpenIbcChannelTest is Test, Base {
         dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
     }
 
-    function test_unsupportedVersion() public {
+    modifier unsupportedVersions() {
+        // NOTE: counterparty version is set in VersionSet
+        ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
+        // 1st handshake with unknown counterparty version or channelId
         cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        vm.expectRevert('Unsupported version');
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            'unsupported-version',
-            ChannelOrder.ORDERED,
-            connectionHops,
-            cp,
-            polymerProof
-        );
+        VersionSet[2] memory versions = [
+            VersionSet('', '', ''), // cannot be empty
+            VersionSet('xxx', '', '')
+        ];
+        for (uint i = 0; i < versions.length; i++) {
+            for (uint j = 0; j < orderings.length; j++) {
+                setTestParams(versions[i], cp, orderings[j]);
+                _;
+            }
+        }
+        // 2nd handshake with known counterparty version and channelId
+        cp = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '');
+        versions = [VersionSet('', 'xxx', ''), VersionSet('', '', '')];
+        for (uint i = 0; i < versions.length; i++) {
+            for (uint j = 0; j < orderings.length; j++) {
+                setTestParams(versions[i], cp, orderings[j]);
+                _;
+            }
+        }
+    }
+
+    function test_unsupportedVersion() public unsupportedVersions {
+        vm.expectRevert(bytes('Unsupported version'));
+        dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+    }
+
+    function test_invalidCounterpartyPortId() public {
+        CounterParty[4] memory cps = [
+            CounterParty('', bytes32(0x0), ''),
+            CounterParty('portX', bytes32(0x0), ''),
+            CounterParty('', bytes32('channel-99'), '1.0'),
+            CounterParty('portX', bytes32('channel-99'), '1.0')
+        ];
+        for (uint i = 0; i < cps.length; i++) {
+            cp = cps[i];
+            vm.expectRevert('Invalid counterpartyPortId');
+            dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+        }
+    }
+
+    function test_invalidProof() public {
+        vm.expectRevert('Fail to prove channel state');
+        dispatcher.openIbcChannel(IbcReceiver(mars), '', ChannelOrder.ORDERED, connectionHops, cpBsc, invalidProof);
     }
 }
 

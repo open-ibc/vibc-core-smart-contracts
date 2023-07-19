@@ -273,7 +273,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         CounterParty calldata counterparty,
         Proof calldata proof
     ) external {
-        require(bytes(counterparty.portId).length != 0, 'Empty counterparty.portId');
+        require(bytes(counterparty.portId).length != 0, 'Invalid counterpartyPortId');
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
