@@ -1678,8 +1678,8 @@
       }
     },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689781551111,
-      "contentHash": "8e1a4a9d1f25f6b237ce6c18218f5fc6",
+      "lastModificationDate": 1689790239692,
+      "contentHash": "6276ff69ffb6e0766948a09152020756",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {
@@ -1747,11 +1747,14 @@
         "Base": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/Base.json"
         },
-        "DispatcherBaseTest": {
-          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherBaseTest.json"
+        "DispatcherCreateClientTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherCreateClientTest.json"
         },
         "DispatcherTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherTest.json"
+        },
+        "DispatcherUpdateClientTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherUpdateClientTest.json"
         }
       }
     }
