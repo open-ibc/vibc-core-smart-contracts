@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
-import {Dispatcher, InitClientMsg} from '../contracts/Dispatcher.sol';
+import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
 import '../contracts/IbcVerifier.sol';
 import '../contracts/Verifier.sol';
 
@@ -88,6 +88,24 @@ contract DispatcherUpdateClientTest is Test, Base {
         vm.expectRevert('UpdateClientMsg proof verification failed');
         ConsensusState memory invalidConsensusState;
         dispatcher.updateClient(UpdateClientMsg(invalidConsensusState, proof));
+    }
+}
+
+contract DispatcherUpgradeClientTest is Test, Base {
+    function setUp() public {
+        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher.createClient(initClientMsg);
+        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+    }
+
+    function test_success() public {
+        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeClientState'), trustedState));
+    }
+
+    function test_ownerOnly() public {
+        vm.prank(vm.addr(0x1));
+        vm.expectRevert('Ownable: caller is not the owner');
+        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeClientState'), trustedState));
     }
 }
 

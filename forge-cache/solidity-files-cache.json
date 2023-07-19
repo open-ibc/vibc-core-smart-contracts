@@ -1678,8 +1678,8 @@
       }
     },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689790239692,
-      "contentHash": "6276ff69ffb6e0766948a09152020756",
+      "lastModificationDate": 1689790755266,
+      "contentHash": "922214398f48e6b5226d965f24b0c5b1",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {
@@ -1755,6 +1755,9 @@
         },
         "DispatcherUpdateClientTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherUpdateClientTest.json"
+        },
+        "DispatcherUpgradeClientTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherUpgradeClientTest.json"
         }
       }
     }
