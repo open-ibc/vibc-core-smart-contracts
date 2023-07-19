@@ -27,7 +27,7 @@ struct UpgradeClientMsg {
 }
 
 struct Channel {
-    bytes32 version;
+    string version;
     ChannelOrder ordering;
     string[] connectionHops;
     string counterpartyPortId;
@@ -345,7 +345,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         ChannelOrder ordering,
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId,
-        bytes32 counterpartyVersion,
+        string calldata counterpartyVersion,
         Proof calldata proof
     ) external {
         require(
