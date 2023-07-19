@@ -1676,6 +1676,84 @@
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Counter.t.sol/CounterTest.json"
         }
       }
+    },
+    "test/Dispatcher.t.sol": {
+      "lastModificationDate": 1689781551111,
+      "contentHash": "8e1a4a9d1f25f6b237ce6c18218f5fc6",
+      "sourceName": "test/Dispatcher.t.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "useLiteralContent": false,
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ]
+            }
+          },
+          "evmVersion": "paris",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/Dispatcher.sol",
+        "contracts/Groth16Verifier.sol",
+        "contracts/Ibc.sol",
+        "contracts/IbcDispatcher.sol",
+        "contracts/IbcReceiver.sol",
+        "contracts/IbcVerifier.sol",
+        "contracts/Verifier.sol",
+        "lib/forge-std/lib/ds-test/src/test.sol",
+        "lib/forge-std/src/Base.sol",
+        "lib/forge-std/src/StdAssertions.sol",
+        "lib/forge-std/src/StdChains.sol",
+        "lib/forge-std/src/StdCheats.sol",
+        "lib/forge-std/src/StdError.sol",
+        "lib/forge-std/src/StdInvariant.sol",
+        "lib/forge-std/src/StdJson.sol",
+        "lib/forge-std/src/StdMath.sol",
+        "lib/forge-std/src/StdStorage.sol",
+        "lib/forge-std/src/StdStyle.sol",
+        "lib/forge-std/src/StdUtils.sol",
+        "lib/forge-std/src/Test.sol",
+        "lib/forge-std/src/Vm.sol",
+        "lib/forge-std/src/console.sol",
+        "lib/forge-std/src/console2.sol",
+        "lib/forge-std/src/interfaces/IMulticall3.sol",
+        "lib/forge-std/src/safeconsole.sol",
+        "node_modules/@openzeppelin/contracts/access/Ownable.sol",
+        "node_modules/@openzeppelin/contracts/utils/Context.sol",
+        "node_modules/@openzeppelin/contracts/utils/Strings.sol",
+        "node_modules/@openzeppelin/contracts/utils/math/Math.sol",
+        "node_modules/hardhat/console.sol"
+      ],
+      "versionRequirement": "^0.8.13",
+      "artifacts": {
+        "Base": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/Base.json"
+        },
+        "DispatcherBaseTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherBaseTest.json"
+        },
+        "DispatcherTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherTest.json"
+        }
+      }
     }
   }
 }
