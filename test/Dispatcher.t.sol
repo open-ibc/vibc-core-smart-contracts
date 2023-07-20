@@ -98,6 +98,11 @@ contract Base is Test {
         );
     address payable escrow = payable(vm.addr(uint256(keccak256(abi.encode('escrow')))));
 
+    // Proofs from Polymer chain, to verify packet or channel state on Polymer
+    Proof emptyProof;
+    Proof invalidProof = Proof(42, bytes('')); // invalid proof with empty proof bytes
+    Proof validProof = Proof(42, bytes('valid proof'));
+
     Dispatcher dispatcher;
 }
 
@@ -173,9 +178,6 @@ contract ChannelTestBase is Test, Base {
     ChannelOrder ordering = ChannelOrder.ORDERED;
     CounterParty cp;
 
-    Proof emptyProof;
-    Proof invalidProof = Proof(42, bytes('')); // invalid proof with empty proof bytes
-    Proof validProof = Proof(42, bytes('valid proof'));
     CounterParty cpBsc = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
 
     function setUp() public virtual {
@@ -343,6 +345,68 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
             bytes32(abi.encodePacked(cpBsc.version)),
             invalidProof
         );
+    }
+}
+
+contract DispatcherCloseChannelTest is Test, Base {
+    Mars mars;
+    bytes32 channelId = 'channel-1';
+
+    function setUp() public {
+        string[] memory connectionHops = new string[](2);
+        connectionHops[0] = 'connection-1';
+        connectionHops[1] = 'connection-2';
+
+        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher.createClient(initClientMsg);
+
+        vm.startPrank(vm.addr(0x1));
+        mars = new Mars();
+
+        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+
+        // finish channel handshake as chain A
+        CounterParty memory cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
+        dispatcher.openIbcChannel(IbcReceiver(mars), '1.0', ChannelOrder.ORDERED, connectionHops, cp, emptyProof);
+        CounterParty memory cp2 = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
+        dispatcher.connectIbcChannel(
+            IbcReceiver(mars),
+            channelId,
+            connectionHops,
+            ChannelOrder.ORDERED,
+            cp2.portId,
+            cp2.channelId,
+            bytes32(abi.encodePacked(cp2.version)),
+            validProof
+        );
+    }
+
+    function test_closeChannelInit_success() public {
+        vm.expectEmit(true, true, true, true);
+        emit CloseIbcChannel(address(mars), channelId);
+        mars.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
+    }
+
+    function test_closeChannelInit_mustOwner() public {
+        Mars earth = new Mars();
+        vm.expectRevert('Channel not owned by msg.sender');
+        earth.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
+    }
+
+    function test_closeChannelConfirm_success() public {
+        vm.expectEmit(true, true, true, true);
+        emit CloseIbcChannel(address(mars), channelId);
+        dispatcher.onCloseIbcChannel(address(mars), channelId, validProof);
+    }
+
+    function test_closeChannelConfirm_mustOwner() public {
+        vm.expectRevert('Channel not owned by portAddress');
+        dispatcher.onCloseIbcChannel(address(mars), 'channel-999', validProof);
+    }
+
+    function test_closeChannelConfirm_invalidProof() public {
+        vm.expectRevert('Fail to prove channel state');
+        dispatcher.onCloseIbcChannel(address(mars), channelId, invalidProof);
     }
 }
 

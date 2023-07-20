@@ -1576,8 +1576,8 @@
       }
     },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689860893871,
-      "contentHash": "bfca5af35580bba1f3374adec6c8ad9d",
+      "lastModificationDate": 1689864321619,
+      "contentHash": "d1eed595fe68921c9b0b22fc54837660",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {
@@ -1648,6 +1648,9 @@
         },
         "ChannelTestBase": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/ChannelTestBase.json"
+        },
+        "DispatcherCloseChannelTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherCloseChannelTest.json"
         },
         "DispatcherConnectIbcChannelTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherConnectIbcChannelTest.json"
