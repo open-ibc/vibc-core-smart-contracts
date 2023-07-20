@@ -620,6 +620,22 @@ contract Dispatcher is IbcDispatcher, Ownable {
             nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
+        // If pkt is timeout, the do timeout handling
+        if ((packet.timeout.timestamp != 0 && block.timestamp >= packet.timeout.timestamp)
+            || (packet.timeout.blockHeight != 0 && block.number >= packet.timeout.blockHeight)
+        ) {
+            address writerPortAddress = address(receiver);
+
+            emit WriteTimeoutPacket(
+                writerPortAddress,
+                packet.dest.channelId,
+                packet.sequence
+            );
+
+            return;
+        }
+
+        // Not timeout yet, then do normal handling
         AckPacket memory ack = receiver.onRecvPacket(packet);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
