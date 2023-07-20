@@ -608,6 +608,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify packet has not been received yet
         bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         require(!hasReceipt, 'Packet receipt already exists');
+        recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
