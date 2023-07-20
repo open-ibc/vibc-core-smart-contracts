@@ -662,6 +662,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //     );
     // }
 
+    // TODO: remove below writeTimeoutPacket() function
+    //       1. core SC is responsible to generate timeout packet
+    //       2. user contract are not free to generate timeout with different criteria
+    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, below function won't do the job, as it doesn't have proofs.
+    //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will do proper timeout generation.
     /**
      * Generate a timeout packet for the given packet
      */
