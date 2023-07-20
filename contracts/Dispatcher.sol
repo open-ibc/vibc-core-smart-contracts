@@ -620,6 +620,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
             nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
+        // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
+        emit RecvPacket(
+            address(receiver),
+            packet.dest.channelId,
+            packet.sequence
+        );
+
         // If pkt is timeout, the do timeout handling
         if ((packet.timeout.timestamp != 0 && block.timestamp >= packet.timeout.timestamp)
             || (packet.timeout.blockHeight != 0 && block.number >= packet.timeout.blockHeight)
@@ -642,11 +649,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(!hasAckPacketCommitment, 'Ack packet commitment already exists');
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
-        emit RecvPacket(
-            address(receiver),
-            packet.dest.channelId,
-            packet.sequence
-        );
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
 
