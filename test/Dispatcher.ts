@@ -534,7 +534,7 @@ describe('IBC Core Smart Contract', function () {
         dest: { portId: portId, channelId: C.RemoteChannelIds[0] },
         sequence: 1,
         data: toBytes(packet.msg),
-        timeout: { blockHeight: 0, timestamp: packet.timeout }
+        timeout: { blockHeight: 0, timestamp: 0 }
       }
 
       const txRecv = await dispatcher.connect(accounts.relayer).recvPacket(mars.address, ibcPacket, C.ValidProof)
