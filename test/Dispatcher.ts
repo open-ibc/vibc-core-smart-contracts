@@ -551,6 +551,78 @@ describe('IBC Core Smart Contract', function () {
           ethers.utils.hexlify(toBytes(`{ "account": "account", "reply": "got the message" }`))
         ])
     })
+
+    it('succeeds with a timestamp based timeout', async function () {
+      const { dispatcher, mars, accounts, channel, packets } = await loadFixture(setupChannelFixture)
+
+      const updatedPortPrefix = 'polyibc.eth.'
+      await dispatcher.setPortPrefix(updatedPortPrefix)
+      const packet = getPacket(packets[0], 0)
+
+      const portId = `${updatedPortPrefix}${mars.address.slice(2)}`
+
+      const ibcPacket = {
+        src: {
+          portId: C.BscPortId,
+          channelId: channel.channelId
+        },
+        dest: { portId: portId, channelId: C.RemoteChannelIds[0] },
+        sequence: 1,
+        data: toBytes(packet.msg),
+        timeout: { blockHeight: 0, timestamp: 1 }
+      }
+
+      const txRecv = await dispatcher.connect(accounts.relayer).recvPacket(mars.address, ibcPacket, C.ValidProof)
+      await expect(txRecv)
+          .to.emit(dispatcher, 'RecvPacket')
+          .withArgs(
+              mars.address,
+              ibcPacket.dest.channelId,
+              ibcPacket.sequence
+          )
+          .to.emit(dispatcher, 'WriteTimeoutPacket')
+          .withArgs(
+              mars.address,
+              ibcPacket.dest.channelId,
+              ibcPacket.sequence
+          )
+    })
+
+    it('succeeds with a height based timeout', async function () {
+      const { dispatcher, mars, accounts, channel, packets } = await loadFixture(setupChannelFixture)
+
+      const updatedPortPrefix = 'polyibc.eth.'
+      await dispatcher.setPortPrefix(updatedPortPrefix)
+      const packet = getPacket(packets[0], 0)
+
+      const portId = `${updatedPortPrefix}${mars.address.slice(2)}`
+
+      const ibcPacket = {
+        src: {
+          portId: C.BscPortId,
+          channelId: channel.channelId
+        },
+        dest: { portId: portId, channelId: C.RemoteChannelIds[0] },
+        sequence: 1,
+        data: toBytes(packet.msg),
+        timeout: { blockHeight: 1, timestamp: 0 }
+      }
+
+      const txRecv = await dispatcher.connect(accounts.relayer).recvPacket(mars.address, ibcPacket, C.ValidProof)
+      await expect(txRecv)
+          .to.emit(dispatcher, 'RecvPacket')
+          .withArgs(
+              mars.address,
+              ibcPacket.dest.channelId,
+              ibcPacket.sequence
+          )
+          .to.emit(dispatcher, 'WriteTimeoutPacket')
+          .withArgs(
+              mars.address,
+              ibcPacket.dest.channelId,
+              ibcPacket.sequence
+          )
+    })
   })
 
   describe('sendPacket', function () {
