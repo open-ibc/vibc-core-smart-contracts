@@ -1576,8 +1576,8 @@
       }
     },
     "test/Dispatcher.t.sol": {
-      "lastModificationDate": 1689864321619,
-      "contentHash": "d1eed595fe68921c9b0b22fc54837660",
+      "lastModificationDate": 1689867326860,
+      "contentHash": "669e27c0af80ed4e207373d14f10077c",
       "sourceName": "test/Dispatcher.t.sol",
       "solcConfig": {
         "settings": {
@@ -1646,6 +1646,9 @@
         "Base": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/Base.json"
         },
+        "ChannelOpenTestBase": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/ChannelOpenTestBase.json"
+        },
         "ChannelTestBase": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/ChannelTestBase.json"
         },
@@ -1660,6 +1663,9 @@
         },
         "DispatcherOpenIbcChannelTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherOpenIbcChannelTest.json"
+        },
+        "DispatcherSendPacketTest": {
+          "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherSendPacketTest.json"
         },
         "DispatcherTest": {
           "0.8.20+commit.a1b79de6.Darwin.appleclang": "Dispatcher.t.sol/DispatcherTest.json"

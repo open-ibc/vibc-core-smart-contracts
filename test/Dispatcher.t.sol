@@ -348,9 +348,11 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
     }
 }
 
-contract DispatcherCloseChannelTest is Test, Base {
+// This Base contract provides an open channel for sub-contract tests
+contract ChannelOpenTestBase is Test, Base {
     Mars mars;
     bytes32 channelId = 'channel-1';
+    address relayer = vm.addr(0x0123456);
 
     function setUp() public {
         string[] memory connectionHops = new string[](2);
@@ -360,7 +362,9 @@ contract DispatcherCloseChannelTest is Test, Base {
         dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
         dispatcher.createClient(initClientMsg);
 
-        vm.startPrank(vm.addr(0x1));
+        // anyone can run Relayers
+        vm.startPrank(relayer);
+        vm.deal(relayer, 100000 ether);
         mars = new Mars();
 
         dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
@@ -380,7 +384,9 @@ contract DispatcherCloseChannelTest is Test, Base {
             validProof
         );
     }
+}
 
+contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     function test_closeChannelInit_success() public {
         vm.expectEmit(true, true, true, true);
         emit CloseIbcChannel(address(mars), channelId);
@@ -407,6 +413,44 @@ contract DispatcherCloseChannelTest is Test, Base {
     function test_closeChannelConfirm_invalidProof() public {
         vm.expectRevert('Fail to prove channel state');
         dispatcher.onCloseIbcChannel(address(mars), channelId, invalidProof);
+    }
+}
+
+contract DispatcherSendPacketTest is ChannelOpenTestBase {
+    // default params
+    string msg = 'msgPayload';
+    uint64 timeoutTimestamp = 1000;
+    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
+
+    // calcFee returns the fee to be paid for sending a packet.
+    function calcFee(PacketFee memory _fee) internal pure returns (uint256) {
+        uint256 maxFee = _fee.ackFee > _fee.timeoutFee ? _fee.ackFee : _fee.timeoutFee;
+        return _fee.recvFee + maxFee;
+    }
+
+    function test_success() public {
+        for (uint64 index = 0; index < 3; index++) {
+            uint256 balance = escrow.balance;
+            bytes memory packet = abi.encodePacked(msg);
+            vm.expectEmit(true, true, true, true);
+            uint64 packetSeq = index + 1;
+            emit SendPacket(address(mars), channelId, packet, index + 1, timeoutTimestamp, fee);
+            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
+            assertEq(escrow.balance - balance, calcFee(fee));
+        }
+    }
+
+    // sendPacket fails if insufficient fee is paid.
+    function test_insufficientFee() public {
+        vm.expectRevert();
+        mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
+    }
+
+    // sendPacket fails if calling dApp doesn't own the channel
+    function test_mustOwner() public {
+        Mars earth = new Mars();
+        vm.expectRevert('Channel not owned by sender');
+        earth.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
     }
 }
 
