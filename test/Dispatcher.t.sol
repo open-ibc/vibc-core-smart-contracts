@@ -10,6 +10,7 @@ import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
 
 contract Base is Test {
+    uint64 UINT64_MAX = 18446744073709551615;
     //
     // channel events
     //
@@ -104,11 +105,12 @@ contract Base is Test {
     Proof validProof = Proof(42, bytes('valid proof'));
 
     Dispatcher dispatcher;
+    string portPrefix = 'polyibc.eth.';
 }
 
 contract DispatcherCreateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
     }
 
     function test_success() public {
@@ -130,7 +132,7 @@ contract DispatcherCreateClientTest is Test, Base {
 
 contract DispatcherUpdateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
     }
 
@@ -149,7 +151,7 @@ contract DispatcherUpdateClientTest is Test, Base {
 
 contract DispatcherUpgradeClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
     }
@@ -185,7 +187,7 @@ contract ChannelTestBase is Test, Base {
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
 
@@ -354,12 +356,12 @@ contract ChannelOpenTestBase is Test, Base {
     bytes32 channelId = 'channel-1';
     address relayer = vm.addr(0x0123456);
 
-    function setUp() public {
+    function setUp() public virtual {
         string[] memory connectionHops = new string[](2);
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, 'polyibc.eth.');
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
 
         // anyone can run Relayers
@@ -418,7 +420,7 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
 
 contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // default params
-    string msg = 'msgPayload';
+    string payload = 'msgPayload';
     uint64 timeoutTimestamp = 1000;
     PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
@@ -431,11 +433,11 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             uint256 balance = escrow.balance;
-            bytes memory packet = abi.encodePacked(msg);
+            bytes memory packet = abi.encodePacked(payload);
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
             emit SendPacket(address(mars), channelId, packet, index + 1, timeoutTimestamp, fee);
-            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
+            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
             assertEq(escrow.balance - balance, calcFee(fee));
         }
     }
@@ -443,14 +445,56 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // sendPacket fails if insufficient fee is paid.
     function test_insufficientFee() public {
         vm.expectRevert();
-        mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
+        mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
     }
 
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
         Mars earth = new Mars();
         vm.expectRevert('Channel not owned by sender');
-        earth.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), msg, channelId, timeoutTimestamp, fee);
+        earth.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
+    }
+}
+
+contract DispatcherRecvPacketTest is ChannelOpenTestBase {
+    IbcEndpoint src = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
+    IbcEndpoint dest;
+    IbcTimeout maxTimeout = IbcTimeout(0, UINT64_MAX);
+    bytes payload = bytes('msgPayload');
+    bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
+
+    function setUp() public override {
+        super.setUp();
+        string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
+        dest = IbcEndpoint(marsPort, channelId);
+    }
+
+    function test_success() public {
+        for (uint64 index = 0; index < 3; index++) {
+            uint64 packetSeq = index + 1;
+            vm.expectEmit(true, true, true, true, address(dispatcher));
+            emit RecvPacket(address(mars), channelId, packetSeq);
+            vm.expectEmit(true, true, false, true, address(dispatcher));
+            emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
+            dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, maxTimeout), validProof);
+        }
+    }
+
+    // cannot receive packets out of order for ordered channel
+    function test_outOfOrder() public {
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);
+        vm.expectRevert('Unexpected packet sequence');
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, maxTimeout), validProof);
+    }
+
+    // getHexStr converts an address to a hex string without the leading 0x
+    function getHexBytes(address addr) internal pure returns (bytes memory) {
+        bytes memory addrWithPrefix = abi.encodePacked(vm.toString(addr));
+        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
+        for (uint i = 0; i < addrWithoutPrefix.length; i++) {
+            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
+        }
+        return addrWithoutPrefix;
     }
 }
 
