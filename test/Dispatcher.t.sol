@@ -97,6 +97,7 @@ contract Base is Test {
                 15082220514596158133191868403239442750535261032426474092101151620016661078026
             ]
         );
+    IbcTimeout maxTimeout = IbcTimeout(0, UINT64_MAX);
     address payable escrow = payable(vm.addr(uint256(keccak256(abi.encode('escrow')))));
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
@@ -106,6 +107,24 @@ contract Base is Test {
 
     Dispatcher dispatcher;
     string portPrefix = 'polyibc.eth.';
+
+    // ⬇️ Utility functions for testing
+
+    // getHexStr converts an address to a hex string without the leading 0x
+    function getHexBytes(address addr) internal pure returns (bytes memory) {
+        bytes memory addrWithPrefix = abi.encodePacked(vm.toString(addr));
+        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
+        for (uint i = 0; i < addrWithoutPrefix.length; i++) {
+            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
+        }
+        return addrWithoutPrefix;
+    }
+
+    // calcFee returns the fee to be paid for sending a packet.
+    function calcFee(PacketFee memory _fee) internal pure returns (uint256) {
+        uint256 maxFee = _fee.ackFee > _fee.timeoutFee ? _fee.ackFee : _fee.timeoutFee;
+        return _fee.recvFee + maxFee;
+    }
 }
 
 contract DispatcherCreateClientTest is Test, Base {
@@ -424,12 +443,6 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     uint64 timeoutTimestamp = 1000;
     PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
-    // calcFee returns the fee to be paid for sending a packet.
-    function calcFee(PacketFee memory _fee) internal pure returns (uint256) {
-        uint256 maxFee = _fee.ackFee > _fee.timeoutFee ? _fee.ackFee : _fee.timeoutFee;
-        return _fee.recvFee + maxFee;
-    }
-
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             uint256 balance = escrow.balance;
@@ -459,7 +472,6 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
 contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     IbcEndpoint src = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
     IbcEndpoint dest;
-    IbcTimeout maxTimeout = IbcTimeout(0, UINT64_MAX);
     bytes payload = bytes('msgPayload');
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
 
@@ -487,14 +499,83 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, maxTimeout), validProof);
     }
 
-    // getHexStr converts an address to a hex string without the leading 0x
-    function getHexBytes(address addr) internal pure returns (bytes memory) {
-        bytes memory addrWithPrefix = abi.encodePacked(vm.toString(addr));
-        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
-        for (uint i = 0; i < addrWithoutPrefix.length; i++) {
-            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
+    // TODO: add tests for unordered channel, wrong port, and invalid proof
+}
+
+contract DispatcherAckPacketTest is ChannelOpenTestBase {
+    IbcEndpoint dest = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
+    IbcEndpoint src;
+    string payloadStr = 'msgPayload';
+    bytes payload = bytes(payloadStr);
+    bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
+    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
+
+    function setUp() public override {
+        super.setUp();
+        string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
+        src = IbcEndpoint(marsPort, channelId);
+    }
+
+    function test_success() public {
+        for (uint64 index = 0; index < 3; index++) {
+            uint64 packetSeq = index + 1;
+            mars.greet{value: calcFee(fee)}(
+                IbcDispatcher(dispatcher),
+                payloadStr,
+                channelId,
+                maxTimeout.timestamp,
+                fee
+            );
+
+            IbcPacket memory packet = IbcPacket(src, dest, packetSeq, payload, maxTimeout);
+            AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+            vm.expectEmit(true, true, false, true, address(dispatcher));
+            emit Acknowledgement(address(mars), channelId, packetSeq);
+            dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
         }
-        return addrWithoutPrefix;
+    }
+
+    // cannot ack packets if packet commitment is missing
+    function test_missingPacket() public {
+        uint64 packetSeq = 1;
+        IbcPacket memory packet = IbcPacket(src, dest, packetSeq, payload, maxTimeout);
+        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+
+        // packet commitment is removed after ack
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+    }
+
+    function test_invalidPort() public {
+        Mars earth = new Mars();
+        string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
+        IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
+        uint64 packetSeq = 1;
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+
+        // another valid packet but not the same port
+        IbcPacket memory packet = IbcPacket(earthEnd, dest, packetSeq, payload, maxTimeout);
+        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+
+        vm.expectRevert('Receiver is not the original packet sender');
+        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+    }
+
+    // ackPacket fails if channel doesn't match
+    function test_invalidChannel() public {
+        uint64 packetSeq = 1;
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, 'channel-invalid');
+        IbcPacket memory packet = IbcPacket(invalidSrc, dest, packetSeq, payload, maxTimeout);
+        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
     }
 }
 
