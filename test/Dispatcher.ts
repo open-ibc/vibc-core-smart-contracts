@@ -584,7 +584,9 @@ describe('IBC Core Smart Contract', function () {
           .withArgs(
               mars.address,
               ibcPacket.dest.channelId,
-              ibcPacket.sequence
+              ibcPacket.sequence,
+              ibcPacket.timeout.blockHeight,
+              ibcPacket.timeout.timestamp
           )
     })
 
@@ -620,7 +622,9 @@ describe('IBC Core Smart Contract', function () {
           .withArgs(
               mars.address,
               ibcPacket.dest.channelId,
-              ibcPacket.sequence
+              ibcPacket.sequence,
+              ibcPacket.timeout.blockHeight,
+              ibcPacket.timeout.timestamp
           )
     })
   })

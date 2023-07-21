@@ -105,7 +105,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
         AckPacket ackPacket
     );
 
-    event WriteTimeoutPacket(address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence);
+    event WriteTimeoutPacket(
+        address indexed writerPortAddress,
+        bytes32 indexed writerChannelId,
+        uint64 sequence,
+        uint64 pktTimeoutHeight,
+        uint64 pktTimeoutTimestamp
+    );
 
     //
     // fields
@@ -636,7 +642,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
             emit WriteTimeoutPacket(
                 writerPortAddress,
                 packet.dest.channelId,
-                packet.sequence
+                packet.sequence,
+                packet.timeout.blockHeight,
+                packet.timeout.timestamp
             );
 
             return;
@@ -683,7 +691,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
             'Packet not timed out yet'
         );
 
-        emit WriteTimeoutPacket(receiver, packet.dest.channelId, packet.sequence);
+        emit WriteTimeoutPacket(
+            receiver,
+            packet.dest.channelId,
+            packet.sequence,
+            packet.timeout.blockHeight,
+            packet.timeout.timestamp
+        );
     }
 
     /**
