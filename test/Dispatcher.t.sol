@@ -469,6 +469,46 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     }
 }
 
+contract PacketSenderTest is ChannelOpenTestBase {
+    IbcEndpoint dest = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
+    IbcEndpoint src;
+    string payloadStr = 'msgPayload';
+    bytes payload = bytes(payloadStr);
+    bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
+    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
+
+    uint64 nextSendSeq = 1;
+    // cached packet that was sent in `sendPacket`
+    IbcPacket sentPacket;
+    // ackPacket is the acknowledgement packet that is expected to be written for the `sentPacket`
+    AckPacket ackPacket;
+
+    function setUp() public virtual override {
+        super.setUp();
+        string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
+        src = IbcEndpoint(marsPort, channelId);
+    }
+
+    // sendPacket writes a packet commitment, and updates cached `sentPacket` and `ackPacket`
+    function sendPacket() internal {
+        sentPacket = genPacket(nextSendSeq);
+        ackPacket = genAckPacket(nextSendSeq);
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        nextSendSeq += 1;
+    }
+
+    // genPacket generates a packet for the given packet sequence
+    function genPacket(uint64 packetSeq) internal view returns (IbcPacket memory) {
+        return IbcPacket(src, dest, packetSeq, payload, maxTimeout);
+    }
+
+    // genAckPacket generates an ack packet for the given packet sequence
+    function genAckPacket(uint64 packetSeq) internal pure returns (AckPacket memory) {
+        return AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+    }
+}
+
+// Test Chains B receives a packet from Chain A
 contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     IbcEndpoint src = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
     IbcEndpoint dest;
@@ -502,44 +542,8 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     // TODO: add tests for unordered channel, wrong port, and invalid proof
 }
 
-contract DispatcherAckPacketTest is ChannelOpenTestBase {
-    IbcEndpoint dest = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
-    IbcEndpoint src;
-    string payloadStr = 'msgPayload';
-    bytes payload = bytes(payloadStr);
-    bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
-    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
-
-    uint64 nextSendSeq = 1;
-    // cached packet that was sent in `sendPacket`
-    IbcPacket sentPacket;
-    // ackPacket is the acknowledgement packet that is expected to be written for the `sentPacket`
-    AckPacket ackPacket;
-
-    function setUp() public override {
-        super.setUp();
-        string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
-        src = IbcEndpoint(marsPort, channelId);
-    }
-
-    // sendPacket writes a packet commitment, and updates cached `sentPacket` and `ackPacket`
-    function sendPacket() internal {
-        sentPacket = genPacket(nextSendSeq);
-        ackPacket = genAckPacket(nextSendSeq);
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
-        nextSendSeq += 1;
-    }
-
-    // genPacket generates a packet for the given packet sequence
-    function genPacket(uint64 packetSeq) internal view returns (IbcPacket memory) {
-        return IbcPacket(src, dest, packetSeq, payload, maxTimeout);
-    }
-
-    // genAckPacket generates an ack packet for the given packet sequence
-    function genAckPacket(uint64 packetSeq) internal pure returns (AckPacket memory) {
-        return AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
-    }
-
+// Test Chain A receives an acknowledgement packet from Chain B
+contract DispatcherAckPacketTest is PacketSenderTest {
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             sendPacket();
@@ -588,6 +592,71 @@ contract DispatcherAckPacketTest is ChannelOpenTestBase {
 
         vm.expectRevert('Packet commitment not found');
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+    }
+}
+
+// Test Chain A receives a timeout packet from Chain B
+contract DispatcherTimeoutPacketTest is PacketSenderTest {
+    // preconditions for timeout packet
+    // - packet commitment exists
+    // - packet timeout is verified by Polymer client
+    function test_success() public {
+        for (uint64 index = 0; index < 3; index++) {
+            sendPacket();
+
+            vm.expectEmit(true, true, true, true, address(dispatcher));
+            emit Timeout(address(mars), channelId, sentPacket.sequence);
+            dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
+        }
+    }
+
+    // cannot timeout packets if packet commitment is missing
+    function test_missingPacket() public {
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.timeout(IbcReceiver(mars), genPacket(1), validProof);
+
+        sendPacket();
+        dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
+
+        // packet commitment is removed after timeout
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
+    }
+
+    // cannot timeout packets if original packet port doesn't match current port
+    function test_invalidPort() public {
+        Mars earth = new Mars();
+        string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
+        IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
+
+        sendPacket();
+
+        // another valid packet but not the same port
+        IbcPacket memory packetEarth = sentPacket;
+        packetEarth.src = earthEnd;
+
+        vm.expectRevert('Receiver is not the original packet sender');
+        dispatcher.timeout(IbcReceiver(mars), packetEarth, validProof);
+    }
+
+    // cannot timeout packetsfails if channel doesn't match
+    function test_invalidChannel() public {
+        sendPacket();
+
+        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, 'channel-invalid');
+        IbcPacket memory packet = sentPacket;
+        packet.src = invalidSrc;
+
+        vm.expectRevert('Packet commitment not found');
+        dispatcher.timeout(IbcReceiver(mars), packet, validProof);
+    }
+
+    // cannot timeout packets if proof from Polymer is invalid
+    function test_invalidProof() public {
+        sendPacket();
+
+        vm.expectRevert('Fail to prove timeout');
+        dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }
 
