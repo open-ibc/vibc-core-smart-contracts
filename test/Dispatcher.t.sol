@@ -510,69 +510,81 @@ contract DispatcherAckPacketTest is ChannelOpenTestBase {
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
     PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
+    uint64 nextSendSeq = 1;
+    // cached packet that was sent in `sendPacket`
+    IbcPacket sentPacket;
+    // ackPacket is the acknowledgement packet that is expected to be written for the `sentPacket`
+    AckPacket ackPacket;
+
     function setUp() public override {
         super.setUp();
         string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
         src = IbcEndpoint(marsPort, channelId);
     }
 
+    // sendPacket writes a packet commitment, and updates cached `sentPacket` and `ackPacket`
+    function sendPacket() internal {
+        sentPacket = genPacket(nextSendSeq);
+        ackPacket = genAckPacket(nextSendSeq);
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        nextSendSeq += 1;
+    }
+
+    // genPacket generates a packet for the given packet sequence
+    function genPacket(uint64 packetSeq) internal view returns (IbcPacket memory) {
+        return IbcPacket(src, dest, packetSeq, payload, maxTimeout);
+    }
+
+    // genAckPacket generates an ack packet for the given packet sequence
+    function genAckPacket(uint64 packetSeq) internal pure returns (AckPacket memory) {
+        return AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+    }
+
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
-            uint64 packetSeq = index + 1;
-            mars.greet{value: calcFee(fee)}(
-                IbcDispatcher(dispatcher),
-                payloadStr,
-                channelId,
-                maxTimeout.timestamp,
-                fee
-            );
+            sendPacket();
 
-            IbcPacket memory packet = IbcPacket(src, dest, packetSeq, payload, maxTimeout);
-            AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
             vm.expectEmit(true, true, false, true, address(dispatcher));
-            emit Acknowledgement(address(mars), channelId, packetSeq);
-            dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+            emit Acknowledgement(address(mars), channelId, sentPacket.sequence);
+            dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
         }
     }
 
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
-        uint64 packetSeq = 1;
-        IbcPacket memory packet = IbcPacket(src, dest, packetSeq, payload, maxTimeout);
-        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
         vm.expectRevert('Packet commitment not found');
-        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+        dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
 
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
-        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+        sendPacket();
+        dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
         vm.expectRevert('Packet commitment not found');
-        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+        dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
     function test_invalidPort() public {
         Mars earth = new Mars();
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
-        uint64 packetSeq = 1;
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+
+        sendPacket();
 
         // another valid packet but not the same port
-        IbcPacket memory packet = IbcPacket(earthEnd, dest, packetSeq, payload, maxTimeout);
-        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+        IbcPacket memory packetEarth = sentPacket;
+        packetEarth.src = earthEnd;
 
         vm.expectRevert('Receiver is not the original packet sender');
-        dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+        dispatcher.acknowledgement(IbcReceiver(mars), packetEarth, ackPacket, validProof);
     }
 
     // ackPacket fails if channel doesn't match
     function test_invalidChannel() public {
-        uint64 packetSeq = 1;
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        sendPacket();
+
         IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, 'channel-invalid');
-        IbcPacket memory packet = IbcPacket(invalidSrc, dest, packetSeq, payload, maxTimeout);
-        AckPacket memory ackPacket = AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+        IbcPacket memory packet = sentPacket;
+        packet.src = invalidSrc;
 
         vm.expectRevert('Packet commitment not found');
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
