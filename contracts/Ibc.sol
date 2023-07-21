@@ -35,7 +35,7 @@ enum ChannelOrder {
     ORDERED
 }
 struct Channel {
-    bytes32 version;
+    string version;
     ChannelOrder ordering;
     string[] connectionHops;
     string counterpartyPortId;
