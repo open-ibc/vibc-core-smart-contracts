@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import 'hardhat/console.sol';
 
 import './Ibc.sol';
 import './IbcDispatcher.sol';
