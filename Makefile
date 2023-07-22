@@ -11,6 +11,7 @@ build: npm-install
 
 test: build
 	npx hardhat test
+	forge test -vvv
 
 clean:
 	npx hardhat clean
