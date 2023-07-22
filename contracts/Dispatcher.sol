@@ -520,6 +520,16 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         require(hasCommitment, 'Packet commitment not found');
 
+        // enforce ack'ed packet sequences always increment by 1 for ordered channels
+        Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
+        if (channel.ordering == ChannelOrder.ORDERED) {
+            require(
+                packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],
+                'Unexpected packet sequence'
+            );
+            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+        }
+
         receiver.onAcknowledgementPacket(packet);
 
         // delete packet commitment to avoid double ack

@@ -594,6 +594,19 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
+    // cannot recieve ack packets out of order for ordered channel
+    function test_outOfOrder() public {
+        for (uint64 index = 0; index < 3; index++) {
+            sendPacket();
+        }
+        // 1st ack is ok
+        dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
+
+        // only 2nd ack is allowed; so the 3rd ack fails
+        vm.expectRevert('Unexpected packet sequence');
+        dispatcher.acknowledgement(IbcReceiver(mars), genPacket(3), genAckPacket(3), validProof);
+    }
+
     function test_invalidPort() public {
         Mars earth = new Mars();
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
@@ -685,8 +698,4 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
         vm.expectRevert('Fail to prove timeout');
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
-}
-
-contract DispatcherTest is Test, Base {
-    function setUp() public {}
 }
