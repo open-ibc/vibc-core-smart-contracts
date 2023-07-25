@@ -6,6 +6,35 @@ import '@lazyledger/protobuf3-solidity-lib/contracts/ProtobufLib.sol';
 import '../../contracts/payload/packet.proto.sol';
 
 contract PacketContract {
+    // simulates a contract public function called by relayers, where packet is directly passed in as a param
+    function processPacket(Packet calldata packet) public pure returns (bool) {
+        return packet.sequence != 0 && packet.data.length != 0;
+    }
+
+    // simulates a contract public function called by relayers, where packet is passed in as abi.encode(packet)
+    function processPacketAbiEncode(bytes calldata payload) public pure returns (bool) {
+        Packet memory packet = abi.decode(payload, (Packet));
+        return packet.sequence != 0 && packet.data.length != 0;
+    }
+
+    // simulates a contract public function called by relayers, where packet is passed in as a bytes calldata param in protobuf format
+    function processPacketBytes(bytes calldata packet) public pure returns (bool) {
+        (bool ok, uint64 _endPos, Packet memory _packet) = decode(0, packet, uint64(packet.length));
+        if (!ok) {
+            return false;
+        }
+        return _packet.sequence != 0 && _packet.data.length != 0;
+    }
+
+    // simulates a contract public function called by relayers, where packet is passed in as a bytes memory param in protobuf format
+    function processPacketBytesMemory(bytes memory packet) public pure returns (bool) {
+        (bool ok, uint64 _endPos, Packet memory _packet) = PacketCodec.decode(0, packet, uint64(packet.length));
+        if (!ok) {
+            return false;
+        }
+        return _packet.sequence != 0 && _packet.data.length != 0;
+    }
+
     function decode(
         uint64 initial_pos,
         bytes calldata buf,
@@ -372,24 +401,41 @@ contract PacketTest is Test {
     bytes PacketPayload =
         hex'0801120b736f757263652d706f72741a0e736f757263652d6368616e6e656c221064657374696e6174696f6e2d706f72742a1364657374696e6174696f6e2d6368616e6e656c3204646174613a04080210034004';
 
-    // decode from memory bytes should succeed
-    function testDecodeMemory() public {
-        Packet memory packet = decodePacket(PacketPayload);
+    Packet packet1;
+    bytes packet1Abi;
+
+    function setUp() public {
+        packet1 = Packet({
+            sequence: 1,
+            source_port: 'source-port',
+            source_channel: 'source-channel',
+            destination_port: 'destination-port',
+            destination_channel: 'destination-channel',
+            data: bytes('data'),
+            timeout_height: Height({revision_number: 2, revision_height: 3}),
+            timeout_timestamp: 4
+        });
+        packet1Abi = abi.encode(packet1);
     }
 
-    // decode from calldata bytes should succeed
-    function testDecodeCalldata() public {
-        (bool ok, uint64 _endPos, Packet memory packet) = packetContract.decode(
-            0,
-            PacketPayload,
-            uint64(PacketPayload.length)
-        );
+    // directly pass packet as a param where packet abi decode is done in the by EVM
+    // This is the most efficient way to pass packet as a param, but requires explicit data structure definition in solidity
+    function testPacketParam() public view {
+        assert(packetContract.processPacket(packet1));
     }
 
-    // assert that the packet is decoded correctly and returns the parsed packet
-    function decodePacket(bytes memory data) public returns (Packet memory packet) {
-        (bool ok, uint64 _endPos, Packet memory _packet) = PacketCodec.decode(0, data, uint64(data.length));
-        assert(ok);
-        return _packet;
+    // abi encode packet and decode by calling abi.decode manually in contract
+    function testPacketAbiEncode() public view {
+        assert(packetContract.processPacketAbiEncode(packet1Abi));
+    }
+
+    // decode packet from protobuf payload as a memory param
+    function testDecodeBytesMemory() public view {
+        assert(packetContract.processPacketBytesMemory(PacketPayload));
+    }
+
+    // decode packet from protobuf payload as a calldata param
+    function testDecodeBytes() public view {
+        assert(packetContract.processPacketBytes(PacketPayload));
     }
 }
