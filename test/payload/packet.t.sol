@@ -4,10 +4,15 @@ pragma solidity ^0.8.13;
 import 'forge-std/Test.sol';
 import '@lazyledger/protobuf3-solidity-lib/contracts/ProtobufLib.sol';
 import '../../contracts/payload/packet.proto.sol';
+import '../../contracts/payload/hash.sol';
 
 contract PacketContract {
     // simulates a contract public function called by relayers, where packet is directly passed in as a param
     function processPacket(Packet calldata packet) public pure returns (bool) {
+        return packet.sequence != 0 && packet.data.length != 0;
+    }
+
+    function processPacketMemory(Packet memory packet) public pure returns (bool) {
         return packet.sequence != 0 && packet.data.length != 0;
     }
 
@@ -400,6 +405,7 @@ contract PacketTest is Test {
 
     bytes PacketPayload =
         hex'0801120b736f757263652d706f72741a0e736f757263652d6368616e6e656c221064657374696e6174696f6e2d706f72742a1364657374696e6174696f6e2d6368616e6e656c3204646174613a04080210034004';
+    bytes32 PacketHash = hex'628b8b36e417d89f5522a76818951c096544fc3ab4527bfc489cdb629cfc176a';
 
     Packet packet1;
     bytes packet1Abi;
@@ -424,6 +430,10 @@ contract PacketTest is Test {
         assert(packetContract.processPacket(packet1));
     }
 
+    function testPacketParamMemory() public view {
+        assert(packetContract.processPacketMemory(packet1));
+    }
+
     // abi encode packet and decode by calling abi.decode manually in contract
     function testPacketAbiEncode() public view {
         assert(packetContract.processPacketAbiEncode(packet1Abi));
@@ -437,5 +447,10 @@ contract PacketTest is Test {
     // decode packet from protobuf payload as a calldata param
     function testDecodeBytes() public view {
         assert(packetContract.processPacketBytes(PacketPayload));
+    }
+
+    // verify packet commitment hash matches IBC spec
+    function testPacketCommitment() public {
+        assertEq(IbcHash.hashPacketCommitment(packet1), PacketHash, 'packet commitment hash does not match');
     }
 }
