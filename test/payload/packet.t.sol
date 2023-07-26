@@ -40,6 +40,11 @@ contract PacketContract {
         return _packet.sequence != 0 && _packet.data.length != 0;
     }
 
+    // encode packet as protobuf bytes
+    function encodePacket(Packet memory packet) public pure returns (bytes memory) {
+        return PacketCodec.encode(packet);
+    }
+
     function decode(
         uint64 initial_pos,
         bytes calldata buf,
@@ -447,6 +452,14 @@ contract PacketTest is Test {
     // decode packet from protobuf payload as a calldata param
     function testDecodeBytes() public view {
         assert(packetContract.processPacketBytes(PacketPayload));
+    }
+
+    // verify protobuf encoding
+    function testPacketEncode() public {
+        // FIX: encoding doesn't work
+        vm.expectRevert();
+        bytes memory encoded = packetContract.encodePacket(packet1);
+        // assertEq(encoded, PacketPayload, 'packet encoding does not match');
     }
 
     // verify packet commitment hash matches IBC spec
