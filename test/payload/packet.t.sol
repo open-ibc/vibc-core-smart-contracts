@@ -17,7 +17,7 @@ contract PacketContract {
     }
 
     // simulates a contract public function called by relayers, where packet is passed in as abi.encode(packet)
-    function processPacketAbiEncode(bytes calldata payload) public pure returns (bool) {
+    function processPacketAbi(bytes calldata payload) public pure returns (bool) {
         Packet memory packet = abi.decode(payload, (Packet));
         return packet.sequence != 0 && packet.data.length != 0;
     }
@@ -431,7 +431,7 @@ contract PacketTest is Test {
 
     // directly pass packet as a param where packet abi decode is done in the by EVM
     // This is the most efficient way to pass packet as a param, but requires explicit data structure definition in solidity
-    function testPacketParam() public view {
+    function testPacketParamCalldata() public view {
         assert(packetContract.processPacket(packet1));
     }
 
@@ -439,18 +439,18 @@ contract PacketTest is Test {
         assert(packetContract.processPacketMemory(packet1));
     }
 
-    // abi encode packet and decode by calling abi.decode manually in contract
-    function testPacketAbiEncode() public view {
-        assert(packetContract.processPacketAbiEncode(packet1Abi));
+    // decode packet from abi encoded packet bytes
+    function testPacketAbiDecode() public view {
+        assert(packetContract.processPacketAbi(packet1Abi));
     }
 
     // decode packet from protobuf payload as a memory param
-    function testDecodeBytesMemory() public view {
+    function testPacketProtoDecodeBytesMemory() public view {
         assert(packetContract.processPacketBytesMemory(PacketPayload));
     }
 
     // decode packet from protobuf payload as a calldata param
-    function testDecodeBytes() public view {
+    function testPacketProtoDecodeBytesCalldata() public view {
         assert(packetContract.processPacketBytes(PacketPayload));
     }
 
@@ -460,6 +460,13 @@ contract PacketTest is Test {
         vm.expectRevert();
         bytes memory encoded = packetContract.encodePacket(packet1);
         // assertEq(encoded, PacketPayload, 'packet encoding does not match');
+    }
+
+    // verify packet abi encoding/decodeing
+    function testPacketAbiEncodeDecode() public {
+        bytes memory encoded = abi.encode(packet1);
+        Packet memory packet = abi.decode(encoded, (Packet));
+        assertEq(encoded, abi.encode(packet), 'packet abi encoding/decoding does not match');
     }
 
     // verify packet commitment hash matches IBC spec
