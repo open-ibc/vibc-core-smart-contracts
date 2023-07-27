@@ -324,7 +324,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         if (
             counterparty.channelId != 0 ||
             bytes(counterparty.version).length != 0 ||
-            proof.proofHeight != 0 ||
+            proof.proofHeight.revision_number != 0 ||
             proof.proof.length != 0
         ) {
             verifyMembership(

@@ -72,7 +72,7 @@ struct PacketFee {
 
 struct Proof {
     // block height at which the proof is valid for a membership or non-membership at the given keyPath
-    uint64 proofHeight;
+    Height proofHeight;
     // ics23 merkle proof
     bytes proof;
 }

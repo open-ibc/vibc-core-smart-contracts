@@ -102,8 +102,8 @@ contract Base is Test {
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
     Proof emptyProof;
-    Proof invalidProof = Proof(42, bytes('')); // invalid proof with empty proof bytes
-    Proof validProof = Proof(42, bytes('valid proof'));
+    Proof invalidProof = Proof(Height(0, 42), bytes('')); // invalid proof with empty proof bytes
+    Proof validProof = Proof(Height(0, 42), bytes('valid proof'));
 
     Dispatcher dispatcher;
     string portPrefix = 'polyibc.eth.';
