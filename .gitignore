@@ -12,6 +12,7 @@ artifacts
 
 # Foundry files
 out/
+forge-cache/
 
 *.tgz
 src/contracts.template.ts
