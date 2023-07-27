@@ -57,13 +57,7 @@ contract Base is Test {
         AckPacket ackPacket
     );
 
-    event WriteTimeoutPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        uint64 pktTimeoutHeight,
-        uint64 pktTimeoutTimestamp
-    );
+    event WriteTimeoutPacket(address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence);
     ConsensusState untrustedState =
         ConsensusState(
             80990,
@@ -102,7 +96,8 @@ contract Base is Test {
                 15082220514596158133191868403239442750535261032426474092101151620016661078026
             ]
         );
-    IbcTimeout maxTimeout = IbcTimeout(0, UINT64_MAX);
+    Height ZERO_HEIGHT = Height(0, 0);
+    uint64 maxTimeout = UINT64_MAX;
     address payable escrow = payable(vm.addr(uint256(keccak256(abi.encode('escrow')))));
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
@@ -175,11 +170,14 @@ contract DispatcherUpdateClientTest is Test, Base {
 
     function test_invalidOptimisticConsensusState() public {
         // a user updates the execution state to height 2.
-        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
-                                                                                     1,   // valset_hash
-                                                                                     1,   // time
-                                                                                     2)); // height
-                                                
+        dispatcher.updateClientWithOptimisticConsensusState(
+            OptimisticConsensusState(
+                1, // app_hash
+                1, // valset_hash
+                1, // time
+                2
+            )
+        ); // height
 
         // the time of the untrusted execution state (used for fraud
         // window calculation) should be updated using the EVM's time.
@@ -188,11 +186,14 @@ contract DispatcherUpdateClientTest is Test, Base {
         vm.expectRevert('UpdateClientMsg proof verification failed: must update to a newer execution state');
 
         // another user wants to update the execution state to height 1, and will be rejected.
-        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
-                                                                                     1,   // valset_hash
-                                                                                     1,   // time
-                                                                                     1)); // height
-                                                
+        dispatcher.updateClientWithOptimisticConsensusState(
+            OptimisticConsensusState(
+                1, // app_hash
+                1, // valset_hash
+                1, // time
+                1
+            )
+        ); // height
 
         // TODO(zfeng): add test case for updating execution state
         // with a height smaller than the height of the trusted
@@ -526,13 +527,13 @@ contract PacketSenderTest is ChannelOpenTestBase {
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(nextSendSeq);
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout.timestamp, fee);
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
         nextSendSeq += 1;
     }
 
     // genPacket generates a packet for the given packet sequence
     function genPacket(uint64 packetSeq) internal view returns (IbcPacket memory) {
-        return IbcPacket(src, dest, packetSeq, payload, maxTimeout);
+        return IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout);
     }
 
     // genAckPacket generates an ack packet for the given packet sequence
@@ -561,8 +562,11 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
             emit RecvPacket(address(mars), channelId, packetSeq);
             vm.expectEmit(true, true, false, true, address(dispatcher));
             emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
-
-            dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, maxTimeout), validProof);
+            dispatcher.recvPacket(
+                IbcReceiver(mars),
+                IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout),
+                validProof
+            );
         }
     }
 
@@ -575,7 +579,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         // send a packet to trigger the untrusted to trusted state
         // transition.
         vm.warp(1801);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);
 
         // revert to the previous state
         vm.warp(prevTimestamp);
@@ -587,31 +591,29 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
 
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time
     function test_timeout_timestamp() public {
-        IbcTimeout memory timeout = IbcTimeout(0, 1);
         uint64 packetSeq = 1;
         vm.expectEmit(true, true, true, true, address(dispatcher));
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcher));
-        emit WriteTimeoutPacket(address(mars), channelId, packetSeq, timeout.blockHeight, timeout.timestamp);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, timeout), validProof);
+        emit WriteTimeoutPacket(address(mars), channelId, packetSeq);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, 1), validProof);
     }
 
     // recvPacket emits a WriteTimeoutPacket if block height passes chain B's block height
     function test_timeout_blockHeight() public {
-        IbcTimeout memory timeout = IbcTimeout(1, 0);
         uint64 packetSeq = 1;
         vm.expectEmit(true, true, true, true, address(dispatcher));
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcher));
-        emit WriteTimeoutPacket(address(mars), channelId, packetSeq, timeout.blockHeight, timeout.timestamp);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, timeout), validProof);
+        emit WriteTimeoutPacket(address(mars), channelId, packetSeq);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, Height(0, 1), 0), validProof);
     }
 
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
         vm.expectRevert('Unexpected packet sequence');
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, maxTimeout), validProof);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
     // TODO: add tests for unordered channel, wrong port, and invalid proof

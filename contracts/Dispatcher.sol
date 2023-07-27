@@ -79,13 +79,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         AckPacket ackPacket
     );
 
-    event WriteTimeoutPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        uint64 pktTimeoutHeight,
-        uint64 pktTimeoutTimestamp
-    );
+    event WriteTimeoutPacket(address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence);
 
     //
     // fields
@@ -652,21 +646,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
         emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
 
-        // If pkt is timeout, the do timeout handling
-        if (
-            (packet.timeout.timestamp != 0 && block.timestamp >= packet.timeout.timestamp) ||
-            (packet.timeout.blockHeight != 0 && block.number >= packet.timeout.blockHeight)
-        ) {
+        // If pkt is already timed out, then return early so dApps won't receive it.
+        if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
-
-            emit WriteTimeoutPacket(
-                writerPortAddress,
-                packet.dest.channelId,
-                packet.sequence,
-                packet.timeout.blockHeight,
-                packet.timeout.timestamp
-            );
-
+            emit WriteTimeoutPacket(writerPortAddress, packet.dest.channelId, packet.sequence);
             return;
         }
 
@@ -690,6 +673,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //     );
     // }
 
+    // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
+    function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
+        return ((packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp) ||
+            // TODO: check timeoutHeight.revision_number?
+            (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height));
+    }
+
     // TODO: remove below writeTimeoutPacket() function
     //       1. core SC is responsible to generate timeout packet
     //       2. user contract are not free to generate timeout with different criteria
@@ -705,19 +695,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bool hasReceipt = recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         require(!hasReceipt, 'Packet receipt already exists');
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        require(
-            (packet.timeout.timestamp == 0 || block.timestamp >= packet.timeout.timestamp) &&
-                (packet.timeout.blockHeight == 0 || block.number >= packet.timeout.blockHeight),
-            'Packet not timed out yet'
-        );
+        require(!isPacketTimeout(packet), 'Packet not timed out yet');
 
-        emit WriteTimeoutPacket(
-            receiver,
-            packet.dest.channelId,
-            packet.sequence,
-            packet.timeout.blockHeight,
-            packet.timeout.timestamp
-        );
+        emit WriteTimeoutPacket(receiver, packet.dest.channelId, packet.sequence);
     }
 
     /**

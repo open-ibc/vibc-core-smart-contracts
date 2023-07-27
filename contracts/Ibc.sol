@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.9;
 
+/// IbcPacket represents the packet data structure received from a remote chain
+/// over an IBC channel.
 struct IbcPacket {
     /// identifies the channel and port on the sending chain.
     IbcEndpoint src;
@@ -10,9 +12,25 @@ struct IbcPacket {
     /// The sequence number of the packet on the given channel
     uint64 sequence;
     bytes data;
-    /// when packet times out, measured on remote chain
-    /// Only inbound packets support both timeout height and timestamp.
-    IbcTimeout timeout;
+    /// block height after which the packet times out
+    Height timeoutHeight;
+    /// block timestamp (in nanoseconds) after which the packet times out
+    uint64 timeoutTimestamp;
+}
+
+/// Height is a monotonically increasing data type
+/// that can be compared against another Height for the purposes of updating and
+/// freezing clients
+///
+/// Normally the RevisionHeight is incremented at each height while keeping
+/// RevisionNumber the same. However some consensus algorithms may choose to
+/// reset the height in certain conditions e.g. hard forks, state-machine
+/// breaking changes In these cases, the RevisionNumber is incremented so that
+/// height continues to be monitonically increasing even as the RevisionHeight
+/// gets reset
+struct Height {
+    uint64 revision_number;
+    uint64 revision_height;
 }
 
 struct AckPacket {
@@ -20,13 +38,6 @@ struct AckPacket {
     // delivery of packet and ack packet are still considered successful.
     bool success;
     bytes data;
-}
-
-/// In IBC each package must set at least one type of timeout:
-/// the timestamp or the block height.
-struct IbcTimeout {
-    uint64 blockHeight;
-    uint64 timestamp;
 }
 
 enum ChannelOrder {
