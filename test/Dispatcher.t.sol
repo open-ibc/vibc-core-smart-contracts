@@ -302,10 +302,7 @@ contract DispatcherOpenIbcChannelTest is ChannelTestBase {
         ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
         // 1st handshake with unknown counterparty version or channelId
         cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        VersionSet[2] memory versions = [
-            VersionSet('', '', ''), // cannot be empty
-            VersionSet('xxx', '', '')
-        ];
+        VersionSet[1] memory versions = [VersionSet('', '', '')];
         for (uint i = 0; i < versions.length; i++) {
             for (uint j = 0; j < orderings.length; j++) {
                 setTestParams(versions[i], cp, orderings[j]);
@@ -313,8 +310,8 @@ contract DispatcherOpenIbcChannelTest is ChannelTestBase {
             }
         }
         // 2nd handshake with known counterparty version and channelId
-        cp = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '');
-        versions = [VersionSet('', 'xxx', ''), VersionSet('', '', '')];
+        cp = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), 'xxx');
+        versions = [VersionSet('', 'xxx', '')];
         for (uint i = 0; i < versions.length; i++) {
             for (uint j = 0; j < orderings.length; j++) {
                 setTestParams(versions[i], cp, orderings[j]);
