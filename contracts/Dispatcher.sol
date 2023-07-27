@@ -237,8 +237,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
     function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
         require(isClientCreated, 'Client not created');
         require(
-                verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof),
-                'UpdateClientMsg proof verification failed'
+            verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof),
+            'UpdateClientMsg proof verification failed'
         );
         latestConsensusState = consensusState;
         return;
@@ -250,8 +250,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // window.
     function updateClientWithOptimisticConsensusState(OptimisticConsensusState calldata opConsensusState) external {
         require(isClientCreated, 'Client not created');
-        require(opConsensusState.height >= pendingOptimisticConsensusState.height,
-                'UpdateClientMsg proof verification failed: must update to a newer execution state');
+        require(
+            opConsensusState.height >= pendingOptimisticConsensusState.height,
+            'UpdateClientMsg proof verification failed: must update to a newer execution state'
+        );
         pendingOptimisticConsensusState = opConsensusState;
 
         // Use the timestamp on the EVM chain since the timestamp
@@ -321,16 +323,24 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-        if (
-            counterparty.channelId != 0 ||
-            bytes(counterparty.version).length != 0 ||
-            proof.proofHeight.revision_number != 0 ||
-            proof.proof.length != 0
-        ) {
-            verifyMembership(
-                proof,
-                bytes('channel/path/to/be/added/here'),
-                bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
+        bool isChanOpenTry = false;
+        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
+            // ChanOpenInit with unknow conterparty
+        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
+            // this is the ChanOpenTry; counterparty must not be zero-value
+            isChanOpenTry = true;
+        } else {
+            revert('Invalid counterparty');
+        }
+        if (isChanOpenTry) {
+            // TODO: fill below proof path
+            require(
+                verifier.verifyMembership(
+                    latestConsensusState,
+                    proof,
+                    'channel/path/to/be/added/here',
+                    bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}')
+                ),
                 'Fail to prove channel state'
             );
         }
@@ -584,7 +594,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
         // prove absence of packet receipt on Polymer chain
         verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
-        
+
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         require(hasCommitment, 'Packet commitment not found');
@@ -726,27 +736,17 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(
             trustedOptimisticConsensusState.height >= proof.proofHeight,
             'cannot verify the proof with current consensus state'
-        );       
-
-        require(
-            verifier.verifyMembership(trustedOptimisticConsensusState, proof, key, expectedValue),
-            message
         );
+
+        require(verifier.verifyMembership(trustedOptimisticConsensusState, proof, key, expectedValue), message);
     }
 
-    function verifyNonMembership(
-        Proof calldata proof,
-        bytes memory key,
-        string memory message
-    ) internal {
+    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) internal {
         require(
             trustedOptimisticConsensusState.height >= proof.proofHeight,
             'cannot verify the proof with current consensus state'
-        );       
-
-        require(
-            verifier.verifyNonMembership(trustedOptimisticConsensusState, proof, key),
-            message
         );
+
+        require(verifier.verifyNonMembership(trustedOptimisticConsensusState, proof, key), message);
     }
 }
