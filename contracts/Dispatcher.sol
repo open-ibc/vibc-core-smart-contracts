@@ -79,7 +79,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
         AckPacket ackPacket
     );
 
-    event WriteTimeoutPacket(address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence);
+    event WriteTimeoutPacket(
+        address indexed writerPortAddress,
+        bytes32 indexed writerChannelId,
+        uint64 sequence,
+        Height timeoutHeight,
+        uint64 timeoutTimestamp
+    );
 
     //
     // fields
@@ -659,7 +665,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // If pkt is already timed out, then return early so dApps won't receive it.
         if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
-            emit WriteTimeoutPacket(writerPortAddress, packet.dest.channelId, packet.sequence);
+            emit WriteTimeoutPacket(
+                writerPortAddress,
+                packet.dest.channelId,
+                packet.sequence,
+                packet.timeoutHeight,
+                packet.timeoutTimestamp
+            );
             return;
         }
 
@@ -707,7 +719,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
         require(!isPacketTimeout(packet), 'Packet not timed out yet');
 
-        emit WriteTimeoutPacket(receiver, packet.dest.channelId, packet.sequence);
+        emit WriteTimeoutPacket(
+            receiver,
+            packet.dest.channelId,
+            packet.sequence,
+            packet.timeoutHeight,
+            packet.timeoutTimestamp
+        );
     }
 
     /**
