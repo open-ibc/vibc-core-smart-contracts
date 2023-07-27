@@ -494,14 +494,37 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
     function test_success() public {
+        bytes memory packet = abi.encodePacked(payload);
         for (uint64 index = 0; index < 3; index++) {
             uint256 balance = escrow.balance;
-            bytes memory packet = abi.encodePacked(payload);
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
-            emit SendPacket(address(mars), channelId, packet, index + 1, timeoutTimestamp, fee);
+            emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp, fee);
             mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
             assertEq(escrow.balance - balance, calcFee(fee));
+
+            // query escrowed fee per packet
+            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
+            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+        }
+    }
+
+    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
+        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
+    }
+
+    // pay extra packet fee after packet creation
+    function test_payPacketFeeAsync() public {
+        bytes memory packet = abi.encodePacked(payload);
+        PacketFee memory accu = mergeFees(fee, fee);
+        for (uint64 index = 0; index < 3; index++) {
+            uint64 packetSeq = index + 1;
+
+            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
+            dispatcher.payPacketFeeAsync{value: calcFee(fee)}(address(mars), channelId, packetSeq, fee);
+
+            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
+            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(accu)));
         }
     }
 
