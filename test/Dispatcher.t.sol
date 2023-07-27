@@ -57,7 +57,14 @@ contract Base is Test {
         AckPacket ackPacket
     );
 
-    event WriteTimeoutPacket(address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence);
+    event WriteTimeoutPacket(
+        address indexed writerPortAddress,
+        bytes32 indexed writerChannelId,
+        uint64 sequence,
+        Height timeoutHeight,
+        uint64 timeoutTimestamp
+    );
+
     ConsensusState untrustedState =
         ConsensusState(
             80990,
@@ -589,21 +596,23 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time
     function test_timeout_timestamp() public {
         uint64 packetSeq = 1;
+        IbcPacket memory pkt = IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, 1);
         vm.expectEmit(true, true, true, true, address(dispatcher));
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcher));
-        emit WriteTimeoutPacket(address(mars), channelId, packetSeq);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, 1), validProof);
+        emit WriteTimeoutPacket(address(mars), channelId, packetSeq, pkt.timeoutHeight, pkt.timeoutTimestamp);
+        dispatcher.recvPacket(IbcReceiver(mars), pkt, validProof);
     }
 
     // recvPacket emits a WriteTimeoutPacket if block height passes chain B's block height
     function test_timeout_blockHeight() public {
         uint64 packetSeq = 1;
+        IbcPacket memory pkt = IbcPacket(src, dest, packetSeq, payload, Height(0, 1), 0);
         vm.expectEmit(true, true, true, true, address(dispatcher));
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcher));
-        emit WriteTimeoutPacket(address(mars), channelId, packetSeq);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, Height(0, 1), 0), validProof);
+        emit WriteTimeoutPacket(address(mars), channelId, packetSeq, pkt.timeoutHeight, pkt.timeoutTimestamp);
+        dispatcher.recvPacket(IbcReceiver(mars), pkt, validProof);
     }
 
     // cannot receive packets out of order for ordered channel
