@@ -25,6 +25,22 @@ export async function extractVibcCoreSmartContracts(contractsDir: string): Promi
     })
   } finally {
     // Delete the temporary directory
-    fs.rmSync(tempDir, { force: true, recursive: true })
+    fs.rmSync(tempDir, {force: true, recursive: true})
   }
+}
+
+if (require.main === module) {
+  const contractsDir = process.argv[2];
+  if (!contractsDir) {
+    console.error('Please provide a contracts directory as the first argument.');
+    process.exit(1);
+  }
+
+  extractVibcCoreSmartContracts(contractsDir)
+    .then(() => {
+      console.log('Extraction completed successfully.');
+    })
+    .catch(error => {
+      console.error('Error during extraction:', error);
+    });
 }
