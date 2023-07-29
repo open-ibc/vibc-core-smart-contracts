@@ -40,6 +40,12 @@ struct AckPacket {
     bytes data;
 }
 
+struct IncentivizedAckPacket {
+    bool success;
+    string relayer;
+    bytes data;
+}
+
 enum ChannelOrder {
     NONE,
     UNORDERED,
