@@ -95,6 +95,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
     address payable escrow;
     bool isClientCreated = false;
     ConsensusState public latestConsensusState;
+    OptimisticConsensusState public trustedOptimisticConsensusState;
+    OptimisticConsensusState public pendingOptimisticConsensusState;
+    uint32 public fraudProofWindowSeconds;
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string portPrefix;
     uint32 portPrefixLen;
@@ -128,6 +131,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // initialize portPrefix
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
+
+        // by default, have a fraud proof window of 30 min.
+        // TODO(zfeng): make this configurable.
+        fraudProofWindowSeconds = 1800;
     }
 
     //
@@ -177,6 +184,26 @@ contract Dispatcher is IbcDispatcher, Ownable {
         return hexStrToAddress(portSuffix) == addr;
     }
 
+    // getPendingOptimisticConsensusStateTime returns the timestamp associated with the
+    // trusted execution state.
+    function getPendingOptimisticConsensusStateTime() public view returns (uint256) {
+        return pendingOptimisticConsensusState.time;
+    }
+
+    // getTrustedOptimisticConsensusStateTime returns the timestamp associated with the
+    // trusted execution state.
+    function getTrustedOptimisticConsensusStateTime() public view returns (uint256) {
+        return trustedOptimisticConsensusState.time;
+    }
+
+    function getTrustedOptimisticConsensusStateHeight() public view returns (uint256) {
+        return trustedOptimisticConsensusState.height;
+    }
+
+    function getPendingOptimisticConsensusStateHeight() public view returns (uint256) {
+        return pendingOptimisticConsensusState.height;
+    }
+
     //
     // CoreSC maaintainer methods, only invoked by the owner
     //
@@ -197,23 +224,47 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(!isClientCreated, 'Client already created');
         isClientCreated = true;
         latestConsensusState = initClientMsg.consensusState;
+
+        // initClientMsg contains a consensus state that is already
+        // trusted, so we can use it to update the trusted optimistic
+        // consensus state if the non-optimistic consensus state is
+        // newer.
+        if (trustedOptimisticConsensusState.height <= latestConsensusState.height) {
+            trustedOptimisticConsensusState.app_hash = latestConsensusState.app_hash;
+            trustedOptimisticConsensusState.valset_hash = latestConsensusState.valset_hash;
+            trustedOptimisticConsensusState.time = latestConsensusState.time;
+            trustedOptimisticConsensusState.height = latestConsensusState.height;
+        }
     }
 
-    /**
-     * @dev Updates the Polymer client.
-     *
-     * Requirements:
-     * - The consensus state must pass zkProof verification.
-     *
-     * @param updateClientMsg The new consensus state for the client.
-     */
-    function updateClient(UpdateClientMsg calldata updateClientMsg) external {
+    // updateClientWithConsensusState updates the client with the
+    // latest consensus state. The zkproof related to this consensus
+    // state is used to verify the consensus state.
+    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
         require(isClientCreated, 'Client not created');
         require(
-            verifier.verifyUpdateClientMsg(latestConsensusState, updateClientMsg),
-            'UpdateClientMsg proof verification failed'
+                verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof),
+                'UpdateClientMsg proof verification failed'
         );
-        latestConsensusState = updateClientMsg.consensusState;
+        latestConsensusState = consensusState;
+        return;
+    }
+
+    // updateClientWithOptimisticConsensusState updates the client
+    // with the optimistic consensus state. The optimistic consensus
+    // is accepted and will be open for verify in the fraud proof
+    // window.
+    function updateClientWithOptimisticConsensusState(OptimisticConsensusState calldata opConsensusState) external {
+        require(isClientCreated, 'Client not created');
+        require(opConsensusState.height >= pendingOptimisticConsensusState.height,
+                'UpdateClientMsg proof verification failed: must update to a newer execution state');
+        pendingOptimisticConsensusState = opConsensusState;
+
+        // Use the timestamp on the EVM chain since the timestamp
+        // is used for fraud proof and we cannot trust the
+        // timestamp on untrusted messages.
+        pendingOptimisticConsensusState.time = block.timestamp;
+        return;
     }
 
     /**
@@ -282,14 +333,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
             proof.proofHeight != 0 ||
             proof.proof.length != 0
         ) {
-            // TODO: fill below proof path
-            require(
-                verifier.verifyMembership(
-                    latestConsensusState,
-                    proof,
-                    'channel/path/to/be/added/here',
-                    bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}')
-                ),
+            verifyMembership(
+                proof,
+                bytes('channel/path/to/be/added/here'),
+                bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
                 'Fail to prove channel state'
             );
         }
@@ -328,13 +375,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         string calldata counterpartyVersion,
         Proof calldata proof
     ) external {
-        require(
-            verifier.verifyMembership(
-                latestConsensusState,
-                proof,
-                'channel/path/to/be/added/here',
-                bytes('expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}')
-            ),
+        verifyMembership(
+            proof,
+            bytes('channel/path/to/be/added/here'),
+            bytes('expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}'),
             'Fail to prove channel state'
         );
 
@@ -391,15 +435,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function onCloseIbcChannel(address portAddress, bytes32 channelId, Proof calldata proof) external {
         // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-        require(
-            verifier.verifyMembership(
-                latestConsensusState,
-                proof,
-                'channel/path/to/be/added/here',
-                bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
-            ),
+        verifyMembership(
+            proof,
+            bytes('channel/path/to/be/added/here'),
+            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}'),
             'Fail to prove channel state'
         );
+
         // ensure port owns channel
         Channel memory channel = portChannelMap[portAddress][channelId];
         require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by portAddress');
@@ -506,13 +548,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify `receiver` is the original packet sender
         require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
         // prove ack packet is on Polymer chain
-        require(
-            verifier.verifyMembership(
-                latestConsensusState,
-                proof,
-                'ack/packet/path',
-                'expected ack receipt hash on Polymer chain'
-            ),
+        verifyMembership(
+            proof,
+            bytes('ack/packet/path'),
+            bytes('expected ack receipt hash on Polymer chain'),
             'Fail to prove ack'
         );
         // verify packet has been committed and not yet ack'ed or timed out
@@ -550,10 +589,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify `receiver` is the original packet sender
         require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
         // prove absence of packet receipt on Polymer chain
-        require(
-            verifier.verifyNonMembership(latestConsensusState, proof, 'packet/receipt/path'),
-            'Fail to prove timeout'
-        );
+        verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
+        
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         require(hasCommitment, 'Packet commitment not found');
@@ -582,16 +619,21 @@ contract Dispatcher is IbcDispatcher, Ownable {
             portIdAddressMatch(address(receiver), packet.dest.portId),
             'Receiver is not the intended packet destination'
         );
-        // prove packet is received on Polymer chain
-        require(
-            verifier.verifyMembership(
-                latestConsensusState,
-                proof,
-                'packet/commitment/path',
-                'expected virtual packet commitment hash on Polymer chain'
-            ),
+
+        // check if the current untrusted op consensus state is outside the fraud proof window and
+        // set it to be the trusted op consensus state if so.
+        if (block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds) {
+            trustedOptimisticConsensusState = pendingOptimisticConsensusState;
+            pendingOptimisticConsensusState = OptimisticConsensusState(0, 0, 0, 0);
+        }
+
+        verifyMembership(
+            proof,
+            'packet/commitment/path',
+            'expected virtual packet commitment hash on Polymer chain',
             'Fail to prove packet commitment'
         );
+
         // verify packet has not been received yet
         bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         require(!hasReceipt, 'Packet receipt already exists');
@@ -688,5 +730,43 @@ contract Dispatcher is IbcDispatcher, Ownable {
         uint64 sequence
     ) external view returns (PacketFee memory) {
         return packetFees[packetSender][channelId][sequence];
+    }
+
+    /**
+     * verifyMembership checks if the current trustedOptimisticConsensusState state
+     * can be used to perform the membership test and if so, it uses
+     * the verifier to perform membership check.
+     */
+    function verifyMembership(
+        Proof calldata proof,
+        bytes memory key,
+        bytes memory expectedValue,
+        string memory message
+    ) internal {
+        require(
+            trustedOptimisticConsensusState.height >= proof.proofHeight,
+            'cannot verify the proof with current consensus state'
+        );       
+
+        require(
+            verifier.verifyMembership(trustedOptimisticConsensusState, proof, key, expectedValue),
+            message
+        );
+    }
+
+    function verifyNonMembership(
+        Proof calldata proof,
+        bytes memory key,
+        string memory message
+    ) internal {
+        require(
+            trustedOptimisticConsensusState.height >= proof.proofHeight,
+            'cannot verify the proof with current consensus state'
+        );       
+
+        require(
+            verifier.verifyNonMembership(trustedOptimisticConsensusState, proof, key),
+            message
+        );
     }
 }

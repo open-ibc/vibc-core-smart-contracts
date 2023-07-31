@@ -161,15 +161,42 @@ contract DispatcherUpdateClientTest is Test, Base {
     }
 
     function test_success() public {
-        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+        dispatcher.updateClientWithConsensusState(trustedState, proof);
     }
 
     function test_invalidConsensusState() public {
         vm.expectRevert('UpdateClientMsg proof verification failed');
-        dispatcher.updateClient(UpdateClientMsg(untrustedState, proof));
+        dispatcher.updateClientWithConsensusState(untrustedState, proof);
+
         vm.expectRevert('UpdateClientMsg proof verification failed');
         ConsensusState memory invalidConsensusState;
-        dispatcher.updateClient(UpdateClientMsg(invalidConsensusState, proof));
+        dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
+    }
+
+    function test_invalidOptimisticConsensusState() public {
+        // a user updates the execution state to height 2.
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     2)); // height
+                                                
+
+        // the time of the untrusted execution state (used for fraud
+        // window calculation) should be updated using the EVM's time.
+        require(dispatcher.getPendingOptimisticConsensusStateTime() == block.timestamp);
+
+        vm.expectRevert('UpdateClientMsg proof verification failed: must update to a newer execution state');
+
+        // another user wants to update the execution state to height 1, and will be rejected.
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     1)); // height
+                                                
+
+        // TODO(zfeng): add test case for updating execution state
+        // with a height smaller than the height of the trusted
+        // execution state.
     }
 }
 
@@ -177,17 +204,17 @@ contract DispatcherUpgradeClientTest is Test, Base {
     function setUp() public {
         dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
-        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+        dispatcher.updateClientWithConsensusState(trustedState, proof);
     }
 
     function test_success() public {
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeClientState'), trustedState));
+        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
     }
 
     function test_ownerOnly() public {
         vm.prank(vm.addr(0x1));
         vm.expectRevert('Ownable: caller is not the owner');
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeClientState'), trustedState));
+        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
     }
 }
 
@@ -213,7 +240,7 @@ contract ChannelTestBase is Test, Base {
 
         dispatcher = new Dispatcher(verifier, escrow, portPrefix);
         dispatcher.createClient(initClientMsg);
-        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+        dispatcher.updateClientWithConsensusState(trustedState, proof);
 
         polymerProof = validProof;
         vm.startPrank(vm.addr(0x1));
@@ -393,12 +420,13 @@ contract ChannelOpenTestBase is Test, Base {
         vm.deal(relayer, 100000 ether);
         mars = new Mars();
 
-        dispatcher.updateClient(UpdateClientMsg(trustedState, proof));
+        dispatcher.updateClientWithConsensusState(trustedState, proof);
 
         // finish channel handshake as chain A
         CounterParty memory cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
         dispatcher.openIbcChannel(IbcReceiver(mars), '1.0', ChannelOrder.ORDERED, connectionHops, cp, emptyProof);
         CounterParty memory cp2 = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
+
         dispatcher.connectIbcChannel(
             IbcReceiver(mars),
             channelId,
@@ -533,9 +561,29 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
             emit RecvPacket(address(mars), channelId, packetSeq);
             vm.expectEmit(true, true, false, true, address(dispatcher));
             emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
+
             dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, maxTimeout), validProof);
         }
     }
+
+    function test_updateTrustedOptimisticConsensusState() public {
+        uint256 prevTimestamp = block.timestamp;
+
+        // update client with an untrusted execution state
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1, 1, 1, 43));
+
+        // send a packet to trigger the untrusted to trusted state
+        // transition.
+        vm.warp(1801);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+
+        // revert to the previous state
+        vm.warp(prevTimestamp);
+    }
+
+    // TODO(zfeng): add test to prove that packet won't transition a
+    // untrusted state to a trusted state when it's still in the fraud
+    // proof window.
 
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time
     function test_timeout_timestamp() public {

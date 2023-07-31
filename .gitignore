@@ -17,3 +17,5 @@ out/
 src/contracts.template.ts
 
 .idea/
+.direnv/
+forge-cache/

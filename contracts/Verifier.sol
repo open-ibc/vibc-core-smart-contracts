@@ -7,27 +7,37 @@ import "./Groth16Verifier.sol";
 
 
 contract Verifier is ZKMintVerifier {
-    function verifyUpdateClientMsg(
+    function verifyConsensusState(
         ConsensusState calldata trustedState,
-        UpdateClientMsg calldata updateClientMsg
+        ConsensusState calldata untrustedState,
+        ZkProof calldata proof
     ) external view override returns (bool) {
-        ConsensusState memory untrustedState = updateClientMsg.consensusState;
-
-        bool isVerified = Groth16Verifier.verifyProof(updateClientMsg.zkProof.a, updateClientMsg.zkProof.b, updateClientMsg.zkProof.c,
-            [trustedState.valset_hash, trustedState.time, trustedState.height,
-            untrustedState.app_hash, untrustedState.valset_hash, untrustedState.time, untrustedState.height]
+        bool isVerified = Groth16Verifier.verifyProof(
+            proof.a,
+            proof.b,
+            proof.c,
+            [
+             trustedState.valset_hash,
+             trustedState.time,
+             trustedState.height,
+             untrustedState.app_hash,
+             untrustedState.valset_hash,
+             untrustedState.time,
+             untrustedState.height
+            ]
         );
         return isVerified;
     }
 
     function verifyMembership(
-        ConsensusState calldata consensusState,
+        OptimisticConsensusState calldata consensusState,
         Proof calldata proof,
         bytes calldata key,
         bytes calldata expectedValue
     ) external pure override returns (bool) {
         require(key.length > 0, 'Key cannot be empty');
         require(expectedValue.length > 0, 'Expected value cannot be empty');
+        require(consensusState.height >= proof.proofHeight, 'Consensus state not sufficient for Merkle proof verification');
 
         // TODO: replace with real merkle verification logic
         // For now, a dummy proof verification is implemented
@@ -35,7 +45,7 @@ contract Verifier is ZKMintVerifier {
     }
 
     function verifyNonMembership(
-        ConsensusState calldata consensusState,
+        OptimisticConsensusState calldata consensusState,
         Proof calldata proof,
         bytes calldata key
     ) external pure override returns (bool) {
