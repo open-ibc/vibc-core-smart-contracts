@@ -13,9 +13,6 @@
     "type": "git",
     "url": "https://github.com/open-ibc/vibc-core-smart-contracts.git"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx"
   },
