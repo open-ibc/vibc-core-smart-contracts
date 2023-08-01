@@ -3,7 +3,7 @@ name: Publish npm package
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
   release:
     types: [published]
 
@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: "18.15"
+          node-version: '18.15'
 
       - name: Build
         run: make build
@@ -27,5 +27,5 @@ jobs:
       - name: Publish
         uses: JS-DevTools/npm-publish@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          strategy: all
+          token: ${{ secrets.NPM_TOKEN }}
+          access: public
