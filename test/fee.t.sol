@@ -16,6 +16,8 @@ contract FeeTest is ChannelOpenTestBase {
     uint64 timeoutTimestamp = 1000;
     PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
+    address payee = deriveAddress('payee');
+
     // pay extra packet fee after packet creation
     function test_payPacketFeeAsync() public {
         PacketFee memory accu = mergeFees(fee, fee);
@@ -34,5 +36,10 @@ contract FeeTest is ChannelOpenTestBase {
     function test_insufficientFee() public {
         vm.expectRevert();
         mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
+    }
+
+    // claim ack fee on receving ack
+    function test_ack_fee() public {
+        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
     }
 }
