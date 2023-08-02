@@ -132,6 +132,10 @@ contract Base is Test {
         uint256 maxFee = _fee.ackFee > _fee.timeoutFee ? _fee.ackFee : _fee.timeoutFee;
         return _fee.recvFee + maxFee;
     }
+
+    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
+        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
+    }
 }
 
 contract DispatcherCreateClientTest is Test, Base {
@@ -507,31 +511,6 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
             PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
             assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
         }
-    }
-
-    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
-        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
-    }
-
-    // pay extra packet fee after packet creation
-    function test_payPacketFeeAsync() public {
-        bytes memory packet = abi.encodePacked(payload);
-        PacketFee memory accu = mergeFees(fee, fee);
-        for (uint64 index = 0; index < 3; index++) {
-            uint64 packetSeq = index + 1;
-
-            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
-            dispatcher.payPacketFeeAsync{value: calcFee(fee)}(address(mars), channelId, packetSeq, fee);
-
-            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
-            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(accu)));
-        }
-    }
-
-    // sendPacket fails if insufficient fee is paid.
-    function test_insufficientFee() public {
-        vm.expectRevert();
-        mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
     }
 
     // sendPacket fails if calling dApp doesn't own the channel
