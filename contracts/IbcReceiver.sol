@@ -18,7 +18,7 @@ interface IbcReceiver {
 
     function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
 
-    function onAcknowledgementPacket(IbcPacket calldata packet) external;
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
 
     function onTimeoutPacket(IbcPacket calldata packet) external;
 

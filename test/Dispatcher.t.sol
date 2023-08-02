@@ -634,6 +634,10 @@ contract DispatcherAckPacketTest is PacketSenderTest {
             vm.expectEmit(true, true, false, true, address(dispatcher));
             emit Acknowledgement(address(mars), channelId, sentPacket.sequence);
             dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
+            // confirm dapp recieved the ack
+            (bool success, bytes memory data) = mars.ackPackets(sentPacket.sequence - 1);
+            assertEq(success, ackPacket.success);
+            assertEq(data, ackPacket.data);
         }
     }
 
