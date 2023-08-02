@@ -635,7 +635,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(!hasAckPacketCommitment, 'Ack packet commitment already exists');
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
-        emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
 
