@@ -578,7 +578,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        receiver.onAcknowledgementPacket(packet);
+        receiver.onAcknowledgementPacket(packet, ackPacket);
 
         // delete packet commitment to avoid double ack
         delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];

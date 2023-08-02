@@ -7,8 +7,11 @@ import './IbcReceiver.sol';
 import './IbcDispatcher.sol';
 
 contract Mars is IbcReceiver, Ownable {
+    // received packet as chain B
     IbcPacket[] public recvedPackets;
-    IbcPacket[] public ackPackets;
+    // received ack packet as chain A
+    AckPacket[] public ackPackets;
+    // received timeout packet as chain A
     IbcPacket[] public timeoutPackets;
     bytes32[] public connectedChannels;
 
@@ -19,8 +22,8 @@ contract Mars is IbcReceiver, Ownable {
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet) external {
-        ackPackets.push(packet);
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external {
+        ackPackets.push(ack);
     }
 
     function onTimeoutPacket(IbcPacket calldata packet) external {
