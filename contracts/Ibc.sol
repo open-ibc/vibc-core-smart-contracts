@@ -42,7 +42,7 @@ struct AckPacket {
 
 struct IncentivizedAckPacket {
     bool success;
-    string relayer;
+    bytes relayer;
     bytes data;
 }
 
