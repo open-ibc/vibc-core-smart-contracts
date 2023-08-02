@@ -105,7 +105,7 @@ contract Base is Test {
         );
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
-    address payable escrow = payable(vm.addr(uint256(keccak256(abi.encode('escrow')))));
+    address payable escrow = payable(deriveAddress('escrow'));
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
     Proof emptyProof;
@@ -125,6 +125,11 @@ contract Base is Test {
             addrWithoutPrefix[i] = addrWithPrefix[i + 2];
         }
         return addrWithoutPrefix;
+    }
+
+    // deriveAddress derives an address from a given string deterministically for testing
+    function deriveAddress(string memory str) internal pure returns (address) {
+        return vm.addr(uint256(keccak256(abi.encodePacked(str))));
     }
 
     // calcFee returns the fee to be paid for sending a packet.
@@ -148,7 +153,7 @@ contract DispatcherCreateClientTest is Test, Base {
     }
 
     function test_mustByOwner() public {
-        vm.prank(vm.addr(0x1));
+        vm.prank(deriveAddress('non-onwer'));
         vm.expectRevert('Ownable: caller is not the owner');
         dispatcher.createClient(initClientMsg);
     }
@@ -236,7 +241,7 @@ contract DispatcherUpgradeClientTest is Test, Base {
     }
 
     function test_ownerOnly() public {
-        vm.prank(vm.addr(0x1));
+        vm.prank(deriveAddress('non-onwer'));
         vm.expectRevert('Ownable: caller is not the owner');
         dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
     }
@@ -267,7 +272,7 @@ contract ChannelTestBase is Test, Base {
         dispatcher.updateClientWithConsensusState(trustedState, proof);
 
         polymerProof = validProof;
-        vm.startPrank(vm.addr(0x1));
+        vm.startPrank(deriveAddress('relayer'));
     }
 
     Proof polymerProof;
@@ -426,7 +431,7 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
 contract ChannelOpenTestBase is Test, Base {
     Mars mars;
     bytes32 channelId = 'channel-1';
-    address relayer = vm.addr(0x0123456);
+    address relayer = deriveAddress('relayer');
 
     function setUp() public virtual {
         string[] memory connectionHops = new string[](2);
