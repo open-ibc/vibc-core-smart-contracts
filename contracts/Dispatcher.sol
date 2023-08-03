@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import 'forge-std/Test.sol';
+import 'forge-std/console.sol';
 import './Ibc.sol';
 import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
@@ -58,10 +60,26 @@ contract Escrow is Ownable {
         require(!locked, 'Escrow is locked');
         require(msg.sender == dispatcher, 'Only dispatcher can call distributeFee');
 
+        // console.log('distributeFees', relayers, fees);
+
         for (uint i = 0; i < relayers.length; i++) {
-            (bool sent, ) = relayers[i].call{value: fees[i]}('');
-            require(sent, 'Failed to distribute fee');
+            _transfer(relayers[i], fees[i]);
         }
+    }
+
+    /// refund returns the extra packet fee to packet sender
+    function refund(address payable sender, uint256 amount) external {
+        // preconditions check
+        require(!locked, 'Escrow is locked');
+        require(msg.sender == dispatcher, 'Only dispatcher can call refund');
+
+        _transfer(sender, amount);
+    }
+
+    /// _transfer transfers the given amount of Ether to the given address.
+    function _transfer(address payable payee, uint256 amount) internal {
+        (bool sent, ) = payee.call{value: amount}('');
+        require(sent, 'Failed to transfer Ether');
     }
 }
 
@@ -733,6 +751,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // transfer recv and ack fees
         PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
         escrow.distributeFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
+        // refund extra packet fee to packet sender, ie. receiver dApp
+        if (packetFee.timeoutFee > packetFee.ackFee) {
+            escrow.refund(payable(address(receiver)), packetFee.timeoutFee - packetFee.ackFee);
+        }
 
         // pass a regular ack packet to callback
         AckPacket memory ackPacket = AckPacket(incentivizedAck.success, incentivizedAck.data);

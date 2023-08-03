@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
+import 'forge-std/console.sol';
 import '../contracts/Ibc.sol';
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
 import {IbcReceiver} from '../contracts/IbcReceiver.sol';
@@ -46,9 +47,11 @@ contract FeeTest is PacketSenderTest {
             relayer: abi.encodePacked(forwardRelayerPayee),
             data: bytes('ack-data')
         });
-        vm.startPrank(reverseRelayerPayee);
+        vm.startPrank(reverseRelayerPayee, reverseRelayerPayee);
         dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
+
         assertEq(address(forwardRelayerPayee).balance, fee.recvFee);
-        // assertEq(address(reverseRelayerPayee).balance, fee.ackFee);
+        assertEq(address(reverseRelayerPayee).balance, fee.ackFee);
+        assertEq(escrow.balance, 0);
     }
 }
