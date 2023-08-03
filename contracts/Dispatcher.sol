@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-
 import './Ibc.sol';
 import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
@@ -24,6 +23,46 @@ struct InitClientMsg {
 struct UpgradeClientMsg {
     bytes clientState;
     ConsensusState consensusState;
+}
+
+contract Escrow is Ownable {
+    /// Polymer dispatcher contract address.
+    /// Only dispatcher can call `distributeFee` to distribute packet fee to relayers.
+    address public dispatcher;
+
+    /// if locked, no fee can be transferred out of Escrow
+    bool public locked = false;
+
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    receive() external payable {}
+
+    /// setDispatcher sets the dispatcher contract address
+    function setDispatcher(address _dispatcher) external onlyOwner {
+        dispatcher = _dispatcher;
+    }
+
+    /// lockEscrow disables `distributedFee` function
+    function lockEscrow() external onlyOwner {
+        locked = true;
+    }
+
+    /// unlockEscrow enables `distributedFee` function
+    function unlockEscrow() external onlyOwner {
+        locked = false;
+    }
+
+    /// distributeFees distributes the packet fee to relayers.
+    /// It can only be called by the dispatcher contract.
+    function distributeFees(address payable[2] memory relayers, uint256[2] memory fees) external {
+        // preconditions check
+        require(!locked, 'Escrow is locked');
+        require(msg.sender == dispatcher, 'Only dispatcher can call distributeFee');
+
+        for (uint i = 0; i < relayers.length; i++) {
+            (bool sent, ) = relayers[i].call{value: fees[i]}('');
+            require(sent, 'Failed to distribute fee');
+        }
+    }
 }
 
 /**
@@ -93,7 +132,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
 
     ZKMintVerifier verifier;
-    address payable escrow;
+    Escrow escrow;
     bool isClientCreated = false;
     ConsensusState public latestConsensusState;
     OptimisticConsensusState public trustedOptimisticConsensusState;
@@ -129,8 +168,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
                 string memory initPortPrefix,
                 uint32 fraudProofWindowSeconds_) {
         verifier = _verifier;
-        escrow = _escrow;
-        require(escrow != address(0), 'Escrow cannot be zero address');
+        escrow = Escrow(_escrow);
+        require(_escrow != address(0), 'Escrow cannot be zero address');
 
         // initialize portPrefix
         portPrefix = initPortPrefix;
@@ -545,7 +584,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         uint256 escrowedFeeee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
         // ignore returned data from `call`
         // (bool sent, bytes memory _data) = escrow.call{value: escrowedFeeee}('');
-        (bool sent, ) = escrow.call{value: escrowedFeeee}('');
+        (bool sent, ) = address(escrow).call{value: escrowedFeeee}('');
         require(sent, 'Failed to escrow packet fee');
         // record packet fees
         packetFees[msg.sender][channelId][sequence] = fee;
@@ -574,7 +613,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // escrow packet fee
         uint256 maxFee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
-        (bool sent, ) = escrow.call{value: maxFee}('');
+        (bool sent, ) = address(escrow).call{value: maxFee}('');
         require(sent, 'Failed to escrow packet fee');
 
         // Record accumulated packet fees
@@ -625,6 +664,78 @@ contract Dispatcher is IbcDispatcher, Ownable {
             );
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
+
+        receiver.onAcknowledgementPacket(packet, ackPacket);
+
+        // delete packet commitment to avoid double ack
+        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+
+        emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
+    }
+
+    /**
+    * @notice Handle the incentivized acknowledgement of an IBC packet by the counterparty
+    * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
+      ie. the IBC dApp.
+      Prerequisite: the original packet is committed and not ack'ed or timed out yet.   
+    * @param receiver The dApp contract that should handle the app-level packet acknowledgement 
+    * @param packet The original IbcPacket data sent by the dApp 
+    * @param incentivizedAck The incentivized acknowledgement from counterparty chain, where the relayer is the payee address on behalf of the forward relayer that delivered the packet
+    * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
+     */
+    function incentivizedAcknowledgement(
+        IbcReceiver receiver,
+        IbcPacket calldata packet,
+        IncentivizedAckPacket calldata incentivizedAck,
+        Proof calldata proof
+    ) external {
+        // verify `receiver` is the original packet sender
+        require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
+        // prove ack packet is on Polymer chain
+        require(
+            verifier.verifyMembership(
+                latestConsensusState,
+                proof,
+                'ack/packet/path',
+                'expected ack receipt hash on Polymer chain'
+            ),
+            'Fail to prove ack'
+        );
+        // verify packet has been committed and not yet ack'ed or timed out
+        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        require(hasCommitment, 'Packet commitment not found');
+
+        // enforce ack'ed packet sequences always increment by 1 for ordered channels
+        Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
+        if (channel.ordering == ChannelOrder.ORDERED) {
+            require(
+                packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],
+                'Unexpected packet sequence'
+            );
+            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+        }
+
+        // distribute fee to relayer
+        require(incentivizedAck.relayer.length == 20, 'Invalid relayer address');
+        address payable recvFeePayee;
+        if (keccak256(abi.encodePacked(incentivizedAck.relayer)) == keccak256(abi.encodePacked(address(0)))) {
+            // no forward relayer registered on Polymer, then refund to receiver
+            recvFeePayee = payable(address(receiver));
+        } else {
+            // pay forward relayer's paypee
+            require(incentivizedAck.relayer.length == 20, 'Invalid relayer address');
+            recvFeePayee = payable(address(bytes20(incentivizedAck.relayer)));
+        }
+
+        // TODO: allow reverse relayer registration too
+        address payable ackFeePayee = payable(tx.origin);
+
+        // transfer recv and ack fees
+        PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
+        escrow.distributeFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
+
+        // pass a regular ack packet to callback
+        AckPacket memory ackPacket = AckPacket(incentivizedAck.success, incentivizedAck.data);
 
         receiver.onAcknowledgementPacket(packet, ackPacket);
 

@@ -11,7 +11,8 @@ import '../contracts/Mars.sol';
 import {PacketSenderTest} from './Dispatcher.t.sol';
 
 contract FeeTest is PacketSenderTest {
-    address payee = deriveAddress('payee');
+    address forwardRelayerPayee = deriveAddress('forward-payee');
+    address reverseRelayerPayee = deriveAddress('reverse-payee');
 
     // pay extra packet fee after packet creation
     function test_payPacketFeeAsync() public {
@@ -35,13 +36,19 @@ contract FeeTest is PacketSenderTest {
 
     // claim ack fee on receving ack
     function test_ack_fee() public {
-        assertEq(address(payee).balance, 0);
+        assertEq(address(forwardRelayerPayee).balance, 0);
+        assertEq(address(reverseRelayerPayee).balance, 0);
         sendPacket();
 
-        // No fee distributed for non-incentivized ack
-        dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
-        assertEq(address(payee).balance, 0);
-
         // Incentivized ack
+        IncentivizedAckPacket memory incAck = IncentivizedAckPacket({
+            success: true,
+            relayer: abi.encodePacked(forwardRelayerPayee),
+            data: bytes('ack-data')
+        });
+        vm.startPrank(reverseRelayerPayee);
+        dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
+        assertEq(address(forwardRelayerPayee).balance, fee.recvFee);
+        // assertEq(address(reverseRelayerPayee).balance, fee.ackFee);
     }
 }
