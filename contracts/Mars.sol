@@ -17,6 +17,9 @@ contract Mars is IbcReceiver, Ownable {
 
     string[] supportedVersions = ['1.0', '2.0'];
 
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    receive() external payable {}
+
     function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
