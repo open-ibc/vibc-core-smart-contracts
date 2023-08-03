@@ -136,7 +136,7 @@ contract Base is Test {
 
 contract DispatcherCreateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
     }
 
     function test_success() public {
@@ -158,15 +158,15 @@ contract DispatcherCreateClientTest is Test, Base {
 
 contract DispatcherUpdateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
         dispatcher.createClient(initClientMsg);
     }
 
-    function test_success() public {
+    function test_updateConsensusState_success() public {
         dispatcher.updateClientWithConsensusState(trustedState, proof);
     }
 
-    function test_invalidConsensusState() public {
+    function test_updateConsensusState_invalid() public {
         vm.expectRevert('UpdateClientMsg proof verification failed');
         dispatcher.updateClientWithConsensusState(untrustedState, proof);
 
@@ -175,42 +175,54 @@ contract DispatcherUpdateClientTest is Test, Base {
         dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
     }
 
-    function test_invalidOptimisticConsensusState() public {
-        // a user updates the execution state to height 2.
-        dispatcher.updateClientWithOptimisticConsensusState(
-            OptimisticConsensusState(
-                1, // app_hash
-                1, // valset_hash
-                1, // time
-                2
-            )
-        ); // height
+    function test_updateOpConsensusState_toOlderOpState() public {
+        // a user updates the optimistic consensus state to height 2.
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     2));
 
-        // the time of the untrusted execution state (used for fraud
-        // window calculation) should be updated using the EVM's time.
+        // the time of the pending optimistic consensus state (used
+        // for fraud window calculation) should be updated using the
+        // EVM's time.
         require(dispatcher.getPendingOptimisticConsensusStateTime() == block.timestamp);
 
-        vm.expectRevert('UpdateClientMsg proof verification failed: must update to a newer execution state');
+        vm.expectRevert('UpdateClientMsg proof verification failed: must update to a newer op consensus state');
 
-        // another user wants to update the execution state to height 1, and will be rejected.
-        dispatcher.updateClientWithOptimisticConsensusState(
-            OptimisticConsensusState(
-                1, // app_hash
-                1, // valset_hash
-                1, // time
-                1
-            )
-        ); // height
+        // another user wants to update the client state to height 1.
+        // the transaction will be reverted because updating the
+        // client state to an earlier version is now allowed.
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     1)); // height
+    }
 
-        // TODO(zfeng): add test case for updating execution state
-        // with a height smaller than the height of the trusted
-        // execution state.
+    function test_updateOpConsensusState_toNewerOpState() public {
+        // a user updates the optimistic consensus state to height 2.
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     2));
+
+        // the time of the pending optimistic consensus state (used
+        // for fraud window calculation) should be updated using the
+        // EVM's time.
+        require(dispatcher.getPendingOptimisticConsensusStateTime() == block.timestamp);
+
+        // another user wants to update the client state to height 5.
+        // the transaction will not be reverted because it is newer
+        // than the current op consensus state..
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,   // app_hash
+                                                                                     1,   // valset_hash
+                                                                                     1,   // time
+                                                                                     5)); // height
     }
 }
 
 contract DispatcherUpgradeClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClientWithConsensusState(trustedState, proof);
     }
@@ -246,7 +258,7 @@ contract ChannelTestBase is Test, Base {
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClientWithConsensusState(trustedState, proof);
 
@@ -417,7 +429,7 @@ contract ChannelOpenTestBase is Test, Base {
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
         dispatcher.createClient(initClientMsg);
 
         // anyone can run Relayers
@@ -574,24 +586,56 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         }
     }
 
-    function test_updateTrustedOptimisticConsensusState() public {
+    function test_recvPacket_pendingOptimisticConsensusStateTransition() public {
         uint256 prevTimestamp = block.timestamp;
 
         // update client with an untrusted execution state
-        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1, 1, 1, 43));
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,      // app hash
+                                                                                     1,      // valset hash
+                                                                                     1,      // time
+                                                                                     1043)); // height
+
+        require(1043 == dispatcher.getPendingOptimisticConsensusStateHeight(), 'untrusted client state should be updated');
+        require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted client state should not be updated');
 
         // send a packet to trigger the untrusted to trusted state
-        // transition.
-        vm.warp(1801);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
+        // transition. the op consensus state is outside the fraud
+        // proof window now, so it should transition to trusted upon
+        // receiving a data packet.
+        vm.warp(1802);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+
+        // the previous untrusted state should be trusted.
+        require(1043 == dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted optimistic consensus state should be updated');
 
         // revert to the previous state
         vm.warp(prevTimestamp);
     }
 
-    // TODO(zfeng): add test to prove that packet won't transition a
-    // untrusted state to a trusted state when it's still in the fraud
-    // proof window.
+    function test_recvPacket_pendingOptimisticConsensusStateNoTransition() public {
+        uint256 prevTimestamp = block.timestamp;
+
+        // update client with an untrusted execution state
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,      // app hash
+                                                                                     1,      // valset hash
+                                                                                     1,      // time
+                                                                                     1043)); // height
+
+        require(1043 == dispatcher.getPendingOptimisticConsensusStateHeight(), 'untrusted client state should be updated');
+        require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted client state should not be updated');
+
+        // the op consensus state is still within the fraud proof
+        // window, so it shouldn't transition to trusted state.
+        vm.warp(1600);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+
+        // the state transition shouldn't happen.
+        require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted optimistic consensus state should not be updated');
+
+        // revert to the previous state
+        vm.warp(prevTimestamp);
+    }
+
 
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time
     function test_timeout_timestamp() public {

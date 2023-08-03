@@ -9,6 +9,7 @@ import './Ibc.sol';
 import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
 import './IbcVerifier.sol';
+import 'hardhat/console.sol';
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -123,7 +124,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // methods
     //
 
-    constructor(ZKMintVerifier _verifier, address payable _escrow, string memory initPortPrefix) {
+    constructor(ZKMintVerifier _verifier,
+                address payable _escrow,
+                string memory initPortPrefix,
+                uint32 fraudProofWindowSeconds_) {
         verifier = _verifier;
         escrow = _escrow;
         require(escrow != address(0), 'Escrow cannot be zero address');
@@ -132,9 +136,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
 
-        // by default, have a fraud proof window of 30 min.
-        // TODO(zfeng): make this configurable.
-        fraudProofWindowSeconds = 1800;
+        fraudProofWindowSeconds = fraudProofWindowSeconds_;
     }
 
     //
@@ -204,6 +206,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         return pendingOptimisticConsensusState.height;
     }
 
+    function getConsensusStateHeight() public view returns (uint256) {
+        return latestConsensusState.height;
+    }
+
     //
     // CoreSC maaintainer methods, only invoked by the owner
     //
@@ -256,10 +262,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // window.
     function updateClientWithOptimisticConsensusState(OptimisticConsensusState calldata opConsensusState) external {
         require(isClientCreated, 'Client not created');
-        require(
-            opConsensusState.height >= pendingOptimisticConsensusState.height,
-            'UpdateClientMsg proof verification failed: must update to a newer execution state'
-        );
+        require(opConsensusState.height >= pendingOptimisticConsensusState.height,
+                'UpdateClientMsg proof verification failed: must update to a newer op consensus state');
         pendingOptimisticConsensusState = opConsensusState;
 
         // Use the timestamp on the EVM chain since the timestamp
