@@ -42,6 +42,9 @@ struct AckPacket {
 
 struct IncentivizedAckPacket {
     bool success;
+    // Forward relayer's payee address, an EMV address registered on Polymer chain with `RegisterCounterpartyPayee` endpoint.
+    // In case of missing payee, zero address is used on Polymer.
+    // The relayer payee address is set when incentivized ack is created on Polymer.
     bytes relayer;
     bytes data;
 }
