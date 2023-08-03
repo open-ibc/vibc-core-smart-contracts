@@ -3,6 +3,7 @@
 pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
+import './Ibc.sol';
 import './IbcReceiver.sol';
 import './IbcDispatcher.sol';
 
@@ -112,7 +113,6 @@ contract Mars is IbcReceiver, Ownable {
         uint64 timeoutTimestamp,
         PacketFee calldata fee
     ) external payable {
-        uint256 maxFee = fee.ackFee > fee.timeoutFee ? fee.ackFee : fee.timeoutFee;
-        dispatcher.sendPacket{value: fee.recvFee + maxFee}(channelId, bytes(message), timeoutTimestamp, fee);
+        dispatcher.sendPacket{value: Ibc.calcEscrowFee(fee)}(channelId, bytes(message), timeoutTimestamp, fee);
     }
 }

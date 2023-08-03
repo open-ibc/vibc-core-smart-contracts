@@ -4,8 +4,6 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import 'forge-std/Test.sol';
-import 'forge-std/console.sol';
 import './Ibc.sol';
 import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
@@ -53,18 +51,26 @@ contract Escrow is Ownable {
         locked = false;
     }
 
-    /// distributeFees distributes the packet fee to relayers.
+    /// Distribute the packet recv and ack fees to forward and reverse relayers' payees accounts.
     /// It can only be called by the dispatcher contract.
-    function distributeFees(address payable[2] memory relayers, uint256[2] memory fees) external {
+    function distributeAckFees(address payable[2] memory relayers, uint256[2] memory fees) external {
         // preconditions check
         require(!locked, 'Escrow is locked');
         require(msg.sender == dispatcher, 'Only dispatcher can call distributeFee');
 
-        // console.log('distributeFees', relayers, fees);
-
-        for (uint i = 0; i < relayers.length; i++) {
+        for (uint256 i = 0; i < relayers.length; i++) {
             _transfer(relayers[i], fees[i]);
         }
+    }
+
+    /// Distribute packet timeout fee to forward relayer's payee account.
+    /// It can only be called by the dispatcher contract.
+    function distributeTimeoutFee(address payable relayer, uint256 fee) external {
+        // preconditions check
+        require(!locked, 'Escrow is locked');
+        require(msg.sender == dispatcher, 'Only dispatcher can call distributeFee');
+
+        _transfer(relayer, fee);
     }
 
     /// refund returns the extra packet fee to packet sender
@@ -94,7 +100,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
     // channel events
     //
-
     event OpenIbcChannel(
         address indexed portAddress,
         string version,
@@ -111,7 +116,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
     // packet events
     //
-
     event SendPacket(
         address indexed sourcePortAddress,
         bytes32 indexed sourceChannelId,
@@ -148,7 +152,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
     // fields
     //
-
     ZKMintVerifier verifier;
     Escrow escrow;
     bool isClientCreated = false;
@@ -181,10 +184,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // methods
     //
 
-    constructor(ZKMintVerifier _verifier,
-                address payable _escrow,
-                string memory initPortPrefix,
-                uint32 fraudProofWindowSeconds_) {
+    constructor(
+        ZKMintVerifier _verifier,
+        address payable _escrow,
+        string memory initPortPrefix,
+        uint32 fraudProofWindowSeconds_
+    ) {
         verifier = _verifier;
         escrow = Escrow(_escrow);
         require(_escrow != address(0), 'Escrow cannot be zero address');
@@ -302,8 +307,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // check if the current untrusted op consensus state is outside the fraud proof window and
     // set it to be the trusted op consensus state if so.
     function tryPromotePendingOpConsensusState() internal {
-        if (block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds &&
-            pendingOptimisticConsensusState.height != 0) {
+        if (
+            block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds &&
+            pendingOptimisticConsensusState.height != 0
+        ) {
             trustedOptimisticConsensusState = pendingOptimisticConsensusState;
             pendingOptimisticConsensusState = OptimisticConsensusState(0, 0, 0, 0);
         }
@@ -365,8 +372,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // window.
     function updateClientWithOptimisticConsensusState(OptimisticConsensusState calldata opConsensusState) external {
         require(isClientCreated, 'Client not created');
-        require(opConsensusState.height >= pendingOptimisticConsensusState.height,
-                'UpdateClientMsg proof verification failed: must update to a newer op consensus state');
+        require(
+            opConsensusState.height >= pendingOptimisticConsensusState.height,
+            'UpdateClientMsg proof verification failed: must update to a newer op consensus state'
+        );
         pendingOptimisticConsensusState = opConsensusState;
 
         // Use the timestamp on the EVM chain since the timestamp
@@ -524,7 +533,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @param portAddress EVM address of the IBC port
      * @param channelId IBC channel ID from the port perspective
      * @return A channel struct is always returned. If it doesn't exists, the channel struct is populated with default
-       values per EVM.
+     *    values per EVM.
      */
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory) {
         return portChannelMap[portAddress][channelId];
@@ -580,9 +589,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @param packet The packet data to send.
      * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
      * @param fee The fee serves as the packet incentive for forward relay. It's escrowed on the running chain and will be
-       claimed by relayer later once the packet is delivered and ack'ed or timed out.
-       recvFee is always paid, but only ackFee or timeoutFee is paid, depending on packet path.
-       Total fee for packet roundtrip is determined by recvFee + max(ackFee, timeoutFee).
+     *    claimed by relayer later once the packet is delivered and ack'ed or timed out.
+     *    recvFee is always paid, but only ackFee or timeoutFee is paid, depending on packet path.
+     *    Total fee for packet roundtrip is determined by recvFee + max(ackFee, timeoutFee).
      */
     function sendPacket(
         bytes32 channelId,
@@ -599,10 +608,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(sequence > 0, 'Invalid packet sequence');
 
         // escescrow packet fee
-        uint256 escrowedFeeee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
-        // ignore returned data from `call`
-        // (bool sent, bytes memory _data) = escrow.call{value: escrowedFeeee}('');
-        (bool sent, ) = address(escrow).call{value: escrowedFeeee}('');
+        (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
         require(sent, 'Failed to escrow packet fee');
         // record packet fees
         packetFees[msg.sender][channelId][sequence] = fee;
@@ -630,8 +636,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(hasCommitment, 'Packet commitment not found');
 
         // escrow packet fee
-        uint256 maxFee = fee.recvFee + max(fee.ackFee, fee.timeoutFee); // only need to pay either ack or timeout fee, but not both
-        (bool sent, ) = address(escrow).call{value: maxFee}('');
+        (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
         require(sent, 'Failed to escrow packet fee');
 
         // Record accumulated packet fees
@@ -646,8 +651,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
     /**
      * @notice Handle the acknowledgement of an IBC packet by the counterparty
      * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
-       ie. the IBC dApp.
-       Prerequisite: the original packet is committed and not ack'ed or timed out yet.
+     *    ie. the IBC dApp.
+     *    Prerequisite: the original packet is committed and not ack'ed or timed out yet.
      * @param receiver The IbcReceiver contract that should handle the packet acknowledgement event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the acknowledged packet
@@ -692,14 +697,14 @@ contract Dispatcher is IbcDispatcher, Ownable {
     }
 
     /**
-    * @notice Handle the incentivized acknowledgement of an IBC packet by the counterparty
-    * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
-      ie. the IBC dApp.
-      Prerequisite: the original packet is committed and not ack'ed or timed out yet.   
-    * @param receiver The dApp contract that should handle the app-level packet acknowledgement 
-    * @param packet The original IbcPacket data sent by the dApp 
-    * @param incentivizedAck The incentivized acknowledgement from counterparty chain, where the relayer is the payee address on behalf of the forward relayer that delivered the packet
-    * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
+     * @notice Handle the incentivized acknowledgement of an IBC packet by the counterparty
+     * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
+     *   ie. the IBC dApp.
+     *   Prerequisite: the original packet is committed and not ack'ed or timed out yet.
+     * @param receiver The dApp contract that should handle the app-level packet acknowledgement
+     * @param packet The original IbcPacket data sent by the dApp
+     * @param incentivizedAck The incentivized acknowledgement from counterparty chain, where the relayer is the payee address on behalf of the forward relayer that delivered the packet
+     * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
     function incentivizedAcknowledgement(
         IbcReceiver receiver,
@@ -750,9 +755,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // transfer recv and ack fees
         PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
-        escrow.distributeFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
+        escrow.distributeAckFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
         // refund extra packet fee to packet sender, ie. receiver dApp
-        if (packetFee.timeoutFee > packetFee.ackFee) {
+        if (packetFee.timeoutFee > packetFee.ackFee + packetFee.recvFee) {
             escrow.refund(payable(address(receiver)), packetFee.timeoutFee - packetFee.ackFee);
         }
 
@@ -785,6 +790,18 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         require(hasCommitment, 'Packet commitment not found');
+
+        PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
+        if (packetFee.timeoutFee != 0) {
+            // transfer timeout fee
+            address payable timeoutFeePayee = payable(tx.origin);
+            escrow.distributeTimeoutFee(timeoutFeePayee, packetFee.timeoutFee);
+        }
+        uint timeoutRefund = Ibc.timeoutRefundAmount(packetFee);
+        if (timeoutRefund > 0) {
+            // refund extra packet fee to packet sender, ie. receiver dApp
+            escrow.refund(payable(address(receiver)), timeoutRefund);
+        }
 
         receiver.onTimeoutPacket(packet);
 
