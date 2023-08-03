@@ -85,3 +85,36 @@ struct Proof {
     // ics23 merkle proof
     bytes proof;
 }
+
+// define a library of Ibc utility functions
+library Ibc {
+    // calcEscrowFee returns the fee to be escrowed for sending a packet.
+    function calcEscrowFee(PacketFee memory fee) internal pure returns (uint256) {
+        uint256 ackFees = fee.recvFee + fee.ackFee;
+        return fee.timeoutFee > ackFees ? fee.timeoutFee : ackFees;
+    }
+
+    /**
+     * @dev Return the amount of fee to be refunded to the sender when a packet is timed out.
+     * @param fee accumulative packet fees
+     */
+    function timeoutRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
+        if (fee.timeoutFee > fee.recvFee + fee.ackFee) {
+            return fee.timeoutFee - fee.recvFee - fee.ackFee;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * @dev Return the amount of fee to be refunded to the sender when a packet is acknowledged.
+     * @param fee accumulative packet fees
+     */
+    function ackRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
+        if (fee.ackFee + fee.recvFee > fee.timeoutFee) {
+            return fee.ackFee + fee.recvFee - fee.timeoutFee;
+        } else {
+            return 0;
+        }
+    }
+}

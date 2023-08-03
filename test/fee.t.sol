@@ -21,8 +21,14 @@ contract FeeTest is PacketSenderTest {
         for (uint64 index = 0; index < 3; index++) {
             uint64 packetSeq = index + 1;
 
-            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
-            dispatcher.payPacketFeeAsync{value: calcFee(fee)}(address(mars), channelId, packetSeq, fee);
+            mars.greet{value: Ibc.calcEscrowFee(fee)}(
+                IbcDispatcher(dispatcher),
+                payloadStr,
+                channelId,
+                maxTimeout,
+                fee
+            );
+            dispatcher.payPacketFeeAsync{value: Ibc.calcEscrowFee(fee)}(address(mars), channelId, packetSeq, fee);
 
             PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
             assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(accu)));
@@ -32,14 +38,22 @@ contract FeeTest is PacketSenderTest {
     // sendPacket fails if insufficient fee is paid.
     function test_insufficientFee() public {
         vm.expectRevert();
-        mars.greet{value: calcFee(fee) - 1}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
+        mars.greet{value: Ibc.calcEscrowFee(fee) - 1}(
+            IbcDispatcher(dispatcher),
+            payloadStr,
+            channelId,
+            maxTimeout,
+            fee
+        );
     }
 
     // claim ack fee on receving ack
     function test_ack_fee() public {
         assertEq(address(forwardRelayerPayee).balance, 0);
         assertEq(address(reverseRelayerPayee).balance, 0);
+
         sendPacket();
+        uint balance1 = address(mars).balance;
 
         // Incentivized ack
         IncentivizedAckPacket memory incAck = IncentivizedAckPacket({
@@ -53,5 +67,32 @@ contract FeeTest is PacketSenderTest {
         assertEq(address(forwardRelayerPayee).balance, fee.recvFee);
         assertEq(address(reverseRelayerPayee).balance, fee.ackFee);
         assertEq(escrow.balance, 0);
+        assertEq(address(mars).balance, Ibc.ackRefundAmount(fee) + balance1);
+
+        // cannot claim ack fee twice
+        vm.expectRevert();
+        dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
+    }
+
+    // claim timeout fee on receving timeout
+    function test_timeout_fee() public {
+        assertEq(address(forwardRelayerPayee).balance, 0);
+        assertEq(address(reverseRelayerPayee).balance, 0);
+
+        sendPacket();
+
+        uint balance1 = address(mars).balance;
+
+        vm.startPrank(reverseRelayerPayee, reverseRelayerPayee);
+        dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
+
+        assertEq(address(reverseRelayerPayee).balance, fee.timeoutFee);
+        assertEq(address(forwardRelayerPayee).balance, 0);
+        assertEq(escrow.balance, 0);
+        assertEq(address(mars).balance, balance1 + Ibc.timeoutRefundAmount(fee));
+
+        // cannot claim timeout fee twice
+        vm.expectRevert();
+        dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
     }
 }

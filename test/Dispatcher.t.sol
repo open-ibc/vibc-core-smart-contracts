@@ -132,12 +132,6 @@ contract Base is Test {
         return vm.addr(uint256(keccak256(abi.encodePacked(str))));
     }
 
-    // calcFee returns the fee to be paid for sending a packet.
-    function calcFee(PacketFee memory _fee) internal pure returns (uint256) {
-        uint256 maxFee = _fee.ackFee > _fee.timeoutFee ? _fee.ackFee : _fee.timeoutFee;
-        return _fee.recvFee + maxFee;
-    }
-
     function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
         return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
     }
@@ -512,8 +506,14 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
             emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp, fee);
-            mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
-            assertEq(escrow.balance - balance, calcFee(fee));
+            mars.greet{value: Ibc.calcEscrowFee(fee)}(
+                IbcDispatcher(dispatcher),
+                payload,
+                channelId,
+                timeoutTimestamp,
+                fee
+            );
+            assertEq(escrow.balance - balance, Ibc.calcEscrowFee(fee));
 
             // query escrowed fee per packet
             PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
@@ -525,7 +525,13 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     function test_mustOwner() public {
         Mars earth = new Mars();
         vm.expectRevert('Channel not owned by sender');
-        earth.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payload, channelId, timeoutTimestamp, fee);
+        earth.greet{value: Ibc.calcEscrowFee(fee)}(
+            IbcDispatcher(dispatcher),
+            payload,
+            channelId,
+            timeoutTimestamp,
+            fee
+        );
     }
 }
 
@@ -553,7 +559,7 @@ contract PacketSenderTest is ChannelOpenTestBase {
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(nextSendSeq);
-        mars.greet{value: calcFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
+        mars.greet{value: Ibc.calcEscrowFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
         nextSendSeq += 1;
     }
 
