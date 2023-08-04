@@ -17,38 +17,6 @@ contract FeeTest is PacketSenderTest {
 
     PacketFee[] packetFees;
 
-    // pay extra packet fee after packet creation
-    function test_payPacketFeeAsync() public {
-        PacketFee memory accu = mergeFees(fee, fee);
-        for (uint64 index = 0; index < 3; index++) {
-            uint64 packetSeq = index + 1;
-
-            mars.greet{value: Ibc.calcEscrowFee(fee)}(
-                IbcDispatcher(dispatcher),
-                payloadStr,
-                channelId,
-                maxTimeout,
-                fee
-            );
-            dispatcher.payPacketFeeAsync{value: Ibc.calcEscrowFee(fee)}(address(mars), channelId, packetSeq, fee);
-
-            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
-            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(accu)));
-        }
-    }
-
-    // sendPacket fails if insufficient fee is paid.
-    function test_insufficientFee() public {
-        vm.expectRevert();
-        mars.greet{value: Ibc.calcEscrowFee(fee) - 1}(
-            IbcDispatcher(dispatcher),
-            payloadStr,
-            channelId,
-            maxTimeout,
-            fee
-        );
-    }
-
     modifier useFeeTestCases() {
         // initialize an array of PacketFee with different values
         packetFees.push(PacketFee(0, 0, 0));
@@ -66,6 +34,42 @@ contract FeeTest is PacketSenderTest {
             fee = packetFees[i];
             _;
         }
+    }
+
+    // pay extra packet fee after packet creation
+    function test_payPacketFeeAsync() public useFeeTestCases {
+        // merge fees to calculate expected packet fee
+        PacketFee memory extraFee = PacketFee(1, 2, 3);
+        PacketFee memory expectedFee = mergeFees(fee, extraFee);
+
+        for (uint64 index = 0; index < 3; index++) {
+            // create packet and pay escrow fee
+            sendPacket();
+
+            // pay packet fee asynchronously
+            dispatcher.payPacketFeeAsync{value: Ibc.calcEscrowFee(extraFee)}(
+                address(mars),
+                channelId,
+                sentPacket.sequence,
+                extraFee
+            );
+
+            // check that the total packet fee is correct
+            PacketFee memory actualFee = dispatcher.getTotalPacketFees(address(mars), channelId, sentPacket.sequence);
+            assertEq(keccak256(abi.encode(actualFee)), keccak256(abi.encode(expectedFee)), 'Packet fee is incorrect');
+        }
+    }
+
+    // sendPacket fails if insufficient fee is paid.
+    function test_insufficientFee() public {
+        vm.expectRevert();
+        mars.greet{value: Ibc.calcEscrowFee(fee) - 1}(
+            IbcDispatcher(dispatcher),
+            payloadStr,
+            channelId,
+            maxTimeout,
+            fee
+        );
     }
 
     // claim ack fee on receving ack
@@ -99,21 +103,22 @@ contract FeeTest is PacketSenderTest {
     }
 
     // claim timeout fee on receving timeout
-    function test_timeout_fee() public {
-        assertEq(address(forwardRelayerPayee).balance, 0);
-        assertEq(address(reverseRelayerPayee).balance, 0);
+    function test_timeout_fee() public useFeeTestCases {
+        uint balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
+        address refundPayee = address(mars);
+        uint balanceRefund1 = refundPayee.balance;
 
+        vm.startPrank(relayer);
         sendPacket();
-
-        uint balance1 = address(mars).balance;
 
         vm.startPrank(reverseRelayerPayee, reverseRelayerPayee);
         dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
 
-        assertEq(address(reverseRelayerPayee).balance, fee.timeoutFee);
+        assertEq(address(reverseRelayerPayee).balance, fee.timeoutFee + balanceReverseRelayer1);
+        // no forward relayer is invovled in timeout case
         assertEq(address(forwardRelayerPayee).balance, 0);
+        assertEq(refundPayee.balance, Ibc.timeoutRefundAmount(fee) + balanceRefund1);
         assertEq(escrow.balance, 0);
-        assertEq(address(mars).balance, balance1 + Ibc.timeoutRefundAmount(fee));
 
         // cannot claim timeout fee twice
         vm.expectRevert();
