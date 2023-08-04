@@ -757,8 +757,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
         escrow.distributeAckFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
         // refund extra packet fee to packet sender, ie. receiver dApp
-        if (packetFee.timeoutFee > packetFee.ackFee + packetFee.recvFee) {
-            escrow.refund(payable(address(receiver)), packetFee.timeoutFee - packetFee.ackFee);
+        // TODO: allow refund payee registration too
+        uint refundFee = Ibc.ackRefundAmount(packetFee);
+        if (refundFee > 0) {
+            escrow.refund(payable(address(receiver)), refundFee);
         }
 
         // pass a regular ack packet to callback

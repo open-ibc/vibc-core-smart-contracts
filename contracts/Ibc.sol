@@ -99,8 +99,8 @@ library Ibc {
      * @param fee accumulative packet fees
      */
     function timeoutRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.timeoutFee > fee.recvFee + fee.ackFee) {
-            return fee.timeoutFee - fee.recvFee - fee.ackFee;
+        if (fee.recvFee + fee.ackFee > fee.timeoutFee) {
+            return fee.recvFee + fee.ackFee - fee.timeoutFee;
         } else {
             return 0;
         }
@@ -111,8 +111,8 @@ library Ibc {
      * @param fee accumulative packet fees
      */
     function ackRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.ackFee + fee.recvFee > fee.timeoutFee) {
-            return fee.ackFee + fee.recvFee - fee.timeoutFee;
+        if (fee.timeoutFee > fee.ackFee + fee.recvFee) {
+            return fee.timeoutFee - fee.ackFee - fee.recvFee;
         } else {
             return 0;
         }
