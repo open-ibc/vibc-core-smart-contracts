@@ -15,6 +15,8 @@ contract FeeTest is PacketSenderTest {
     address forwardRelayerPayee = deriveAddress('forward-payee');
     address reverseRelayerPayee = deriveAddress('reverse-payee');
 
+    PacketFee[] packetFees;
+
     // pay extra packet fee after packet creation
     function test_payPacketFeeAsync() public {
         PacketFee memory accu = mergeFees(fee, fee);
@@ -47,13 +49,35 @@ contract FeeTest is PacketSenderTest {
         );
     }
 
-    // claim ack fee on receving ack
-    function test_ack_fee() public {
-        assertEq(address(forwardRelayerPayee).balance, 0);
-        assertEq(address(reverseRelayerPayee).balance, 0);
+    modifier useFeeTestCases() {
+        // initialize an array of PacketFee with different values
+        packetFees.push(PacketFee(0, 0, 0));
+        packetFees.push(PacketFee(1, 0, 0));
+        packetFees.push(PacketFee(0, 1, 0));
+        packetFees.push(PacketFee(0, 0, 1));
+        packetFees.push(PacketFee(1, 1, 1));
+        packetFees.push(PacketFee(1, 2, 3));
+        packetFees.push(PacketFee(2, 2, 1));
+        packetFees.push(PacketFee(1, 1, 2));
+        packetFees.push(PacketFee(1, 2, 2));
+        packetFees.push(PacketFee(3, 2, 1));
 
+        for (uint i = 0; i < packetFees.length; i++) {
+            fee = packetFees[i];
+            _;
+        }
+    }
+
+    // claim ack fee on receving ack
+    function test_ack_fee() public useFeeTestCases {
+        // save balances of forward and reverse relayer payees; assert balances changes after ack
+        uint balanceForwardRelayer1 = address(forwardRelayerPayee).balance;
+        uint balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
+        address refundPayee = address(mars);
+        uint balanceRefund1 = refundPayee.balance;
+
+        vm.startPrank(relayer);
         sendPacket();
-        uint balance1 = address(mars).balance;
 
         // Incentivized ack
         IncentivizedAckPacket memory incAck = IncentivizedAckPacket({
@@ -64,10 +88,10 @@ contract FeeTest is PacketSenderTest {
         vm.startPrank(reverseRelayerPayee, reverseRelayerPayee);
         dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
 
-        assertEq(address(forwardRelayerPayee).balance, fee.recvFee);
-        assertEq(address(reverseRelayerPayee).balance, fee.ackFee);
+        assertEq(address(forwardRelayerPayee).balance, fee.recvFee + balanceForwardRelayer1);
+        assertEq(address(reverseRelayerPayee).balance, fee.ackFee + balanceReverseRelayer1);
+        assertEq(refundPayee.balance, Ibc.ackRefundAmount(fee) + balanceRefund1);
         assertEq(escrow.balance, 0);
-        assertEq(address(mars).balance, Ibc.ackRefundAmount(fee) + balance1);
 
         // cannot claim ack fee twice
         vm.expectRevert();
