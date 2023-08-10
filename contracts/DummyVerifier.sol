@@ -4,43 +4,30 @@ pragma solidity ^0.8.0;
 import './IbcVerifier.sol';
 import './IbcReceiver.sol';
 
-
-function isUpdateClientMsgFilled(UpdateClientMsg memory message) pure returns (bool) {
-    // check that each field of the ConsensusState struct is not zero
-    if (message.consensusState.app_hash == 0 ||
-    message.consensusState.valset_hash == 0 ||
-    message.consensusState.time == 0 ||
-        message.consensusState.height == 0) {
+function isConsensusStateFilled(ConsensusState calldata state) pure returns (bool) {
+    if (state.app_hash == 0 ||
+        state.valset_hash == 0 ||
+        state.time == 0 ||
+        state.height == 0) {
         return false;
-    }
+    }   
 
-    // check that each field of the ZkProof struct is not zero
-    for (uint256 i = 0; i < 2; i++) {
-        if (message.zkProof.a[i] == 0) return false;
-        if (message.zkProof.c[i] == 0) return false;
-        for (uint256 j = 0; j < 2; j++) {
-            if (message.zkProof.b[i][j] == 0) return false;
-        }
-    }
-
-    // if none of the fields were zero, the struct is considered filled
     return true;
 }
 
 
 contract DummyVerifier is ZKMintVerifier {
-    function verifyUpdateClientMsg(
+    function verifyConsensusState(
         ConsensusState calldata trustedState,
-        UpdateClientMsg calldata updateClientMsg
+        ConsensusState calldata untrustedState,
+        ZkProof calldata proof
     ) external pure override returns (bool) {
-        ConsensusState memory untrustedState = updateClientMsg.consensusState;
-
-        require(isUpdateClientMsgFilled(updateClientMsg), 'Invalid update client message');
+        require(isConsensusStateFilled(untrustedState), 'empty non-optimistic consensus state');
         return untrustedState.height >= trustedState.height;
     }
 
     function verifyMembership(
-        ConsensusState calldata consensusState,
+        OptimisticConsensusState calldata consensusState,
         Proof calldata proof,
         bytes calldata key,
         bytes calldata expectedValue
@@ -54,7 +41,7 @@ contract DummyVerifier is ZKMintVerifier {
     }
 
     function verifyNonMembership(
-        ConsensusState calldata consensusState,
+        OptimisticConsensusState calldata consensusState,
         Proof calldata proof,
         bytes calldata key
     ) external pure override returns (bool) {
