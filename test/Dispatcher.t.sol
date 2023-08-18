@@ -20,6 +20,7 @@ contract Base is Test {
         address indexed portAddress,
         string version,
         ChannelOrder ordering,
+        bool feeEnabled,
         string[] connectionHops,
         string counterpartyPortId,
         bytes32 counterpartyChannelId
@@ -253,6 +254,7 @@ contract ChannelTestBase is Test, Base {
     string[] connectionHops;
     VersionSet version = VersionSet('1.0', '1.0', '1.0');
     ChannelOrder ordering = ChannelOrder.ORDERED;
+    bool feeEnabled = false;
     CounterParty cp;
 
     CounterParty cpBsc = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
@@ -316,8 +318,24 @@ contract ChannelTestBase is Test, Base {
 contract DispatcherOpenIbcChannelTest is ChannelTestBase {
     function test_success() public goodCases {
         vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannel(address(mars), version.expected, ordering, connectionHops, cp.portId, cp.channelId);
-        dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+        emit OpenIbcChannel(
+            address(mars),
+            version.expected,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            cp.portId,
+            cp.channelId
+        );
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            version.self,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            cp,
+            polymerProof
+        );
     }
 
     modifier unsupportedVersions() {
@@ -345,7 +363,15 @@ contract DispatcherOpenIbcChannelTest is ChannelTestBase {
 
     function test_unsupportedVersion() public unsupportedVersions {
         vm.expectRevert(bytes('Unsupported version'));
-        dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            version.self,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            cp,
+            polymerProof
+        );
     }
 
     function test_invalidCounterpartyPortId() public {
@@ -358,19 +384,43 @@ contract DispatcherOpenIbcChannelTest is ChannelTestBase {
         for (uint i = 0; i < cps.length; i++) {
             cp = cps[i];
             vm.expectRevert('Invalid counterpartyPortId');
-            dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+            dispatcher.openIbcChannel(
+                IbcReceiver(mars),
+                version.self,
+                ordering,
+                feeEnabled,
+                connectionHops,
+                cp,
+                polymerProof
+            );
         }
     }
 
     function test_invalidProof() public {
         vm.expectRevert('Fail to prove channel state');
-        dispatcher.openIbcChannel(IbcReceiver(mars), '', ChannelOrder.ORDERED, connectionHops, cpBsc, invalidProof);
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            '',
+            ChannelOrder.ORDERED,
+            feeEnabled,
+            connectionHops,
+            cpBsc,
+            invalidProof
+        );
     }
 }
 
 contract DispatcherConnectIbcChannelTest is ChannelTestBase {
     function test_success() public goodCases {
-        dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            version.self,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            cp,
+            polymerProof
+        );
         string memory cpVersion = keccak256(abi.encode(cp.version)) == keccak256(abi.encode(bytes('')))
             ? version.self
             : cp.version;
@@ -383,6 +433,7 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
             channelId,
             connectionHops,
             ordering,
+            feeEnabled,
             cpBsc.portId,
             bytes32('channel-99'),
             cpVersion,
@@ -391,7 +442,15 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
     }
 
     function test_unsupportedVersions() public goodCases {
-        dispatcher.openIbcChannel(IbcReceiver(mars), version.self, ordering, connectionHops, cp, polymerProof);
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            version.self,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            cp,
+            polymerProof
+        );
         string memory cpVersion = 'xxx';
 
         vm.expectRevert('Unsupported version');
@@ -400,6 +459,7 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
             bytes32('channel-1'),
             connectionHops,
             ordering,
+            feeEnabled,
             cp.portId,
             bytes32('channel-99'),
             cpVersion,
@@ -414,6 +474,7 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
             bytes32('channel-1'),
             connectionHops,
             ordering,
+            feeEnabled,
             cpBsc.portId,
             cpBsc.channelId,
             cpBsc.version,
@@ -427,6 +488,7 @@ contract ChannelOpenTestBase is Test, Base {
     Mars mars;
     bytes32 channelId = 'channel-1';
     address relayer = deriveAddress('relayer');
+    bool feeEnabled = false;
 
     function setUp() public virtual {
         string[] memory connectionHops = new string[](2);
@@ -448,7 +510,15 @@ contract ChannelOpenTestBase is Test, Base {
 
         // finish channel handshake as chain A
         CounterParty memory cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        dispatcher.openIbcChannel(IbcReceiver(mars), '1.0', ChannelOrder.ORDERED, connectionHops, cp, emptyProof);
+        dispatcher.openIbcChannel(
+            IbcReceiver(mars),
+            '1.0',
+            ChannelOrder.ORDERED,
+            feeEnabled,
+            connectionHops,
+            cp,
+            emptyProof
+        );
         CounterParty memory cp2 = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
 
         dispatcher.connectIbcChannel(
@@ -456,6 +526,7 @@ contract ChannelOpenTestBase is Test, Base {
             channelId,
             connectionHops,
             ChannelOrder.ORDERED,
+            feeEnabled,
             cp2.portId,
             cp2.channelId,
             cp2.version,
@@ -774,6 +845,18 @@ contract DispatcherAckPacketTest is PacketSenderTest {
 
         vm.expectRevert('Packet commitment not found');
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+    }
+
+    function test_no_incentivizedAck() public {
+        sendPacket();
+        IncentivizedAckPacket memory incAck = IncentivizedAckPacket(
+            true,
+            abi.encodePacked(deriveAddress('foward-relayer')),
+            bytes('ack')
+        );
+
+        vm.expectRevert('invalid channel type: non-incentivized');
+        dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
     }
 }
 

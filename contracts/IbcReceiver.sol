@@ -29,6 +29,7 @@ interface IbcReceiver {
     function onOpenIbcChannel(
         string calldata version,
         ChannelOrder ordering,
+        bool feeEnabled,
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId,
