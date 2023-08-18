@@ -95,7 +95,7 @@ contract FeeTest is PacketSenderTest {
         assertEq(address(forwardRelayerPayee).balance, fee.recvFee + balanceForwardRelayer1);
         assertEq(address(reverseRelayerPayee).balance, fee.ackFee + balanceReverseRelayer1);
         assertEq(refundPayee.balance, Ibc.ackRefundAmount(fee) + balanceRefund1);
-        assertEq(escrow.balance, 0);
+        assertEq(address(escrow).balance, 0);
 
         // cannot claim ack fee twice
         vm.expectRevert();
@@ -118,7 +118,7 @@ contract FeeTest is PacketSenderTest {
         // no forward relayer is invovled in timeout case
         assertEq(address(forwardRelayerPayee).balance, 0);
         assertEq(refundPayee.balance, Ibc.timeoutRefundAmount(fee) + balanceRefund1);
-        assertEq(escrow.balance, 0);
+        assertEq(address(escrow).balance, 0);
 
         // cannot claim timeout fee twice
         vm.expectRevert();
