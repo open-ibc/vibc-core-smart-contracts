@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import './IbcVerifier.sol';
 import './IbcReceiver.sol';
-import "./Groth16Verifier.sol";
-
+import './Groth16Verifier.sol';
 
 contract Verifier is ZKMintVerifier {
     function verifyConsensusState(
@@ -17,13 +16,13 @@ contract Verifier is ZKMintVerifier {
             proof.b,
             proof.c,
             [
-             trustedState.valset_hash,
-             trustedState.time,
-             trustedState.height,
-             untrustedState.app_hash,
-             untrustedState.valset_hash,
-             untrustedState.time,
-             untrustedState.height
+                trustedState.valset_hash,
+                trustedState.time,
+                trustedState.height,
+                untrustedState.app_hash,
+                untrustedState.valset_hash,
+                untrustedState.time,
+                untrustedState.height
             ]
         );
         return isVerified;
@@ -37,7 +36,10 @@ contract Verifier is ZKMintVerifier {
     ) external pure override returns (bool) {
         require(key.length > 0, 'Key cannot be empty');
         require(expectedValue.length > 0, 'Expected value cannot be empty');
-        require(consensusState.height >= proof.proofHeight, 'Consensus state not sufficient for Merkle proof verification');
+        require(
+            consensusState.height >= proof.proofHeight.revision_height,
+            'Consensus state not sufficient for Merkle proof membership verification'
+        );
 
         // TODO: replace with real merkle verification logic
         // For now, a dummy proof verification is implemented
@@ -50,6 +52,10 @@ contract Verifier is ZKMintVerifier {
         bytes calldata key
     ) external pure override returns (bool) {
         require(key.length > 0, 'Key cannot be empty');
+        require(
+            consensusState.height >= proof.proofHeight.revision_height,
+            'Consensus state not sufficient for Merkle proof non-membership verification'
+        );
 
         // TODO: replace with real merkle verification logic
         // For now, a dummy proof verification is implemented

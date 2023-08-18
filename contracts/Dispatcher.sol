@@ -340,13 +340,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
         if (isChanOpenTry) {
             // TODO: fill below proof path
-            require(
-                verifier.verifyMembership(
-                    latestConsensusState,
-                    proof,
-                    'channel/path/to/be/added/here',
-                    bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}')
-                ),
+            verifyMembership(
+                proof,
+                'channel/path/to/be/added/here',
+                bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
                 'Fail to prove channel state'
             );
         }
@@ -750,18 +747,18 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bytes memory key,
         bytes memory expectedValue,
         string memory message
-    ) internal {
+    ) internal view {
         require(
-            trustedOptimisticConsensusState.height >= proof.proofHeight,
+            trustedOptimisticConsensusState.height >= proof.proofHeight.revision_height,
             'cannot verify the proof with current consensus state'
         );
 
         require(verifier.verifyMembership(trustedOptimisticConsensusState, proof, key, expectedValue), message);
     }
 
-    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) internal {
+    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) internal view {
         require(
-            trustedOptimisticConsensusState.height >= proof.proofHeight,
+            trustedOptimisticConsensusState.height >= proof.proofHeight.revision_height,
             'cannot verify the proof with current consensus state'
         );
 

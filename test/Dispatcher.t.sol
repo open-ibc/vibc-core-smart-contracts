@@ -583,7 +583,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         // send a packet to trigger the untrusted to trusted state
         // transition.
         vm.warp(1801);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
 
         // revert to the previous state
         vm.warp(prevTimestamp);
