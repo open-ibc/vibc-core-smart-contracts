@@ -674,7 +674,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             // no forward relayer registered on Polymer, then refund to receiver
             recvFeePayee = payable(address(receiver));
         } else {
-            // pay forward relayer's paypee
+            // pay forward relayer's payee
             require(incentivizedAck.relayer.length == 20, 'Invalid relayer address');
             recvFeePayee = payable(address(bytes20(incentivizedAck.relayer)));
         }
