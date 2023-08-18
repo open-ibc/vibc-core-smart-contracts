@@ -3,7 +3,8 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 import '../contracts/Ibc.sol';
-import {Dispatcher, InitClientMsg, UpgradeClientMsg, Escrow} from '../contracts/Dispatcher.sol';
+import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
+import {Escrow} from '../contracts/Escrow.sol';
 import {IbcReceiver} from '../contracts/IbcReceiver.sol';
 import '../contracts/IbcVerifier.sol';
 import '../contracts/Verifier.sol';
