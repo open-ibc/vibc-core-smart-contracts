@@ -715,15 +715,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify `receiver` is the original packet sender
         require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
         // prove ack packet is on Polymer chain
-        require(
-            verifier.verifyMembership(
-                latestConsensusState,
-                proof,
-                'ack/packet/path',
-                'expected ack receipt hash on Polymer chain'
-            ),
-            'Fail to prove ack'
-        );
+        verifyMembership(proof, 'ack/packet/path', 'expected ack receipt hash on Polymer chain', 'Fail to prove ack');
+
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         require(hasCommitment, 'Packet commitment not found');
