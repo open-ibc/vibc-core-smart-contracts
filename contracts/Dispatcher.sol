@@ -40,6 +40,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         address indexed portAddress,
         string version,
         ChannelOrder ordering,
+        bool feeEnabled,
         string[] connectionHops,
         string counterpartyPortId,
         bytes32 counterpartyChannelId
@@ -374,6 +375,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         IbcReceiver portAddress,
         string calldata version,
         ChannelOrder ordering,
+        bool feeEnabled,
         string[] calldata connectionHops,
         CounterParty calldata counterparty,
         Proof calldata proof
@@ -404,6 +406,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         string memory selectedVersion = portAddress.onOpenIbcChannel(
             version,
             ordering,
+            feeEnabled,
             connectionHops,
             counterparty.portId,
             counterparty.channelId,
@@ -414,6 +417,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             address(portAddress),
             selectedVersion,
             ordering,
+            feeEnabled,
             connectionHops,
             counterparty.portId,
             counterparty.channelId
@@ -430,6 +434,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bytes32 channelId,
         string[] calldata connectionHops,
         ChannelOrder ordering,
+        bool feeEnabled,
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId,
         string calldata counterpartyVersion,
@@ -451,6 +456,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         portChannelMap[address(portAddress)][channelId] = Channel(
             counterpartyVersion, // TODO: this should be self version instead of counterparty version
             ordering,
+            feeEnabled,
             connectionHops,
             counterpartyPortId,
             counterpartyChannelId
@@ -560,6 +566,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
     /**
      * Pay extra fees for a packet that has already been sent.
      * Dapps should call this function to incentivize packet relay if the packet is not ack'ed or timed out yet.
+     * @notice This function can be called multiple times for the same packet. But it shouldn't be called if the
+     * channel is not incentivized.
      */
     function payPacketFeeAsync(
         address portAddress,
@@ -616,6 +624,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
+        require(!channel.feeEnabled, 'invalid channel type: incentivized');
+
         if (channel.ordering == ChannelOrder.ORDERED) {
             require(
                 packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],
@@ -659,6 +669,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
+        require(channel.feeEnabled, 'invalid channel type: non-incentivized');
         if (channel.ordering == ChannelOrder.ORDERED) {
             require(
                 packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],

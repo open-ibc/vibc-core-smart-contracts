@@ -17,6 +17,11 @@ contract FeeTest is PacketSenderTest {
 
     PacketFee[] packetFees;
 
+    function setUp() public override {
+        feeEnabled = true;
+        super.setUp();
+    }
+
     modifier useFeeTestCases() {
         // initialize an array of PacketFee with different values
         packetFees.push(PacketFee(0, 0, 0));
@@ -70,6 +75,14 @@ contract FeeTest is PacketSenderTest {
             maxTimeout,
             fee
         );
+    }
+
+    // call to acknowledgement fails if the channel is incentivized
+    function test_must_incentivizedAck() public useFeeTestCases {
+        vm.startPrank(relayer);
+        sendPacket();
+        vm.expectRevert('invalid channel type: incentivized');
+        dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
     // claim ack fee on receving ack

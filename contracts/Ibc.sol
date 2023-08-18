@@ -57,6 +57,7 @@ enum ChannelOrder {
 struct Channel {
     string version;
     ChannelOrder ordering;
+    bool feeEnabled;
     string[] connectionHops;
     string counterpartyPortId;
     bytes32 counterpartyChannelId;
