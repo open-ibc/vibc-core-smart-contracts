@@ -122,13 +122,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
     constructor(
         ZKMintVerifier _verifier,
-        address payable _escrow,
+        Escrow _escrow,
         string memory initPortPrefix,
         uint32 fraudProofWindowSeconds_
     ) {
         verifier = _verifier;
-        escrow = Escrow(_escrow);
-        require(_escrow != address(0), 'Escrow cannot be zero address');
+        // require(_escrow != address(0), 'Escrow cannot be zero address');
+        escrow = _escrow;
 
         // initialize portPrefix
         portPrefix = initPortPrefix;

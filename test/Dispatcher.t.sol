@@ -106,7 +106,7 @@ contract Base is Test {
         );
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
-    address payable escrow = payable(new Escrow());
+    Escrow escrow = new Escrow();
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
     Proof emptyProof;
@@ -503,7 +503,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     function test_success() public {
         bytes memory packet = abi.encodePacked(payload);
         for (uint64 index = 0; index < 3; index++) {
-            uint256 balance = escrow.balance;
+            uint256 balance = address(escrow).balance;
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
             emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp, fee);
@@ -514,7 +514,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
                 timeoutTimestamp,
                 fee
             );
-            assertEq(escrow.balance - balance, Ibc.calcEscrowFee(fee));
+            assertEq(address(escrow).balance - balance, Ibc.calcEscrowFee(fee));
 
             // query escrowed fee per packet
             PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
