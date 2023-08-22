@@ -603,7 +603,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         // proof window now, so it should transition to trusted upon
         // receiving a data packet.
         vm.warp(1802);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, Height(0, 9999), maxTimeout), validProof);       
 
         // the previous untrusted state should be trusted.
         require(1043 == dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted optimistic consensus state should be updated');
@@ -627,7 +627,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         // the op consensus state is still within the fraud proof
         // window, so it shouldn't transition to trusted state.
         vm.warp(1600);
-        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, maxTimeout), validProof);       
+        dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, Height(0, 9999), maxTimeout), validProof);       
 
         // the state transition shouldn't happen.
         require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted optimistic consensus state should not be updated');
