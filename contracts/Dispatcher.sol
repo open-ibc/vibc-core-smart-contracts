@@ -192,18 +192,64 @@ contract Dispatcher is IbcDispatcher, Ownable {
         return pendingOptimisticConsensusState.time;
     }
 
+    // getPendingOptimisticConsensusStateTimeWithPromotion tries to
+    // promote the optimistic consensus state and returns the
+    // timestamp associated with the trusted execution state.
+    function getPendingOptimisticConsensusStateTimeWithPromotion() public returns (uint256) {
+        tryPromotePendingOpConsensusState();
+        return pendingOptimisticConsensusState.time;
+    }
+
     // getTrustedOptimisticConsensusStateTime returns the timestamp associated with the
     // trusted execution state.
     function getTrustedOptimisticConsensusStateTime() public view returns (uint256) {
         return trustedOptimisticConsensusState.time;
     }
 
+    // getTrustedOptimisticConsensusStateTimeWithPromotion tries to
+    // promote the optimistic consensus state and returns the
+    // timestamp associated with the trusted execution state.
+    function getTrustedOptimisticConsensusStateTimeWithPromotion() public returns (uint256) {
+        tryPromotePendingOpConsensusState();
+        return trustedOptimisticConsensusState.time;
+    }
+
+    // getTrustedOptimisticConsensusStateHeight returns the height of
+    // the trusted optimistic consensus state.
     function getTrustedOptimisticConsensusStateHeight() public view returns (uint256) {
         return trustedOptimisticConsensusState.height;
     }
 
+    // getTrustedOptimisticConsensusStateTimeWithPromotion tries to
+    // promote the optimistic consensus state and returns the
+    // timestamp associated with the trusted execution state.
+    function getTrustedOptimisticConsensusStateHeightWithPromotion() public returns (uint256) {
+        tryPromotePendingOpConsensusState();
+        return trustedOptimisticConsensusState.height;
+    }
+
+    // getPendingOptimisticConsensusStateHeight returns the height
+    // associated with the pending optimistic consensus state.
     function getPendingOptimisticConsensusStateHeight() public view returns (uint256) {
         return pendingOptimisticConsensusState.height;
+    }
+
+    // getPendingOptimisticConsensusStateHeightWithPromotion tries to
+    // promote the optimistic consensus state and returns the height
+    // associated with the pending execution state.
+    function getPendingOptimisticConsensusStateHeightWithPromotion() public returns (uint256) {
+        tryPromotePendingOpConsensusState();
+        return trustedOptimisticConsensusState.height;
+    }
+
+    // check if the current untrusted op consensus state is outside the fraud proof window and
+    // set it to be the trusted op consensus state if so.
+    function tryPromotePendingOpConsensusState() internal {
+        if (block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds &&
+            pendingOptimisticConsensusState.height != 0) {
+            trustedOptimisticConsensusState = pendingOptimisticConsensusState;
+            pendingOptimisticConsensusState = OptimisticConsensusState(0, 0, 0, 0);
+        }
     }
 
     function getConsensusStateHeight() public view returns (uint256) {
@@ -270,6 +316,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // is used for fraud proof and we cannot trust the
         // timestamp on untrusted messages.
         pendingOptimisticConsensusState.time = block.timestamp;
+
         return;
     }
 
@@ -631,12 +678,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             'Receiver is not the intended packet destination'
         );
 
-        // check if the current untrusted op consensus state is outside the fraud proof window and
-        // set it to be the trusted op consensus state if so.
-        if (block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds) {
-            trustedOptimisticConsensusState = pendingOptimisticConsensusState;
-            pendingOptimisticConsensusState = OptimisticConsensusState(0, 0, 0, 0);
-        }
+        tryPromotePendingOpConsensusState();
 
         verifyMembership(
             proof,
