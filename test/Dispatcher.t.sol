@@ -586,7 +586,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         }
     }
 
-    function test_recvPacket_pendingOptimisticConsensusStateTransition() public {
+    function test_recvPacket_promoteOpConsensusState() public {
         uint256 prevTimestamp = block.timestamp;
 
         // update client with an untrusted execution state
@@ -612,7 +612,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
         vm.warp(prevTimestamp);
     }
 
-    function test_recvPacket_pendingOptimisticConsensusStateNoTransition() public {
+    function test_recvPacket_notPromoteOpConsensusState() public {
         uint256 prevTimestamp = block.timestamp;
 
         // update client with an untrusted execution state
@@ -631,6 +631,27 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
 
         // the state transition shouldn't happen.
         require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted optimistic consensus state should not be updated');
+
+        // revert to the previous state
+        vm.warp(prevTimestamp);
+    }
+
+    function test_getTrustedOptimisticConsensusStateHeightWithPromotion_promoteOpConsensusState() public {
+        uint256 prevTimestamp = block.timestamp;
+
+        // update client with an untrusted execution state
+        dispatcher.updateClientWithOptimisticConsensusState(OptimisticConsensusState(1,      // app hash
+                                                                                     1,      // valset hash
+                                                                                     1,      // time
+                                                                                     1043)); // height
+
+        require(1043 == dispatcher.getPendingOptimisticConsensusStateHeight(), 'untrusted client state should be updated');
+        require(1043 != dispatcher.getTrustedOptimisticConsensusStateHeight(), 'trusted client state should not be updated');
+
+        // the op consensus state is still within the fraud proof
+        // window, so it shouldn't transition to trusted state.
+        vm.warp(1802);
+        require(1043 == dispatcher.getTrustedOptimisticConsensusStateHeightWithPromotion());
 
         // revert to the previous state
         vm.warp(prevTimestamp);
