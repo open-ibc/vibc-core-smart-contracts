@@ -4,15 +4,6 @@ pragma solidity ^0.8.0;
 import './IbcReceiver.sol';
 
 
-// OptimisticConsensusState contains the minimum information required
-// to perform membership proof for IBC messages.
-struct OptimisticConsensusState {
-    uint256 app_hash;
-    uint256 valset_hash;
-    uint256 time;
-    uint256 height;
-}
-
 // ConsensusState contains the complete information that can be used
 // to verify the next update for consensus state.
 //
@@ -39,14 +30,14 @@ interface ZKMintVerifier {
     ) external view returns (bool);
 
     function verifyMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key,
         bytes calldata expectedValue
     ) external pure returns (bool);
 
     function verifyNonMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key
     ) external pure returns (bool);

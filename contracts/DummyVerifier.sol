@@ -27,7 +27,7 @@ contract DummyVerifier is ZKMintVerifier {
     }
 
     function verifyMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key,
         bytes calldata expectedValue
@@ -41,7 +41,7 @@ contract DummyVerifier is ZKMintVerifier {
     }
 
     function verifyNonMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key
     ) external pure override returns (bool) {
