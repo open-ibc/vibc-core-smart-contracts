@@ -9,6 +9,7 @@ import {IbcReceiver} from '../contracts/IbcReceiver.sol';
 import '../contracts/IbcVerifier.sol';
 import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
+import '../contracts/OpConsensusStateManager.sol';
 
 contract Base is Test {
     uint64 UINT64_MAX = 18446744073709551615;
@@ -109,6 +110,8 @@ contract Base is Test {
     uint64 maxTimeout = UINT64_MAX;
     Escrow escrow = new Escrow();
 
+    OptimisticConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
+
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
     Proof emptyProof;
     Proof invalidProof = Proof(Height(0, 42), bytes('')); // invalid proof with empty proof bytes
@@ -141,7 +144,7 @@ contract Base is Test {
 
 contract DispatcherCreateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
     }
 
     function test_success() public {
@@ -163,7 +166,7 @@ contract DispatcherCreateClientTest is Test, Base {
 
 contract DispatcherUpdateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
         dispatcher.createClient(initClientMsg);
     }
 
@@ -183,7 +186,7 @@ contract DispatcherUpdateClientTest is Test, Base {
 
 contract DispatcherUpgradeClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClientWithConsensusState(trustedState, proof);
     }
@@ -220,7 +223,7 @@ contract ChannelTestBase is Test, Base {
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClientWithConsensusState(trustedState, proof);
 
@@ -460,7 +463,7 @@ contract ChannelOpenTestBase is Test, Base {
         connectionHops[0] = 'connection-1';
         connectionHops[1] = 'connection-2';
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, 1800);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
         dispatcher.createClient(initClientMsg);
 
         Escrow myEscrow = Escrow(escrow);
