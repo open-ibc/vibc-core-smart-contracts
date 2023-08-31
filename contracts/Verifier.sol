@@ -29,17 +29,13 @@ contract Verifier is ZKMintVerifier {
     }
 
     function verifyMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key,
         bytes calldata expectedValue
     ) external pure override returns (bool) {
         require(key.length > 0, 'Key cannot be empty');
         require(expectedValue.length > 0, 'Expected value cannot be empty');
-        require(
-            consensusState.height >= proof.proofHeight.revision_height,
-            'Consensus state not sufficient for Merkle proof membership verification'
-        );
 
         // TODO: replace with real merkle verification logic
         // For now, a dummy proof verification is implemented
@@ -47,15 +43,11 @@ contract Verifier is ZKMintVerifier {
     }
 
     function verifyNonMembership(
-        OptimisticConsensusState calldata consensusState,
+        uint256 appHash,
         Proof calldata proof,
         bytes calldata key
     ) external pure override returns (bool) {
         require(key.length > 0, 'Key cannot be empty');
-        require(
-            consensusState.height >= proof.proofHeight.revision_height,
-            'Consensus state not sufficient for Merkle proof non-membership verification'
-        );
 
         // TODO: replace with real merkle verification logic
         // For now, a dummy proof verification is implemented

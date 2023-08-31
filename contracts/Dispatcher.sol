@@ -9,6 +9,7 @@ import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
 import './IbcVerifier.sol';
 import {Escrow} from './Escrow.sol';
+import './OpConsensusStateManager.sol';
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -89,13 +90,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
     // fields
     //
+    using OptimisticConsensusStateManager for OptimisticConsensusStateManager.DataStore;
+    OptimisticConsensusStateManager.DataStore private opConsensusStatesStore;
+
     ZKMintVerifier verifier;
     Escrow escrow;
     bool isClientCreated = false;
     ConsensusState public latestConsensusState;
-    OptimisticConsensusState public trustedOptimisticConsensusState;
-    OptimisticConsensusState public pendingOptimisticConsensusState;
-    uint32 public fraudProofWindowSeconds;
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string portPrefix;
     uint32 portPrefixLen;
@@ -135,7 +136,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
 
-        fraudProofWindowSeconds = fraudProofWindowSeconds_;
+        opConsensusStatesStore.fraudProofWindowSeconds = fraudProofWindowSeconds_;
     }
 
     //
@@ -185,78 +186,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
         return hexStrToAddress(portSuffix) == addr;
     }
 
-    // getPendingOptimisticConsensusStateTime returns the timestamp associated with the
-    // trusted execution state.
-    function getPendingOptimisticConsensusStateTime() public view returns (uint256) {
-        return pendingOptimisticConsensusState.time;
-    }
-
-    // getPendingOptimisticConsensusStateTimeWithPromotion tries to
-    // promote the optimistic consensus state and returns the
-    // timestamp associated with the trusted execution state.
-    function getPendingOptimisticConsensusStateTimeWithPromotion() public returns (uint256) {
-        tryPromotePendingOpConsensusState();
-        return pendingOptimisticConsensusState.time;
-    }
-
-    // getTrustedOptimisticConsensusStateTime returns the timestamp associated with the
-    // trusted execution state.
-    function getTrustedOptimisticConsensusStateTime() public view returns (uint256) {
-        return trustedOptimisticConsensusState.time;
-    }
-
-    // getTrustedOptimisticConsensusStateTimeWithPromotion tries to
-    // promote the optimistic consensus state and returns the
-    // timestamp associated with the trusted execution state.
-    function getTrustedOptimisticConsensusStateTimeWithPromotion() public returns (uint256) {
-        tryPromotePendingOpConsensusState();
-        return trustedOptimisticConsensusState.time;
-    }
-
-    // getTrustedOptimisticConsensusStateHeight returns the height of
-    // the trusted optimistic consensus state.
-    function getTrustedOptimisticConsensusStateHeight() public view returns (uint256) {
-        return trustedOptimisticConsensusState.height;
-    }
-
-    // getTrustedOptimisticConsensusStateTimeWithPromotion tries to
-    // promote the optimistic consensus state and returns the
-    // timestamp associated with the trusted execution state.
-    function getTrustedOptimisticConsensusStateHeightWithPromotion() public returns (uint256) {
-        tryPromotePendingOpConsensusState();
-        return trustedOptimisticConsensusState.height;
-    }
-
-    // getPendingOptimisticConsensusStateHeight returns the height
-    // associated with the pending optimistic consensus state.
-    function getPendingOptimisticConsensusStateHeight() public view returns (uint256) {
-        return pendingOptimisticConsensusState.height;
-    }
-
-    // getPendingOptimisticConsensusStateHeightWithPromotion tries to
-    // promote the optimistic consensus state and returns the height
-    // associated with the pending execution state.
-    function getPendingOptimisticConsensusStateHeightWithPromotion() public returns (uint256) {
-        tryPromotePendingOpConsensusState();
-        return trustedOptimisticConsensusState.height;
-    }
-
-    // check if the current untrusted op consensus state is outside the fraud proof window and
-    // set it to be the trusted op consensus state if so.
-    function tryPromotePendingOpConsensusState() internal {
-        if (
-            block.timestamp > pendingOptimisticConsensusState.time + fraudProofWindowSeconds &&
-            pendingOptimisticConsensusState.height != 0
-        ) {
-            trustedOptimisticConsensusState = pendingOptimisticConsensusState;
-            pendingOptimisticConsensusState = OptimisticConsensusState(0, 0, 0, 0);
-        }
-    }
-
-    function getConsensusStateHeight() public view returns (uint256) {
-        return latestConsensusState.height;
-    }
-
     //
     // CoreSC maaintainer methods, only invoked by the owner
     //
@@ -277,17 +206,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
         require(!isClientCreated, 'Client already created');
         isClientCreated = true;
         latestConsensusState = initClientMsg.consensusState;
-
-        // initClientMsg contains a consensus state that is already
-        // trusted, so we can use it to update the trusted optimistic
-        // consensus state if the non-optimistic consensus state is
-        // newer.
-        if (trustedOptimisticConsensusState.height <= latestConsensusState.height) {
-            trustedOptimisticConsensusState.app_hash = latestConsensusState.app_hash;
-            trustedOptimisticConsensusState.valset_hash = latestConsensusState.valset_hash;
-            trustedOptimisticConsensusState.time = latestConsensusState.time;
-            trustedOptimisticConsensusState.height = latestConsensusState.height;
-        }
     }
 
     // updateClientWithConsensusState updates the client with the
@@ -307,20 +225,17 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
-    function updateClientWithOptimisticConsensusState(OptimisticConsensusState calldata opConsensusState) external {
+    function updateClientWithOptimisticConsensusState(uint256 height, uint256 appHash)
+        external returns (uint256 fraudProofEndTime, bool ended) {
         require(isClientCreated, 'Client not created');
-        require(
-            opConsensusState.height >= pendingOptimisticConsensusState.height,
-            'UpdateClientMsg proof verification failed: must update to a newer op consensus state'
-        );
-        pendingOptimisticConsensusState = opConsensusState;
+        return opConsensusStatesStore.addOpConsensusState(height, appHash);
+    }
 
-        // Use the timestamp on the EVM chain since the timestamp
-        // is used for fraud proof and we cannot trust the
-        // timestamp on untrusted messages.
-        pendingOptimisticConsensusState.time = block.timestamp;
-
-        return;
+    // getOptimisticConsensusState
+    function getOptimisticConsensusState(uint256 height) external
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+        require(isClientCreated, 'Client not created');
+        return opConsensusStatesStore.getState(height);
     }
 
     /**
@@ -769,8 +684,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
             'Receiver is not the intended packet destination'
         );
 
-        tryPromotePendingOpConsensusState();
-
         verifyMembership(
             proof,
             'packet/commitment/path',
@@ -884,21 +797,15 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bytes memory key,
         bytes memory expectedValue,
         string memory message
-    ) internal view {
-        require(
-            trustedOptimisticConsensusState.height >= proof.proofHeight.revision_height,
-            'cannot verify the proof with current consensus state'
-        );
-
-        require(verifier.verifyMembership(trustedOptimisticConsensusState, proof, key, expectedValue), message);
+    ) internal {
+        (uint256 appHash, , bool ended) = opConsensusStatesStore.getState(proof.proofHeight.revision_height);
+        require(ended, 'appHash hasn\'t passed the fraud proof window');
+        require(verifier.verifyMembership(appHash, proof, key, expectedValue), message);
     }
 
-    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) internal view {
-        require(
-            trustedOptimisticConsensusState.height >= proof.proofHeight.revision_height,
-            'cannot verify the proof with current consensus state'
-        );
-
-        require(verifier.verifyNonMembership(trustedOptimisticConsensusState, proof, key), message);
+    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) internal {
+        (uint256 appHash, , bool ended) = opConsensusStatesStore.getState(proof.proofHeight.revision_height);
+        require(ended, 'appHash hasn\'t passed the fraud proof window');
+        require(verifier.verifyNonMembership(appHash, proof, key), message);
     }
 }
