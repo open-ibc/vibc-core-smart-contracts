@@ -7,6 +7,8 @@ import './Ibc.sol';
 import './IbcReceiver.sol';
 import './IbcDispatcher.sol';
 
+error invalidCounterPartyPortId();
+
 contract Mars is IbcReceiver, Ownable {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
@@ -44,7 +46,9 @@ contract Mars is IbcReceiver, Ownable {
         bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
     ) external returns (string memory selectedVersion) {
-        require(bytes(counterpartyPortId).length > 8, 'Invalid counterpartyPortId');
+        if (bytes(counterpartyPortId).length <= 8) {
+            revert invalidCounterPartyPortId();
+        }
         /**
          * Version selection is determined by if the callback is invoked on behalf of ChanOpenInit or ChanOpenTry.
          * ChanOpenInit: self version should be provided whereas the counterparty version is empty.
