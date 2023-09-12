@@ -156,7 +156,7 @@ contract DispatcherCreateClientTest is Test, Base {
 
     function test_onlyOnce() public {
         dispatcher.createClient(initClientMsg);
-        vm.expectRevert('Client already created');
+        vm.expectRevert(abi.encodeWithSignature('clientAlreadyCreated()'));
         dispatcher.createClient(initClientMsg);
     }
 }
@@ -172,10 +172,10 @@ contract DispatcherUpdateClientTest is Test, Base {
     }
 
     function test_updateConsensusState_invalid() public {
-        vm.expectRevert('UpdateClientMsg proof verification failed');
+        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
         dispatcher.updateClientWithConsensusState(untrustedState, proof);
 
-        vm.expectRevert('UpdateClientMsg proof verification failed');
+        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
         ConsensusState memory invalidConsensusState;
         dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
     }
@@ -348,7 +348,7 @@ contract DispatcherOpenIbcChannelTest is ChannelTestBase {
         ];
         for (uint i = 0; i < cps.length; i++) {
             cp = cps[i];
-            vm.expectRevert('Invalid counterpartyPortId');
+            vm.expectRevert(abi.encodeWithSignature('invalidCounterPartyPortId()'));
             dispatcher.openIbcChannel(
                 IbcReceiver(mars),
                 version.self,
@@ -518,7 +518,7 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
 
     function test_closeChannelInit_mustOwner() public {
         Mars earth = new Mars();
-        vm.expectRevert('Channel not owned by msg.sender');
+        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
         earth.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
     }
 
@@ -529,7 +529,7 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     }
 
     function test_closeChannelConfirm_mustOwner() public {
-        vm.expectRevert('Channel not owned by portAddress');
+        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedByPortAddress()'));
         dispatcher.onCloseIbcChannel(address(mars), 'channel-999', validProof);
     }
 
@@ -570,7 +570,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
         Mars earth = new Mars();
-        vm.expectRevert('Channel not owned by sender');
+        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
         earth.greet{value: Ibc.calcEscrowFee(fee)}(
             IbcDispatcher(dispatcher),
             payload,
@@ -673,7 +673,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
         dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
-        vm.expectRevert('Unexpected packet sequence');
+        vm.expectRevert(abi.encodeWithSignature('unexpectedPacketSequence()'));
         dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
@@ -698,14 +698,14 @@ contract DispatcherAckPacketTest is PacketSenderTest {
 
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
 
         sendPacket();
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
@@ -718,7 +718,8 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
 
         // only 2nd ack is allowed; so the 3rd ack fails
-        vm.expectRevert('Unexpected packet sequence');
+        vm.expectRevert(abi.encodeWithSignature('unexpectedPacketSequence()')); 
+
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(3), genAckPacket(3), validProof);
     }
 
@@ -733,7 +734,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert('Receiver is not the original packet sender');
+        vm.expectRevert(abi.encodeWithSignature('receiverNotOriginPacketSender()'));
         dispatcher.acknowledgement(IbcReceiver(mars), packetEarth, ackPacket, validProof);
     }
 
@@ -745,7 +746,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
     }
 
@@ -757,7 +758,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
             bytes('ack')
         );
 
-        vm.expectRevert('invalid channel type: non-incentivized');
+        vm.expectRevert(abi.encodeWithSignature('invalidChannelType(string)', 'non-incentivized'));
         dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
     }
 }
@@ -779,14 +780,14 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
 
     // cannot timeout packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
         dispatcher.timeout(IbcReceiver(mars), genPacket(1), validProof);
 
         sendPacket();
         dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
 
         // packet commitment is removed after timeout
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
         dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
     }
 
@@ -802,7 +803,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert('Receiver is not the original packet sender');
+        vm.expectRevert(abi.encodeWithSignature('receiverNotIndtendedPacketDestination()'));
         dispatcher.timeout(IbcReceiver(mars), packetEarth, validProof);
     }
 
@@ -814,7 +815,8 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert('Packet commitment not found');
+        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        /* vm.expectRevert('Packet commitment not found'); */
         dispatcher.timeout(IbcReceiver(mars), packet, validProof);
     }
 

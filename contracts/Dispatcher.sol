@@ -26,6 +26,39 @@ struct UpgradeClientMsg {
     ConsensusState consensusState;
 }
 
+// misc errors.
+error invalidCounterParty();
+error invalidCounterPartyPortId();
+error invalidHexStringLength();
+error invalidRelayerAddress();
+error consensusStateVerificationFailed();
+error packetNotTimedOut();
+
+// packet sequence related errors.
+error invalidPacketSequence();
+error unexpectedPacketSequence();
+
+// channel related errors.
+error channelNotOwnedBySender();
+error channelNotOwnedByPortAddress();
+
+// client related errors.
+error clientAlreadyCreated();
+error clientNotCreated();
+
+// packet commitment related errors.
+error packetCommitmentNotFound();
+error ackPacketCommitmentAlreadyExists();
+error packetReceiptAlreadyExists();
+
+// receiver related errors.
+error receiverNotIndtendedPacketDestination();
+error receiverNotOriginPacketSender();
+
+// fee related errors.
+error escrowPacketFee();
+error invalidChannelType(string channelType);
+
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -149,7 +182,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * hexStr is case-insensitive.
      */
     function hexStrToAddress(string memory hexStr) internal pure returns (address) {
-        require(bytes(hexStr).length == 40, 'Invalid hex string length');
+        if (bytes(hexStr).length != 40) {
+            revert invalidHexStringLength();
+        }
 
         bytes memory strBytes = bytes(hexStr);
         bytes memory addrBytes = new bytes(20);
@@ -203,7 +238,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @param initClientMsg The initial client state and consensus state.
      */
     function createClient(InitClientMsg calldata initClientMsg) external onlyOwner {
-        require(!isClientCreated, 'Client already created');
+        if (isClientCreated) {
+            revert clientAlreadyCreated();
+        }
+
         isClientCreated = true;
         latestConsensusState = initClientMsg.consensusState;
     }
@@ -212,11 +250,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // latest consensus state. The zkproof related to this consensus
     // state is used to verify the consensus state.
     function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
-        require(isClientCreated, 'Client not created');
-        require(
-            verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof),
-            'UpdateClientMsg proof verification failed'
-        );
+        if (!isClientCreated) {
+            revert clientNotCreated();
+        }
+        if (!verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof)) {
+            revert consensusStateVerificationFailed();
+        }
+
         latestConsensusState = consensusState;
         return;
     }
@@ -227,14 +267,20 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // window.
     function updateClientWithOptimisticConsensusState(uint256 height, uint256 appHash)
         external returns (uint256 fraudProofEndTime, bool ended) {
-        require(isClientCreated, 'Client not created');
+        if (!isClientCreated) {
+            revert clientNotCreated();
+        }
+
         return opConsensusStatesStore.addOpConsensusState(height, appHash);
     }
 
     // getOptimisticConsensusState
     function getOptimisticConsensusState(uint256 height) external
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
-        require(isClientCreated, 'Client not created');
+        if (!isClientCreated) {
+            revert clientNotCreated();
+        }
+
         return opConsensusStatesStore.getState(height);
     }
 
@@ -244,7 +290,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @param upgradeClientMsg The new client state and consensus state.
      */
     function upgradeClient(UpgradeClientMsg calldata upgradeClientMsg) external onlyOwner {
-        require(isClientCreated, 'Client not created');
+        if (!isClientCreated) {
+            revert clientNotCreated();
+        }
+
         latestConsensusState = upgradeClientMsg.consensusState;
     }
 
@@ -295,7 +344,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
         CounterParty calldata counterparty,
         Proof calldata proof
     ) external {
-        require(bytes(counterparty.portId).length != 0, 'Invalid counterpartyPortId');
+        if (bytes(counterparty.portId).length == 0) {
+            revert invalidCounterPartyPortId();
+        }
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
@@ -306,8 +357,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
             // this is the ChanOpenTry; counterparty must not be zero-value
             isChanOpenTry = true;
         } else {
-            revert('Invalid counterparty');
+            revert invalidCounterParty();
         }
+
         if (isChanOpenTry) {
             // TODO: fill below proof path
             verifyMembership(
@@ -403,7 +455,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function closeIbcChannel(bytes32 channelId) external {
         Channel memory channel = portChannelMap[msg.sender][channelId];
-        require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by msg.sender');
+        if (channel.counterpartyChannelId == bytes32(0)) {
+            revert channelNotOwnedBySender();
+        }
+
         IbcReceiver reciever = IbcReceiver(msg.sender);
         reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
         emit CloseIbcChannel(msg.sender, channelId);
@@ -425,7 +480,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // ensure port owns channel
         Channel memory channel = portChannelMap[portAddress][channelId];
-        require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by portAddress');
+        if (channel.counterpartyChannelId == bytes32(0)) {
+            revert channelNotOwnedByPortAddress();
+        }
 
         // confirm with dApp by calling its callback
         IbcReceiver reciever = IbcReceiver(portAddress);
@@ -458,15 +515,22 @@ contract Dispatcher is IbcDispatcher, Ownable {
     ) external payable {
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
-        require(channel.counterpartyChannelId != bytes32(0), 'Channel not owned by sender');
+        if (channel.counterpartyChannelId == bytes32(0)) {
+            revert channelNotOwnedBySender();
+        }
 
         // current packet sequence
         uint64 sequence = nextSequenceSend[msg.sender][channelId];
-        require(sequence > 0, 'Invalid packet sequence');
+        if (sequence == 0) {
+            revert invalidPacketSequence();
+        }
 
         // escescrow packet fee
         (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
-        require(sent, 'Failed to escrow packet fee');
+        if (!sent) {
+            revert escrowPacketFee();
+        }
+
         // record packet fees
         packetFees[msg.sender][channelId][sequence] = fee;
 
@@ -492,11 +556,15 @@ contract Dispatcher is IbcDispatcher, Ownable {
     ) external payable {
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[portAddress][channelId][sequence];
-        require(hasCommitment, 'Packet commitment not found');
+        if (!hasCommitment) {
+            revert packetCommitmentNotFound();
+        }
 
         // escrow packet fee
         (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
-        require(sent, 'Failed to escrow packet fee');
+        if (!sent) {
+            revert escrowPacketFee();
+        }
 
         // Record accumulated packet fees
         PacketFee storage packetFee = packetFees[portAddress][channelId][sequence];
@@ -525,7 +593,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         Proof calldata proof
     ) external {
         // verify `receiver` is the original packet sender
-        require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
+        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
+            revert receiverNotOriginPacketSender();
+        }
+
         // prove ack packet is on Polymer chain
         verifyMembership(
             proof,
@@ -535,17 +606,21 @@ contract Dispatcher is IbcDispatcher, Ownable {
         );
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-        require(hasCommitment, 'Packet commitment not found');
+        if (!hasCommitment) {
+            revert packetCommitmentNotFound();
+        }
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
-        require(!channel.feeEnabled, 'invalid channel type: incentivized');
+        if (channel.feeEnabled) {
+            revert invalidChannelType('incentivized');
+        }
 
         if (channel.ordering == ChannelOrder.ORDERED) {
-            require(
-                packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],
-                'Unexpected packet sequence'
-            );
+            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                revert unexpectedPacketSequence();
+            }
+            
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
@@ -574,27 +649,37 @@ contract Dispatcher is IbcDispatcher, Ownable {
         Proof calldata proof
     ) external {
         // verify `receiver` is the original packet sender
-        require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
+        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
+            revert receiverNotOriginPacketSender();
+        }
+
         // prove ack packet is on Polymer chain
         verifyMembership(proof, 'ack/packet/path', 'expected ack receipt hash on Polymer chain', 'Fail to prove ack');
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-        require(hasCommitment, 'Packet commitment not found');
+        if (!hasCommitment) {
+            revert packetCommitmentNotFound();
+        }
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
-        require(channel.feeEnabled, 'invalid channel type: non-incentivized');
+        if (!channel.feeEnabled) {
+            revert invalidChannelType('non-incentivized');
+        }
+
         if (channel.ordering == ChannelOrder.ORDERED) {
-            require(
-                packet.sequence == nextSequenceAck[address(receiver)][packet.src.channelId],
-                'Unexpected packet sequence'
-            );
+            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                revert unexpectedPacketSequence();
+            }
+            
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
         // distribute fee to relayer
-        require(incentivizedAck.relayer.length == 20, 'Invalid relayer address');
+        if (incentivizedAck.relayer.length != 20) {
+            revert invalidRelayerAddress();
+        }
         address payable recvFeePayee;
         if (keccak256(abi.encodePacked(incentivizedAck.relayer)) == keccak256(abi.encodePacked(address(0)))) {
             // no forward relayer registered on Polymer, then refund to receiver
@@ -639,13 +724,18 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function timeout(IbcReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the original packet sender
-        require(portIdAddressMatch(address(receiver), packet.src.portId), 'Receiver is not the original packet sender');
+        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
+            revert receiverNotIndtendedPacketDestination();
+        }
+
         // prove absence of packet receipt on Polymer chain
         verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-        require(hasCommitment, 'Packet commitment not found');
+        if (!hasCommitment) {
+            revert packetCommitmentNotFound();
+        }
 
         PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
         if (packetFee.timeoutFee != 0) {
@@ -679,10 +769,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function recvPacket(IbcReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the intended packet destination
-        require(
-            portIdAddressMatch(address(receiver), packet.dest.portId),
-            'Receiver is not the intended packet destination'
-        );
+        if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
+            revert receiverNotIndtendedPacketDestination();
+        }
 
         verifyMembership(
             proof,
@@ -693,16 +782,19 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // verify packet has not been received yet
         bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
-        require(!hasReceipt, 'Packet receipt already exists');
+        if (hasReceipt) {
+            revert packetReceiptAlreadyExists();
+        }
+
         recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            require(
-                packet.sequence == nextSequenceRecv[address(receiver)][packet.dest.channelId],
-                'Unexpected packet sequence'
-            );
+            if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+                revert unexpectedPacketSequence();
+            }
+            
             nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
@@ -726,7 +818,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         AckPacket memory ack = receiver.onRecvPacket(packet);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
-        require(!hasAckPacketCommitment, 'Ack packet commitment already exists');
+        if (hasAckPacketCommitment) {
+            revert ackPacketCommitmentAlreadyExists();
+        }
+
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
@@ -759,12 +854,20 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
         // verify `receiver` is the original packet sender
-        require(portIdAddressMatch(receiver, packet.src.portId), 'Receiver is not the intended packet destination');
+        if (!portIdAddressMatch(receiver, packet.src.portId)) {
+            revert receiverNotIndtendedPacketDestination();
+        }
+
         // verify packet does not have a receipt
         bool hasReceipt = recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
-        require(!hasReceipt, 'Packet receipt already exists');
+        if (hasReceipt) {
+            revert packetReceiptAlreadyExists();
+        }
+
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        require(!isPacketTimeout(packet), 'Packet not timed out yet');
+        if (!isPacketTimeout(packet)) {
+            revert packetNotTimedOut();
+        }
 
         emit WriteTimeoutPacket(
             receiver,

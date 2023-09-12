@@ -4,12 +4,14 @@ pragma solidity ^0.8.13;
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 import '../contracts/Ibc.sol';
-import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
+import {invalidChannelType, Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
 import {IbcReceiver} from '../contracts/IbcReceiver.sol';
 import '../contracts/IbcVerifier.sol';
 import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
 import {PacketSenderTest} from './Dispatcher.t.sol';
+import "forge-std/console.sol";
+
 
 contract FeeTest is PacketSenderTest {
     address forwardRelayerPayee = deriveAddress('forward-payee');
@@ -81,7 +83,8 @@ contract FeeTest is PacketSenderTest {
     function test_must_incentivizedAck() public useFeeTestCases {
         vm.startPrank(relayer);
         sendPacket();
-        vm.expectRevert('invalid channel type: incentivized');
+        vm.expectRevert(abi.encodeWithSignature('invalidChannelType(string)',
+                                                'incentivized'));
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
