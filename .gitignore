@@ -20,3 +20,4 @@ src/contracts.template.ts
 .idea/
 .direnv/
 forge-cache/
+.envrc
