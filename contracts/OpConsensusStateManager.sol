@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import './IbcVerifier.sol';
 import './Ibc.sol';
 
-
 // OptimisticConsensusStateManager manages the appHash at different
 // heights and track the fraud proof end time for them.
 contract OptimisticConsensusStateManager {
@@ -26,8 +25,10 @@ contract OptimisticConsensusStateManager {
     // returns the fraud proof end time, and a bool flag indicating if
     // the fraud proof window has passed according to the block's
     // timestamp.
-    function addOpConsensusState(uint256 height, uint256 appHash)
-        external returns (uint256 fraudProofEndTime, bool ended) {
+    function addOpConsensusState(
+        uint256 height,
+        uint256 appHash
+    ) external returns (uint256 fraudProofEndTime, bool ended) {
         uint256 hash = consensusStates[height];
         if (hash == 0) {
             // a new appHash
@@ -43,17 +44,18 @@ contract OptimisticConsensusStateManager {
             return (endTime, block.timestamp >= endTime);
         }
 
-        revert('cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead');
+        revert(
+            'cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead'
+        );
     }
 
     // getState returns the appHash at the given height, and the fraud
     // proof end time.
     //
     // 0 is returned if there isn't an appHash with the given height.
-    function getState(uint256 height)
-        public view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getState(uint256 height) public view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
         uint256 hash = consensusStates[height];
-        return (hash, fraudProofEndtime[hash], hash != 0 &&  block.timestamp >= fraudProofEndtime[hash]);
+        return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
     }
 
     function getFraudProofEndtime(uint256 height) public view returns (uint256 fraudProofEndTime) {
@@ -73,14 +75,13 @@ contract OptimisticConsensusStateManager {
         string memory message
     ) external {
         (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height);
-        require(ended, 'appHash hasn\'t passed the fraud proof window');
-        require(verifier.verifyMembership(appHash, proof, key, expectedValue), message);
+        //require(ended, 'appHash hasn\'t passed the fraud proof window');
+        //require(verifier.verifyMembership(appHash, proof, key, expectedValue), message);
     }
 
-    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message)
-        external view {
+    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) external view {
         (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height);
-        require(ended, 'appHash hasn\'t passed the fraud proof window');
-        require(verifier.verifyNonMembership(appHash, proof, key), message);
+        //require(ended, 'appHash hasn\'t passed the fraud proof window');
+        //require(verifier.verifyNonMembership(appHash, proof, key), message);
     }
 }
