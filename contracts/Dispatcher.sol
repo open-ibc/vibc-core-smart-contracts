@@ -8,7 +8,7 @@ import './IbcDispatcher.sol';
 import './IbcReceiver.sol';
 import './IbcVerifier.sol';
 import {Escrow} from './Escrow.sol';
-import './OpConsensusStateManager.sol';
+import './ConsensusStateManager.sol';
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -147,7 +147,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // keep track of packet fees. PortAddress => ChannelId => PacketSequence => IbcFee
     mapping(address => mapping(bytes32 => mapping(uint64 => PacketFee))) packetFees;
 
-    OptimisticConsensusStateManager opConsensusStateManager;
+    ConsensusStateManager consensusStateManager;
 
     //
     // methods
@@ -157,7 +157,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         ZKMintVerifier _verifier,
         Escrow _escrow,
         string memory initPortPrefix,
-        OptimisticConsensusStateManager _opConsensusStateManager
+        ConsensusStateManager _consensusStateManager
     ) {
         verifier = _verifier;
         // require(_escrow != address(0), 'Escrow cannot be zero address');
@@ -167,7 +167,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
 
-        opConsensusStateManager = _opConsensusStateManager;
+        consensusStateManager = _consensusStateManager;
     }
 
     //
@@ -263,23 +263,26 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
-    function updateClientWithOptimisticConsensusState(uint256 height, uint256 appHash)
-        external returns (uint256 fraudProofEndTime, bool ended) {
+    function updateClientWithOptimisticConsensusState(
+        uint256 height,
+        uint256 appHash
+    ) external returns (uint256 fraudProofEndTime, bool ended) {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
 
-        return opConsensusStateManager.addOpConsensusState(height, appHash);
+        return consensusStateManager.addOpConsensusState(height, appHash);
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height) external view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getOptimisticConsensusState(
+        uint256 height
+    ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
 
-        return opConsensusStateManager.getState(height);
+        return consensusStateManager.getState(height);
     }
 
     /**
@@ -346,7 +349,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         if (isChanOpenTry) {
             // TODO: fill below proof path
-            opConsensusStateManager.verifyMembership(
+            consensusStateManager.verifyMembership(
                 proof,
                 'channel/path/to/be/added/here',
                 bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
@@ -391,7 +394,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         string calldata counterpartyVersion,
         Proof calldata proof
     ) external {
-        opConsensusStateManager.verifyMembership(
+        consensusStateManager.verifyMembership(
             proof,
             bytes('channel/path/to/be/added/here'),
             bytes('expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}'),
@@ -455,7 +458,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
      */
     function onCloseIbcChannel(address portAddress, bytes32 channelId, Proof calldata proof) external {
         // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-        opConsensusStateManager.verifyMembership(
+        consensusStateManager.verifyMembership(
             proof,
             bytes('channel/path/to/be/added/here'),
             bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}'),
@@ -582,7 +585,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // prove ack packet is on Polymer chain
-        opConsensusStateManager.verifyMembership(
+        consensusStateManager.verifyMembership(
             proof,
             bytes('ack/packet/path'),
             bytes('expected ack receipt hash on Polymer chain'),
@@ -604,7 +607,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
                 revert unexpectedPacketSequence();
             }
-            
+
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
@@ -638,7 +641,12 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // prove ack packet is on Polymer chain
-        opConsensusStateManager.verifyMembership(proof, 'ack/packet/path', 'expected ack receipt hash on Polymer chain', 'Fail to prove ack');
+        consensusStateManager.verifyMembership(
+            proof,
+            'ack/packet/path',
+            'expected ack receipt hash on Polymer chain',
+            'Fail to prove ack'
+        );
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -656,7 +664,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
                 revert unexpectedPacketSequence();
             }
-            
+
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
@@ -713,7 +721,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // prove absence of packet receipt on Polymer chain
-        opConsensusStateManager.verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
+        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -757,7 +765,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             revert receiverNotIndtendedPacketDestination();
         }
 
-        opConsensusStateManager.verifyMembership(
+        consensusStateManager.verifyMembership(
             proof,
             'packet/commitment/path',
             'expected virtual packet commitment hash on Polymer chain',
@@ -778,7 +786,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
                 revert unexpectedPacketSequence();
             }
-            
+
             nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 

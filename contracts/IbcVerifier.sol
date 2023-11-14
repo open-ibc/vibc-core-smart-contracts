@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import './IbcReceiver.sol';
 
-
 // ConsensusState contains the complete information that can be used
 // to verify the next update for consensus state.
 //
@@ -17,9 +16,9 @@ struct ConsensusState {
 }
 
 struct ZkProof {
-    uint256[2]  a;
+    uint256[2] a;
     uint256[2][2] b;
-    uint256[2]  c;
+    uint256[2] c;
 }
 
 interface ZKMintVerifier {
