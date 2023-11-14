@@ -5,16 +5,12 @@ import './IbcVerifier.sol';
 import './IbcReceiver.sol';
 
 function isConsensusStateFilled(ConsensusState calldata state) pure returns (bool) {
-    if (state.app_hash == 0 ||
-        state.valset_hash == 0 ||
-        state.time == 0 ||
-        state.height == 0) {
+    if (state.app_hash == 0 || state.valset_hash == 0 || state.time == 0 || state.height == 0) {
         return false;
-    }   
+    }
 
     return true;
 }
-
 
 contract DummyVerifier is ZKMintVerifier {
     function verifyConsensusState(
