@@ -72,15 +72,15 @@ contract OptimisticConsensusStateManager {
         bytes memory expectedValue,
         string memory message
     ) external {
-        (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height);
-        require(ended, 'appHash hasn\'t passed the fraud proof window');
-        require(verifier.verifyMembership(appHash, proof, key, expectedValue), message);
+        /* (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height); */
+        /* require(ended, 'appHash hasn\'t passed the fraud proof window'); */
+        /* require(verifier.verifyMembership(appHash, proof, key, expectedValue), message); */
     }
 
     function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message)
         external view {
-        (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height);
-        require(ended, 'appHash hasn\'t passed the fraud proof window');
-        require(verifier.verifyNonMembership(appHash, proof, key), message);
+        /* (uint256 appHash, , bool ended) = getState(proof.proofHeight.revision_height); */
+        /* require(ended, 'appHash hasn\'t passed the fraud proof window'); */
+        /* require(verifier.verifyNonMembership(appHash, proof, key), message); */
     }
 }

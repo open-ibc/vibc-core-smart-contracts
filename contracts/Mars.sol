@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/access/Ownable.sol';
 import './Ibc.sol';
 import './IbcReceiver.sol';
 import './IbcDispatcher.sol';
+import "forge-std/console.sol";
 
 error invalidCounterPartyPortId();
 
@@ -119,6 +120,7 @@ contract Mars is IbcReceiver, Ownable {
         uint64 timeoutTimestamp,
         PacketFee calldata fee
     ) external payable {
+        console.log("zf debug - greet");
         dispatcher.sendPacket{value: Ibc.calcEscrowFee(fee)}(channelId, bytes(message), timeoutTimestamp, fee);
     }
 }

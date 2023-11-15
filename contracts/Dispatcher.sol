@@ -9,6 +9,7 @@ import './IbcReceiver.sol';
 import './IbcVerifier.sol';
 import {Escrow} from './Escrow.sol';
 import './OpConsensusStateManager.sol';
+import "forge-std/console.sol";
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -34,11 +35,11 @@ error consensusStateVerificationFailed();
 error packetNotTimedOut();
 
 // packet sequence related errors.
-error invalidPacketSequence();
+error invalidPacketSequence(string);
 error unexpectedPacketSequence();
 
 // channel related errors.
-error channelNotOwnedBySender();
+error channelNotOwnedBySender(string);
 error channelNotOwnedByPortAddress();
 
 // client related errors.
@@ -55,7 +56,7 @@ error receiverNotIndtendedPacketDestination();
 error receiverNotOriginPacketSender();
 
 // fee related errors.
-error escrowPacketFee();
+error escrowPacketFee(string);
 error invalidChannelType(string channelType);
 
 /**
@@ -212,10 +213,16 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // verify an EVM address matches an IBC portId.
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
     function portIdAddressMatch(address addr, string calldata portId) public view returns (bool) {
+        console.log("zf debug - portIdAddressMatch");
+        console.log(addr);
+        console.log(portId);
+        console.log(portPrefix);
+        console.log(portId[0:portPrefixLen]);
         if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
             return false;
         }
         string memory portSuffix = portId[portPrefixLen:];
+        console.log(portSuffix);
         return hexStrToAddress(portSuffix) == addr;
     }
 
@@ -328,7 +335,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
         CounterParty calldata counterparty,
         Proof calldata proof
     ) external {
+        console.log("zf debug - openIbcChannel - cp0");
+
         if (bytes(counterparty.portId).length == 0) {
+            console.log("zf debug - openIbcChannel - cp1");
             revert invalidCounterPartyPortId();
         }
 
@@ -337,10 +347,13 @@ contract Dispatcher is IbcDispatcher, Ownable {
         bool isChanOpenTry = false;
         if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
             // ChanOpenInit with unknow conterparty
+            console.log("zf debug - openIbcChannel - cp2.1 - ChanOpenInit");
         } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
             // this is the ChanOpenTry; counterparty must not be zero-value
+            console.log("zf debug - openIbcChannel - cp2.2 - ChanOpenTry");
             isChanOpenTry = true;
         } else {
+            console.log("zf debug - openIbcChannel - cp2.3");
             revert invalidCounterParty();
         }
 
@@ -354,6 +367,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
             );
         }
 
+        console.log("zf debug - openIbcChannel - cp3");
+
         string memory selectedVersion = portAddress.onOpenIbcChannel(
             version,
             ordering,
@@ -363,6 +378,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
             counterparty.channelId,
             counterparty.version
         );
+
+        console.log("zf debug - openIbcChannel - cp4");
 
         emit OpenIbcChannel(
             address(portAddress),
@@ -398,7 +415,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
             'Fail to prove channel state'
         );
 
+        console.log("zf debug - connectIbcChannel - cp1");
+
         portAddress.onConnectIbcChannel(channelId, counterpartyChannelId, counterpartyVersion);
+
+        console.log("zf debug - connectIbcChannel - cp2");
 
         // Register port and channel mapping
         // TODO: check duplicated channel registration?
@@ -417,6 +438,8 @@ contract Dispatcher is IbcDispatcher, Ownable {
         nextSequenceSend[address(portAddress)][channelId] = 1;
         nextSequenceRecv[address(portAddress)][channelId] = 1;
         nextSequenceAck[address(portAddress)][channelId] = 1;
+
+        console.log("zf debug - connectIbcChannel - cp3");
 
         emit ConnectIbcChannel(address(portAddress), channelId);
     }
@@ -440,7 +463,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
     function closeIbcChannel(bytes32 channelId) external {
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
-            revert channelNotOwnedBySender();
+            revert channelNotOwnedBySender("channelNotOwnedBySender");
         }
 
         IbcReceiver reciever = IbcReceiver(msg.sender);
@@ -497,23 +520,29 @@ contract Dispatcher is IbcDispatcher, Ownable {
         uint64 timeoutTimestamp,
         PacketFee calldata fee
     ) external payable {
+        console.log("zf debug - sendPacket - cp1");
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
-            revert channelNotOwnedBySender();
+            console.log("zf debug - sendPacket - cp2");
+            revert channelNotOwnedBySender("channelNotOwnedBySender");
         }
 
         // current packet sequence
         uint64 sequence = nextSequenceSend[msg.sender][channelId];
         if (sequence == 0) {
-            revert invalidPacketSequence();
+            console.log("zf debug - sendPacket - cp3");
+            revert invalidPacketSequence("invalidPacketSequence");
         }
 
         // escescrow packet fee
         (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
         if (!sent) {
-            revert escrowPacketFee();
+            console.log("zf debug - sendPacket - cp4");
+            revert escrowPacketFee("escrowPacketFee");
         }
+
+        console.log("zf debug - sendPacket - cp5");
 
         // record packet fees
         packetFees[msg.sender][channelId][sequence] = fee;
@@ -547,7 +576,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // escrow packet fee
         (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
         if (!sent) {
-            revert escrowPacketFee();
+            revert escrowPacketFee("escrowPacketFee");
         }
 
         // Record accumulated packet fees
@@ -754,6 +783,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
     function recvPacket(IbcReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
+            console.log("zf debug - recvPacket - cp1");
             revert receiverNotIndtendedPacketDestination();
         }
 
@@ -767,6 +797,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify packet has not been received yet
         bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
+            console.log("zf debug - recvPacket - cp2");
             revert packetReceiptAlreadyExists();
         }
 
@@ -776,6 +807,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
             if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+                console.log("zf debug - recvPacket - cp3");
                 revert unexpectedPacketSequence();
             }
             
@@ -798,17 +830,23 @@ contract Dispatcher is IbcDispatcher, Ownable {
             return;
         }
 
+        console.log("zf debug - recvPacket - cp4");
+
         // Not timeout yet, then do normal handling
         AckPacket memory ack = receiver.onRecvPacket(packet);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
+            console.log("zf debug - recvPacket - cp5");
             revert ackPacketCommitmentAlreadyExists();
         }
 
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
+
+        
+        console.log("zf debug - recvPacket - cp6");
     }
 
     // TODO: add async writeAckPacket
