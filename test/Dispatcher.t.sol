@@ -209,7 +209,7 @@ struct VersionSet {
 }
 
 contract ChannelTestBase is Test, Base {
-    Mars mars = new Mars();
+    Mars mars;
     string[] connectionHops;
     VersionSet version = VersionSet('1.0', '1.0', '1.0');
     ChannelOrder ordering = ChannelOrder.ORDERED;
@@ -224,6 +224,8 @@ contract ChannelTestBase is Test, Base {
         connectionHops[1] = 'connection-2';
 
         dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
+        mars = new Mars(dispatcher);
+
         dispatcher.createClient(initClientMsg);
         dispatcher.updateClientWithConsensusState(trustedState, proof);
 
@@ -472,7 +474,7 @@ contract ChannelOpenTestBase is Test, Base {
         // anyone can run Relayers
         vm.startPrank(relayer);
         vm.deal(relayer, 100000 ether);
-        mars = new Mars();
+        mars = new Mars(dispatcher);
 
         dispatcher.updateClientWithConsensusState(trustedState, proof);
 
@@ -520,7 +522,7 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     }
 
     function test_closeChannelInit_mustOwner() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
         earth.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
     }
@@ -572,7 +574,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
 
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
         earth.greet{value: Ibc.calcEscrowFee(fee)}(
             IbcDispatcher(dispatcher),
@@ -727,7 +729,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
     }
 
     function test_invalidPort() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
 
@@ -796,7 +798,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
 
     // cannot timeout packets if original packet port doesn't match current port
     function test_invalidPort() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
 

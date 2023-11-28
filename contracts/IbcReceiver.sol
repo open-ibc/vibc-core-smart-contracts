@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.9;
 
+import '@openzeppelin/contracts/access/Ownable.sol';
 import './IbcDispatcher.sol';
 import './Ibc.sol';
 
@@ -47,4 +48,28 @@ interface IbcReceiver {
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId
     ) external;
+}
+
+contract IbcReceiverBase is Ownable {
+
+    IbcDispatcher public dispatcher;
+
+    /**
+     * @dev Constructor function that takes an IbcDispatcher address and grants the IBC_ROLE to the Polymer IBC Dispatcher.
+     * @param _dispatcher The address of the IbcDispatcher contract.
+     */
+    constructor(IbcDispatcher _dispatcher) Ownable() {
+        dispatcher = _dispatcher;
+    }
+
+
+    /**
+     * @dev Modifier to restrict access to only the IBC dispatcher.
+     * Only the address with the IBC_ROLE can execute the function.
+     * Should add this modifier to all IBC-related callback functions.
+     */
+    modifier onlyIbcDispatcher() {
+        require(msg.sender == address(dispatcher), 'only IBC dispatcher');
+        _;
+    }
 }
