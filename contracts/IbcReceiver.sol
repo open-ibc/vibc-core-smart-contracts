@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import './Ibc.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IbcDispatcher.sol";
+import "./Ibc.sol";
 
 /**
  * @title IbcReceiver
@@ -16,7 +16,6 @@ interface IbcReceiver {
     //
     // Packet handling methods
     //
-
     function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
@@ -26,7 +25,6 @@ interface IbcReceiver {
     //
     // Channel handshake methods
     //
-
     function onOpenIbcChannel(
         string calldata version,
         ChannelOrder ordering,
@@ -37,21 +35,14 @@ interface IbcReceiver {
         string calldata counterpartyVersion
     ) external returns (string memory selectedVersion);
 
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external;
+    function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
+        external;
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external;
+    function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external;
 }
 
 contract IbcReceiverBase is Ownable {
-
     IbcDispatcher public dispatcher;
 
     /**
@@ -62,6 +53,9 @@ contract IbcReceiverBase is Ownable {
         dispatcher = _dispatcher;
     }
 
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    // An empty function body is sufficient to receive packet fee refunds.
+    receive() external payable {}
 
     /**
      * @dev Modifier to restrict access to only the IBC dispatcher.
@@ -69,7 +63,7 @@ contract IbcReceiverBase is Ownable {
      * Should add this modifier to all IBC-related callback functions.
      */
     modifier onlyIbcDispatcher() {
-        require(msg.sender == address(dispatcher), 'only IBC dispatcher');
+        require(msg.sender == address(dispatcher), "only IBC dispatcher");
         _;
     }
 }

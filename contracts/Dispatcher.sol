@@ -2,13 +2,13 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import './IbcReceiver.sol';
-import './IbcVerifier.sol';
-import {Escrow} from './Escrow.sol';
-import './ConsensusStateManager.sol';
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IbcDispatcher.sol";
+import "./IbcReceiver.sol";
+import "./IbcVerifier.sol";
+import {Escrow} from "./Escrow.sol";
+import "./ConsensusStateManager.sol";
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -105,10 +105,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
     event RecvPacket(address indexed destPortAddress, bytes32 indexed destChannelId, uint64 sequence);
 
     event WriteAckPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        AckPacket ackPacket
+        address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence, AckPacket ackPacket
     );
 
     event WriteTimeoutPacket(
@@ -152,7 +149,6 @@ contract Dispatcher is IbcDispatcher, Ownable {
     //
     // methods
     //
-
     constructor(
         ZKMintVerifier _verifier,
         Escrow _escrow,
@@ -247,7 +243,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // updateClientWithConsensusState updates the client with the
     // latest consensus state. The zkproof related to this consensus
     // state is used to verify the consensus state.
-    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
+    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof)
+        external
+    {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -263,10 +261,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
-    function updateClientWithOptimisticConsensusState(
-        uint256 height,
-        uint256 appHash
-    ) external returns (uint256 fraudProofEndTime, bool ended) {
+    function updateClientWithOptimisticConsensusState(uint256 height, uint256 appHash)
+        external
+        returns (uint256 fraudProofEndTime, bool ended)
+    {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -275,9 +273,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(
-        uint256 height
-    ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getOptimisticConsensusState(uint256 height)
+        external
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -351,9 +351,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
             // TODO: fill below proof path
             consensusStateManager.verifyMembership(
                 proof,
-                'channel/path/to/be/added/here',
-                bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
-                'Fail to prove channel state'
+                "channel/path/to/be/added/here",
+                bytes("expected channel bytes constructed from params. Channel.State = {Try_Pending}"),
+                "Fail to prove channel state"
             );
         }
 
@@ -396,9 +396,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
     ) external {
         consensusStateManager.verifyMembership(
             proof,
-            bytes('channel/path/to/be/added/here'),
-            bytes('expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}'),
-            'Fail to prove channel state'
+            bytes("channel/path/to/be/added/here"),
+            bytes("expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}"),
+            "Fail to prove channel state"
         );
 
         portAddress.onConnectIbcChannel(channelId, counterpartyChannelId, counterpartyVersion);
@@ -460,9 +460,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
         consensusStateManager.verifyMembership(
             proof,
-            bytes('channel/path/to/be/added/here'),
-            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}'),
-            'Fail to prove channel state'
+            bytes("channel/path/to/be/added/here"),
+            bytes("expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}"),
+            "Fail to prove channel state"
         );
 
         // ensure port owns channel
@@ -494,12 +494,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
      *    recvFee is always paid, but only ackFee or timeoutFee is paid, depending on packet path.
      *    Total fee for packet roundtrip is determined by recvFee + max(ackFee, timeoutFee).
      */
-    function sendPacket(
-        bytes32 channelId,
-        bytes calldata packet,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee
-    ) external payable {
+    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp, PacketFee calldata fee)
+        external
+        payable
+    {
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
@@ -513,7 +511,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // escescrow packet fee
-        (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
+        (bool sent,) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}("");
         if (!sent) {
             revert escrowPacketFee();
         }
@@ -535,12 +533,10 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * @notice This function can be called multiple times for the same packet. But it shouldn't be called if the
      * channel is not incentivized.
      */
-    function payPacketFeeAsync(
-        address portAddress,
-        bytes32 channelId,
-        uint64 sequence,
-        PacketFee calldata fee
-    ) external payable {
+    function payPacketFeeAsync(address portAddress, bytes32 channelId, uint64 sequence, PacketFee calldata fee)
+        external
+        payable
+    {
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[portAddress][channelId][sequence];
         if (!hasCommitment) {
@@ -548,7 +544,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // escrow packet fee
-        (bool sent, ) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}('');
+        (bool sent,) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}("");
         if (!sent) {
             revert escrowPacketFee();
         }
@@ -556,9 +552,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // Record accumulated packet fees
         PacketFee storage packetFee = packetFees[portAddress][channelId][sequence];
         packetFees[portAddress][channelId][sequence] = PacketFee(
-            packetFee.recvFee + fee.recvFee,
-            packetFee.ackFee + fee.ackFee,
-            packetFee.timeoutFee + fee.timeoutFee
+            packetFee.recvFee + fee.recvFee, packetFee.ackFee + fee.ackFee, packetFee.timeoutFee + fee.timeoutFee
         );
     }
 
@@ -586,10 +580,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // prove ack packet is on Polymer chain
         consensusStateManager.verifyMembership(
-            proof,
-            bytes('ack/packet/path'),
-            bytes('expected ack receipt hash on Polymer chain'),
-            'Fail to prove ack'
+            proof, bytes("ack/packet/path"), bytes("expected ack receipt hash on Polymer chain"), "Fail to prove ack"
         );
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -600,7 +591,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
         if (channel.feeEnabled) {
-            revert invalidChannelType('incentivized');
+            revert invalidChannelType("incentivized");
         }
 
         if (channel.ordering == ChannelOrder.ORDERED) {
@@ -642,10 +633,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         // prove ack packet is on Polymer chain
         consensusStateManager.verifyMembership(
-            proof,
-            'ack/packet/path',
-            'expected ack receipt hash on Polymer chain',
-            'Fail to prove ack'
+            proof, "ack/packet/path", "expected ack receipt hash on Polymer chain", "Fail to prove ack"
         );
 
         // verify packet has been committed and not yet ack'ed or timed out
@@ -657,7 +645,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
         if (!channel.feeEnabled) {
-            revert invalidChannelType('non-incentivized');
+            revert invalidChannelType("non-incentivized");
         }
 
         if (channel.ordering == ChannelOrder.ORDERED) {
@@ -689,7 +677,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         escrow.distributeAckFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
         // refund extra packet fee to packet sender, ie. receiver dApp
         // TODO: allow refund payee registration too
-        uint refundFee = Ibc.ackRefundAmount(packetFee);
+        uint256 refundFee = Ibc.ackRefundAmount(packetFee);
         if (refundFee > 0) {
             escrow.refund(payable(address(receiver)), refundFee);
         }
@@ -721,7 +709,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         // prove absence of packet receipt on Polymer chain
-        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
+        consensusStateManager.verifyNonMembership(proof, "packet/receipt/path", "Fail to prove timeout");
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -735,7 +723,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
             address payable timeoutFeePayee = payable(tx.origin);
             escrow.distributeTimeoutFee(timeoutFeePayee, packetFee.timeoutFee);
         }
-        uint timeoutRefund = Ibc.timeoutRefundAmount(packetFee);
+        uint256 timeoutRefund = Ibc.timeoutRefundAmount(packetFee);
         if (timeoutRefund > 0) {
             // refund extra packet fee to packet sender, ie. receiver dApp
             escrow.refund(payable(address(receiver)), timeoutRefund);
@@ -767,9 +755,9 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
         consensusStateManager.verifyMembership(
             proof,
-            'packet/commitment/path',
-            'expected virtual packet commitment hash on Polymer chain',
-            'Fail to prove packet commitment'
+            "packet/commitment/path",
+            "expected virtual packet commitment hash on Polymer chain",
+            "Fail to prove packet commitment"
         );
 
         // verify packet has not been received yet
@@ -797,11 +785,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
-                writerPortAddress,
-                packet.dest.channelId,
-                packet.sequence,
-                packet.timeoutHeight,
-                packet.timeoutTimestamp
+                writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
             );
             return;
         }
@@ -831,9 +815,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
 
     // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
     function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
-        return ((packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp) ||
+        return (
+            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
             // TODO: check timeoutHeight.revision_number?
-            (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height));
+            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+        );
     }
 
     // TODO: remove below writeTimeoutPacket() function
@@ -862,11 +848,7 @@ contract Dispatcher is IbcDispatcher, Ownable {
         }
 
         emit WriteTimeoutPacket(
-            receiver,
-            packet.dest.channelId,
-            packet.sequence,
-            packet.timeoutHeight,
-            packet.timeoutTimestamp
+            receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
         );
     }
 
@@ -874,11 +856,11 @@ contract Dispatcher is IbcDispatcher, Ownable {
      * Return escrowed fees for a packet.
      * Relayers can query this to determine if a packet is worth relaying.
      */
-    function getTotalPacketFees(
-        address packetSender,
-        bytes32 channelId,
-        uint64 sequence
-    ) external view returns (PacketFee memory) {
+    function getTotalPacketFees(address packetSender, bytes32 channelId, uint64 sequence)
+        external
+        view
+        returns (PacketFee memory)
+    {
         return packetFees[packetSender][channelId][sequence];
     }
 }

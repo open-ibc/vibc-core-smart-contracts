@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import 'forge-std/Test.sol';
-import 'forge-std/console.sol';
-import '../contracts/Ibc.sol';
-import {invalidChannelType, Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
-import {IbcReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/IbcVerifier.sol';
-import '../contracts/Verifier.sol';
-import '../contracts/Mars.sol';
-import {PacketSenderTest} from './Dispatcher.t.sol';
+import "forge-std/Test.sol";
+import "forge-std/console.sol";
+import "../contracts/Ibc.sol";
+import {invalidChannelType, Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
+import {IbcReceiver} from "../contracts/IbcReceiver.sol";
+import "../contracts/IbcVerifier.sol";
+import "../contracts/Verifier.sol";
+import "../contracts/Mars.sol";
+import {PacketSenderTest} from "./Dispatcher.t.sol";
 import "forge-std/console.sol";
 
-
 contract FeeTest is PacketSenderTest {
-    address forwardRelayerPayee = deriveAddress('forward-payee');
-    address reverseRelayerPayee = deriveAddress('reverse-payee');
+    address forwardRelayerPayee = deriveAddress("forward-payee");
+    address reverseRelayerPayee = deriveAddress("reverse-payee");
 
     PacketFee[] packetFees;
 
@@ -37,7 +36,7 @@ contract FeeTest is PacketSenderTest {
         packetFees.push(PacketFee(1, 2, 2));
         packetFees.push(PacketFee(3, 2, 1));
 
-        for (uint i = 0; i < packetFees.length; i++) {
+        for (uint256 i = 0; i < packetFees.length; i++) {
             fee = packetFees[i];
             _;
         }
@@ -55,46 +54,36 @@ contract FeeTest is PacketSenderTest {
 
             // pay packet fee asynchronously
             dispatcher.payPacketFeeAsync{value: Ibc.calcEscrowFee(extraFee)}(
-                address(mars),
-                channelId,
-                sentPacket.sequence,
-                extraFee
+                address(mars), channelId, sentPacket.sequence, extraFee
             );
 
             // check that the total packet fee is correct
             PacketFee memory actualFee = dispatcher.getTotalPacketFees(address(mars), channelId, sentPacket.sequence);
-            assertEq(keccak256(abi.encode(actualFee)), keccak256(abi.encode(expectedFee)), 'Packet fee is incorrect');
+            assertEq(keccak256(abi.encode(actualFee)), keccak256(abi.encode(expectedFee)), "Packet fee is incorrect");
         }
     }
 
     // sendPacket fails if insufficient fee is paid.
     function test_insufficientFee() public {
         vm.expectRevert();
-        mars.greet{value: Ibc.calcEscrowFee(fee) - 1}(
-            IbcDispatcher(dispatcher),
-            payloadStr,
-            channelId,
-            maxTimeout,
-            fee
-        );
+        mars.greet{value: Ibc.calcEscrowFee(fee) - 1}(payloadStr, channelId, maxTimeout, fee);
     }
 
     // call to acknowledgement fails if the channel is incentivized
     function test_must_incentivizedAck() public useFeeTestCases {
         vm.startPrank(relayer);
         sendPacket();
-        vm.expectRevert(abi.encodeWithSignature('invalidChannelType(string)',
-                                                'incentivized'));
+        vm.expectRevert(abi.encodeWithSignature("invalidChannelType(string)", "incentivized"));
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
     // claim ack fee on receving ack
     function test_ack_fee() public useFeeTestCases {
         // save balances of forward and reverse relayer payees; assert balances changes after ack
-        uint balanceForwardRelayer1 = address(forwardRelayerPayee).balance;
-        uint balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
+        uint256 balanceForwardRelayer1 = address(forwardRelayerPayee).balance;
+        uint256 balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
         address refundPayee = address(mars);
-        uint balanceRefund1 = refundPayee.balance;
+        uint256 balanceRefund1 = refundPayee.balance;
 
         vm.startPrank(relayer);
         sendPacket();
@@ -103,7 +92,7 @@ contract FeeTest is PacketSenderTest {
         IncentivizedAckPacket memory incAck = IncentivizedAckPacket({
             success: true,
             relayer: abi.encodePacked(forwardRelayerPayee),
-            data: bytes('ack-data')
+            data: bytes("ack-data")
         });
         vm.startPrank(reverseRelayerPayee, reverseRelayerPayee);
         dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
@@ -120,9 +109,9 @@ contract FeeTest is PacketSenderTest {
 
     // claim timeout fee on receving timeout
     function test_timeout_fee() public useFeeTestCases {
-        uint balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
+        uint256 balanceReverseRelayer1 = address(reverseRelayerPayee).balance;
         address refundPayee = address(mars);
-        uint balanceRefund1 = refundPayee.balance;
+        uint256 balanceRefund1 = refundPayee.balance;
 
         vm.startPrank(relayer);
         sendPacket();
