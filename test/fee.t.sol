@@ -9,10 +9,9 @@ import {IbcReceiver} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
-import {PacketSenderTest} from "./Dispatcher.t.sol";
-import "forge-std/console.sol";
+import {PacketSenderTestBase} from "./Dispatcher.t.sol";
 
-contract FeeTest is PacketSenderTest {
+contract FeeTest is PacketSenderTestBase {
     address forwardRelayerPayee = deriveAddress("forward-payee");
     address reverseRelayerPayee = deriveAddress("reverse-payee");
 
