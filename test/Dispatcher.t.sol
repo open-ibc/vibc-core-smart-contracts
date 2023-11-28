@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
+import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
 import {Escrow} from "../contracts/Escrow.sol";
 import {IbcReceiver} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
@@ -11,58 +12,8 @@ import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
 import "../contracts/OpConsensusStateManager.sol";
 
-contract Base is Test {
+contract Base is Test, IbcEventsEmitter {
     uint64 UINT64_MAX = 18446744073709551615;
-    //
-    // channel events
-    //
-
-    event OpenIbcChannel(
-        address indexed portAddress,
-        string version,
-        ChannelOrder ordering,
-        bool feeEnabled,
-        string[] connectionHops,
-        string counterpartyPortId,
-        bytes32 counterpartyChannelId
-    );
-
-    event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
-
-    event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
-
-    //
-    // packet events
-    //
-    event SendPacket(
-        address indexed sourcePortAddress,
-        bytes32 indexed sourceChannelId,
-        bytes packet,
-        uint64 sequence,
-        // timeoutTimestamp is in UNIX nano seconds; packet will be rejected if
-        // delivered after this timestamp on the receiving chain.
-        // Timeout semantics is compliant to IBC spec and ibc-go implementation
-        uint64 timeoutTimestamp,
-        PacketFee fee
-    );
-
-    event Acknowledgement(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 sequence);
-
-    event Timeout(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 indexed sequence);
-
-    event RecvPacket(address indexed destPortAddress, bytes32 indexed destChannelId, uint64 sequence);
-
-    event WriteAckPacket(
-        address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence, AckPacket ackPacket
-    );
-
-    event WriteTimeoutPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        Height timeoutHeight,
-        uint64 timeoutTimestamp
-    );
 
     ConsensusState untrustedState = ConsensusState(
         80990, 590199110038530808131927832294665177527506259518072095333098842116767351199, 7000040, 1000
