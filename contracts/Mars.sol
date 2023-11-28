@@ -2,14 +2,13 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
 import './Ibc.sol';
 import './IbcReceiver.sol';
 import './IbcDispatcher.sol';
 
 error invalidCounterPartyPortId();
 
-contract Mars is IbcReceiver, Ownable {
+contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
     // received ack packet as chain A
@@ -20,20 +19,23 @@ contract Mars is IbcReceiver, Ownable {
 
     string[] supportedVersions = ['1.0', '2.0'];
 
+    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher){
+    }
+
     /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
     // An empty function body is sufficient to receive packet fee refunds.
     receive() external payable {}
 
-    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket calldata packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket)  {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external {
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {
         ackPackets.push(ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external {
+    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {
         timeoutPackets.push(packet);
     }
 
@@ -45,7 +47,7 @@ contract Mars is IbcReceiver, Ownable {
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
-    ) external returns (string memory selectedVersion) {
+    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
         if (bytes(counterpartyPortId).length <= 8) {
             revert invalidCounterPartyPortId();
         }
@@ -74,7 +76,7 @@ contract Mars is IbcReceiver, Ownable {
         bytes32 channelId,
         bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
-    ) external {
+    ) external onlyIbcDispatcher {
         // ensure negotiated version is supported
         bool foundVersion = false;
         for (uint i = 0; i < supportedVersions.length; i++) {
@@ -91,7 +93,7 @@ contract Mars is IbcReceiver, Ownable {
         bytes32 channelId,
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId
-    ) external {
+    ) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
         for (uint i = 0; i < connectedChannels.length; i++) {
