@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "forge-std/Test.sol";
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
@@ -11,134 +10,7 @@ import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
 import "../contracts/OpConsensusStateManager.sol";
-
-contract Base is Test, IbcEventsEmitter {
-    uint64 UINT64_MAX = 18446744073709551615;
-
-    ConsensusState untrustedState = ConsensusState(
-        80990, 590199110038530808131927832294665177527506259518072095333098842116767351199, 7000040, 1000
-    );
-    ConsensusState trustedState = ConsensusState(
-        10934, 7064503680087416120706887577693908749828198688716609274705703517077803898371, 7002040, 1020
-    );
-    InitClientMsg initClientMsg = InitClientMsg(bytes("Polymer"), untrustedState);
-
-    ZKMintVerifier verifier = new Verifier();
-    ZkProof proof = ZkProof(
-        [
-            13449388914393258752883032560537386278857542833249142697090243871249761501123,
-            5963894333042515966217276339656894890750758020607775733717462915787234629927
-        ],
-        [
-            [
-                4811559872397934450173412387101758297072581261546553338353504577141293696514,
-                18400634037991283592418145553628778322894277765243742619561207628896194710939
-            ],
-            [
-                17903685207039300384995795331083569887497623740119108595975170464164316221644,
-                9246628133289276308945311797896077179503891414159382179119544904154776510385
-            ]
-        ],
-        [
-            17432552394458345841788798376121543520587716339044416231610790827968220675517,
-            15082220514596158133191868403239442750535261032426474092101151620016661078026
-        ]
-    );
-    Height ZERO_HEIGHT = Height(0, 0);
-    uint64 maxTimeout = UINT64_MAX;
-    Escrow escrow = new Escrow();
-
-    OptimisticConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
-
-    // Proofs from Polymer chain, to verify packet or channel state on Polymer
-    Proof emptyProof;
-    Proof invalidProof = Proof(Height(0, 42), bytes("")); // invalid proof with empty proof bytes
-    Proof validProof = Proof(Height(0, 42), bytes("valid proof"));
-
-    Dispatcher dispatcher;
-    string portPrefix = "polyibc.eth.";
-
-    // ⬇️ Utility functions for testing
-
-    // getHexStr converts an address to a hex string without the leading 0x
-    function getHexBytes(address addr) internal pure returns (bytes memory) {
-        bytes memory addrWithPrefix = abi.encodePacked(vm.toString(addr));
-        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
-        for (uint256 i = 0; i < addrWithoutPrefix.length; i++) {
-            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
-        }
-        return addrWithoutPrefix;
-    }
-
-    // deriveAddress derives an address from a given string deterministically for testing
-    function deriveAddress(string memory str) internal pure returns (address) {
-        return vm.addr(uint256(keccak256(abi.encodePacked(str))));
-    }
-
-    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
-        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
-    }
-}
-
-contract DispatcherCreateClientTest is Test, Base {
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-    }
-
-    function test_success() public {
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_mustByOwner() public {
-        vm.prank(deriveAddress("non-onwer"));
-        vm.expectRevert("Ownable: caller is not the owner");
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_onlyOnce() public {
-        dispatcher.createClient(initClientMsg);
-        vm.expectRevert(abi.encodeWithSignature("clientAlreadyCreated()"));
-        dispatcher.createClient(initClientMsg);
-    }
-}
-
-contract DispatcherUpdateClientTest is Test, Base {
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_updateConsensusState_success() public {
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-    }
-
-    function test_updateConsensusState_invalid() public {
-        vm.expectRevert(abi.encodeWithSignature("consensusStateVerificationFailed()"));
-        dispatcher.updateClientWithConsensusState(untrustedState, proof);
-
-        vm.expectRevert(abi.encodeWithSignature("consensusStateVerificationFailed()"));
-        ConsensusState memory invalidConsensusState;
-        dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
-    }
-}
-
-contract DispatcherUpgradeClientTest is Test, Base {
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-    }
-
-    function test_success() public {
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes("upgradeOptimisticConsensusState"), trustedState));
-    }
-
-    function test_ownerOnly() public {
-        vm.prank(deriveAddress("non-onwer"));
-        vm.expectRevert("Ownable: caller is not the owner");
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes("upgradeOptimisticConsensusState"), trustedState));
-    }
-}
+import "./Dispatcher.base.t.sol";
 
 struct VersionSet {
     string self;
@@ -146,7 +18,7 @@ struct VersionSet {
     string expected;
 }
 
-contract ChannelTestBase is Test, Base {
+contract ChannelTestBase is Base {
     Mars mars;
     string[] connectionHops;
     VersionSet version = VersionSet("1.0", "1.0", "1.0");
@@ -348,7 +220,7 @@ contract DispatcherConnectIbcChannelTest is ChannelTestBase {
 }
 
 // This Base contract provides an open channel for sub-contract tests
-contract ChannelOpenTestBase is Test, Base {
+contract ChannelOpenTestBase is Base {
     Mars mars;
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
@@ -462,7 +334,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     }
 }
 
-contract PacketSenderTest is ChannelOpenTestBase {
+contract PacketSenderTestBase is ChannelOpenTestBase {
     IbcEndpoint dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint src;
     string payloadStr = "msgPayload";
@@ -560,7 +432,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
 }
 
 // Test Chain A receives an acknowledgement packet from Chain B
-contract DispatcherAckPacketTest is PacketSenderTest {
+contract DispatcherAckPacketTest is PacketSenderTestBase {
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             sendPacket();
@@ -640,7 +512,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
 }
 
 // Test Chain A receives a timeout packet from Chain B
-contract DispatcherTimeoutPacketTest is PacketSenderTest {
+contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
     // preconditions for timeout packet
     // - packet commitment exists
     // - packet timeout is verified by Polymer client
