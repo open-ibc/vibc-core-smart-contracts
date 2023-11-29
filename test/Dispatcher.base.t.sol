@@ -147,7 +147,7 @@ contract Base is Test, IbcEventsEmitter {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function connectionChannel(LocalEnd memory le, RemoteEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function connectChannel(LocalEnd memory le, RemoteEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         if (expPass) {
