@@ -11,6 +11,30 @@ import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
 import "../contracts/OpConsensusStateManager.sol";
+import "../contracts/DummyConsensusStateManager.sol";
+
+struct LocalEnd {
+    IbcReceiver receiver;
+    // channelId is only used in connectIbcChannel
+    bytes32 channelId;
+    string[] connectionHops;
+    string versionCall;
+    string versionExpected;
+}
+
+struct RemoteEnd {
+    string portId;
+    // If LocalEnd initiates the first step in 4-step handshake, channelId and version fields are not passed in to openIbcChannel
+    bytes32 channelId;
+    string version;
+}
+
+struct ChannelHandshakeSetting {
+    ChannelOrder ordering;
+    bool feeEnabled;
+    bool localInitiate;
+    Proof proof;
+}
 
 // Base contract for testing Dispatcher
 contract Base is Test, IbcEventsEmitter {
@@ -49,7 +73,8 @@ contract Base is Test, IbcEventsEmitter {
     uint64 maxTimeout = UINT64_MAX;
     Escrow escrow = new Escrow();
 
-    OptimisticConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
+    ConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
+    ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
 
     // Proofs from Polymer chain, to verify packet or channel state on Polymer
     Proof emptyProof;
@@ -78,5 +103,67 @@ contract Base is Test, IbcEventsEmitter {
 
     function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
         return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
+    }
+
+    // ⬇️ IBC functions for testing
+
+    /**
+     * @dev Step-1/2 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function openChannel(LocalEnd memory le, RemoteEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
+        CounterParty memory cp;
+        cp.portId = re.portId;
+        if (!s.localInitiate) {
+            cp.channelId = re.channelId;
+            cp.version = re.version;
+        }
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit OpenIbcChannel(
+                address(le.receiver),
+                le.versionExpected,
+                s.ordering,
+                s.feeEnabled,
+                le.connectionHops,
+                cp.portId,
+                cp.channelId
+            );
+        }
+        dispatcher.openIbcChannel(le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, cp, s.proof);
+    }
+
+    /**
+     * @dev Step-3/4 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function connectionChannel(LocalEnd memory le, RemoteEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ConnectIbcChannel(address(le.receiver), le.channelId);
+        }
+        dispatcher.connectIbcChannel(
+            le.receiver,
+            le.channelId,
+            le.connectionHops,
+            s.ordering,
+            s.feeEnabled,
+            re.portId,
+            re.channelId,
+            re.version,
+            s.proof
+        );
     }
 }

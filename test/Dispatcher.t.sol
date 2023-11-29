@@ -12,6 +12,120 @@ import "../contracts/Mars.sol";
 import "../contracts/OpConsensusStateManager.sol";
 import "./Dispatcher.base.t.sol";
 
+contract ChannelHandshakeTest is Base {
+    LocalEnd _local;
+    RemoteEnd _remote;
+    Mars mars;
+
+    function setUp() public {
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
+        mars = new Mars(dispatcher);
+        _local = LocalEnd(mars, "channel-1", new string[](2), "1.0", "1.0");
+        _local.connectionHops[0] = "connection-1";
+        _local.connectionHops[1] = "connection-2";
+
+        _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+    }
+
+    function test_openChannel_initiator_ok() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                // remoteEnd has no channelId or version if localEnd is the initiator
+                openChannel(le, re, settings[i], true);
+            }
+        }
+    }
+
+    function test_openChannel_receiver_ok() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                re.version = versions[j];
+                // explicit version
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                // remoteEnd version is used
+                openChannel(le, re, settings[i], true);
+
+                // auto version selection
+                le.versionCall = "";
+                openChannel(le, re, settings[i], true);
+            }
+        }
+    }
+
+    function test_openChannel_receiver_fail_versionMismatch() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                re.version = versions[j];
+                // always select the wrong version
+                bool isVersionOne = keccak256(abi.encodePacked(versions[j])) == keccak256(abi.encodePacked("1.0"));
+                le.versionCall = isVersionOne ? "2.0" : "1.0";
+                vm.expectRevert(bytes("Version mismatch"));
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_openChannel_initiator_fail_unsupportedVersion() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["", "xxxxxxx"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                vm.expectRevert(bytes("Unsupported version"));
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_openChannel_receiver_fail_invalidProof() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, false);
+        string[1] memory versions = ["1.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                vm.expectRevert("Fail to prove channel state");
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function createSettings(bool localInitiate, bool isProofValid)
+        internal
+        view
+        returns (ChannelHandshakeSetting[4] memory)
+    {
+        Proof memory proof = isProofValid ? validProof : invalidProof;
+        ChannelHandshakeSetting[4] memory settings = [
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, true, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, localInitiate, proof)
+        ];
+        return settings;
+    }
+}
+
 struct VersionSet {
     string self;
     string counterparty;
@@ -33,20 +147,10 @@ contract ChannelTestBase is Base {
         connectionHops[0] = "connection-1";
         connectionHops[1] = "connection-2";
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcher);
 
         dispatcher.createClient(initClientMsg);
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-
-        // channel handshake methods use optimistic consensus state
-        // for membership verification. it is necessary to update the
-        // optimistic consensus state and wait for it to pass the
-        // fraud proof window before proceeeding.
-        dispatcher.updateClientWithOptimisticConsensusState(validProof.proofHeight.revision_height, 1);
-
-        // forward the time to make the consensus state transition to trusted state
-        vm.warp(block.timestamp + 1801);
 
         polymerProof = validProof;
         vm.startPrank(deriveAddress("relayer"));
@@ -231,7 +335,7 @@ contract ChannelOpenTestBase is Base {
         connectionHops[0] = "connection-1";
         connectionHops[1] = "connection-2";
 
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
+        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
         dispatcher.createClient(initClientMsg);
 
         Escrow myEscrow = Escrow(escrow);
@@ -242,7 +346,7 @@ contract ChannelOpenTestBase is Base {
         vm.deal(relayer, 100000 ether);
         mars = new Mars(dispatcher);
 
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
+        // dispatcher.updateClientWithConsensusState(trustedState, proof);
 
         // finish channel handshake as chain A
         CounterParty memory cp = CounterParty("polyibc.bsc.9876543210", bytes32(0x0), "");
@@ -250,15 +354,6 @@ contract ChannelOpenTestBase is Base {
             IbcReceiver(mars), "1.0", ChannelOrder.ORDERED, feeEnabled, connectionHops, cp, emptyProof
         );
         CounterParty memory cp2 = CounterParty("polyibc.bsc.9876543210", bytes32("channel-99"), "1.0");
-
-        // channel handshake methods use optimistic consensus state
-        // for membership verification. it is necessary to update the
-        // optimistic consensus state and wait for it to pass the
-        // fraud proof window before proceeeding.
-        dispatcher.updateClientWithOptimisticConsensusState(validProof.proofHeight.revision_height, 1);
-
-        // forward the time to make the consensus state transition to trusted state
-        vm.warp(block.timestamp + 1801);
 
         dispatcher.connectIbcChannel(
             IbcReceiver(mars),
