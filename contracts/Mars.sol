@@ -62,6 +62,13 @@ contract Mars is IbcReceiverBase, IbcReceiver {
             }
         }
         require(foundVersion, "Unsupported version");
+        // if counterpartyVersion is not empty, then it must be the same foundVersion
+        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(""))) {
+            require(
+                keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(selectedVersion)),
+                "Version mismatch"
+            );
+        }
 
         return selectedVersion;
     }
