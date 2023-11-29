@@ -63,6 +63,23 @@ contract ChannelHandshakeTest is Base {
         }
     }
 
+    function test_connectChannel_ok() public {
+        ChannelHandshakeSetting[8] memory settings = createSettings2(true);
+
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                re.version = versions[j];
+                openChannel(le, re, settings[i], true);
+                connectChannel(le, re, settings[i], true);
+            }
+        }
+    }
+
     function test_openChannel_receiver_fail_versionMismatch() public {
         ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
         string[2] memory versions = ["1.0", "2.0"];
@@ -96,6 +113,7 @@ contract ChannelHandshakeTest is Base {
     }
 
     function test_openChannel_receiver_fail_invalidProof() public {
+        // When localEnd initiates, no proof verification is done in openIbcChannel
         ChannelHandshakeSetting[4] memory settings = createSettings(false, false);
         string[1] memory versions = ["1.0"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -106,6 +124,41 @@ contract ChannelHandshakeTest is Base {
                 le.versionExpected = versions[j];
                 vm.expectRevert("Fail to prove channel state");
                 openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_connectChannel_fail_unsupportedVersion() public {
+        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["", "xxxxxxx"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                // no remote version applied in openChannel
+                openChannel(le, re, settings[i], true);
+                re.version = versions[j];
+                vm.expectRevert(bytes("Unsupported version"));
+                connectChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_connectChannel_fail_invalidProof() public {
+        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+        ChannelHandshakeSetting[8] memory settings = createSettings2(true);
+        string[1] memory versions = ["1.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                // no remote version applied in openChannel
+                openChannel(le, re, settings[i], true);
+                re.version = versions[j];
+                settings[i].proof = invalidProof;
+                vm.expectRevert("Fail to prove channel state");
+                connectChannel(le, re, settings[i], false);
             }
         }
     }
@@ -124,248 +177,51 @@ contract ChannelHandshakeTest is Base {
         ];
         return settings;
     }
-}
 
-struct VersionSet {
-    string self;
-    string counterparty;
-    string expected;
-}
-
-contract ChannelTestBase is Base {
-    Mars mars;
-    string[] connectionHops;
-    VersionSet version = VersionSet("1.0", "1.0", "1.0");
-    ChannelOrder ordering = ChannelOrder.ORDERED;
-    bool feeEnabled = false;
-    CounterParty cp;
-
-    CounterParty cpBsc = CounterParty("polyibc.bsc.9876543210", bytes32("channel-99"), "1.0");
-
-    function setUp() public virtual {
-        connectionHops = new string[](2);
-        connectionHops[0] = "connection-1";
-        connectionHops[1] = "connection-2";
-
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
-        mars = new Mars(dispatcher);
-
-        dispatcher.createClient(initClientMsg);
-
-        polymerProof = validProof;
-        vm.startPrank(deriveAddress("relayer"));
-    }
-
-    Proof polymerProof;
-
-    function setTestParams(VersionSet memory _version, CounterParty memory _cp, ChannelOrder _ordering) internal {
-        version = _version;
-        _cp.version = version.counterparty;
-        cp = _cp;
-        ordering = _ordering;
-
-        // 1st handshake call with unknown counterparty version or channelId
-        if (cp.channelId == bytes32(0x0) && keccak256(abi.encodePacked(cp.version)) == keccak256(abi.encodePacked("")))
-        {
-            polymerProof = emptyProof;
-        } else {
-            // all other handshake calls requires a polymer proof
-            polymerProof = validProof;
+    function createSettings2(bool isProofValid) internal view returns (ChannelHandshakeSetting[8] memory) {
+        // localEnd initiates
+        ChannelHandshakeSetting[4] memory settings1 = createSettings(true, isProofValid);
+        // remoteEnd initiates
+        ChannelHandshakeSetting[4] memory settings2 = createSettings(false, isProofValid);
+        ChannelHandshakeSetting[8] memory settings;
+        for (uint256 i = 0; i < settings1.length; i++) {
+            settings[i] = settings1[i];
+            settings[i + settings1.length] = settings2[i];
         }
-    }
-
-    modifier goodCases() {
-        // NOTE: counterparty version is set in VersionSet
-        ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
-        // 1st handshake with unknown counterparty version or channelId
-        cp = CounterParty("polyibc.bsc.9876543210", bytes32(0x0), "");
-        VersionSet[2] memory versions = [VersionSet("1.0", "", "1.0"), VersionSet("2.0", "", "2.0")];
-        for (uint256 i = 0; i < versions.length; i++) {
-            for (uint256 j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-        // 2nd handshake with known counterparty version and channelId
-        cp = CounterParty("polyibc.bsc.9876543210", bytes32("channel-99"), "");
-        versions = [VersionSet("", "1.0", "1.0"), VersionSet("", "2.0", "2.0")];
-        for (uint256 i = 0; i < versions.length; i++) {
-            for (uint256 j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-    }
-}
-
-contract DispatcherOpenIbcChannelTest is ChannelTestBase {
-    function test_success() public goodCases {
-        vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannel(
-            address(mars), version.expected, ordering, feeEnabled, connectionHops, cp.portId, cp.channelId
-        );
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), version.self, ordering, feeEnabled, connectionHops, cp, polymerProof
-        );
-    }
-
-    modifier unsupportedVersions() {
-        // NOTE: counterparty version is set in VersionSet
-        ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
-        // 1st handshake with unknown counterparty version or channelId
-        cp = CounterParty("polyibc.bsc.9876543210", bytes32(0x0), "");
-        VersionSet[1] memory versions = [VersionSet("", "", "")];
-        for (uint256 i = 0; i < versions.length; i++) {
-            for (uint256 j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-        // 2nd handshake with known counterparty version and channelId
-        cp = CounterParty("polyibc.bsc.9876543210", bytes32("channel-99"), "xxx");
-        versions = [VersionSet("", "xxx", "")];
-        for (uint256 i = 0; i < versions.length; i++) {
-            for (uint256 j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-    }
-
-    function test_unsupportedVersion() public unsupportedVersions {
-        vm.expectRevert(bytes("Unsupported version"));
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), version.self, ordering, feeEnabled, connectionHops, cp, polymerProof
-        );
-    }
-
-    function test_invalidCounterpartyPortId() public {
-        CounterParty[4] memory cps = [
-            CounterParty("", bytes32(0x0), ""),
-            CounterParty("portX", bytes32(0x0), ""),
-            CounterParty("", bytes32("channel-99"), "1.0"),
-            CounterParty("portX", bytes32("channel-99"), "1.0")
-        ];
-        for (uint256 i = 0; i < cps.length; i++) {
-            cp = cps[i];
-            vm.expectRevert(abi.encodeWithSignature("invalidCounterPartyPortId()"));
-            dispatcher.openIbcChannel(
-                IbcReceiver(mars), version.self, ordering, feeEnabled, connectionHops, cp, polymerProof
-            );
-        }
-    }
-
-    function test_invalidProof() public {
-        vm.expectRevert("Fail to prove channel state");
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), "", ChannelOrder.ORDERED, feeEnabled, connectionHops, cpBsc, invalidProof
-        );
-    }
-}
-
-contract DispatcherConnectIbcChannelTest is ChannelTestBase {
-    function test_success() public goodCases {
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), version.self, ordering, feeEnabled, connectionHops, cp, polymerProof
-        );
-        string memory cpVersion =
-            keccak256(abi.encode(cp.version)) == keccak256(abi.encode(bytes(""))) ? version.self : cp.version;
-
-        bytes32 channelId = "channel-1"; // generated by IBC core on Polymer chain
-        vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannel(address(mars), channelId);
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            channelId,
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cpBsc.portId,
-            bytes32("channel-99"),
-            cpVersion,
-            validProof
-        );
-    }
-
-    function test_unsupportedVersions() public goodCases {
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), version.self, ordering, feeEnabled, connectionHops, cp, polymerProof
-        );
-        string memory cpVersion = "xxx";
-
-        vm.expectRevert("Unsupported version");
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            bytes32("channel-1"),
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cp.portId,
-            bytes32("channel-99"),
-            cpVersion,
-            validProof
-        );
-    }
-
-    function test_invalidProof() public {
-        vm.expectRevert("Fail to prove channel state");
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            bytes32("channel-1"),
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cpBsc.portId,
-            cpBsc.channelId,
-            cpBsc.version,
-            invalidProof
-        );
+        return settings;
     }
 }
 
 // This Base contract provides an open channel for sub-contract tests
 contract ChannelOpenTestBase is Base {
-    Mars mars;
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
     bool feeEnabled = false;
 
+    LocalEnd _local;
+    RemoteEnd _remote;
+    Mars mars;
+    ChannelHandshakeSetting setting;
+
     function setUp() public virtual {
-        string[] memory connectionHops = new string[](2);
-        connectionHops[0] = "connection-1";
-        connectionHops[1] = "connection-2";
-
         dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
-        dispatcher.createClient(initClientMsg);
-
         Escrow myEscrow = Escrow(escrow);
         myEscrow.setDispatcher(address(dispatcher));
+
+        setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
         // anyone can run Relayers
         vm.startPrank(relayer);
         vm.deal(relayer, 100000 ether);
         mars = new Mars(dispatcher);
 
-        // dispatcher.updateClientWithConsensusState(trustedState, proof);
+        _local = LocalEnd(mars, channelId, new string[](2), "1.0", "1.0");
+        _local.connectionHops[0] = "connection-1";
+        _local.connectionHops[1] = "connection-2";
+        _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
-        // finish channel handshake as chain A
-        CounterParty memory cp = CounterParty("polyibc.bsc.9876543210", bytes32(0x0), "");
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars), "1.0", ChannelOrder.ORDERED, feeEnabled, connectionHops, cp, emptyProof
-        );
-        CounterParty memory cp2 = CounterParty("polyibc.bsc.9876543210", bytes32("channel-99"), "1.0");
-
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            channelId,
-            connectionHops,
-            ChannelOrder.ORDERED,
-            feeEnabled,
-            cp2.portId,
-            cp2.channelId,
-            cp2.version,
-            validProof
-        );
+        openChannel(_local, _remote, setting, true);
+        connectChannel(_local, _remote, setting, true);
     }
 }
 
