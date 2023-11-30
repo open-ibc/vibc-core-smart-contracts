@@ -167,4 +167,10 @@ contract Base is Test, IbcEventsEmitter {
             s.proof
         );
     }
+
+    // A helper function to expect revert with message when contract is called with non-owner.
+    // Error msg is defined by OpenZeppelin Ownable contract.
+    function expectRevertNonOwner() internal {
+        vm.expectRevert("Ownable: caller is not the owner");
+    }
 }

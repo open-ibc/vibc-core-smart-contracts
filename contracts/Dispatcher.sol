@@ -32,6 +32,7 @@ error invalidHexStringLength();
 error invalidRelayerAddress();
 error consensusStateVerificationFailed();
 error packetNotTimedOut();
+error invalidAddress();
 
 // packet sequence related errors.
 error invalidPacketSequence();
@@ -74,7 +75,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     bool isClientCreated = false;
     ConsensusState public latestConsensusState;
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
-    string portPrefix;
+    string public portPrefix;
     uint32 portPrefixLen;
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
@@ -96,6 +97,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     ConsensusStateManager consensusStateManager;
 
+    IbcReceiver public universalChannelHandler;
+
     //
     // methods
     //
@@ -114,6 +117,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         portPrefixLen = uint32(bytes(initPortPrefix).length);
 
         consensusStateManager = _consensusStateManager;
+    }
+
+    // setUniversalChannelHandler sets the universal channel handler contract address.
+    function setUniversalChannelHandler(IbcReceiver _universalChannelHandler) external onlyOwner {
+        if (address(_universalChannelHandler) == address(0)) {
+            revert invalidAddress();
+        }
+        universalChannelHandler = _universalChannelHandler;
     }
 
     //
@@ -284,6 +295,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (bytes(counterparty.portId).length == 0) {
             revert invalidCounterPartyPortId();
         }
+        // only CoreSC maintainer can open a universal channel
+        if (portAddress == universalChannelHandler) {
+            _checkOwner();
+        }
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
@@ -344,6 +359,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         string calldata counterpartyVersion,
         Proof calldata proof
     ) external {
+        // only CoreSC maintainer can open a universal channel
+        if (portAddress == universalChannelHandler) {
+            _checkOwner();
+        }
+
         consensusStateManager.verifyMembership(
             proof,
             bytes("channel/path/to/be/added/here"),

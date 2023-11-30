@@ -25,7 +25,7 @@ contract DispatcherCreateClientTest is ClientTestBase {
 
     function test_mustByOwner() public {
         vm.prank(deriveAddress("non-onwer"));
-        vm.expectRevert("Ownable: caller is not the owner");
+        expectRevertNonOwner();
         dispatcher.createClient(initClientMsg);
     }
 
@@ -69,7 +69,7 @@ contract DispatcherUpgradeClientTest is ClientTestBase {
 
     function test_ownerOnly() public {
         vm.prank(deriveAddress("non-onwer"));
-        vm.expectRevert("Ownable: caller is not the owner");
+        expectRevertNonOwner();
         dispatcher.upgradeClient(UpgradeClientMsg(bytes("upgradeOptimisticConsensusState"), trustedState));
     }
 }
