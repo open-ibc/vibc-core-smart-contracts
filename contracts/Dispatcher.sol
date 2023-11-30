@@ -474,14 +474,27 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert channelNotOwnedBySender();
         }
 
+        uint256 escrowAmount = Ibc.calcEscrowFee(fee);
+        _sendPacket(msg.sender, channelId, packet, timeoutTimestamp, fee, escrowAmount);
+    }
+
+    // Prerequisite: must verify sender is authorized to send packet on the channel
+    function _sendPacket(
+        address sender,
+        bytes32 channelId,
+        bytes memory packet,
+        uint64 timeoutTimestamp,
+        PacketFee calldata fee,
+        uint256 escrowAmount
+    ) internal {
         // current packet sequence
-        uint64 sequence = nextSequenceSend[msg.sender][channelId];
+        uint64 sequence = nextSequenceSend[sender][channelId];
         if (sequence == 0) {
             revert invalidPacketSequence();
         }
 
         // escescrow packet fee
-        (bool sent,) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}("");
+        (bool sent,) = address(escrow).call{value: escrowAmount}("");
         if (!sent) {
             revert escrowPacketFee();
         }
@@ -495,6 +508,35 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         nextSequenceSend[msg.sender][channelId] = sequence + 1;
 
         emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp, fee);
+    }
+
+    /**
+     * @notice Sends an IBC packet over a universal channel with the specified packet data and timeout block timestamp.
+     * @param portId The ID of the port to send the packet.
+     * @param channelId The ID of the universal channel on which to send the packet.
+     * @param appData The application data to send.
+     * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
+     * @param fee The fee serves as the packet incentive for forward relay.
+     */
+    function sendPacketOverUniversalChannel(
+        string calldata portId,
+        bytes32 channelId,
+        bytes calldata appData,
+        uint64 timeoutTimestamp,
+        PacketFee calldata fee
+    ) external payable {
+        // Check if channelId is a universal channel
+        Channel memory channel = portChannelMap[address(universalChannelHandler)][channelId];
+        if (channel.counterpartyChannelId == bytes32(0)) {
+            revert invalidChannelType("non-universal");
+        }
+
+        // Pack appData with portId into a IBC Packet
+        uint256 portIdLen = bytes(portId).length;
+        bytes memory packet = abi.encodePacked(portIdLen, portId, appData);
+
+        uint256 escrowAmount = Ibc.calcEscrowFee(fee);
+        _sendPacket(address(universalChannelHandler), channelId, packet, timeoutTimestamp, fee, escrowAmount);
     }
 
     /**

@@ -17,6 +17,14 @@ interface IbcDispatcher {
     function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp, PacketFee calldata fee)
         external
         payable;
+
+    function sendPacketOverUniversalChannel(
+        string calldata portId,
+        bytes32 channelId,
+        bytes calldata appData,
+        uint64 timeoutTimestamp,
+        PacketFee calldata fee
+    ) external payable;
 }
 
 /**
