@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
 import "./Ibc.sol";
 
-contract UniversalChannelHandler is IbcReceiverBase, IbcReceiver {
+contract UniversalChannelHandler is IbcReceiverBase, IbcChannelHandler {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
     bytes32[] public connectedChannels;
@@ -22,14 +22,6 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcReceiver {
     }
 
     // IBC callback functions
-
-    function onRecvPacket(IbcPacket calldata packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
-        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
-    }
-
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {}
-
-    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {}
 
     function onOpenIbcChannel(
         string calldata version,

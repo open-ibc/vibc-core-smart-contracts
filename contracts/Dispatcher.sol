@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
-import "./IbcReceiver.sol";
+import {IbcChannelHandler, IbcPacketHandler} from "./IbcReceiver.sol";
 import "./IbcVerifier.sol";
 import {Escrow} from "./Escrow.sol";
 import "./ConsensusStateManager.sol";
@@ -97,7 +97,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     ConsensusStateManager consensusStateManager;
 
-    IbcReceiver public universalChannelHandler;
+    IbcChannelHandler public universalChannelHandler;
 
     //
     // methods
@@ -120,7 +120,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // setUniversalChannelHandler sets the universal channel handler contract address.
-    function setUniversalChannelHandler(IbcReceiver _universalChannelHandler) external onlyOwner {
+    function setUniversalChannelHandler(IbcChannelHandler _universalChannelHandler) external onlyOwner {
         if (address(_universalChannelHandler) == address(0)) {
             revert invalidAddress();
         }
@@ -277,14 +277,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     //
 
     /**
-     * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcReceiver.
+     * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcChannelHandler.
      * The dApp should implement the onOpenIbcChannel method to handle one of the first two channel handshake methods,
      * ie. ChanOpenInit or ChanOpenTry.
      * If callback succeeds, the dApp should return the selected version, and an emitted event will be relayed to the
      * IBC/VIBC hub chain.
      */
     function openIbcChannel(
-        IbcReceiver portAddress,
+        IbcChannelHandler portAddress,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -349,7 +349,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * ChanOpenAck or ChanOpenConfirm.
      */
     function connectIbcChannel(
-        IbcReceiver portAddress,
+        IbcChannelHandler portAddress,
         bytes32 channelId,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -416,7 +416,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert channelNotOwnedBySender();
         }
 
-        IbcReceiver reciever = IbcReceiver(msg.sender);
+        IbcChannelHandler reciever = IbcChannelHandler(msg.sender);
         reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
         emit CloseIbcChannel(msg.sender, channelId);
     }
@@ -442,7 +442,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // confirm with dApp by calling its callback
-        IbcReceiver reciever = IbcReceiver(portAddress);
+        IbcChannelHandler reciever = IbcChannelHandler(portAddress);
         reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
         delete portChannelMap[portAddress][channelId];
         emit CloseIbcChannel(portAddress, channelId);
@@ -573,14 +573,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
      *    ie. the IBC dApp.
      *    Prerequisite: the original packet is committed and not ack'ed or timed out yet.
-     * @param receiver The IbcReceiver contract that should handle the packet acknowledgement event
+     * @param receiver The IbcPacketHandler contract that should handle the packet acknowledgement event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the acknowledged packet
      * @param ackPacket The acknowledgement receipt for the packet
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
     function acknowledgement(
-        IbcReceiver receiver,
+        IbcPacketHandler receiver,
         IbcPacket calldata packet,
         AckPacket calldata ackPacket,
         Proof calldata proof
@@ -633,7 +633,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
     function incentivizedAcknowledgement(
-        IbcReceiver receiver,
+        IbcPacketHandler receiver,
         IbcPacket calldata packet,
         IncentivizedAckPacket calldata incentivizedAck,
         Proof calldata proof
@@ -709,12 +709,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @notice Timeout of an IBC packet
      * @dev Verifies the given proof and calls the `onTimeoutPacket` function on the given `receiver` contract, ie. the IBC-dApp.
      * Prerequisite: the original packet is committed and not ack'ed or timed out yet.
-     * @param receiver The IbcReceiver contract that should handle the packet timeout event
+     * @param receiver The IbcPacketHandler contract that should handle the packet timeout event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the timed-out packet
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
-    function timeout(IbcReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
+    function timeout(IbcPacketHandler receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert receiverNotIndtendedPacketDestination();
@@ -752,14 +752,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     /**
      * @notice Receive an IBC packet and then pass it to the IBC-dApp for processing if verification succeeds.
      * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
-     * @param receiver The IbcReceiver contract that should handle the packet receipt event
+     * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
-    function recvPacket(IbcReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
+    function recvPacket(IbcPacketHandler receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert receiverNotIndtendedPacketDestination();
