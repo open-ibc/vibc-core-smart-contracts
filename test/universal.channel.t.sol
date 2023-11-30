@@ -25,24 +25,43 @@ contract UniversalChannelTestBase is Base {
         myEscrow.setDispatcher(address(dispatcher));
 
         ucHandler = new UniversalChannelHandler(dispatcher);
-        setting = ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, true, validProof);
+        dispatcher.setUniversalChannelHandler(ucHandler);
 
-        localEnd = LocalEnd(ucHandler, "chanel-80", connectionHops, "1.0", "1.0");
+        setting = ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, true, validProof);
         remoteEnd = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "chanel-81", "1.0");
+        localEnd = LocalEnd(ucHandler, "chanel-80", connectionHops, "1.0", "1.0");
     }
 
     function test_channel_ok() public {
         openChannel(localEnd, remoteEnd, setting, true);
         connectChannel(localEnd, remoteEnd, setting, true);
         assertEq(ucHandler.connectedChannels(0), localEnd.channelId);
+
+        Channel memory channel = dispatcher.getChannel(address(localEnd.receiver), localEnd.channelId);
+        Channel memory channelExpected = Channel(
+            localEnd.versionExpected,
+            setting.ordering,
+            setting.feeEnabled,
+            connectionHops,
+            remoteEnd.portId,
+            remoteEnd.channelId
+        );
+        assertEq(abi.encode(channel), abi.encode(channelExpected));
+        // confirm only one channel is created
         vm.expectRevert();
         ucHandler.connectedChannels(1);
     }
 
     function test_channel_fail_unauthorized() public {
         address unauthorized = deriveAddress("unauthorized");
-        vm.startPrank(unauthorized);
         vm.deal(unauthorized, 100 ether);
-        // TODO: revert if called by unauthorized account
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        openChannel(localEnd, remoteEnd, setting, false);
+
+        openChannel(localEnd, remoteEnd, setting, true);
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        connectChannel(localEnd, remoteEnd, setting, false);
     }
 }
