@@ -64,4 +64,23 @@ contract UniversalChannelTestBase is Base {
         expectRevertNonOwner();
         connectChannel(localEnd, remoteEnd, setting, false);
     }
+
+    function test_sendPacket_ok() public {
+        openChannel(localEnd, remoteEnd, setting, true);
+        connectChannel(localEnd, remoteEnd, setting, true);
+        Earth earth = new Earth(dispatcher);
+        assertNotEq(address(earth), address(0));
+        earth.greet(remoteEnd.portId, localEnd.channelId, "hello");
+    }
+}
+
+contract Earth is IbcReceiverBase {
+    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
+
+    function greet(string calldata portId, bytes32 channelId, string calldata message) external payable {
+        PacketFee memory fee;
+        dispatcher.sendPacketOverUniversalChannel{value: Ibc.calcEscrowFee(fee)}(
+            portId, channelId, bytes(message), 1 days, fee
+        );
+    }
 }
