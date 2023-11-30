@@ -20,10 +20,7 @@ contract ChannelHandshakeTest is Base {
     function setUp() public {
         dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcher);
-        _local = LocalEnd(mars, "channel-1", new string[](2), "1.0", "1.0");
-        _local.connectionHops[0] = "connection-1";
-        _local.connectionHops[1] = "connection-2";
-
+        _local = LocalEnd(mars, "channel-1", connectionHops, "1.0", "1.0");
         _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
     }
 
@@ -215,9 +212,7 @@ contract ChannelOpenTestBase is Base {
         vm.deal(relayer, 100000 ether);
         mars = new Mars(dispatcher);
 
-        _local = LocalEnd(mars, channelId, new string[](2), "1.0", "1.0");
-        _local.connectionHops[0] = "connection-1";
-        _local.connectionHops[1] = "connection-2";
+        _local = LocalEnd(mars, channelId, connectionHops, "1.0", "1.0");
         _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
         openChannel(_local, _remote, setting, true);

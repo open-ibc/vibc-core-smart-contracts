@@ -83,6 +83,7 @@ contract Base is Test, IbcEventsEmitter {
 
     Dispatcher dispatcher;
     string portPrefix = "polyibc.eth.";
+    string[] connectionHops = ["connection-1", "connection-2"];
 
     // ⬇️ Utility functions for testing
 
