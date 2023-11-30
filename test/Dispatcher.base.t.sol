@@ -6,7 +6,7 @@ import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
 import {Escrow} from "../contracts/Escrow.sol";
-import {IbcReceiver} from "../contracts/IbcReceiver.sol";
+import {IbcChannelHandler} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
@@ -14,7 +14,7 @@ import "../contracts/OpConsensusStateManager.sol";
 import "../contracts/DummyConsensusStateManager.sol";
 
 struct LocalEnd {
-    IbcReceiver receiver;
+    IbcChannelHandler receiver;
     // channelId is only used in connectIbcChannel
     bytes32 channelId;
     string[] connectionHops;

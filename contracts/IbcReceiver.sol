@@ -7,24 +7,11 @@ import "./IbcDispatcher.sol";
 import "./Ibc.sol";
 
 /**
- * @title IbcReceiver
- * @author Polymer Labs
- * @notice IBC receiver interface must be implemented by a IBC-enabled contract.
- * The implementer, aka. dApp devs, should implement channel handshake and packet handling methods.
+ * @title IbcChannelHandler
+ * @notice Channel handler interface must be implemented by a IBC-enabled contract.
+ * @dev Channel handling callback methods are invoked by the IBC dispatcher.
  */
-interface IbcReceiver {
-    //
-    // Packet handling methods
-    //
-    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
-
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
-
-    function onTimeoutPacket(IbcPacket calldata packet) external;
-
-    //
-    // Channel handshake methods
-    //
+interface IbcChannelHandler {
     function onOpenIbcChannel(
         string calldata version,
         ChannelOrder ordering,
@@ -41,6 +28,27 @@ interface IbcReceiver {
     function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
         external;
 }
+
+/**
+ * @title IbcPacketHandler
+ * @notice Packet handler interface must be implemented by a IBC-enabled contract.
+ * @dev Packet handling callback methods are invoked by the IBC dispatcher.
+ */
+interface IbcPacketHandler {
+    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
+
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
+
+    function onTimeoutPacket(IbcPacket calldata packet) external;
+}
+
+/**
+ * @title IbcReceiver
+ * @author Polymer Labs
+ * @notice IBC receiver interface must be implemented by a IBC-enabled contract.
+ * The implementer, aka. dApp devs, should implement channel handshake and packet handling methods.
+ */
+interface IbcReceiver is IbcChannelHandler, IbcPacketHandler {}
 
 contract IbcReceiverBase is Ownable {
     IbcDispatcher public dispatcher;
