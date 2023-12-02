@@ -12,6 +12,7 @@ import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
 import "../contracts/OpConsensusStateManager.sol";
 import "./Dispatcher.base.t.sol";
+import "./VirtualChain.sol";
 
 contract UniversalChannelTestBase is Base {
     UniversalChannelHandler ucHandler;
@@ -74,13 +75,20 @@ contract UniversalChannelTestBase is Base {
     }
 }
 
-contract Earth is IbcReceiverBase {
-    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
+contract VirtualChainTest is Base {
+    VirtualChain eth1;
+    VirtualChain eth2;
 
-    function greet(string calldata portId, bytes32 channelId, string calldata message) external payable {
-        PacketFee memory fee;
-        dispatcher.sendPacketOverUniversalChannel{value: Ibc.calcEscrowFee(fee)}(
-            portId, channelId, bytes(message), 1 days, fee
-        );
+    function setUp() public virtual {
+        eth1 = new VirtualChain(100, "polyibc.eth1.");
+        eth2 = new VirtualChain(200, "polyibc.eth2.");
+    }
+
+    function test_channel_handshake_ok() public {
+        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
+        // msg.sender is VirtualChain contracts
+
+        eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+        eth1.finishHandshake(eth1.mars(), eth2, eth2.mars(), setting);
     }
 }

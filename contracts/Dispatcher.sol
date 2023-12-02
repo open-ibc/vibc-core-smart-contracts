@@ -25,40 +25,6 @@ struct UpgradeClientMsg {
     ConsensusState consensusState;
 }
 
-// misc errors.
-error invalidCounterParty();
-error invalidCounterPartyPortId();
-error invalidHexStringLength();
-error invalidRelayerAddress();
-error consensusStateVerificationFailed();
-error packetNotTimedOut();
-error invalidAddress();
-
-// packet sequence related errors.
-error invalidPacketSequence();
-error unexpectedPacketSequence();
-
-// channel related errors.
-error channelNotOwnedBySender();
-error channelNotOwnedByPortAddress();
-
-// client related errors.
-error clientAlreadyCreated();
-error clientNotCreated();
-
-// packet commitment related errors.
-error packetCommitmentNotFound();
-error ackPacketCommitmentAlreadyExists();
-error packetReceiptAlreadyExists();
-
-// receiver related errors.
-error receiverNotIndtendedPacketDestination();
-error receiverNotOriginPacketSender();
-
-// fee related errors.
-error escrowPacketFee();
-error invalidChannelType(string channelType);
-
 /**
  * @title Dispatcher
  * @author Polymer Labs
