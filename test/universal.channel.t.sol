@@ -15,11 +15,6 @@ import "./Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
 
 contract UniversalChannelTestBase is Base {
-    // UniversalChannelHandler ucHandler;
-    // ChannelHandshakeSetting setting;
-    // LocalEnd localEnd;
-    // RemoteEnd remoteEnd;
-
     VirtualChain eth1;
     VirtualChain eth2;
 
@@ -47,18 +42,38 @@ contract UniversalChannelTestBase is Base {
         ucHandler1.connectedChannels(1);
     }
 
-    // function test_channel_fail_unauthorized() public {
-    //     address unauthorized = deriveAddress("unauthorized");
-    //     vm.deal(unauthorized, 100 ether);
-    //     vm.prank(unauthorized);
-    //     expectRevertNonOwner();
-    //     openChannel(localEnd, remoteEnd, setting, false);
+    function test_channel_fail_unauthorized() public {
+        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
+        IbcChannelHandler ucHandler1 = eth1.ucHandler();
+        IbcChannelHandler ucHandler2 = eth2.ucHandler();
+        eth1.assignChanelIds(ucHandler1, ucHandler2, eth2);
 
-    //     openChannel(localEnd, remoteEnd, setting, true);
-    //     vm.prank(unauthorized);
-    //     expectRevertNonOwner();
-    //     connectChannel(localEnd, remoteEnd, setting, false);
-    // }
+        address unauthorized = deriveAddress("unauthorized");
+        vm.deal(unauthorized, 100 ether);
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        eth1.channelOpenInit(ucHandler1, eth2, ucHandler2, setting, false);
+        vm.prank(address(eth1));
+        eth1.channelOpenInit(ucHandler1, eth2, ucHandler2, setting, true);
+
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, false);
+        vm.prank(address(eth2));
+        eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, true);
+
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, false);
+        vm.prank(address(eth1));
+        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, true);
+
+        vm.prank(unauthorized);
+        expectRevertNonOwner();
+        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, false);
+        vm.prank(address(eth2));
+        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true);
+    }
 
     // function test_sendPacket_ok() public {
     //     openChannel(localEnd, remoteEnd, setting, true);
