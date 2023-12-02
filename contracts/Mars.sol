@@ -6,8 +6,6 @@ import "./Ibc.sol";
 import "./IbcReceiver.sol";
 import "./IbcDispatcher.sol";
 
-error invalidCounterPartyPortId();
-
 contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
