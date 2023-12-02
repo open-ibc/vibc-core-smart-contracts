@@ -30,7 +30,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     mapping(address => mapping(bytes32 => Channel)) public channels;
     mapping(address => string) public portIds;
 
-    string[] connectionHops;
+    string[] public connectionHops;
     uint256 _seed;
 
     // seed is used to generate unique channelIds and connectionIds;
@@ -62,6 +62,28 @@ contract VirtualChain is Test, IbcEventsEmitter {
         connectionHops[1] = newConnectionId();
     }
 
+    // expectedChannel returns a Channel struct with expected values
+    // this is used to verify on its counterpart chain
+    function expectedChannel(
+        address localAddr,
+        bytes32 localChanId,
+        string[] memory counterpartyConnectionHops,
+        ChannelSetting memory setting
+    ) public view returns (Channel memory) {
+        return Channel(
+            setting.version,
+            setting.ordering,
+            setting.feeEnabled,
+            counterpartyConnectionHops,
+            portIds[localAddr],
+            localChanId
+        );
+    }
+
+    function getConnectionHops() external view returns (string[] memory) {
+        return connectionHops;
+    }
+
     // finishHandshake is a helper function to finish the 4-step handshake
     // @arg localEnd: the local end of the channel on this virtual chain
     // @arg remoteChain: the remote virtual chain
@@ -81,9 +103,16 @@ contract VirtualChain is Test, IbcEventsEmitter {
         remoteChain.setChannelId(remoteEnd, localEnd, remoteChannelId);
 
         // localEnd initiates the first step in 4-step handshake
+        vm.prank(address(this));
         this.channelOpenInit(localEnd, remoteChain, remoteEnd, setting, true); // step-1
+
+        vm.prank(address(remoteChain));
         remoteChain.channelOpenTry(remoteEnd, this, localEnd, setting, true); // step-2
+
+        vm.prank(address(this));
         this.channelOpenAckOrConfirm(localEnd, remoteChain, remoteEnd, setting, true); // step-3
+
+        vm.prank(address(remoteChain));
         remoteChain.channelOpenAckOrConfirm(remoteEnd, this, localEnd, setting, true); // step-4
     }
 
@@ -96,6 +125,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     ) external {
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
+
+        // set dispatcher's msg.sender to this function's msg.sender
+        vm.prank(msg.sender);
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
@@ -133,6 +165,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
+
+        // set dispatcher's msg.sender to this function's msg.sender
+        vm.prank(msg.sender);
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
@@ -173,6 +208,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenAckOrConfirm: counterparty portId does not exist");
+
+        // set dispatcher's msg.sender to this function's msg.sender
+        vm.prank(msg.sender);
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
