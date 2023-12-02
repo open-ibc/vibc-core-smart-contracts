@@ -84,6 +84,17 @@ contract VirtualChain is Test, IbcEventsEmitter {
         return connectionHops;
     }
 
+    // Assign new channelIds to both ends of the channel
+    function assignChanelIds(IbcChannelHandler localEnd, IbcChannelHandler remoteEnd, VirtualChain remoteChain)
+        external
+    {
+        bytes32 localChannelId = this.newChannelId();
+        bytes32 remoteChannelId = remoteChain.newChannelId();
+        // save channelIds on each virtual chain
+        this.setChannelId(localEnd, remoteEnd, localChannelId);
+        remoteChain.setChannelId(remoteEnd, localEnd, remoteChannelId);
+    }
+
     // finishHandshake is a helper function to finish the 4-step handshake
     // @arg localEnd: the local end of the channel on this virtual chain
     // @arg remoteChain: the remote virtual chain
@@ -96,11 +107,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         IbcChannelHandler remoteEnd,
         ChannelSetting memory setting
     ) external {
-        bytes32 localChannelId = this.newChannelId();
-        bytes32 remoteChannelId = remoteChain.newChannelId();
-        // save channelIds on each virtual chain
-        this.setChannelId(localEnd, remoteEnd, localChannelId);
-        remoteChain.setChannelId(remoteEnd, localEnd, remoteChannelId);
+        this.assignChanelIds(localEnd, remoteEnd, remoteChain);
 
         // localEnd initiates the first step in 4-step handshake
         vm.prank(address(this));
