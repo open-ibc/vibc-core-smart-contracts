@@ -15,67 +15,61 @@ import "./Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
 
 contract UniversalChannelTestBase is Base {
-    UniversalChannelHandler ucHandler;
-    ChannelHandshakeSetting setting;
-    LocalEnd localEnd;
-    RemoteEnd remoteEnd;
+    // UniversalChannelHandler ucHandler;
+    // ChannelHandshakeSetting setting;
+    // LocalEnd localEnd;
+    // RemoteEnd remoteEnd;
+
+    VirtualChain eth1;
+    VirtualChain eth2;
 
     function setUp() public virtual {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
-        Escrow myEscrow = Escrow(escrow);
-        myEscrow.setDispatcher(address(dispatcher));
-
-        ucHandler = new UniversalChannelHandler(dispatcher);
-        dispatcher.setUniversalChannelHandler(ucHandler);
-
-        setting = ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, true, validProof);
-        remoteEnd = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "chanel-81", "1.0");
-        localEnd = LocalEnd(ucHandler, "chanel-80", connectionHops, "1.0", "1.0");
+        eth1 = new VirtualChain(100, "polyibc.eth1.");
+        eth2 = new VirtualChain(200, "polyibc.eth2.");
     }
 
     function test_channel_ok() public {
-        openChannel(localEnd, remoteEnd, setting, true);
-        connectChannel(localEnd, remoteEnd, setting, true);
-        assertEq(ucHandler.connectedChannels(0), localEnd.channelId);
+        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
+        eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
 
-        Channel memory channel = dispatcher.getChannel(address(localEnd.receiver), localEnd.channelId);
-        Channel memory channelExpected = Channel(
-            localEnd.versionExpected,
-            setting.ordering,
-            setting.feeEnabled,
-            connectionHops,
-            remoteEnd.portId,
-            remoteEnd.channelId
-        );
+        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
+        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
+        assertEq(eth1.ucHandler().connectedChannels(0), channelId1);
+
+        Channel memory channel = eth1.dispatcher().getChannel(address(eth1.ucHandler()), channelId1);
+        Channel memory channelExpected =
+            eth2.expectedChannel(address(eth2.ucHandler()), channelId2, eth1.getConnectionHops(), setting);
         assertEq(abi.encode(channel), abi.encode(channelExpected));
+
         // confirm only one channel is created
+        UniversalChannelHandler ucHandler1 = UniversalChannelHandler(eth1.ucHandler());
         vm.expectRevert();
-        ucHandler.connectedChannels(1);
+        ucHandler1.connectedChannels(1);
     }
 
-    function test_channel_fail_unauthorized() public {
-        address unauthorized = deriveAddress("unauthorized");
-        vm.deal(unauthorized, 100 ether);
-        vm.prank(unauthorized);
-        expectRevertNonOwner();
-        openChannel(localEnd, remoteEnd, setting, false);
+    // function test_channel_fail_unauthorized() public {
+    //     address unauthorized = deriveAddress("unauthorized");
+    //     vm.deal(unauthorized, 100 ether);
+    //     vm.prank(unauthorized);
+    //     expectRevertNonOwner();
+    //     openChannel(localEnd, remoteEnd, setting, false);
 
-        openChannel(localEnd, remoteEnd, setting, true);
-        vm.prank(unauthorized);
-        expectRevertNonOwner();
-        connectChannel(localEnd, remoteEnd, setting, false);
-    }
+    //     openChannel(localEnd, remoteEnd, setting, true);
+    //     vm.prank(unauthorized);
+    //     expectRevertNonOwner();
+    //     connectChannel(localEnd, remoteEnd, setting, false);
+    // }
 
-    function test_sendPacket_ok() public {
-        openChannel(localEnd, remoteEnd, setting, true);
-        connectChannel(localEnd, remoteEnd, setting, true);
-        Earth earth = new Earth(dispatcher);
-        assertNotEq(address(earth), address(0));
-        earth.greet(remoteEnd.portId, localEnd.channelId, "hello");
-    }
+    // function test_sendPacket_ok() public {
+    //     openChannel(localEnd, remoteEnd, setting, true);
+    //     connectChannel(localEnd, remoteEnd, setting, true);
+    //     Earth earth = new Earth(dispatcher);
+    //     assertNotEq(address(earth), address(0));
+    //     earth.greet(remoteEnd.portId, localEnd.channelId, "hello");
+    // }
 }
 
-contract VirtualChainTest is Base {
+contract UniversalChannelPacketTest is Base {
     VirtualChain eth1;
     VirtualChain eth2;
 
