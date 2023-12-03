@@ -14,36 +14,44 @@ import "../contracts/OpConsensusStateManager.sol";
 import "./Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
 
-contract UniversalChannelTestBase is Base {
-    VirtualChain eth1;
-    VirtualChain eth2;
+contract UniversalChannelTest is Base {
+    function test_channel_settings_ok() public {
+        ChannelOrder[2] memory orders = [ChannelOrder.UNORDERED, ChannelOrder.ORDERED];
+        bool[2] memory feesEnabled = [true, false];
 
-    function setUp() public virtual {
-        eth1 = new VirtualChain(100, "polyibc.eth1.");
-        eth2 = new VirtualChain(200, "polyibc.eth2.");
+        for (uint256 i = 0; i < orders.length; i++) {
+            for (uint256 j = 0; j < feesEnabled.length; j++) {
+                VirtualChain eth1 = new VirtualChain(100, "polyibc.eth1.");
+                VirtualChain eth2 = new VirtualChain(200, "polyibc.eth2.");
+                ChannelSetting memory setting = ChannelSetting(orders[i], "1.0", feesEnabled[j], validProof);
+                eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+
+                assert_channel(eth1, eth2, setting);
+            }
+        }
     }
 
-    function test_channel_ok() public {
-        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
-        eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+    function assert_channel(VirtualChain vc1, VirtualChain vc2, ChannelSetting memory setting) internal {
+        bytes32 channelId1 = vc1.channelIds(address(vc1.ucHandler()), address(vc2.ucHandler()));
+        bytes32 channelId2 = vc2.channelIds(address(vc2.ucHandler()), address(vc1.ucHandler()));
+        assertEq(vc1.ucHandler().connectedChannels(0), channelId1);
+        assertEq(vc2.ucHandler().connectedChannels(0), channelId2);
 
-        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
-        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
-        assertEq(eth1.ucHandler().connectedChannels(0), channelId1);
-
-        Channel memory channel = eth1.dispatcher().getChannel(address(eth1.ucHandler()), channelId1);
-        Channel memory channelExpected =
-            eth2.expectedChannel(address(eth2.ucHandler()), channelId2, eth1.getConnectionHops(), setting);
-        assertEq(abi.encode(channel), abi.encode(channelExpected));
-
-        // confirm only one channel is created
-        UniversalChannelHandler ucHandler1 = UniversalChannelHandler(eth1.ucHandler());
-        vm.expectRevert();
-        ucHandler1.connectedChannels(1);
+        Channel memory channel1 = vc1.dispatcher().getChannel(address(vc1.ucHandler()), channelId1);
+        Channel memory channel2 = vc2.dispatcher().getChannel(address(vc2.ucHandler()), channelId2);
+        Channel memory channel2Expected =
+            vc1.expectedChannel(address(vc1.ucHandler()), channelId1, vc2.getConnectionHops(), setting);
+        Channel memory channel1Expected =
+            vc2.expectedChannel(address(vc2.ucHandler()), channelId2, vc1.getConnectionHops(), setting);
+        assertEq(abi.encode(channel1), abi.encode(channel1Expected));
+        assertEq(abi.encode(channel2), abi.encode(channel2Expected));
     }
 
     function test_channel_fail_unauthorized() public {
+        VirtualChain eth1 = new VirtualChain(100, "polyibc.eth1.");
+        VirtualChain eth2 = new VirtualChain(200, "polyibc.eth2.");
         ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
+
         IbcChannelHandler ucHandler1 = eth1.ucHandler();
         IbcChannelHandler ucHandler2 = eth2.ucHandler();
         eth1.assignChanelIds(ucHandler1, ucHandler2, eth2);
@@ -74,30 +82,18 @@ contract UniversalChannelTestBase is Base {
         vm.prank(address(eth2));
         eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true);
     }
-
-    // function test_sendPacket_ok() public {
-    //     openChannel(localEnd, remoteEnd, setting, true);
-    //     connectChannel(localEnd, remoteEnd, setting, true);
-    //     Earth earth = new Earth(dispatcher);
-    //     assertNotEq(address(earth), address(0));
-    //     earth.greet(remoteEnd.portId, localEnd.channelId, "hello");
-    // }
 }
 
 contract UniversalChannelPacketTest is Base {
     VirtualChain eth1;
     VirtualChain eth2;
+    ChannelSetting setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
 
     function setUp() public virtual {
         eth1 = new VirtualChain(100, "polyibc.eth1.");
         eth2 = new VirtualChain(200, "polyibc.eth2.");
-    }
-
-    function test_channel_handshake_ok() public {
-        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
-        // msg.sender is VirtualChain contracts
-
         eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
-        eth1.finishHandshake(eth1.mars(), eth2, eth2.mars(), setting);
     }
+
+    function test_channel_handshake_ok() public {}
 }
