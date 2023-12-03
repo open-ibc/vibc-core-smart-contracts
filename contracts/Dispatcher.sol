@@ -466,14 +466,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // record packet fees
-        packetFees[msg.sender][channelId][sequence] = fee;
+        packetFees[sender][channelId][sequence] = fee;
 
         // packet commitment
-        sendPacketCommitment[msg.sender][channelId][sequence] = true;
+        sendPacketCommitment[sender][channelId][sequence] = true;
         // increment nextSendPacketSequence
-        nextSequenceSend[msg.sender][channelId] = sequence + 1;
+        nextSequenceSend[sender][channelId] = sequence + 1;
 
-        emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp, fee);
+        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp, fee);
     }
 
     /**

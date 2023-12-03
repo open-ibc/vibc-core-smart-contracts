@@ -88,12 +88,45 @@ contract UniversalChannelPacketTest is Base {
     VirtualChain eth1;
     VirtualChain eth2;
     ChannelSetting setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
+    Earth earth1;
+    Earth earth2;
+    UniversalChannelHandler ucHandler1;
+    UniversalChannelHandler ucHandler2;
 
     function setUp() public virtual {
         eth1 = new VirtualChain(100, "polyibc.eth1.");
         eth2 = new VirtualChain(200, "polyibc.eth2.");
         eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+        earth1 = eth1.earth();
+        earth2 = eth2.earth();
+        ucHandler1 = eth1.ucHandler();
+        ucHandler2 = eth2.ucHandler();
     }
 
-    function test_channel_handshake_ok() public {}
+    function test_sendPacket_ok() public {
+        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
+        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
+        string memory earth1PortId = eth1.portIds(address(eth1.earth()));
+        string memory earth2PortId = eth2.portIds(address(eth2.earth()));
+        bytes memory appData = bytes("msg-1");
+
+        // send packet from earth1 to earth2
+        for (uint64 packetSeq = 1; packetSeq <= 5; packetSeq++) {
+            uint64 factor = packetSeq; // change packet settings for each iteration
+            vm.expectEmit(true, true, true, true);
+            uint64 timeout = 1 days * 10 ** 9 * factor;
+            PacketFee memory fee = PacketFee(1 * factor, 2 * factor, 3 * factor);
+            emit SendPacket(address(ucHandler1), channelId1, toPacket(earth2PortId, appData), packetSeq, timeout, fee);
+            earth1.greet{value: Ibc.calcEscrowFee(fee)}(earth2PortId, channelId1, appData, timeout, fee);
+            PacketFee memory packetFee =
+                eth1.dispatcher().getTotalPacketFees(address(ucHandler1), channelId1, packetSeq);
+            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+        }
+    }
+
+    // convert appData to an IBC packet; must be the same logic with Dispatcher contract
+    function toPacket(string memory remotePortId, bytes memory appData) internal pure returns (bytes memory) {
+        uint256 portIdLen = bytes(remotePortId).length;
+        return abi.encodePacked(portIdLen, remotePortId, appData);
+    }
 }
