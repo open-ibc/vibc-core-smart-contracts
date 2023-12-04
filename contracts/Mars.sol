@@ -19,7 +19,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket calldata packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }

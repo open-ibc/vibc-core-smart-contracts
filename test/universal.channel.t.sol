@@ -93,6 +93,15 @@ contract UniversalChannelPacketTest is Base {
     UniversalChannelHandler ucHandler1;
     UniversalChannelHandler ucHandler2;
 
+    bytes appData = bytes("msg-1");
+    bytes packetData;
+    bytes ackPacket;
+    UniversalPacketData ucData;
+    // IBC packet received by dispatcher
+    IbcPacket recvPacket;
+    // actual universal channel packet received by dApp
+    IbcPacket ucPacket;
+
     function setUp() public virtual {
         eth1 = new VirtualChain(100, "polyibc.eth1.");
         eth2 = new VirtualChain(200, "polyibc.eth2.");
@@ -108,20 +117,68 @@ contract UniversalChannelPacketTest is Base {
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
         string memory earth1PortId = eth1.portIds(address(eth1.earth()));
         string memory earth2PortId = eth2.portIds(address(eth2.earth()));
-        bytes memory appData = bytes("msg-1");
 
+        PacketFee memory fee;
+        PacketFee memory packetFee;
         // send packet from earth1 to earth2
         for (uint64 packetSeq = 1; packetSeq <= 5; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
-            vm.expectEmit(true, true, true, true);
             uint64 timeout = 1 days * 10 ** 9 * factor;
-            PacketFee memory fee = PacketFee(1 * factor, 2 * factor, 3 * factor);
-            bytes memory packetData = Ibc.toUniversalPacketDataBytes(address(earth1), earth2PortId, appData);
+            fee = PacketFee(1 * factor, 2 * factor, 3 * factor);
+            appData = abi.encodePacked("msg-", packetSeq);
+
+            ucData = UniversalPacketData(
+                Ibc.addressToPortId(eth1.dispatcher().portPrefix(), address(earth1)), earth2PortId, appData
+            );
+            packetData = Ibc.toUniversalPacketDataBytes(ucData);
+            vm.expectEmit(true, true, true, true);
             emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout, fee);
             earth1.greet{value: Ibc.calcEscrowFee(fee)}(earth2PortId, channelId1, appData, timeout, fee);
-            PacketFee memory packetFee =
-                eth1.dispatcher().getTotalPacketFees(address(ucHandler1), channelId1, packetSeq);
+
+            packetFee = eth1.dispatcher().getTotalPacketFees(address(ucHandler1), channelId1, packetSeq);
             assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+
+            // simulate relayer calling dispatcher.recvPacket on chain B
+            // recvPacket is an IBC packet
+            recvPacket = IbcPacket(
+                IbcEndpoint(eth1.portIds(address(ucHandler1)), channelId1),
+                IbcEndpoint(eth2.portIds(address(ucHandler2)), channelId2),
+                packetSeq,
+                packetData,
+                Height(0, 0),
+                timeout
+            );
+            ucPacket = IbcPacket(
+                IbcEndpoint(earth1PortId, channelId1),
+                IbcEndpoint(earth2PortId, channelId2),
+                packetSeq,
+                appData,
+                Height(0, 0),
+                timeout
+            );
+            ackPacket = abi.encodePacked("ack-", appData);
+            vm.expectEmit(true, true, true, true);
+            emit RecvPacket(address(earth2), channelId2, packetSeq);
+            emit WriteAckPacket(
+                address(earth2), channelId2, packetSeq, AckPacket(true, abi.encodePacked("ack-", appData))
+            );
+            eth2.dispatcher().recvPacket(earth2, recvPacket, setting.proof);
+
+            IbcPacket memory dappPacket = getIbcPacket(earth2, packetSeq - 1);
+            assertEq(abi.encode(dappPacket), abi.encode(ucPacket));
         }
+    }
+
+    // getIbcPacket returns an IBC packet by index
+    function getIbcPacket(Earth earth, uint256 index) internal view returns (IbcPacket memory) {
+        (
+            IbcEndpoint memory _src,
+            IbcEndpoint memory _dest,
+            uint64 _seq,
+            bytes memory _data,
+            Height memory _height,
+            uint64 _timeoutTimestamp
+        ) = earth.recvedPackets(index);
+        return IbcPacket(_src, _dest, _seq, _data, _height, _timeoutTimestamp);
     }
 }

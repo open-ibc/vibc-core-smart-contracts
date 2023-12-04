@@ -2,8 +2,11 @@
 
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 /// IbcPacket represents the packet data structure received from a remote chain
 /// over an IBC channel.
+
 struct IbcPacket {
     /// identifies the channel and port on the sending chain.
     IbcEndpoint src;
@@ -20,7 +23,9 @@ struct IbcPacket {
 
 // UniversalPacketData represents the data field of an IbcPacket
 struct UniversalPacketData {
-    address srcPortAddress;
+    // address srcPortAddress;
+    // address destPortAddress;
+    string srcPortId;
     string destPortId;
     bytes appData;
 }
@@ -162,16 +167,27 @@ library Ibc {
     }
 
     // convert params to UniversalPacketDataBytes with optimal gas cost
-    function toUniversalPacketDataBytes(address srcPortAddress, string memory destPort, bytes memory appData)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encode(srcPortAddress, destPort, appData);
+    function toUniversalPacketDataBytes(UniversalPacketData memory data) internal pure returns (bytes memory) {
+        return abi.encode(data);
     }
 
     // fromUniversalPacketDataBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
     function fromUniversalPacketDataBytes(bytes memory data) internal pure returns (UniversalPacketData memory) {
         return abi.decode(data, (UniversalPacketData));
+    }
+
+    // addressToPortId converts an address to a port ID
+    function addressToPortId(string memory portPrefix, address addr) internal pure returns (string memory) {
+        return string(abi.encodePacked(portPrefix, toHexStr(addr)));
+    }
+    // convert an address to its hex string, but without 0x prefix
+
+    function toHexStr(address addr) internal pure returns (bytes memory) {
+        bytes memory addrWithPrefix = abi.encodePacked(Strings.toHexString(addr));
+        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
+        for (uint256 i = 0; i < addrWithoutPrefix.length; i++) {
+            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
+        }
+        return addrWithoutPrefix;
     }
 }

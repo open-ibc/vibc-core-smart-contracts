@@ -28,7 +28,7 @@ contract Earth is IbcReceiverBase, IbcPacketHandler {
         );
     }
 
-    function onRecvPacket(IbcPacket calldata packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked("ack-", packet.data));
     }
