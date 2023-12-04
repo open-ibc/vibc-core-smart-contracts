@@ -6,7 +6,14 @@ import "./Ibc.sol";
 import "./IbcReceiver.sol";
 import "./IbcDispatcher.sol";
 
-contract Earth is IbcReceiverBase {
+contract Earth is IbcReceiverBase, IbcPacketHandler {
+    // received packet as chain B
+    IbcPacket[] public recvedPackets;
+    // received ack packet as chain A
+    AckPacket[] public ackPackets;
+    // received timeout packet as chain A
+    IbcPacket[] public timeoutPackets;
+
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
     function greet(
@@ -19,5 +26,18 @@ contract Earth is IbcReceiverBase {
         dispatcher.sendPacketOverUniversalChannel{value: Ibc.calcEscrowFee(fee)}(
             portId, channelId, message, timeoutTimestamp, fee
         );
+    }
+
+    function onRecvPacket(IbcPacket calldata packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+        recvedPackets.push(packet);
+        return AckPacket(true, abi.encodePacked("ack-", packet.data));
+    }
+
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {
+        ackPackets.push(ack);
+    }
+
+    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {
+        timeoutPackets.push(packet);
     }
 }

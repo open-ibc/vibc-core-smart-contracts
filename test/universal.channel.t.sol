@@ -116,17 +116,12 @@ contract UniversalChannelPacketTest is Base {
             vm.expectEmit(true, true, true, true);
             uint64 timeout = 1 days * 10 ** 9 * factor;
             PacketFee memory fee = PacketFee(1 * factor, 2 * factor, 3 * factor);
-            emit SendPacket(address(ucHandler1), channelId1, toPacket(earth2PortId, appData), packetSeq, timeout, fee);
+            bytes memory packetData = Ibc.toUniversalPacketDataBytes(address(earth1), earth2PortId, appData);
+            emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout, fee);
             earth1.greet{value: Ibc.calcEscrowFee(fee)}(earth2PortId, channelId1, appData, timeout, fee);
             PacketFee memory packetFee =
                 eth1.dispatcher().getTotalPacketFees(address(ucHandler1), channelId1, packetSeq);
             assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
         }
-    }
-
-    // convert appData to an IBC packet; must be the same logic with Dispatcher contract
-    function toPacket(string memory remotePortId, bytes memory appData) internal pure returns (bytes memory) {
-        uint256 portIdLen = bytes(remotePortId).length;
-        return abi.encodePacked(portIdLen, remotePortId, appData);
     }
 }
