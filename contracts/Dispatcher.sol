@@ -497,12 +497,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert invalidChannelType("non-universal");
         }
 
-        // Pack appData with portId into a IBC Packet
-        uint256 portIdLen = bytes(portId).length;
-        bytes memory packet = abi.encodePacked(portIdLen, portId, appData);
-
+        bytes memory packetData = Ibc.toUniversalPacketDataBytes(msg.sender, portId, appData);
         uint256 escrowAmount = Ibc.calcEscrowFee(fee);
-        _sendPacket(address(universalChannelHandler), channelId, packet, timeoutTimestamp, fee, escrowAmount);
+
+        _sendPacket(address(universalChannelHandler), channelId, packetData, timeoutTimestamp, fee, escrowAmount);
     }
 
     /**

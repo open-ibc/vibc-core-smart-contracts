@@ -18,6 +18,13 @@ struct IbcPacket {
     uint64 timeoutTimestamp;
 }
 
+// UniversalPacketData represents the data field of an IbcPacket
+struct UniversalPacketData {
+    address srcPortAddress;
+    string destPortId;
+    bytes appData;
+}
+
 /// Height is a monotonically increasing data type
 /// that can be compared against another Height for the purposes of updating and
 /// freezing clients
@@ -152,5 +159,19 @@ library Ibc {
         } else {
             return 0;
         }
+    }
+
+    // convert params to UniversalPacketDataBytes with optimal gas cost
+    function toUniversalPacketDataBytes(address srcPortAddress, string memory destPort, bytes memory appData)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encode(srcPortAddress, destPort, appData);
+    }
+
+    // fromUniversalPacketDataBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
+    function fromUniversalPacketDataBytes(bytes memory data) internal pure returns (UniversalPacketData memory) {
+        return abi.decode(data, (UniversalPacketData));
     }
 }
