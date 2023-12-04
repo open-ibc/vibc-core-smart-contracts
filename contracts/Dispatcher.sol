@@ -478,29 +478,38 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     /**
      * @notice Sends an IBC packet over a universal channel with the specified packet data and timeout block timestamp.
-     * @param portId The ID of the port to send the packet.
+     * @param destPortId The portId of the packet destination contract
      * @param channelId The ID of the universal channel on which to send the packet.
      * @param appData The application data to send.
      * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
      * @param fee The fee serves as the packet incentive for forward relay.
      */
     function sendPacketOverUniversalChannel(
-        string calldata portId,
+        string calldata destPortId,
         bytes32 channelId,
         bytes calldata appData,
         uint64 timeoutTimestamp,
         PacketFee calldata fee
     ) external payable {
-        // Check if channelId is a universal channel
-        Channel memory channel = portChannelMap[address(universalChannelHandler)][channelId];
-        if (channel.counterpartyChannelId == bytes32(0)) {
+        if (!isUniversalChannel(channelId)) {
             revert invalidChannelType("non-universal");
         }
 
-        bytes memory packetData = Ibc.toUniversalPacketDataBytes(msg.sender, portId, appData);
+        bytes memory packetData = Ibc.toUniversalPacketDataBytes(
+            UniversalPacketData(Ibc.addressToPortId(portPrefix, msg.sender), destPortId, appData)
+        );
         uint256 escrowAmount = Ibc.calcEscrowFee(fee);
 
         _sendPacket(address(universalChannelHandler), channelId, packetData, timeoutTimestamp, fee, escrowAmount);
+    }
+
+    /**
+     * @notice revert unless a channelId is a universal channel
+     * @param channelId The ID of the channel to check.
+     */
+    function isUniversalChannel(bytes32 channelId) internal view returns (bool) {
+        Channel memory channel = portChannelMap[address(universalChannelHandler)][channelId];
+        return channel.counterpartyChannelId != bytes32(0);
     }
 
     /**
@@ -718,15 +727,23 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
      * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
+     * For regular channel, the receiver must be the intended packet destination, which is the same as packet.dest.portId.
+     * For universal channel, the receiver must be the intended packet destination, which is the NOT same as packet.dest.portId.
+     * The real destPortId is encoded in the packet data.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
     function recvPacket(IbcPacketHandler receiver, IbcPacket calldata packet, Proof calldata proof) external {
-        // verify `receiver` is the intended packet destination
-        if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
-            revert receiverNotIndtendedPacketDestination();
+        bool isUc = isUniversalChannel(packet.dest.channelId);
+        // marker for channel bookkeeping
+        address marker = isUc ? address(universalChannelHandler) : address(receiver);
+        if (!isUc) {
+            // verify `receiver` is the intended packet destination
+            if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
+                revert receiverNotIndtendedPacketDestination();
+            }
         }
 
         consensusStateManager.verifyMembership(
@@ -737,21 +754,21 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         );
 
         // verify packet has not been received yet
-        bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = recvPacketReceipt[marker][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
             revert packetReceiptAlreadyExists();
         }
 
-        recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        recvPacketReceipt[marker][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
+        Channel memory channel = portChannelMap[marker][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+            if (packet.sequence != nextSequenceRecv[marker][packet.dest.channelId]) {
                 revert unexpectedPacketSequence();
             }
 
-            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            nextSequenceRecv[marker][packet.dest.channelId] = packet.sequence + 1;
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
@@ -767,7 +784,23 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // Not timeout yet, then do normal handling
-        AckPacket memory ack = receiver.onRecvPacket(packet);
+        IbcPacket memory pkt = packet;
+        if (isUc) {
+            UniversalPacketData memory universalPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+            // TODO: verify destPortId is the same as receiver's portId
+            // if (!portIdAddressMatch(address(receiver), universalPacketData.destPortId)) {
+            //     revert receiverNotIndtendedPacketDestination();
+            // }
+            pkt = IbcPacket(
+                IbcEndpoint(universalPacketData.srcPortId, packet.src.channelId),
+                IbcEndpoint(universalPacketData.destPortId, packet.dest.channelId),
+                packet.sequence,
+                universalPacketData.appData,
+                packet.timeoutHeight,
+                packet.timeoutTimestamp
+            );
+        }
+        AckPacket memory ack = receiver.onRecvPacket(pkt);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
