@@ -87,12 +87,6 @@ struct IbcEndpoint {
     bytes32 channelId;
 }
 
-struct PacketFee {
-    uint256 recvFee;
-    uint256 ackFee;
-    uint256 timeoutFee;
-}
-
 struct Proof {
     // block height at which the proof is valid for a membership or non-membership at the given keyPath
     Height proofHeight;
@@ -130,42 +124,10 @@ error packetReceiptAlreadyExists();
 error receiverNotIndtendedPacketDestination();
 error receiverNotOriginPacketSender();
 
-// fee related errors.
-error escrowPacketFee();
 error invalidChannelType(string channelType);
 
 // define a library of Ibc utility functions
 library Ibc {
-    // calcEscrowFee returns the fee to be escrowed for sending a packet.
-    function calcEscrowFee(PacketFee memory fee) internal pure returns (uint256) {
-        uint256 ackFees = fee.recvFee + fee.ackFee;
-        return fee.timeoutFee > ackFees ? fee.timeoutFee : ackFees;
-    }
-
-    /**
-     * @dev Return the amount of fee to be refunded to the sender when a packet is timed out.
-     * @param fee accumulative packet fees
-     */
-    function timeoutRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.recvFee + fee.ackFee > fee.timeoutFee) {
-            return fee.recvFee + fee.ackFee - fee.timeoutFee;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * @dev Return the amount of fee to be refunded to the sender when a packet is acknowledged.
-     * @param fee accumulative packet fees
-     */
-    function ackRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.timeoutFee > fee.ackFee + fee.recvFee) {
-            return fee.timeoutFee - fee.ackFee - fee.recvFee;
-        } else {
-            return 0;
-        }
-    }
-
     // convert params to UniversalPacketDataBytes with optimal gas cost
     function toUniversalPacketDataBytes(UniversalPacketData memory data) internal pure returns (bytes memory) {
         return abi.encode(data);

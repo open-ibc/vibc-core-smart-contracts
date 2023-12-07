@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
-import {Escrow} from "../contracts/Escrow.sol";
 import {IbcReceiver} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/UniversalChannelHandler.sol";
@@ -118,13 +117,10 @@ contract UniversalChannelPacketTest is Base {
         string memory earth1PortId = eth1.portIds(address(eth1.earth()));
         string memory earth2PortId = eth2.portIds(address(eth2.earth()));
 
-        PacketFee memory fee;
-        PacketFee memory packetFee;
         // send packet from earth1 to earth2
         for (uint64 packetSeq = 1; packetSeq <= 5; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
             uint64 timeout = 1 days * 10 ** 9 * factor;
-            fee = PacketFee(1 * factor, 2 * factor, 3 * factor);
             appData = abi.encodePacked("msg-", packetSeq);
 
             ucData = UniversalPacketData(
@@ -132,11 +128,8 @@ contract UniversalChannelPacketTest is Base {
             );
             packetData = Ibc.toUniversalPacketDataBytes(ucData);
             vm.expectEmit(true, true, true, true);
-            emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout, fee);
-            earth1.greet{value: Ibc.calcEscrowFee(fee)}(earth2PortId, channelId1, appData, timeout, fee);
-
-            packetFee = eth1.dispatcher().getTotalPacketFees(address(ucHandler1), channelId1, packetSeq);
-            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+            emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout);
+            earth1.greet(earth2PortId, channelId1, appData, timeout);
 
             // simulate relayer calling dispatcher.recvPacket on chain B
             // recvPacket is an IBC packet

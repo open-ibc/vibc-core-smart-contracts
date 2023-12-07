@@ -14,17 +14,14 @@ import "./IbcReceiver.sol";
 interface IbcDispatcher {
     function closeIbcChannel(bytes32 channelId) external;
 
-    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp, PacketFee calldata fee)
-        external
-        payable;
+    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external;
 
     function sendPacketOverUniversalChannel(
         string calldata portId,
         bytes32 channelId,
         bytes calldata appData,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee
-    ) external payable;
+        uint64 timeoutTimestamp
+    ) external;
 }
 
 /**
@@ -60,8 +57,7 @@ interface IbcEventsEmitter {
         // timeoutTimestamp is in UNIX nano seconds; packet will be rejected if
         // delivered after this timestamp on the receiving chain.
         // Timeout semantics is compliant to IBC spec and ibc-go implementation
-        uint64 timeoutTimestamp,
-        PacketFee fee
+        uint64 timeoutTimestamp
     );
 
     event Acknowledgement(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 sequence);

@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
-import {Escrow} from "../contracts/Escrow.sol";
 import {IbcReceiver} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
@@ -18,7 +17,7 @@ contract ChannelHandshakeTest is Base {
     Mars mars;
 
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
+        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcher);
         _local = LocalEnd(mars, "channel-1", connectionHops, "1.0", "1.0");
         _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
@@ -201,10 +200,7 @@ contract ChannelOpenTestBase is Base {
     ChannelHandshakeSetting setting;
 
     function setUp() public virtual {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, dummyConsStateManager);
-        Escrow myEscrow = Escrow(escrow);
-        myEscrow.setDispatcher(address(dispatcher));
-
+        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
         setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
         // anyone can run Relayers
@@ -254,21 +250,14 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // default params
     string payload = "msgPayload";
     uint64 timeoutTimestamp = 1000;
-    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
     function test_success() public {
         bytes memory packet = abi.encodePacked(payload);
         for (uint64 index = 0; index < 3; index++) {
-            uint256 balance = address(escrow).balance;
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
-            emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp, fee);
-            mars.greet{value: Ibc.calcEscrowFee(fee)}(payload, channelId, timeoutTimestamp, fee);
-            assertEq(address(escrow).balance - balance, Ibc.calcEscrowFee(fee));
-
-            // query escrowed fee per packet
-            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
-            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+            emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp);
+            mars.greet(payload, channelId, timeoutTimestamp);
         }
     }
 
@@ -276,7 +265,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     function test_mustOwner() public {
         Mars earth = new Mars(dispatcher);
         vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
-        earth.greet{value: Ibc.calcEscrowFee(fee)}(payload, channelId, timeoutTimestamp, fee);
+        earth.greet(payload, channelId, timeoutTimestamp);
     }
 }
 
@@ -286,7 +275,6 @@ contract PacketSenderTestBase is ChannelOpenTestBase {
     string payloadStr = "msgPayload";
     bytes payload = bytes(payloadStr);
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
-    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
     uint64 nextSendSeq = 1;
     // cached packet that was sent in `sendPacket`
@@ -304,7 +292,7 @@ contract PacketSenderTestBase is ChannelOpenTestBase {
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(nextSendSeq);
-        mars.greet{value: Ibc.calcEscrowFee(fee)}(payloadStr, channelId, maxTimeout, fee);
+        mars.greet(payloadStr, channelId, maxTimeout);
         nextSendSeq += 1;
     }
 
@@ -445,15 +433,6 @@ contract DispatcherAckPacketTest is PacketSenderTestBase {
 
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
-    }
-
-    function test_no_incentivizedAck() public {
-        sendPacket();
-        IncentivizedAckPacket memory incAck =
-            IncentivizedAckPacket(true, abi.encodePacked(deriveAddress("foward-relayer")), bytes("ack"));
-
-        vm.expectRevert(abi.encodeWithSignature("invalidChannelType(string)", "non-incentivized"));
-        dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
     }
 }
 

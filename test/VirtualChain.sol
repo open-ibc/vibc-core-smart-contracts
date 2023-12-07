@@ -21,7 +21,6 @@ struct ChannelSetting {
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
 contract VirtualChain is Test, IbcEventsEmitter {
     Dispatcher public dispatcher;
-    Escrow public escrow;
     UniversalChannelHandler public ucHandler;
 
     Mars public mars;
@@ -39,14 +38,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     // ChannelIds are not initialized until channel handshake is started
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
-        escrow = new Escrow();
-        dispatcher = new Dispatcher(
-            new Verifier(),
-            escrow,
-            portPrefix,
-            new DummyConsensusStateManager()
-        );
-        escrow.setDispatcher(address(dispatcher));
+        dispatcher = new Dispatcher(new Verifier(), portPrefix, new DummyConsensusStateManager());
         ucHandler = new UniversalChannelHandler(dispatcher);
         dispatcher.setUniversalChannelHandler(ucHandler);
 

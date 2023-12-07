@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
-import {Escrow} from "../contracts/Escrow.sol";
 import {IbcChannelHandler} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
@@ -71,7 +70,6 @@ contract Base is Test, IbcEventsEmitter {
     );
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
-    Escrow escrow = new Escrow();
 
     ConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
     ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
@@ -100,10 +98,6 @@ contract Base is Test, IbcEventsEmitter {
     // deriveAddress derives an address from a given string deterministically for testing
     function deriveAddress(string memory str) internal pure returns (address) {
         return vm.addr(uint256(keccak256(abi.encodePacked(str))));
-    }
-
-    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
-        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
     }
 
     // ⬇️ IBC functions for testing
