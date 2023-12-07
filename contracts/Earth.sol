@@ -16,16 +16,10 @@ contract Earth is IbcReceiverBase, IbcPacketHandler {
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
-    function greet(
-        string calldata portId,
-        bytes32 channelId,
-        bytes calldata message,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee
-    ) external payable {
-        dispatcher.sendPacketOverUniversalChannel{value: Ibc.calcEscrowFee(fee)}(
-            portId, channelId, message, timeoutTimestamp, fee
-        );
+    function greet(string calldata portId, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp)
+        external
+    {
+        dispatcher.sendPacketOverUniversalChannel(portId, channelId, message, timeoutTimestamp);
     }
 
     function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {

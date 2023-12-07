@@ -115,13 +115,9 @@ contract Mars is IbcReceiverBase, IbcReceiver {
      * @param message The greeting message to be sent.
      * @param channelId The ID of the channel to send the packet to.
      * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
-     * @param fee The fee to be paid for sending the packet.
      */
 
-    function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp, PacketFee calldata fee)
-        external
-        payable
-    {
-        dispatcher.sendPacket{value: Ibc.calcEscrowFee(fee)}(channelId, bytes(message), timeoutTimestamp, fee);
+    function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp) external {
+        dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 }

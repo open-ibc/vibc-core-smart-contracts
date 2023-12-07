@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
 import {IbcChannelHandler, IbcPacketHandler} from "./IbcReceiver.sol";
 import "./IbcVerifier.sol";
-import {Escrow} from "./Escrow.sol";
 import "./ConsensusStateManager.sol";
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
@@ -37,7 +36,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // fields
     //
     ZKMintVerifier verifier;
-    Escrow escrow;
     bool isClientCreated = false;
     ConsensusState public latestConsensusState;
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
@@ -58,9 +56,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
 
-    // keep track of packet fees. PortAddress => ChannelId => PacketSequence => IbcFee
-    mapping(address => mapping(bytes32 => mapping(uint64 => PacketFee))) packetFees;
-
     ConsensusStateManager consensusStateManager;
 
     IbcChannelHandler public universalChannelHandler;
@@ -68,20 +63,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     //
     // methods
     //
-    constructor(
-        ZKMintVerifier _verifier,
-        Escrow _escrow,
-        string memory initPortPrefix,
-        ConsensusStateManager _consensusStateManager
-    ) {
+    constructor(ZKMintVerifier _verifier, string memory initPortPrefix, ConsensusStateManager _consensusStateManager) {
         verifier = _verifier;
-        // require(_escrow != address(0), 'Escrow cannot be zero address');
-        escrow = _escrow;
-
-        // initialize portPrefix
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-
         consensusStateManager = _consensusStateManager;
     }
 
@@ -425,55 +410,31 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param channelId The ID of the channel on which to send the packet.
      * @param packet The packet data to send.
      * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
-     * @param fee The fee serves as the packet incentive for forward relay. It's escrowed on the running chain and will be
-     *    claimed by relayer later once the packet is delivered and ack'ed or timed out.
-     *    recvFee is always paid, but only ackFee or timeoutFee is paid, depending on packet path.
-     *    Total fee for packet roundtrip is determined by recvFee + max(ackFee, timeoutFee).
      */
-    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp, PacketFee calldata fee)
-        external
-        payable
-    {
+    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external {
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert channelNotOwnedBySender();
         }
 
-        uint256 escrowAmount = Ibc.calcEscrowFee(fee);
-        _sendPacket(msg.sender, channelId, packet, timeoutTimestamp, fee, escrowAmount);
+        _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
-    function _sendPacket(
-        address sender,
-        bytes32 channelId,
-        bytes memory packet,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee,
-        uint256 escrowAmount
-    ) internal {
+    function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
         uint64 sequence = nextSequenceSend[sender][channelId];
         if (sequence == 0) {
             revert invalidPacketSequence();
         }
 
-        // escescrow packet fee
-        (bool sent,) = address(escrow).call{value: escrowAmount}("");
-        if (!sent) {
-            revert escrowPacketFee();
-        }
-
-        // record packet fees
-        packetFees[sender][channelId][sequence] = fee;
-
         // packet commitment
         sendPacketCommitment[sender][channelId][sequence] = true;
         // increment nextSendPacketSequence
         nextSequenceSend[sender][channelId] = sequence + 1;
 
-        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp, fee);
+        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
     /**
@@ -482,15 +443,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param channelId The ID of the universal channel on which to send the packet.
      * @param appData The application data to send.
      * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
-     * @param fee The fee serves as the packet incentive for forward relay.
      */
     function sendPacketOverUniversalChannel(
         string calldata destPortId,
         bytes32 channelId,
         bytes calldata appData,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee
-    ) external payable {
+        uint64 timeoutTimestamp
+    ) public {
         if (!isUniversalChannel(channelId)) {
             revert invalidChannelType("non-universal");
         }
@@ -498,9 +457,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         bytes memory packetData = Ibc.toUniversalPacketDataBytes(
             UniversalPacketData(Ibc.addressToPortId(portPrefix, msg.sender), destPortId, appData)
         );
-        uint256 escrowAmount = Ibc.calcEscrowFee(fee);
 
-        _sendPacket(address(universalChannelHandler), channelId, packetData, timeoutTimestamp, fee, escrowAmount);
+        _sendPacket(address(universalChannelHandler), channelId, packetData, timeoutTimestamp);
     }
 
     /**
@@ -510,35 +468,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     function isUniversalChannel(bytes32 channelId) internal view returns (bool) {
         Channel memory channel = portChannelMap[address(universalChannelHandler)][channelId];
         return channel.counterpartyChannelId != bytes32(0);
-    }
-
-    /**
-     * Pay extra fees for a packet that has already been sent.
-     * Dapps should call this function to incentivize packet relay if the packet is not ack'ed or timed out yet.
-     * @notice This function can be called multiple times for the same packet. But it shouldn't be called if the
-     * channel is not incentivized.
-     */
-    function payPacketFeeAsync(address portAddress, bytes32 channelId, uint64 sequence, PacketFee calldata fee)
-        external
-        payable
-    {
-        // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = sendPacketCommitment[portAddress][channelId][sequence];
-        if (!hasCommitment) {
-            revert packetCommitmentNotFound();
-        }
-
-        // escrow packet fee
-        (bool sent,) = address(escrow).call{value: Ibc.calcEscrowFee(fee)}("");
-        if (!sent) {
-            revert escrowPacketFee();
-        }
-
-        // Record accumulated packet fees
-        PacketFee storage packetFee = packetFees[portAddress][channelId][sequence];
-        packetFees[portAddress][channelId][sequence] = PacketFee(
-            packetFee.recvFee + fee.recvFee, packetFee.ackFee + fee.ackFee, packetFee.timeoutFee + fee.timeoutFee
-        );
     }
 
     /**
@@ -596,89 +525,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     /**
-     * @notice Handle the incentivized acknowledgement of an IBC packet by the counterparty
-     * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
-     *   ie. the IBC dApp.
-     *   Prerequisite: the original packet is committed and not ack'ed or timed out yet.
-     * @param receiver The dApp contract that should handle the app-level packet acknowledgement
-     * @param packet The original IbcPacket data sent by the dApp
-     * @param incentivizedAck The incentivized acknowledgement from counterparty chain, where the relayer is the payee address on behalf of the forward relayer that delivered the packet
-     * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
-     */
-    function incentivizedAcknowledgement(
-        IbcPacketHandler receiver,
-        IbcPacket calldata packet,
-        IncentivizedAckPacket calldata incentivizedAck,
-        Proof calldata proof
-    ) external {
-        // verify `receiver` is the original packet sender
-        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert receiverNotOriginPacketSender();
-        }
-
-        // prove ack packet is on Polymer chain
-        consensusStateManager.verifyMembership(
-            proof, "ack/packet/path", "expected ack receipt hash on Polymer chain", "Fail to prove ack"
-        );
-
-        // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-        if (!hasCommitment) {
-            revert packetCommitmentNotFound();
-        }
-
-        // enforce ack'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
-        if (!channel.feeEnabled) {
-            revert invalidChannelType("non-incentivized");
-        }
-
-        if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
-                revert unexpectedPacketSequence();
-            }
-
-            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
-        }
-
-        // distribute fee to relayer
-        if (incentivizedAck.relayer.length != 20) {
-            revert invalidRelayerAddress();
-        }
-        address payable recvFeePayee;
-        if (keccak256(abi.encodePacked(incentivizedAck.relayer)) == keccak256(abi.encodePacked(address(0)))) {
-            // no forward relayer registered on Polymer, then refund to receiver
-            recvFeePayee = payable(address(receiver));
-        } else {
-            // pay forward relayer's payee
-            recvFeePayee = payable(address(bytes20(incentivizedAck.relayer)));
-        }
-
-        // TODO: allow reverse relayer registration too
-        address payable ackFeePayee = payable(tx.origin);
-
-        // transfer recv and ack fees
-        PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
-        escrow.distributeAckFees([recvFeePayee, ackFeePayee], [packetFee.recvFee, packetFee.ackFee]);
-        // refund extra packet fee to packet sender, ie. receiver dApp
-        // TODO: allow refund payee registration too
-        uint256 refundFee = Ibc.ackRefundAmount(packetFee);
-        if (refundFee > 0) {
-            escrow.refund(payable(address(receiver)), refundFee);
-        }
-
-        // pass a regular ack packet to callback
-        AckPacket memory ackPacket = AckPacket(incentivizedAck.success, incentivizedAck.data);
-
-        receiver.onAcknowledgementPacket(packet, ackPacket);
-
-        // delete packet commitment to avoid double ack
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-
-        emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
-    }
-
-    /**
      * @notice Timeout of an IBC packet
      * @dev Verifies the given proof and calls the `onTimeoutPacket` function on the given `receiver` contract, ie. the IBC-dApp.
      * Prerequisite: the original packet is committed and not ack'ed or timed out yet.
@@ -700,18 +546,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
             revert packetCommitmentNotFound();
-        }
-
-        PacketFee storage packetFee = packetFees[address(receiver)][packet.src.channelId][packet.sequence];
-        if (packetFee.timeoutFee != 0) {
-            // transfer timeout fee
-            address payable timeoutFeePayee = payable(tx.origin);
-            escrow.distributeTimeoutFee(timeoutFeePayee, packetFee.timeoutFee);
-        }
-        uint256 timeoutRefund = Ibc.timeoutRefundAmount(packetFee);
-        if (timeoutRefund > 0) {
-            // refund extra packet fee to packet sender, ie. receiver dApp
-            escrow.refund(payable(address(receiver)), timeoutRefund);
         }
 
         receiver.onTimeoutPacket(packet);
@@ -859,17 +693,5 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         emit WriteTimeoutPacket(
             receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
         );
-    }
-
-    /**
-     * Return escrowed fees for a packet.
-     * Relayers can query this to determine if a packet is worth relaying.
-     */
-    function getTotalPacketFees(address packetSender, bytes32 channelId, uint64 sequence)
-        external
-        view
-        returns (PacketFee memory)
-    {
-        return packetFees[packetSender][channelId][sequence];
     }
 }
