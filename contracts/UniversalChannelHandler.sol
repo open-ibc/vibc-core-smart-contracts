@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
 import "./Ibc.sol";
 
-contract UniversalChannelHandler is IbcReceiverBase, IbcChannelHandler {
+contract UniversalChannelHandler is IbcReceiverBase, IbcChannelReceiver {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
     bytes32[] public connectedChannels;

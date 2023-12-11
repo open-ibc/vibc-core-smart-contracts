@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
-import {IbcChannelHandler, IbcPacketHandler} from "./IbcReceiver.sol";
+import {IbcChannelReceiver, IbcPacketReceiver} from "./IbcReceiver.sol";
 import "./IbcVerifier.sol";
 import "./ConsensusStateManager.sol";
 
@@ -58,7 +58,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     ConsensusStateManager consensusStateManager;
 
-    IbcChannelHandler public universalChannelHandler;
+    IbcChannelReceiver public universalChannelHandler;
 
     //
     // methods
@@ -71,7 +71,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // setUniversalChannelHandler sets the universal channel handler contract address.
-    function setUniversalChannelHandler(IbcChannelHandler _universalChannelHandler) external onlyOwner {
+    function setUniversalChannelHandler(IbcChannelReceiver _universalChannelHandler) external onlyOwner {
         if (address(_universalChannelHandler) == address(0)) {
             revert invalidAddress();
         }
@@ -235,7 +235,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * IBC/VIBC hub chain.
      */
     function openIbcChannel(
-        IbcChannelHandler portAddress,
+        IbcChannelReceiver portAddress,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -300,7 +300,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * ChanOpenAck or ChanOpenConfirm.
      */
     function connectIbcChannel(
-        IbcChannelHandler portAddress,
+        IbcChannelReceiver portAddress,
         bytes32 channelId,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -367,7 +367,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert channelNotOwnedBySender();
         }
 
-        IbcChannelHandler reciever = IbcChannelHandler(msg.sender);
+        IbcChannelReceiver reciever = IbcChannelReceiver(msg.sender);
         reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
         emit CloseIbcChannel(msg.sender, channelId);
     }
@@ -393,7 +393,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // confirm with dApp by calling its callback
-        IbcChannelHandler reciever = IbcChannelHandler(portAddress);
+        IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
         reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
         delete portChannelMap[portAddress][channelId];
         emit CloseIbcChannel(portAddress, channelId);
@@ -482,7 +482,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
     function acknowledgement(
-        IbcPacketHandler receiver,
+        IbcPacketReceiver receiver,
         IbcPacket calldata packet,
         AckPacket calldata ackPacket,
         Proof calldata proof
@@ -533,7 +533,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param packet The IbcPacket data for the timed-out packet
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
-    function timeout(IbcPacketHandler receiver, IbcPacket calldata packet, Proof calldata proof) external {
+    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert receiverNotIndtendedPacketDestination();
@@ -569,7 +569,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
-    function recvPacket(IbcPacketHandler receiver, IbcPacket calldata packet, Proof calldata proof) external {
+    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
         bool isUc = isUniversalChannel(packet.dest.channelId);
         // marker for channel bookkeeping
         address marker = isUc ? address(universalChannelHandler) : address(receiver);

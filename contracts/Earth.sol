@@ -6,7 +6,7 @@ import "./Ibc.sol";
 import "./IbcReceiver.sol";
 import "./IbcDispatcher.sol";
 
-contract Earth is IbcReceiverBase, IbcPacketHandler {
+contract Earth is IbcReceiverBase, IbcPacketReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
     // received ack packet as chain A

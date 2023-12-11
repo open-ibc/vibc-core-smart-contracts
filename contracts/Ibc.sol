@@ -4,9 +4,13 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+/**
+ * Ibc.sol 
+ * Basic IBC data structures and utilities.
+ */
+
 /// IbcPacket represents the packet data structure received from a remote chain
 /// over an IBC channel.
-
 struct IbcPacket {
     /// identifies the channel and port on the sending chain.
     IbcEndpoint src;
