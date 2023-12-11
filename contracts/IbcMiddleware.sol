@@ -15,6 +15,12 @@ interface IbcUniversalPacketSender {
         external;
 }
 
+interface IbcUniversalPacketReceiver {
+    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
+        external
+        returns (AckPacket memory ackPacket);
+}
+
 /**
  * @title IbcMiddleware
  * @notice IBC middleware interface must be implemented by a IBC-middleware contract, similar to ICS-30
