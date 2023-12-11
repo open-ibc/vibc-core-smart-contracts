@@ -45,7 +45,11 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
         return this.generateAckPacket(channelId, srcPortAddr, appData);
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcMw {
+    function onUniversalAcknowledgement(UniversalPacketData memory packet, AckPacket calldata ack) external onlyIbcMw {
+        // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
+        require(ack.data.length >= 20, "ack data too short");
+        address ackSender = address(bytes20(ack.data[0:20]));
+        require(packet.destPortAddr == ackSender, "ack address mismatch");
         ackPackets.push(ack);
     }
 

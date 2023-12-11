@@ -452,9 +452,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
-        if (channel.feeEnabled) {
-            revert invalidChannelType("incentivized");
-        }
 
         if (channel.ordering == ChannelOrder.ORDERED) {
             if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
