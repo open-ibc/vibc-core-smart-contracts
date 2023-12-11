@@ -5,8 +5,9 @@ pragma solidity ^0.8.9;
 import "./Ibc.sol";
 import "./IbcReceiver.sol";
 import "./IbcDispatcher.sol";
+import "./IbcMiddleware.sol";
 
-contract Earth is IbcReceiverBase, IbcPacketReceiver {
+contract Earth is IbcMwReceiverBase, IbcPacketReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
     // received ack packet as chain A
@@ -14,24 +15,24 @@ contract Earth is IbcReceiverBase, IbcPacketReceiver {
     // received timeout packet as chain A
     IbcPacket[] public timeoutPackets;
 
-    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
+    constructor(IbcMiddleware _middleware) IbcMwReceiverBase(_middleware) {}
 
-    function greet(string calldata portId, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp)
+    function greet(string calldata destPortId, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp)
         external
     {
-        dispatcher.sendPacketOverUniversalChannel(portId, channelId, message, timeoutTimestamp);
+        mw.sendUniversalPacket(channelId, destPortId, message, timeoutTimestamp);
     }
 
-    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet) external onlyIbcMw returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked("ack-", packet.data));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcMw {
         ackPackets.push(ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {
+    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcMw {
         timeoutPackets.push(packet);
     }
 }

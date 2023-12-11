@@ -12,6 +12,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     bytes32[] public connectedChannels;
     string constant VERSION = "1.0";
+    uint256 constant MW_ID = 1;
 
     /**
      * @dev Close a universal channel.
@@ -73,7 +74,32 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         require(channelFound, "Channel not found");
     }
 
-    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external override {}
+    function sendUniversalPacket(
+        bytes32 channelId,
+        string memory destPortId,
+        bytes calldata appData,
+        uint64 timeoutTimestamp
+    ) external {
+        bytes memory packetData =
+            Ibc.toUniversalPacketDataBytes(UniversalPacketData(msg.sender, MW_ID, destPortId, appData));
+        dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+    }
+
+    // called by another IBC middleware; pack packet and send over to Dispatcher
+    function sendMWPacket(
+        bytes32 channelId,
+        // original source address of the packet
+        address srcPortAddress,
+        string memory destPortId,
+        // source middleware ids bit AND
+        uint256 srcMwIds,
+        bytes calldata appData,
+        uint64 timeoutTimestamp
+    ) external {
+        bytes memory packetData =
+            Ibc.toUniversalPacketDataBytes(UniversalPacketData(srcPortAddress, srcMwIds & MW_ID, destPortId, appData));
+        dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+    }
 
     function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {}
 
