@@ -11,12 +11,8 @@ import "./IbcReceiver.sol";
  * @dev IbcUniversalPacketSender is called by end-users of IBC middleware contracts to send a packet over a MW stack.
  */
 interface IbcUniversalPacketSender {
-    function sendUniversalPacket(
-        bytes32 channelId,
-        string memory destPortId,
-        bytes calldata appData,
-        uint64 timeoutTimestamp
-    ) external;
+    function sendUniversalPacket(bytes32 channelId, address destPortId, bytes calldata appData, uint64 timeoutTimestamp)
+        external;
 }
 
 /**
@@ -31,8 +27,8 @@ interface IbcMiddleware is IbcUniversalPacketSender, IbcPacketReceiver {
     function sendMWPacket(
         bytes32 channelId,
         // original source address of the packet
-        address srcPortAddress,
-        string memory destPortId,
+        address srcPortAddr,
+        address destPortAddr,
         // source middleware ids bit AND
         uint256 srcMwIds,
         bytes calldata appData,

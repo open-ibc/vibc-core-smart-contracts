@@ -546,16 +546,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
     function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Proof calldata proof) external {
-        bool isUc = isUniversalChannel(packet.dest.channelId);
-        // marker for channel bookkeeping
-        address marker = isUc ? address(universalChannelHandler) : address(receiver);
-        if (!isUc) {
-            // verify `receiver` is the intended packet destination
-            if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
-                revert receiverNotIndtendedPacketDestination();
-            }
+        // verify `receiver` is the intended packet destination
+        if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
+            revert receiverNotIndtendedPacketDestination();
         }
-
         consensusStateManager.verifyMembership(
             proof,
             "packet/commitment/path",
@@ -564,21 +558,21 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         );
 
         // verify packet has not been received yet
-        bool hasReceipt = recvPacketReceipt[marker][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
             revert packetReceiptAlreadyExists();
         }
 
-        recvPacketReceipt[marker][packet.dest.channelId][packet.sequence] = true;
+        recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = portChannelMap[marker][packet.dest.channelId];
+        Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceRecv[marker][packet.dest.channelId]) {
+            if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
                 revert unexpectedPacketSequence();
             }
 
-            nextSequenceRecv[marker][packet.dest.channelId] = packet.sequence + 1;
+            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
@@ -595,21 +589,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
-        // if (isUc) {
-        //     UniversalPacketData memory universalPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
-        //     // TODO: verify destPortId is the same as receiver's portId
-        //     // if (!portIdAddressMatch(address(receiver), universalPacketData.destPortId)) {
-        //     //     revert receiverNotIndtendedPacketDestination();
-        //     // }
-        //     pkt = IbcPacket(
-        //         IbcEndpoint(universalPacketData.srcPortId, packet.src.channelId),
-        //         IbcEndpoint(universalPacketData.destPortId, packet.dest.channelId),
-        //         packet.sequence,
-        //         universalPacketData.appData,
-        //         packet.timeoutHeight,
-        //         packet.timeoutTimestamp
-        //     );
-        // }
         AckPacket memory ack = receiver.onRecvPacket(pkt);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks

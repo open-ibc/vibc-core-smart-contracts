@@ -76,12 +76,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function sendUniversalPacket(
         bytes32 channelId,
-        string memory destPortId,
+        address destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
         bytes memory packetData =
-            Ibc.toUniversalPacketDataBytes(UniversalPacketData(msg.sender, MW_ID, destPortId, appData));
+            Ibc.toUniversalPacketDataBytes(UniversalPacketData(msg.sender, MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
@@ -89,19 +89,21 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     function sendMWPacket(
         bytes32 channelId,
         // original source address of the packet
-        address srcPortAddress,
-        string memory destPortId,
+        address srcPortAddr,
+        address destPortAddr,
         // source middleware ids bit AND
         uint256 srcMwIds,
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
         bytes memory packetData =
-            Ibc.toUniversalPacketDataBytes(UniversalPacketData(srcPortAddress, srcMwIds & MW_ID, destPortId, appData));
+            Ibc.toUniversalPacketDataBytes(UniversalPacketData(srcPortAddr, srcMwIds & MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
-    function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {}
+    function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {
+        UniversalPacketData memory ucPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+    }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {}
 
