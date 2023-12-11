@@ -19,6 +19,8 @@ interface IbcUniversalPacketReceiver {
     function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
         external
         returns (AckPacket memory ackPacket);
+
+    function onUniversalAcknowledgement(UniversalPacketData memory packet, AckPacket calldata ack) external;
 }
 
 /**

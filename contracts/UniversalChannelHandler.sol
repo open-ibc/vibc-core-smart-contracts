@@ -109,7 +109,10 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         );
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {}
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {
+        UniversalPacketData memory ucPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onUniversalAcknowledgement(ucPacketData, ack);
+    }
 
     function onTimeoutPacket(IbcPacket calldata packet) external override {}
 }

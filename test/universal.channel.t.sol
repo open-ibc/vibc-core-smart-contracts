@@ -87,7 +87,8 @@ contract UniversalChannelPacketTest is Base {
 
     bytes appData = bytes("msg-1");
     bytes packetData;
-    bytes ackPacket;
+    bytes ackPacketBytes;
+    AckPacket ackPacket;
     UniversalPacketData ucData;
     // IBC packet received by dispatcher
     IbcPacket recvPacket;
@@ -137,19 +138,24 @@ contract UniversalChannelPacketTest is Base {
                 Height(0, 0),
                 timeout
             );
+            ackPacket = v2.earth.generateAckPacket(channelId2, address(v1.earth), appData);
             vm.expectEmit(true, true, true, true);
             emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
-            emit WriteAckPacket(
-                address(v2.ucHandler),
-                channelId2,
-                packetSeq,
-                v2.earth.generateAckPacket(channelId2, address(v1.earth), appData)
-            );
+            emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
             v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, setting.proof);
 
             assertDappUcPacket(v2.earth, packetSeq - 1, UcPacket(channelId2, address(v1.earth), appData));
 
+            //
             // simulate relayer calling dispatcher.acknowledgePacket on chain A
+            //
+            vm.expectEmit(true, true, true, true);
+            emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
+            v1.dispatcher.acknowledgement(v1.ucHandler, recvPacket, ackPacket, setting.proof);
+
+            (bool success, bytes memory data) = v1.earth.ackPackets(packetSeq - 1);
+            assertEq(success, true);
+            assertEq(data, ackPacket.data);
         }
     }
 
