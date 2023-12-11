@@ -21,9 +21,5 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18.15'
-
       - name: Test
-        run: make test
+        run: forge test
