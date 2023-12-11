@@ -40,7 +40,6 @@ contract VirtualChain is Test, IbcEventsEmitter {
         _seed = seed;
         dispatcher = new Dispatcher(new Verifier(), portPrefix, new DummyConsensusStateManager());
         ucHandler = new UniversalChannelHandler(dispatcher);
-        dispatcher.setUniversalChannelHandler(ucHandler);
 
         mars = new Mars(dispatcher);
         earth = new Earth(ucHandler);

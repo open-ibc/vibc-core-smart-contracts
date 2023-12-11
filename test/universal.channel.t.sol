@@ -46,7 +46,8 @@ contract UniversalChannelTest is Base {
         assertEq(abi.encode(channel2), abi.encode(channel2Expected));
     }
 
-    function test_channel_fail_unauthorized() public {
+    // anyone can open channels, universal or not. But only "official channels" are shown in public IBC dashboards
+    function test_channel_ok_by_anyone() public {
         VirtualChain eth1 = new VirtualChain(100, "polyibc.eth1.");
         VirtualChain eth2 = new VirtualChain(200, "polyibc.eth2.");
         ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
@@ -58,27 +59,15 @@ contract UniversalChannelTest is Base {
         address unauthorized = deriveAddress("unauthorized");
         vm.deal(unauthorized, 100 ether);
         vm.prank(unauthorized);
-        expectRevertNonOwner();
-        eth1.channelOpenInit(ucHandler1, eth2, ucHandler2, setting, false);
-        vm.prank(address(eth1));
         eth1.channelOpenInit(ucHandler1, eth2, ucHandler2, setting, true);
 
         vm.prank(unauthorized);
-        expectRevertNonOwner();
-        eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, false);
-        vm.prank(address(eth2));
         eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, true);
 
         vm.prank(unauthorized);
-        expectRevertNonOwner();
-        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, false);
-        vm.prank(address(eth1));
         eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, true);
 
         vm.prank(unauthorized);
-        expectRevertNonOwner();
-        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, false);
-        vm.prank(address(eth2));
         eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true);
     }
 }

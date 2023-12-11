@@ -58,8 +58,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     ConsensusStateManager consensusStateManager;
 
-    IbcChannelReceiver public universalChannelHandler;
-
     //
     // methods
     //
@@ -68,14 +66,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
         consensusStateManager = _consensusStateManager;
-    }
-
-    // setUniversalChannelHandler sets the universal channel handler contract address.
-    function setUniversalChannelHandler(IbcChannelReceiver _universalChannelHandler) external onlyOwner {
-        if (address(_universalChannelHandler) == address(0)) {
-            revert invalidAddress();
-        }
-        universalChannelHandler = _universalChannelHandler;
     }
 
     //
@@ -246,10 +236,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (bytes(counterparty.portId).length == 0) {
             revert invalidCounterPartyPortId();
         }
-        // only CoreSC maintainer can open a universal channel
-        if (portAddress == universalChannelHandler) {
-            _checkOwner();
-        }
 
         // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
         // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
@@ -310,11 +296,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         string calldata counterpartyVersion,
         Proof calldata proof
     ) external {
-        // only CoreSC maintainer can open a universal channel
-        if (portAddress == universalChannelHandler) {
-            _checkOwner();
-        }
-
         consensusStateManager.verifyMembership(
             proof,
             bytes("channel/path/to/be/added/here"),
@@ -438,15 +419,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     /**
-     * @notice revert unless a channelId is a universal channel
-     * @param channelId The ID of the channel to check.
-     */
-    function isUniversalChannel(bytes32 channelId) internal view returns (bool) {
-        Channel memory channel = portChannelMap[address(universalChannelHandler)][channelId];
-        return channel.counterpartyChannelId != bytes32(0);
-    }
-
-    /**
      * @notice Handle the acknowledgement of an IBC packet by the counterparty
      * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
      *    ie. the IBC dApp.
@@ -537,9 +509,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
      * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
-     * For regular channel, the receiver must be the intended packet destination, which is the same as packet.dest.portId.
-     * For universal channel, the receiver must be the intended packet destination, which is the NOT same as packet.dest.portId.
-     * The real destPortId is encoded in the packet data.
+     * The receiver must be the intended packet destination, which is the same as packet.dest.portId.
+     * For universal channel and IBC middleware, the real destPortId is encoded in the packet data.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
      * @dev Emit an `RecvPacket` event with the details of the received packet;
