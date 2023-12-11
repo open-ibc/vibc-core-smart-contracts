@@ -123,7 +123,7 @@ contract UniversalChannelPacketTest is Base {
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacketData(address(earth1), 1 & 2, earth2PortId, appData);
+            ucData = UniversalPacketData(address(earth1), ucHandler1.MW_ID(), earth2PortId, appData);
             packetData = Ibc.toUniversalPacketDataBytes(ucData);
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout);
