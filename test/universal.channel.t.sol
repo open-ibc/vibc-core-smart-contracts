@@ -82,10 +82,8 @@ contract UniversalChannelPacketTest is Base {
     VirtualChain eth1;
     VirtualChain eth2;
     ChannelSetting setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
-    Earth earth1;
-    Earth earth2;
-    UniversalChannelHandler ucHandler1;
-    UniversalChannelHandler ucHandler2;
+    VirtualChainData v1;
+    VirtualChainData v2;
 
     bytes appData = bytes("msg-1");
     bytes packetData;
@@ -100,13 +98,12 @@ contract UniversalChannelPacketTest is Base {
         eth1 = new VirtualChain(100, "polyibc.eth1.");
         eth2 = new VirtualChain(200, "polyibc.eth2.");
         eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
-        earth1 = eth1.earth();
-        earth2 = eth2.earth();
-        ucHandler1 = eth1.ucHandler();
-        ucHandler2 = eth2.ucHandler();
+        v1 = eth1.getVirtualChainData();
+        v2 = eth2.getVirtualChainData();
     }
 
     function test_sendPacket_ok() public {
+        // universal channelIDs
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
 
@@ -116,41 +113,43 @@ contract UniversalChannelPacketTest is Base {
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacketData(address(earth1), ucHandler1.MW_ID(), address(earth2), appData);
+            ucData = UniversalPacketData(address(v1.earth), v1.ucHandler.MW_ID(), address(v2.earth), appData);
             packetData = Ibc.toUniversalPacketDataBytes(ucData);
             vm.expectEmit(true, true, true, true);
-            emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout);
-            earth1.greet(address(earth2), channelId1, appData, timeout);
+            emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
+            v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
             // simulate relayer calling dispatcher.recvPacket on chain B
             // recvPacket is an IBC packet
             recvPacket = IbcPacket(
-                IbcEndpoint(eth1.portIds(address(ucHandler1)), channelId1),
-                IbcEndpoint(eth2.portIds(address(ucHandler2)), channelId2),
+                IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
+                IbcEndpoint(eth2.portIds(address(v2.ucHandler)), channelId2),
                 packetSeq,
                 packetData,
                 Height(0, 0),
                 timeout
             );
             ucPacket = IbcPacket(
-                IbcEndpoint(eth1.portIds(address(ucHandler1)), channelId1),
-                IbcEndpoint(eth2.portIds(address(ucHandler2)), channelId2),
+                IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
+                IbcEndpoint(eth2.portIds(address(v2.ucHandler)), channelId2),
                 packetSeq,
                 appData,
                 Height(0, 0),
                 timeout
             );
             vm.expectEmit(true, true, true, true);
-            emit RecvPacket(address(ucHandler2), channelId2, packetSeq);
+            emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
             emit WriteAckPacket(
-                address(ucHandler2),
+                address(v2.ucHandler),
                 channelId2,
                 packetSeq,
-                earth2.generateAckPacket(channelId2, address(earth1), appData)
+                v2.earth.generateAckPacket(channelId2, address(v1.earth), appData)
             );
-            eth2.dispatcher().recvPacket(ucHandler2, recvPacket, setting.proof);
+            v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, setting.proof);
 
-            assertDappUcPacket(earth2, packetSeq - 1, UcPacket(channelId2, address(earth1), appData));
+            assertDappUcPacket(v2.earth, packetSeq - 1, UcPacket(channelId2, address(v1.earth), appData));
+
+            // simulate relayer calling dispatcher.acknowledgePacket on chain A
         }
     }
 
