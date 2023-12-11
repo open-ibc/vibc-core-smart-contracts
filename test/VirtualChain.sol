@@ -18,6 +18,14 @@ struct ChannelSetting {
     Proof proof;
 }
 
+struct VirtualChainData {
+    Dispatcher dispatcher;
+    UniversalChannelHandler ucHandler;
+    Mars mars;
+    Earth earth;
+    string[] connectionHops;
+}
+
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
 contract VirtualChain is Test, IbcEventsEmitter {
     Dispatcher public dispatcher;
@@ -51,6 +59,11 @@ contract VirtualChain is Test, IbcEventsEmitter {
         connectionHops = new string[](2);
         connectionHops[0] = newConnectionId();
         connectionHops[1] = newConnectionId();
+    }
+
+    // return virtualChainData
+    function getVirtualChainData() external view returns (VirtualChainData memory) {
+        return VirtualChainData(dispatcher, ucHandler, mars, earth, connectionHops);
     }
 
     // expectedChannel returns a Channel struct with expected values
