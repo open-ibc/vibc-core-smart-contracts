@@ -4,9 +4,10 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
+import "./IbcMiddleware.sol";
 import "./Ibc.sol";
 
-contract UniversalChannelHandler is IbcReceiverBase, IbcChannelReceiver {
+contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
     bytes32[] public connectedChannels;
@@ -71,4 +72,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcChannelReceiver {
         }
         require(channelFound, "Channel not found");
     }
+
+    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external override {}
+
+    function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {}
+
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {}
+
+    function onTimeoutPacket(IbcPacket calldata packet) external override {}
 }
