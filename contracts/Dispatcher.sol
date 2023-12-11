@@ -438,30 +438,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     /**
-     * @notice Sends an IBC packet over a universal channel with the specified packet data and timeout block timestamp.
-     * @param destPortId The portId of the packet destination contract
-     * @param channelId The ID of the universal channel on which to send the packet.
-     * @param appData The application data to send.
-     * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been received.
-     */
-    function sendPacketOverUniversalChannel(
-        string calldata destPortId,
-        bytes32 channelId,
-        bytes calldata appData,
-        uint64 timeoutTimestamp
-    ) public {
-        if (!isUniversalChannel(channelId)) {
-            revert invalidChannelType("non-universal");
-        }
-
-        bytes memory packetData = Ibc.toUniversalPacketDataBytes(
-            UniversalPacketData(Ibc.addressToPortId(portPrefix, msg.sender), destPortId, appData)
-        );
-
-        _sendPacket(address(universalChannelHandler), channelId, packetData, timeoutTimestamp);
-    }
-
-    /**
      * @notice revert unless a channelId is a universal channel
      * @param channelId The ID of the channel to check.
      */
@@ -619,21 +595,21 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
-        if (isUc) {
-            UniversalPacketData memory universalPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
-            // TODO: verify destPortId is the same as receiver's portId
-            // if (!portIdAddressMatch(address(receiver), universalPacketData.destPortId)) {
-            //     revert receiverNotIndtendedPacketDestination();
-            // }
-            pkt = IbcPacket(
-                IbcEndpoint(universalPacketData.srcPortId, packet.src.channelId),
-                IbcEndpoint(universalPacketData.destPortId, packet.dest.channelId),
-                packet.sequence,
-                universalPacketData.appData,
-                packet.timeoutHeight,
-                packet.timeoutTimestamp
-            );
-        }
+        // if (isUc) {
+        //     UniversalPacketData memory universalPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+        //     // TODO: verify destPortId is the same as receiver's portId
+        //     // if (!portIdAddressMatch(address(receiver), universalPacketData.destPortId)) {
+        //     //     revert receiverNotIndtendedPacketDestination();
+        //     // }
+        //     pkt = IbcPacket(
+        //         IbcEndpoint(universalPacketData.srcPortId, packet.src.channelId),
+        //         IbcEndpoint(universalPacketData.destPortId, packet.dest.channelId),
+        //         packet.sequence,
+        //         universalPacketData.appData,
+        //         packet.timeoutHeight,
+        //         packet.timeoutTimestamp
+        //     );
+        // }
         AckPacket memory ack = receiver.onRecvPacket(pkt);
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks

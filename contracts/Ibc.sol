@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
- * Ibc.sol 
+ * Ibc.sol
  * Basic IBC data structures and utilities.
  */
 
@@ -27,9 +27,11 @@ struct IbcPacket {
 
 // UniversalPacketData represents the data field of an IbcPacket
 struct UniversalPacketData {
-    // address srcPortAddress;
     // address destPortAddress;
-    string srcPortId;
+    // string srcPortId;
+    address srcPortAddress;
+    // source middleware ids bit AND
+    uint256 srcMwIds;
     string destPortId;
     bytes appData;
 }

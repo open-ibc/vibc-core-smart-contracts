@@ -8,7 +8,7 @@ import "./IbcReceiver.sol";
 /**
  * @title IbcPacketSender
  * @author Polymer Labs
- * @dev IBC packet sender interface. 
+ * @dev IBC packet sender interface.
  */
 interface IbcPacketSender {
     function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external;
@@ -20,15 +20,27 @@ interface IbcPacketSender {
  * @notice IBC dispatcher interface is the Polymer Core Smart Contract that implements the core IBC protocol.
  * @dev IBC-compatible contracts depend on this interface to actively participate in the IBC protocol. Other features are implemented as callback methods in the IbcReceiver interface.
  */
-interface IbcDispatcher is IbcPacketSender{
+interface IbcDispatcher is IbcPacketSender {
+    function portPrefix() external view returns (string memory);
+
+    function openIbcChannel(
+        IbcChannelReceiver portAddress,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        CounterParty calldata counterparty,
+        Proof calldata proof
+    ) external;
+
     function closeIbcChannel(bytes32 channelId) external;
 
-    function sendPacketOverUniversalChannel(
-        string calldata portId,
-        bytes32 channelId,
-        bytes calldata appData,
-        uint64 timeoutTimestamp
-    ) external;
+    // function sendPacketOverUniversalChannel(
+    //     string calldata portId,
+    //     bytes32 channelId,
+    //     bytes calldata appData,
+    //     uint64 timeoutTimestamp
+    // ) external;
 }
 
 /**
