@@ -83,6 +83,12 @@ contract UniversalChannelTest is Base {
     }
 }
 
+struct UcPacket {
+    bytes32 channelId;
+    address srcPortId;
+    bytes appData;
+}
+
 contract UniversalChannelPacketTest is Base {
     VirtualChain eth1;
     VirtualChain eth2;
@@ -153,21 +159,15 @@ contract UniversalChannelPacketTest is Base {
             );
             eth2.dispatcher().recvPacket(ucHandler2, recvPacket, setting.proof);
 
-            IbcPacket memory dappPacket = getIbcPacket(earth2, packetSeq - 1);
-            assertEq(abi.encode(dappPacket), abi.encode(ucPacket));
+            assertDappUcPacket(earth2, packetSeq - 1, UcPacket(channelId2, address(earth1), appData));
         }
     }
 
     // getIbcPacket returns an IBC packet by index
-    function getIbcPacket(Earth earth, uint256 index) internal view returns (IbcPacket memory) {
-        (
-            IbcEndpoint memory _src,
-            IbcEndpoint memory _dest,
-            uint64 _seq,
-            bytes memory _data,
-            Height memory _height,
-            uint64 _timeoutTimestamp
-        ) = earth.recvedPackets(index);
-        return IbcPacket(_src, _dest, _seq, _data, _height, _timeoutTimestamp);
+    function assertDappUcPacket(Earth earth, uint256 index, UcPacket memory expectedPacket) internal {
+        (bytes32 channelId, address srcPortId, bytes memory _appData) = earth.recvedPackets(index);
+        assertEq(channelId, expectedPacket.channelId);
+        assertEq(srcPortId, expectedPacket.srcPortId);
+        assertEq(_appData, expectedPacket.appData);
     }
 }

@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IbcDispatcher.sol";
 import "./IbcMiddleware.sol";
+import {IbcReceiver} from "./IbcReceiver.sol";
 import "./Ibc.sol";
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
@@ -103,6 +104,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {
         UniversalPacketData memory ucPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+        return IbcUniversalPacketReceiver(ucPacketData.destPortAddr).onRecvUniversalPacket(
+            packet.dest.channelId, ucPacketData.srcPortAddr, ucPacketData.appData
+        );
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {}
