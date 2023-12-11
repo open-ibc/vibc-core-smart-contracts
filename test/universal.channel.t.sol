@@ -140,11 +140,13 @@ contract UniversalChannelPacketTest is Base {
                 Height(0, 0),
                 timeout
             );
-            ackPacket = abi.encodePacked("ack-", appData);
             vm.expectEmit(true, true, true, true);
             emit RecvPacket(address(ucHandler2), channelId2, packetSeq);
             emit WriteAckPacket(
-                address(ucHandler2), channelId2, packetSeq, AckPacket(true, abi.encodePacked("ack-", appData))
+                address(ucHandler2),
+                channelId2,
+                packetSeq,
+                earth2.generateAckPacket(channelId2, address(earth1), appData)
             );
             eth2.dispatcher().recvPacket(ucHandler2, recvPacket, setting.proof);
 
@@ -152,7 +154,6 @@ contract UniversalChannelPacketTest is Base {
         }
     }
 
-    // getIbcPacket returns an IBC packet by index
     function assertDappUcPacket(Earth earth, uint256 index, UcPacket memory expectedPacket) internal {
         (bytes32 channelId, address srcPortId, bytes memory _appData) = earth.recvedPackets(index);
         assertEq(channelId, expectedPacket.channelId);

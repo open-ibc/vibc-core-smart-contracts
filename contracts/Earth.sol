@@ -27,14 +27,22 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
         mw.sendUniversalPacket(channelId, destPortAddr, message, timeoutTimestamp);
     }
 
-    // function onRecvPacket(IbcPacket memory packet) external onlyIbcMw returns (AckPacket memory ackPacket) {
-    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
+    // For testing only; real dApps should implment their own ack logic
+    function generateAckPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
+        external
+        view
+        returns (AckPacket memory ackPacket)
+    {
+        return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
+    }
+
+    function onRecvUniversalPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
         external
         onlyIbcMw
         returns (AckPacket memory ackPacket)
     {
-        recvedPackets.push(UcPacket(channelId, srcPortId, appData));
-        return AckPacket(true, abi.encodePacked("ack-", appData));
+        recvedPackets.push(UcPacket(channelId, srcPortAddr, appData));
+        return this.generateAckPacket(channelId, srcPortAddr, appData);
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcMw {
