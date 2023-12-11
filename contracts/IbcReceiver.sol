@@ -8,8 +8,7 @@ import "./Ibc.sol";
 
 /**
  * @title IbcChannelReceiver
- * @notice Channel handler interface must be implemented by a IBC-enabled contract.
- * @dev Channel handling callback methods are invoked by the IBC dispatcher.
+ * @dev This interface must be implemented by IBC-enabled contracts that act as channel owners and process channel handshake callbacks.
  */
 interface IbcChannelReceiver {
     function onOpenIbcChannel(
