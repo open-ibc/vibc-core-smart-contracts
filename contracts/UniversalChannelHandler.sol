@@ -12,7 +12,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     bytes32[] public connectedChannels;
     string constant VERSION = "1.0";
-    uint256 constant MW_ID = 1;
+    uint256 public constant MW_ID = 1;
 
     /**
      * @dev Close a universal channel.
