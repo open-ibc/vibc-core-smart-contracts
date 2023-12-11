@@ -17,10 +17,8 @@ contract Earth is IbcMwReceiverBase, IbcPacketReceiver {
 
     constructor(IbcMiddleware _middleware) IbcMwReceiverBase(_middleware) {}
 
-    function greet(string calldata destPortId, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp)
-        external
-    {
-        mw.sendUniversalPacket(channelId, destPortId, message, timeoutTimestamp);
+    function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
+        mw.sendUniversalPacket(channelId, destPortAddr, message, timeoutTimestamp);
     }
 
     function onRecvPacket(IbcPacket memory packet) external onlyIbcMw returns (AckPacket memory ackPacket) {

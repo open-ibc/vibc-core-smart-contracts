@@ -29,10 +29,10 @@ struct IbcPacket {
 struct UniversalPacketData {
     // address destPortAddress;
     // string srcPortId;
-    address srcPortAddress;
+    address srcPortAddr;
     // source middleware ids bit AND
     uint256 srcMwIds;
-    string destPortId;
+    address destPortAddr;
     bytes appData;
 }
 

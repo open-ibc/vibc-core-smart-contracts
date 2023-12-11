@@ -114,8 +114,6 @@ contract UniversalChannelPacketTest is Base {
     function test_sendPacket_ok() public {
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
-        string memory earth1PortId = eth1.portIds(address(eth1.earth()));
-        string memory earth2PortId = eth2.portIds(address(eth2.earth()));
 
         // send packet from earth1 to earth2
         for (uint64 packetSeq = 1; packetSeq <= 5; packetSeq++) {
@@ -123,11 +121,11 @@ contract UniversalChannelPacketTest is Base {
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacketData(address(earth1), ucHandler1.MW_ID(), earth2PortId, appData);
+            ucData = UniversalPacketData(address(earth1), ucHandler1.MW_ID(), address(earth2), appData);
             packetData = Ibc.toUniversalPacketDataBytes(ucData);
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(ucHandler1), channelId1, packetData, packetSeq, timeout);
-            earth1.greet(earth2PortId, channelId1, appData, timeout);
+            earth1.greet(address(earth2), channelId1, appData, timeout);
 
             // simulate relayer calling dispatcher.recvPacket on chain B
             // recvPacket is an IBC packet
@@ -140,8 +138,8 @@ contract UniversalChannelPacketTest is Base {
                 timeout
             );
             ucPacket = IbcPacket(
-                IbcEndpoint(earth1PortId, channelId1),
-                IbcEndpoint(earth2PortId, channelId2),
+                IbcEndpoint(eth1.portIds(address(ucHandler1)), channelId1),
+                IbcEndpoint(eth2.portIds(address(ucHandler2)), channelId2),
                 packetSeq,
                 appData,
                 Height(0, 0),
@@ -149,11 +147,11 @@ contract UniversalChannelPacketTest is Base {
             );
             ackPacket = abi.encodePacked("ack-", appData);
             vm.expectEmit(true, true, true, true);
-            emit RecvPacket(address(earth2), channelId2, packetSeq);
+            emit RecvPacket(address(ucHandler2), channelId2, packetSeq);
             emit WriteAckPacket(
-                address(earth2), channelId2, packetSeq, AckPacket(true, abi.encodePacked("ack-", appData))
+                address(ucHandler2), channelId2, packetSeq, AckPacket(true, abi.encodePacked("ack-", appData))
             );
-            eth2.dispatcher().recvPacket(earth2, recvPacket, setting.proof);
+            eth2.dispatcher().recvPacket(ucHandler2, recvPacket, setting.proof);
 
             IbcPacket memory dappPacket = getIbcPacket(earth2, packetSeq - 1);
             assertEq(abi.encode(dappPacket), abi.encode(ucPacket));
