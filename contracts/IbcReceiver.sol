@@ -7,11 +7,11 @@ import "./IbcDispatcher.sol";
 import "./Ibc.sol";
 
 /**
- * @title IbcChannelHandler
+ * @title IbcChannelReceiver
  * @notice Channel handler interface must be implemented by a IBC-enabled contract.
  * @dev Channel handling callback methods are invoked by the IBC dispatcher.
  */
-interface IbcChannelHandler {
+interface IbcChannelReceiver {
     function onOpenIbcChannel(
         string calldata version,
         ChannelOrder ordering,
@@ -30,11 +30,11 @@ interface IbcChannelHandler {
 }
 
 /**
- * @title IbcPacketHandler
+ * @title IbcPacketReceiver
  * @notice Packet handler interface must be implemented by a IBC-enabled contract.
  * @dev Packet handling callback methods are invoked by the IBC dispatcher.
  */
-interface IbcPacketHandler {
+interface IbcPacketReceiver {
     function onRecvPacket(IbcPacket memory packet) external returns (AckPacket memory ackPacket);
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
@@ -48,7 +48,7 @@ interface IbcPacketHandler {
  * @notice IBC receiver interface must be implemented by a IBC-enabled contract.
  * The implementer, aka. dApp devs, should implement channel handshake and packet handling methods.
  */
-interface IbcReceiver is IbcChannelHandler, IbcPacketHandler {}
+interface IbcReceiver is IbcChannelReceiver, IbcPacketReceiver {}
 
 contract IbcReceiverBase is Ownable {
     IbcDispatcher public dispatcher;

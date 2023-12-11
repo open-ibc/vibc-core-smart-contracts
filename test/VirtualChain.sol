@@ -77,7 +77,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     // Assign new channelIds to both ends of the channel
-    function assignChanelIds(IbcChannelHandler localEnd, IbcChannelHandler remoteEnd, VirtualChain remoteChain)
+    function assignChanelIds(IbcChannelReceiver localEnd, IbcChannelReceiver remoteEnd, VirtualChain remoteChain)
         external
     {
         bytes32 localChannelId = this.newChannelId();
@@ -94,9 +94,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     // @arg setting: the channel handshake setting
     // @dev: Successfully created channelIds and channels will be set on both virtual chains's channelIds and channels
     function finishHandshake(
-        IbcChannelHandler localEnd,
+        IbcChannelReceiver localEnd,
         VirtualChain remoteChain,
-        IbcChannelHandler remoteEnd,
+        IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting
     ) external {
         this.assignChanelIds(localEnd, remoteEnd, remoteChain);
@@ -116,9 +116,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     function channelOpenInit(
-        IbcChannelHandler localEnd,
+        IbcChannelReceiver localEnd,
         VirtualChain remoteChain,
-        IbcChannelHandler remoteEnd,
+        IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting,
         bool expPass
     ) external {
@@ -153,9 +153,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     function channelOpenTry(
-        IbcChannelHandler localEnd,
+        IbcChannelReceiver localEnd,
         VirtualChain remoteChain,
-        IbcChannelHandler remoteEnd,
+        IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting,
         bool expPass
     ) external {
@@ -192,9 +192,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     function channelOpenAckOrConfirm(
-        IbcChannelHandler localEnd,
+        IbcChannelReceiver localEnd,
         VirtualChain remoteChain,
-        IbcChannelHandler remoteEnd,
+        IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting,
         bool expPass
     ) external {
@@ -233,7 +233,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         return CounterParty(portIds[localEnd], channelIds[localEnd][address(this)], "");
     }
 
-    function setChannelId(IbcChannelHandler localEnd, IbcChannelHandler remoteEnd, bytes32 channelId) external {
+    function setChannelId(IbcChannelReceiver localEnd, IbcChannelReceiver remoteEnd, bytes32 channelId) external {
         channelIds[address(localEnd)][address(remoteEnd)] = channelId;
     }
 

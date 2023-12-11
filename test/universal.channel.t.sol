@@ -51,8 +51,8 @@ contract UniversalChannelTest is Base {
         VirtualChain eth2 = new VirtualChain(200, "polyibc.eth2.");
         ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
 
-        IbcChannelHandler ucHandler1 = eth1.ucHandler();
-        IbcChannelHandler ucHandler2 = eth2.ucHandler();
+        IbcChannelReceiver ucHandler1 = eth1.ucHandler();
+        IbcChannelReceiver ucHandler2 = eth2.ucHandler();
         eth1.assignChanelIds(ucHandler1, ucHandler2, eth2);
 
         address unauthorized = deriveAddress("unauthorized");

@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../contracts/Ibc.sol";
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
-import {IbcChannelHandler} from "../contracts/IbcReceiver.sol";
+import {IbcChannelReceiver} from "../contracts/IbcReceiver.sol";
 import "../contracts/IbcVerifier.sol";
 import "../contracts/Verifier.sol";
 import "../contracts/Mars.sol";
@@ -13,7 +13,7 @@ import "../contracts/OpConsensusStateManager.sol";
 import "../contracts/DummyConsensusStateManager.sol";
 
 struct LocalEnd {
-    IbcChannelHandler receiver;
+    IbcChannelReceiver receiver;
     // channelId is only used in connectIbcChannel
     bytes32 channelId;
     string[] connectionHops;
