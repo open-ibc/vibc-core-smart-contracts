@@ -89,7 +89,7 @@ contract UniversalChannelPacketTest is Base {
     bytes packetData;
     bytes ackPacketBytes;
     AckPacket ackPacket;
-    UniversalPacketData ucData;
+    UniversalPacket ucData;
     // IBC packet received by dispatcher
     IbcPacket recvPacket;
     // actual universal channel packet received by dApp
@@ -114,8 +114,8 @@ contract UniversalChannelPacketTest is Base {
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacketData(address(v1.earth), v1.ucHandler.MW_ID(), address(v2.earth), appData);
-            packetData = Ibc.toUniversalPacketDataBytes(ucData);
+            ucData = UniversalPacket(address(v1.earth), v1.ucHandler.MW_ID(), address(v2.earth), appData);
+            packetData = Ibc.toUniversalPacketBytes(ucData);
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
@@ -158,6 +158,9 @@ contract UniversalChannelPacketTest is Base {
             assertEq(data, ackPacket.data);
         }
     }
+
+    // TODO: test timeout
+    function test_timeoutPacket_ok() public {}
 
     function assertDappUcPacket(Earth earth, uint256 index, UcPacket memory expectedPacket) internal {
         (bytes32 channelId, address srcPortId, bytes memory _appData) = earth.recvedPackets(index);

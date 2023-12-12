@@ -20,7 +20,9 @@ interface IbcUniversalPacketReceiver {
         external
         returns (AckPacket memory ackPacket);
 
-    function onUniversalAcknowledgement(UniversalPacketData memory packet, AckPacket calldata ack) external;
+    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external;
+
+    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external;
 }
 
 /**
