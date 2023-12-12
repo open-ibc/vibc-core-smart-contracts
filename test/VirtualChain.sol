@@ -50,7 +50,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         ucHandler = new UniversalChannelHandler(dispatcher);
 
         mars = new Mars(dispatcher);
-        earth = new Earth(ucHandler);
+        earth = new Earth(address(ucHandler));
         // initialize portIds for counterparty chains
         address[3] memory portContracts = [address(ucHandler), address(mars), address(earth)];
         for (uint256 i = 0; i < portContracts.length; i++) {

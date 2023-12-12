@@ -15,22 +15,7 @@ interface IbcUniversalPacketSender {
         external;
 }
 
-interface IbcUniversalPacketReceiver {
-    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
-        external
-        returns (AckPacket memory ackPacket);
-
-    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external;
-
-    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external;
-}
-
-/**
- * @title IbcMiddleware
- * @notice IBC middleware interface must be implemented by a IBC-middleware contract, similar to ICS-30
- *  https://github.com/cosmos/ibc/tree/main/spec/app/ics-030-middleware.
- */
-interface IbcMiddleware is IbcUniversalPacketSender, IbcPacketReceiver {
+interface IbcMwPacketSender {
     // sendMWPacket must be called by another authorized IBC middleware contract.
     // NEVER by a dApp contract.
     // The middleware contract may choose to send the packet by calling IbcCoreSC or another IBC MW.
@@ -46,22 +31,49 @@ interface IbcMiddleware is IbcUniversalPacketSender, IbcPacketReceiver {
     ) external;
 }
 
+interface IbcUniversalPacketReceiver {
+    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
+        external
+        returns (AckPacket memory ackPacket);
+
+    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external;
+
+    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external;
+}
+
+/**
+ * @title IbcMiddleware
+ * @notice IBC middleware interface must be implemented by a IBC-middleware contract, similar to ICS-30
+ *  https://github.com/cosmos/ibc/tree/main/spec/app/ics-030-middleware.
+ * Current limitations:
+ *   - IbcMiddleware must sit on top of a UniversalChannel MW or another IbcMiddleware.
+ *   - IbcMiddleware cannnot own an IBC channel. Instead, UniversalChannel MW owns channels.
+ */
+interface IbcMiddleware is IbcUniversalPacketSender, IbcMwPacketSender, IbcUniversalPacketReceiver {}
+
 /**
  * @title IbcUniversalChannelMW
  * @notice This interface must be implemented by IBC universal channel middleware contracts.
+ * IbcUniversalChannelMW is a special type of IbcMiddleware that owns IBC channels, which are multiplexed for other IbcMiddleware.
+ * IbcUniversalChannelMW cannot sit on top of other MW, and must talk to IbcDispatcher directly.
  */
-interface IbcUniversalChannelMW is IbcMiddleware, IbcChannelReceiver {}
+interface IbcUniversalChannelMW is
+    IbcUniversalPacketSender,
+    IbcMwPacketSender,
+    IbcPacketReceiver,
+    IbcChannelReceiver
+{}
 
 contract IbcMwReceiverBase is Ownable {
     // default middleware
-    IbcMiddleware public mw;
+    address public mw;
     mapping(address => bool) public authorizedMws;
 
     /**
      * @dev Constructor function that takes an IbcMiddleware address and grants the IBC_ROLE to the Polymer IBC Dispatcher.
      * @param _middleware The address of the IbcMiddleware contract.
      */
-    constructor(IbcMiddleware _middleware) Ownable() {
+    constructor(address _middleware) Ownable() {
         mw = _middleware;
         _authorizeMiddleware(_middleware);
     }
@@ -71,11 +83,11 @@ contract IbcMwReceiverBase is Ownable {
      * Only the address with the IBC_ROLE can execute the function.
      * @notice Should add this modifier to all IBC-related callback functions.
      */
-    function authorizeMiddleware(IbcMiddleware middleware) external onlyOwner {
+    function authorizeMiddleware(address middleware) external onlyOwner {
         _authorizeMiddleware(middleware);
     }
 
-    function _authorizeMiddleware(IbcMiddleware middleware) internal {
+    function _authorizeMiddleware(address middleware) internal {
         authorizedMws[address(middleware)] = true;
     }
 
