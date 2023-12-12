@@ -19,7 +19,7 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
     // received ack packet as chain A
     AckPacket[] public ackPackets;
     // received timeout packet as chain A
-    IbcPacket[] public timeoutPackets;
+    UniversalPacket[] public timeoutPackets;
 
     constructor(IbcMiddleware _middleware) IbcMwReceiverBase(_middleware) {}
 
@@ -45,7 +45,7 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
         return this.generateAckPacket(channelId, srcPortAddr, appData);
     }
 
-    function onUniversalAcknowledgement(UniversalPacketData memory packet, AckPacket calldata ack) external onlyIbcMw {
+    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external onlyIbcMw {
         // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
         require(ack.data.length >= 20, "ack data too short");
         address ackSender = address(bytes20(ack.data[0:20]));
@@ -53,7 +53,7 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
         ackPackets.push(ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcMw {
+    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external onlyIbcMw {
         timeoutPackets.push(packet);
     }
 }

@@ -25,8 +25,8 @@ struct IbcPacket {
     uint64 timeoutTimestamp;
 }
 
-// UniversalPacketData represents the data field of an IbcPacket
-struct UniversalPacketData {
+// UniversalPacke represents the data field of an IbcPacket
+struct UniversalPacket {
     // address destPortAddress;
     // string srcPortId;
     address srcPortAddr;
@@ -134,14 +134,14 @@ error invalidChannelType(string channelType);
 
 // define a library of Ibc utility functions
 library Ibc {
-    // convert params to UniversalPacketDataBytes with optimal gas cost
-    function toUniversalPacketDataBytes(UniversalPacketData memory data) internal pure returns (bytes memory) {
+    // convert params to UniversalPacketBytes with optimal gas cost
+    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory) {
         return abi.encode(data);
     }
 
-    // fromUniversalPacketDataBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
-    function fromUniversalPacketDataBytes(bytes memory data) internal pure returns (UniversalPacketData memory) {
-        return abi.decode(data, (UniversalPacketData));
+    // fromUniversalPacketBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
+    function fromUniversalPacketBytes(bytes memory data) internal pure returns (UniversalPacket memory) {
+        return abi.decode(data, (UniversalPacket));
     }
 
     // addressToPortId converts an address to a port ID

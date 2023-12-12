@@ -81,8 +81,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
-        bytes memory packetData =
-            Ibc.toUniversalPacketDataBytes(UniversalPacketData(msg.sender, MW_ID, destPortAddr, appData));
+        bytes memory packetData = Ibc.toUniversalPacketBytes(UniversalPacket(msg.sender, MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
@@ -98,21 +97,24 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         uint64 timeoutTimestamp
     ) external {
         bytes memory packetData =
-            Ibc.toUniversalPacketDataBytes(UniversalPacketData(srcPortAddr, srcMwIds & MW_ID, destPortAddr, appData));
+            Ibc.toUniversalPacketBytes(UniversalPacket(srcPortAddr, srcMwIds & MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
     function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {
-        UniversalPacketData memory ucPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
         return IbcUniversalPacketReceiver(ucPacketData.destPortAddr).onRecvUniversalPacket(
             packet.dest.channelId, ucPacketData.srcPortAddr, ucPacketData.appData
         );
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {
-        UniversalPacketData memory ucPacketData = Ibc.fromUniversalPacketDataBytes(packet.data);
+        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
         IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onUniversalAcknowledgement(ucPacketData, ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external override {}
+    function onTimeoutPacket(IbcPacket calldata packet) external override {
+        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
+        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(ucPacketData);
+    }
 }
