@@ -11,8 +11,12 @@ import "./IbcReceiver.sol";
  * @dev IbcUniversalPacketSender is called by end-users of IBC middleware contracts to send a packet over a MW stack.
  */
 interface IbcUniversalPacketSender {
-    function sendUniversalPacket(bytes32 channelId, address destPortId, bytes calldata appData, uint64 timeoutTimestamp)
-        external;
+    function sendUniversalPacket(
+        bytes32 channelId,
+        address destPortAddr,
+        bytes calldata appData,
+        uint64 timeoutTimestamp
+    ) external;
 }
 
 interface IbcMwPacketSender {
@@ -32,13 +36,17 @@ interface IbcMwPacketSender {
 }
 
 interface IbcUniversalPacketReceiver {
-    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
+    function onRecvUniversalPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
         external
         returns (AckPacket memory ackPacket);
 
     function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external;
 
     function onTimeoutUniversalPacket(UniversalPacket calldata packet) external;
+}
+
+interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
+    function MW_ID() external view returns (uint256);
 }
 
 /**
@@ -49,7 +57,7 @@ interface IbcUniversalPacketReceiver {
  *   - IbcMiddleware must sit on top of a UniversalChannel MW or another IbcMiddleware.
  *   - IbcMiddleware cannnot own an IBC channel. Instead, UniversalChannel MW owns channels.
  */
-interface IbcMiddleware is IbcUniversalPacketSender, IbcMwPacketSender, IbcUniversalPacketReceiver {}
+interface IbcMiddleware is IbcMiddlwareProvider, IbcUniversalPacketReceiver {}
 
 /**
  * @title IbcUniversalChannelMW
@@ -57,14 +65,14 @@ interface IbcMiddleware is IbcUniversalPacketSender, IbcMwPacketSender, IbcUnive
  * IbcUniversalChannelMW is a special type of IbcMiddleware that owns IBC channels, which are multiplexed for other IbcMiddleware.
  * IbcUniversalChannelMW cannot sit on top of other MW, and must talk to IbcDispatcher directly.
  */
-interface IbcUniversalChannelMW is
-    IbcUniversalPacketSender,
-    IbcMwPacketSender,
-    IbcPacketReceiver,
-    IbcChannelReceiver
-{}
+interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcChannelReceiver {}
 
-contract IbcMwReceiverBase is Ownable {
+/**
+ * @title IbcMwUser
+ * @dev Contracts that send and recv universal packets via IBC MW should inherit IbcMwUser or implement similiar functions.
+ * @notice IbcMwUser ensures only authorized IBC middleware can call IBC callback functions.
+ */
+contract IbcMwUser is Ownable {
     // default middleware
     address public mw;
     mapping(address => bool) public authorizedMws;
@@ -76,6 +84,11 @@ contract IbcMwReceiverBase is Ownable {
     constructor(address _middleware) Ownable() {
         mw = _middleware;
         _authorizeMiddleware(_middleware);
+    }
+
+    function setDefaultMw(address _middleware) external onlyOwner {
+        require(authorizedMws[_middleware], "unauthorized IBC middleware");
+        mw = _middleware;
     }
 
     /**

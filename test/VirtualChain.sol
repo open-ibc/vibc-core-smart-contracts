@@ -9,6 +9,8 @@ import "../contracts/Verifier.sol";
 import {UniversalChannelHandler} from "../contracts/UniversalChannelHandler.sol";
 import {Mars} from "../contracts/Mars.sol";
 import {Earth} from "../contracts/Earth.sol";
+import {IbcMiddleware} from "../contracts/IbcMiddleware.sol";
+import {GeneralMiddleware} from "../contracts/GeneralMiddleware.sol";
 import "../contracts/DummyConsensusStateManager.sol";
 
 struct ChannelSetting {
@@ -23,6 +25,8 @@ struct VirtualChainData {
     UniversalChannelHandler ucHandler;
     Mars mars;
     Earth earth;
+    IbcMiddleware mw1;
+    IbcMiddleware mw2;
     string[] connectionHops;
 }
 
@@ -30,6 +34,8 @@ struct VirtualChainData {
 contract VirtualChain is Test, IbcEventsEmitter {
     Dispatcher public dispatcher;
     UniversalChannelHandler public ucHandler;
+    IbcMiddleware public mw1;
+    IbcMiddleware public mw2;
 
     Mars public mars;
     Earth public earth;
@@ -59,11 +65,14 @@ contract VirtualChain is Test, IbcEventsEmitter {
         connectionHops = new string[](2);
         connectionHops[0] = newConnectionId();
         connectionHops[1] = newConnectionId();
+
+        mw1 = new GeneralMiddleware(1 << 1, address(ucHandler));
+        mw2 = new GeneralMiddleware(1 << 2, address(ucHandler));
     }
 
     // return virtualChainData
     function getVirtualChainData() external view returns (VirtualChainData memory) {
-        return VirtualChainData(dispatcher, ucHandler, mars, earth, connectionHops);
+        return VirtualChainData(dispatcher, ucHandler, mars, earth, mw1, mw2, connectionHops);
     }
 
     // expectedChannel returns a Channel struct with expected values

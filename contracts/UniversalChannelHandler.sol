@@ -97,7 +97,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         uint64 timeoutTimestamp
     ) external {
         bytes memory packetData =
-            Ibc.toUniversalPacketBytes(UniversalPacket(srcPortAddr, srcMwIds & MW_ID, destPortAddr, appData));
+            Ibc.toUniversalPacketBytes(UniversalPacket(srcPortAddr, srcMwIds | MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 

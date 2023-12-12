@@ -7,7 +7,7 @@ import "./IbcReceiver.sol";
 import "./IbcDispatcher.sol";
 import "./IbcMiddleware.sol";
 
-contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
+contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
     struct UcPacket {
         bytes32 channelId;
         address srcPortId;
@@ -21,7 +21,7 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
     // received timeout packet as chain A
     UniversalPacket[] public timeoutPackets;
 
-    constructor(address _middleware) IbcMwReceiverBase(_middleware) {}
+    constructor(address _middleware) IbcMwUser(_middleware) {}
 
     function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
         IbcUniversalPacketSender(mw).sendUniversalPacket(channelId, destPortAddr, message, timeoutTimestamp);
