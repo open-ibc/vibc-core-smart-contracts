@@ -46,11 +46,41 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         _sendPacket(channelId, srcPortAddr, destPortAddr, srcMwIds, appData, timeoutTimestamp);
     }
 
+    function onRecvMWPacket(
+        bytes32 channelId,
+        address srcPortAddr,
+        address destPortAddr,
+        // 0-based receiver middleware index in the MW stack.
+        //  0 for the first MW directly called by UniversalChannel MW.
+        // `mwIndex-1` is the last MW that delivers the packet to the non-MW dApp.
+        // Each mw in the stack must increment mwIndex by 1 before calling the next MW.
+        uint256 mwIndex,
+        bytes calldata appData,
+        address[] calldata mwAddrs
+    ) external returns (AckPacket memory ackPacket) {
+        // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
+        // implementer can emit custom data fields suitable for their use cases.
+        // Here we use MW_ID as the custom MW data field.
+        emit RecvMWPacket(channelId, srcPortAddr, destPortAddr, MW_ID, appData, abi.encodePacked(MW_ID));
+
+        if (mwIndex == mwAddrs.length - 1) {
+            // last MW in the stack, deliver packet to dApp
+            return IbcUniversalPacketReceiver(destPortAddr).onRecvUniversalPacket(channelId, srcPortAddr, appData);
+        } else {
+            // send packet to next MW
+            return IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWPacket(
+                channelId, srcPortAddr, destPortAddr, mwIndex + 1, appData, mwAddrs
+            );
+        }
+    }
+
     function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
         external
         override
         returns (AckPacket memory ackPacket)
-    {}
+    {
+        // emit RecvMWPacket(channelId, srcPortId, MW_ID, appData);
+    }
 
     function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external override {}
 
@@ -66,7 +96,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) internal virtual {
-        // extra custom logic here to process packet, eg. emit MW events, mutate state, etc.
+        // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
         emit SendMWPacket(

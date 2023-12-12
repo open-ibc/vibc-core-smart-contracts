@@ -15,6 +15,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     string constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
+    // Key: middleware bitmap, Value: middleware address from receiver(chain B)'s perspective
+    mapping(uint256 => address[]) public mwStackAddrs;
+
     /**
      * @dev Close a universal channel.
      * Cannot send or receive packets after the channel is closed.
@@ -103,9 +106,23 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {
         UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
-        return IbcUniversalPacketReceiver(ucPacketData.destPortAddr).onRecvUniversalPacket(
-            packet.dest.channelId, ucPacketData.srcPortAddr, ucPacketData.appData
-        );
+        address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
+        if (mwAddrs.length == 0) {
+            // no other middleware stack registered for this packet
+            return IbcUniversalPacketReceiver(ucPacketData.destPortAddr).onRecvUniversalPacket(
+                packet.dest.channelId, ucPacketData.srcPortAddr, ucPacketData.appData
+            );
+        } else {
+            // send packet to first MW in the stack
+            return IbcMwPacketReceiver(mwAddrs[0]).onRecvMWPacket(
+                packet.dest.channelId,
+                ucPacketData.srcPortAddr,
+                ucPacketData.destPortAddr,
+                0,
+                ucPacketData.appData,
+                mwAddrs
+            );
+        }
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {
@@ -116,5 +133,17 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     function onTimeoutPacket(IbcPacket calldata packet) external override {
         UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
         IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(ucPacketData);
+    }
+
+    /**
+     * @dev Register a middleware stack for universal packet routing.
+     * This is a temporary solution for testing only.
+     * Polymer chain will maintain a global registry of middleware stacks.
+     * @param mwBitmap Bit OR of all MW IDs in the stack, excluding this MW's ID
+     * @param mwAddrs addresses in the stack, from the perspective of the receiver (chain B)
+     */
+    function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external onlyOwner {
+        require(mwBitmap != 0, "mwBitmap cannot be 0");
+        mwStackAddrs[mwBitmap] = mwAddrs;
     }
 }

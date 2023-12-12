@@ -35,6 +35,21 @@ interface IbcMwPacketSender {
     ) external;
 }
 
+interface IbcMwPacketReceiver {
+    function onRecvMWPacket(
+        bytes32 channelId,
+        address srcPortAddr,
+        address destPortAddr,
+        // 0-based receiver middleware index in the MW stack.
+        //  0 for the first MW directly called by UniversalChannel MW.
+        // `mwIndex-1` is the last MW that delivers the packet to the non-MW dApp.
+        // Each mw in the stack must increment mwIndex by 1 before calling the next MW.
+        uint256 mwIndex,
+        bytes calldata appData,
+        address[] calldata mwAddrs
+    ) external returns (AckPacket memory ackPacket);
+}
+
 interface IbcUniversalPacketReceiver {
     function onRecvUniversalPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
         external
@@ -65,7 +80,7 @@ interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
  *   - IbcMiddleware must sit on top of a UniversalChannel MW or another IbcMiddleware.
  *   - IbcMiddleware cannnot own an IBC channel. Instead, UniversalChannel MW owns channels.
  */
-interface IbcMiddleware is IbcMiddlwareProvider, IbcUniversalPacketReceiver {}
+interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUniversalPacketReceiver {}
 
 /**
  * @title IbcUniversalChannelMW
@@ -90,6 +105,15 @@ interface IbcMwEventsEmitter {
         uint256 mwId,
         bytes appData,
         uint64 timeoutTimestamp,
+        bytes mwData
+    );
+    event RecvMWPacket(
+        bytes32 indexed channelId,
+        address indexed srcPortAddr,
+        address indexed destPortAddr,
+        // middleware UID
+        uint256 mwId,
+        bytes appData,
         bytes mwData
     );
 }
