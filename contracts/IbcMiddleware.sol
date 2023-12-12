@@ -53,7 +53,9 @@ interface IbcMiddleware is IbcUniversalPacketSender, IbcPacketReceiver {
 interface IbcUniversalChannelMW is IbcMiddleware, IbcChannelReceiver {}
 
 contract IbcMwReceiverBase is Ownable {
+    // default middleware
     IbcMiddleware public mw;
+    mapping(address => bool) public authorizedMws;
 
     /**
      * @dev Constructor function that takes an IbcMiddleware address and grants the IBC_ROLE to the Polymer IBC Dispatcher.
@@ -61,6 +63,20 @@ contract IbcMwReceiverBase is Ownable {
      */
     constructor(IbcMiddleware _middleware) Ownable() {
         mw = _middleware;
+        _authorizeMiddleware(_middleware);
+    }
+
+    /**
+     * @dev register an authorized middleware so that modifier onlyIbcMw can be used to restrict access to only authorized middleware.
+     * Only the address with the IBC_ROLE can execute the function.
+     * @notice Should add this modifier to all IBC-related callback functions.
+     */
+    function authorizeMiddleware(IbcMiddleware middleware) external onlyOwner {
+        _authorizeMiddleware(middleware);
+    }
+
+    function _authorizeMiddleware(IbcMiddleware middleware) internal {
+        authorizedMws[address(middleware)] = true;
     }
 
     /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
@@ -73,7 +89,7 @@ contract IbcMwReceiverBase is Ownable {
      * Should add this modifier to all IBC-related callback functions.
      */
     modifier onlyIbcMw() {
-        require(msg.sender == address(mw), "only IBC middleware");
+        require(authorizedMws[msg.sender], "unauthorized IBC middleware");
         _;
     }
 }
