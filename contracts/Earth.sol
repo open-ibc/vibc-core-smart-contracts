@@ -21,10 +21,10 @@ contract Earth is IbcMwReceiverBase, IbcUniversalPacketReceiver {
     // received timeout packet as chain A
     UniversalPacket[] public timeoutPackets;
 
-    constructor(IbcMiddleware _middleware) IbcMwReceiverBase(_middleware) {}
+    constructor(address _middleware) IbcMwReceiverBase(_middleware) {}
 
     function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
-        mw.sendUniversalPacket(channelId, destPortAddr, message, timeoutTimestamp);
+        IbcUniversalPacketSender(mw).sendUniversalPacket(channelId, destPortAddr, message, timeoutTimestamp);
     }
 
     // For testing only; real dApps should implment their own ack logic

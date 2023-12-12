@@ -34,7 +34,7 @@ interface IbcChannelReceiver {
  * @dev Packet handling callback methods are invoked by the IBC dispatcher.
  */
 interface IbcPacketReceiver {
-    function onRecvPacket(IbcPacket memory packet) external returns (AckPacket memory ackPacket);
+    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external;
 
