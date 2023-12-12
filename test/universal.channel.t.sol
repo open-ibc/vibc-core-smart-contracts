@@ -78,7 +78,7 @@ struct UcPacket {
     bytes appData;
 }
 
-contract UniversalChannelPacketTest is Base {
+contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     VirtualChain eth1;
     VirtualChain eth2;
     ChannelSetting setting = ChannelSetting(ChannelOrder.UNORDERED, "1.0", true, validProof);
@@ -136,6 +136,7 @@ contract UniversalChannelPacketTest is Base {
         // universal channelIDs
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
+        IbcMiddleware[2] memory forwardMws = [v1.mw1, v1.mw2];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
@@ -144,6 +145,23 @@ contract UniversalChannelPacketTest is Base {
 
             ucData = UniversalPacket(address(v1.earth), mwIdBits, address(v2.earth), appData);
             packetData = Ibc.toUniversalPacketBytes(ucData);
+
+            // iterate over forward middleware contracts to verify each MW has witnessed the packet
+            for (uint256 i = 0; i < forwardMws.length; i++) {
+                if (forwardMws[i].MW_ID() == (forwardMws[i].MW_ID() & mwIdBits)) {
+                    vm.expectEmit(true, true, true, true);
+                    emit SendMWPacket(
+                        channelId1,
+                        address(v1.earth),
+                        address(v2.earth),
+                        forwardMws[i].MW_ID(),
+                        appData,
+                        timeout,
+                        abi.encodePacked(forwardMws[i].MW_ID())
+                    );
+                }
+            }
+            // Verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
