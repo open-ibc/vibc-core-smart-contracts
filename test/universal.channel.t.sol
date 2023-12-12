@@ -92,8 +92,6 @@ contract UniversalChannelPacketTest is Base {
     UniversalPacket ucData;
     // IBC packet received by dispatcher
     IbcPacket recvPacket;
-    // actual universal channel packet received by dApp
-    IbcPacket ucPacket;
 
     function setUp() public virtual {
         eth1 = new VirtualChain(100, "polyibc.eth1.");
@@ -103,18 +101,48 @@ contract UniversalChannelPacketTest is Base {
         v2 = eth2.getVirtualChainData();
     }
 
-    function test_sendPacket_ok() public {
+    // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
+    function test_sendPacket_via_universal_channel_ok() public {
+        uint256 mwIdBits = v1.ucHandler.MW_ID();
+        verifyPacketFlow(5, mwIdBits);
+    }
+
+    // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
+    function test_sendPacket_via_mw1_ok() public {
+        // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
+        vm.startPrank(address(eth1));
+        v1.earth.authorizeMiddleware(address(v1.mw1));
+        v1.earth.setDefaultMw(address(v1.mw1));
+        vm.stopPrank();
+
+        vm.startPrank(address(eth2));
+        v2.earth.authorizeMiddleware(address(v2.mw1));
+        v2.earth.setDefaultMw(address(v2.mw1));
+        vm.stopPrank();
+
+        uint256 mwIdBits = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
+        verifyPacketFlow(5, mwIdBits);
+    }
+
+    // TODO: test timeout
+    function test_timeoutPacket_ok() public {}
+
+    /**
+     * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of UniversalChannel MW.
+     * @param numOfPackets packet sequence starts from 1, and ends at numOfPackets
+     * @param mwIdBits bit OR of all MW_IDs of all MWs in the packet flow
+     */
+    function verifyPacketFlow(uint64 numOfPackets, uint256 mwIdBits) internal {
         // universal channelIDs
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
 
-        // send packet from earth1 to earth2
-        for (uint64 packetSeq = 1; packetSeq <= 5; packetSeq++) {
+        for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacket(address(v1.earth), v1.ucHandler.MW_ID(), address(v2.earth), appData);
+            ucData = UniversalPacket(address(v1.earth), mwIdBits, address(v2.earth), appData);
             packetData = Ibc.toUniversalPacketBytes(ucData);
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
@@ -130,14 +158,7 @@ contract UniversalChannelPacketTest is Base {
                 Height(0, 0),
                 timeout
             );
-            ucPacket = IbcPacket(
-                IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
-                IbcEndpoint(eth2.portIds(address(v2.ucHandler)), channelId2),
-                packetSeq,
-                appData,
-                Height(0, 0),
-                timeout
-            );
+
             ackPacket = v2.earth.generateAckPacket(channelId2, address(v1.earth), appData);
             vm.expectEmit(true, true, true, true);
             emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
@@ -158,9 +179,6 @@ contract UniversalChannelPacketTest is Base {
             assertEq(data, ackPacket.data);
         }
     }
-
-    // TODO: test timeout
-    function test_timeoutPacket_ok() public {}
 
     function assertDappUcPacket(Earth earth, uint256 index, UcPacket memory expectedPacket) internal {
         (bytes32 channelId, address srcPortId, bytes memory _appData) = earth.recvedPackets(index);
