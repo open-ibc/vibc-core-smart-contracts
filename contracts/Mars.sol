@@ -112,6 +112,19 @@ contract Mars is IbcReceiver, Ownable {
         dispatcher.closeIbcChannel(channelId);
     }
 
+    function initiateChannelHandshake(
+        IbcDispatcher dispatcher,
+        IbcReceiver portAddress,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        CounterParty calldata counterparty,
+        Proof calldata proof
+    ) external {
+        dispatcher.openIbcChannel(portAddress, version, ordering, feeEnabled,connectionHops, counterparty, proof);
+    }    
+
     function greet(
         IbcDispatcher dispatcher,
         string calldata message,

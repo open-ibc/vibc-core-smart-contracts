@@ -13,6 +13,16 @@ import './IbcReceiver.sol';
 interface IbcDispatcher {
     function closeIbcChannel(bytes32 channelId) external;
 
+    function openIbcChannel(
+        IbcReceiver portAddress,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        CounterParty calldata counterparty,
+        Proof calldata proof
+    ) external;    
+
     function sendPacket(
         bytes32 channelId,
         bytes calldata payload,
