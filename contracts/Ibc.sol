@@ -30,8 +30,8 @@ struct UniversalPacket {
     // address destPortAddress;
     // string srcPortId;
     address srcPortAddr;
-    // source middleware ids bit AND
-    uint256 srcMwIds;
+    // source middleware ids bitmap, ie. logic OR of all MW IDs in the MW stack.
+    uint256 mwBitmap;
     address destPortAddr;
     bytes appData;
 }

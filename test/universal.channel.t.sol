@@ -118,6 +118,10 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         vm.startPrank(address(eth2));
         v2.earth.authorizeMiddleware(address(v2.mw1));
         v2.earth.setDefaultMw(address(v2.mw1));
+        // register mw1 as the only middleware in the stack
+        address[] memory mwAddrs = new address[](1);
+        mwAddrs[0] = address(v2.mw1);
+        v2.ucHandler.registerMwStack(v2.mw1.MW_ID() | v2.ucHandler.MW_ID(), mwAddrs);
         vm.stopPrank();
 
         uint256 mwIdBits = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
@@ -136,7 +140,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         // universal channelIDs
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
-        IbcMiddleware[2] memory forwardMws = [v1.mw1, v1.mw2];
+        IbcMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
+        IbcMiddleware[2] memory recvMws = [v2.mw2, v1.mw1];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
@@ -146,18 +151,18 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             ucData = UniversalPacket(address(v1.earth), mwIdBits, address(v2.earth), appData);
             packetData = Ibc.toUniversalPacketBytes(ucData);
 
-            // iterate over forward middleware contracts to verify each MW has witnessed the packet
-            for (uint256 i = 0; i < forwardMws.length; i++) {
-                if (forwardMws[i].MW_ID() == (forwardMws[i].MW_ID() & mwIdBits)) {
+            // iterate over sending middleware contracts to verify each MW has witnessed the packet
+            for (uint256 i = 0; i < senderMws.length; i++) {
+                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwIdBits)) {
                     vm.expectEmit(true, true, true, true);
                     emit SendMWPacket(
                         channelId1,
                         address(v1.earth),
                         address(v2.earth),
-                        forwardMws[i].MW_ID(),
+                        senderMws[i].MW_ID(),
                         appData,
                         timeout,
-                        abi.encodePacked(forwardMws[i].MW_ID())
+                        abi.encodePacked(senderMws[i].MW_ID())
                     );
                 }
             }
@@ -178,8 +183,25 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             );
 
             ackPacket = v2.earth.generateAckPacket(channelId2, address(v1.earth), appData);
+            // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
+            // iterate over receiving middleware contracts to verify each MW has witnessed the packet
+            for (uint256 i = 0; i < recvMws.length; i++) {
+                if (recvMws[i].MW_ID() == (recvMws[i].MW_ID() & mwIdBits)) {
+                    vm.expectEmit(true, true, true, true);
+                    emit RecvMWPacket(
+                        channelId2,
+                        address(v1.earth),
+                        address(v2.earth),
+                        recvMws[i].MW_ID(),
+                        appData,
+                        abi.encodePacked(recvMws[i].MW_ID())
+                    );
+                }
+            }
+            // verify event emitted by UniversalChannel MW
+            vm.expectEmit(true, true, true, true);
             emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
             v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, setting.proof);
 
