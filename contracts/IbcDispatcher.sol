@@ -34,13 +34,6 @@ interface IbcDispatcher is IbcPacketSender {
     ) external;
 
     function closeIbcChannel(bytes32 channelId) external;
-
-    // function sendPacketOverUniversalChannel(
-    //     string calldata portId,
-    //     bytes32 channelId,
-    //     bytes calldata appData,
-    //     uint64 timeoutTimestamp
-    // ) external;
 }
 
 /**

@@ -46,6 +46,14 @@ interface IbcUniversalPacketReceiver {
 }
 
 interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
+    /**
+     * @dev MW_ID is the ID of MW contract on all supported virtual chains.
+     * MW_ID must:
+     * - be globally unique, ie. no two MWs should have the same MW_ID registered on Polymer chain.
+     * - be identical on all supported virtual chains.
+     * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to one MW stack.
+     * - be 1 << N, where N is a non-negative integer, and not in conflict with other MWs.
+     */
     function MW_ID() external view returns (uint256);
 }
 
@@ -66,6 +74,25 @@ interface IbcMiddleware is IbcMiddlwareProvider, IbcUniversalPacketReceiver {}
  * IbcUniversalChannelMW cannot sit on top of other MW, and must talk to IbcDispatcher directly.
  */
 interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcChannelReceiver {}
+
+/**
+ * @title IbcMwEventsEmitter
+ * @notice IBC middleware events interface.
+ * @dev IBC middleware contracts should emit events specific to their own middleware,
+ * and can choose to emit events not defined in this interface if needed.
+ */
+interface IbcMwEventsEmitter {
+    event SendMWPacket(
+        bytes32 indexed channelId,
+        address indexed srcPortAddr,
+        address indexed destPortAddr,
+        // middleware UID
+        uint256 mwId,
+        bytes appData,
+        uint64 timeoutTimestamp,
+        bytes mwData
+    );
+}
 
 /**
  * @title IbcMwUser
