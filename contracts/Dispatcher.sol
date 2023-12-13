@@ -507,7 +507,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
      * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
      * If the address doesn't satisfy the interface, the transaction will be reverted.
      * The receiver must be the intended packet destination, which is the same as packet.dest.portId.
-     * For universal channel and IBC middleware, the real destPortId is encoded in the packet data.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
      * @dev Emit an `RecvPacket` event with the details of the received packet;
