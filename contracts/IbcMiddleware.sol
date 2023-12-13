@@ -35,6 +35,8 @@ interface IbcMwPacketSender {
     ) external;
 }
 
+// IBC middleware contracts must implement this interface to relay universal channel packets to other IBC middleware contracts.
+// If the MW contract also receives ucPacket as the final destination, it must also implement IbcUniversalPacketReceiver.
 interface IbcMwPacketReceiver {
     function onRecvMWPacket(
         bytes32 channelId,
@@ -60,14 +62,16 @@ interface IbcMwPacketReceiver {
     ) external;
 }
 
+// dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets' final destination.
 interface IbcUniversalPacketReceiver {
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
         external
         returns (AckPacket memory ackPacket);
 
-    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external;
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external;
 
-    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external;
+    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external;
 }
 
 interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
@@ -77,7 +81,7 @@ interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
      * - be globally unique, ie. no two MWs should have the same MW_ID registered on Polymer chain.
      * - be identical on all supported virtual chains.
      * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to one MW stack.
-     * - be 1 << N, where N is a non-negative integer, and not in conflict with other MWs.
+     * - be 1 << N, where N is a non-negative integer [0,255], and not in conflict with other MWs.
      */
     function MW_ID() external view returns (uint256);
 }

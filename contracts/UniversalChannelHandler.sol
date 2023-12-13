@@ -122,7 +122,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver ack to dApp directly.
-            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(ucPacket, ack);
+            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(
+                packet.src.channelId, ucPacket, ack
+            );
         } else {
             // send ack to last MW in the stack
             IbcMwPacketReceiver(mwAddrs[0]).onRecvMWAck(packet.src.channelId, ucPacket, 0, mwAddrs, ack);
@@ -131,7 +133,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onTimeoutPacket(IbcPacket calldata packet) external override {
         UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
-        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(ucPacketData);
+        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(
+            packet.src.channelId, ucPacketData
+        );
     }
 
     /**

@@ -8,18 +8,23 @@ import "./IbcDispatcher.sol";
 import "./IbcMiddleware.sol";
 
 contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
-    struct UcPacket {
+    struct UcPacketWithChannel {
         bytes32 channelId;
-        address srcPortId;
-        bytes appData;
+        UniversalPacket packet;
+    }
+
+    struct UcAckWithChannel {
+        bytes32 channelId;
+        UniversalPacket packet;
+        AckPacket ack;
     }
 
     // received packet as chain B
-    UcPacket[] public recvedPackets;
+    UcPacketWithChannel[] public recvedPackets;
     // received ack packet as chain A
-    AckPacket[] public ackPackets;
+    UcAckWithChannel[] public ackPackets;
     // received timeout packet as chain A
-    UniversalPacket[] public timeoutPackets;
+    UcPacketWithChannel[] public timeoutPackets;
 
     constructor(address _middleware) IbcMwUser(_middleware) {}
 
@@ -41,19 +46,22 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
         onlyIbcMw
         returns (AckPacket memory ackPacket)
     {
-        recvedPackets.push(UcPacket(channelId, packet.srcPortAddr, packet.appData));
+        recvedPackets.push(UcPacketWithChannel(channelId, packet));
         return this.generateAckPacket(channelId, packet.srcPortAddr, packet.appData);
     }
 
-    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external onlyIbcMw {
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external
+        onlyIbcMw
+    {
         // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
         require(ack.data.length >= 20, "ack data too short");
         address ackSender = address(bytes20(ack.data[0:20]));
         require(packet.destPortAddr == ackSender, "ack address mismatch");
-        ackPackets.push(ack);
+        ackPackets.push(UcAckWithChannel(channelId, packet, ack));
     }
 
-    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external onlyIbcMw {
-        timeoutPackets.push(packet);
+    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external onlyIbcMw {
+        timeoutPackets.push(UcPacketWithChannel(channelId, packet));
     }
 }
