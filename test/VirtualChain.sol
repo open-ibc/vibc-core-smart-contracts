@@ -25,8 +25,8 @@ struct VirtualChainData {
     UniversalChannelHandler ucHandler;
     Mars mars;
     Earth earth;
-    IbcMiddleware mw1;
-    IbcMiddleware mw2;
+    GeneralMiddleware mw1;
+    GeneralMiddleware mw2;
     string[] connectionHops;
 }
 
@@ -34,8 +34,8 @@ struct VirtualChainData {
 contract VirtualChain is Test, IbcEventsEmitter {
     Dispatcher public dispatcher;
     UniversalChannelHandler public ucHandler;
-    IbcMiddleware public mw1;
-    IbcMiddleware public mw2;
+    GeneralMiddleware public mw1;
+    GeneralMiddleware public mw2;
 
     Mars public mars;
     Earth public earth;

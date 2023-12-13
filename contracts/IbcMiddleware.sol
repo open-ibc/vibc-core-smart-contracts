@@ -157,8 +157,15 @@ contract IbcMwUser is Ownable {
         _authorizeMiddleware(_middleware);
     }
 
+    /**
+     * @dev Set the default IBC middleware contract in the MW stack.
+     * When sending packets, the default middleware is the next middleware in the MW stack.
+     * When receiving packets, the default middleware is the previous middleware in the MW stack.
+     * @param _middleware The address of the IbcMiddleware contract.
+     * @notice The default middleware is authorized automatically.
+     */
     function setDefaultMw(address _middleware) external onlyOwner {
-        require(authorizedMws[_middleware], "unauthorized IBC middleware");
+        _authorizeMiddleware(_middleware);
         mw = _middleware;
     }
 
