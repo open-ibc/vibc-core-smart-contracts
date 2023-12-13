@@ -133,9 +133,16 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onTimeoutPacket(IbcPacket calldata packet) external override {
         UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
-        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(
-            packet.src.channelId, ucPacketData
-        );
+        address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
+        if (mwAddrs.length == 0) {
+            // no other middleware stack registered for this packet. Deliver timeout to dApp directly.
+            IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onTimeoutUniversalPacket(
+                packet.src.channelId, ucPacketData
+            );
+        } else {
+            // send timeout to last MW in the stack
+            IbcMwPacketReceiver(mwAddrs[0]).onRecvMWTimeout(packet.src.channelId, ucPacketData, 0, mwAddrs);
+        }
     }
 
     /**
