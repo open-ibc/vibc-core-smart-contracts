@@ -110,16 +110,10 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         v2 = eth2.getVirtualChainData();
     }
 
-    // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
-    function test_packetFlow_via_universal_channel_ok() public {
-        uint256 mwBitmap = v1.ucHandler.MW_ID();
-        verifyPacketFlow(5, mwBitmap);
-    }
-
-    // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
-    function test_packetFlow_via_mw1_ok() public {
-        address[] memory mwAddrs = new address[](1);
+    // register middleware stack: dApp -> mw1 -> UniversalChannel MW
+    function register_mw1() internal returns (uint256) {
         uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
+        address[] memory mwAddrs = new address[](1);
 
         // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
         vm.startPrank(address(eth1));
@@ -136,11 +130,11 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
-        verifyPacketFlow(5, mwBitmap);
+        return mwBitmap;
     }
 
-    // packet flow: Earth -> MW1 -> MW2 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW2 -> MW1 -> Earth
-    function test_packetFlow_via_mw2_ok() public {
+    // register middleware stack: dApp -> mw1 -> mw2 -> UniversalChannel MW
+    function register_mw1_mw2() internal returns (uint256) {
         address[] memory mwAddrs = new address[](2);
         uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID() | v2.mw2.MW_ID();
 
@@ -164,6 +158,24 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
+        return mwBitmap;
+    }
+
+    // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
+    function test_packetFlow_via_universal_channel_ok() public {
+        uint256 mwBitmap = v1.ucHandler.MW_ID();
+        verifyPacketFlow(5, mwBitmap);
+    }
+
+    // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
+    function test_packetFlow_via_mw1_ok() public {
+        uint256 mwBitmap = register_mw1();
+        verifyPacketFlow(5, mwBitmap);
+    }
+
+    // packet flow: Earth -> MW1 -> MW2 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW2 -> MW1 -> Earth
+    function test_packetFlow_via_mw2_ok() public {
+        uint256 mwBitmap = register_mw1_mw2();
         verifyPacketFlow(5, mwBitmap);
     }
 
@@ -173,56 +185,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     }
 
     function test_timeout_via_mw1_ok() public {
-        address[] memory mwAddrs = new address[](1);
-        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
-
-        // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
-        vm.startPrank(address(eth1));
-        v1.earth.setDefaultMw(address(v1.mw1));
-        // register mw1 as the only middleware in the stack
-        mwAddrs[0] = address(v1.mw1);
-        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
-        vm.stopPrank();
-
-        vm.startPrank(address(eth2));
-        v2.earth.setDefaultMw(address(v2.mw1));
-        // register mw1 as the only middleware in the stack
-        mwAddrs[0] = address(v2.mw1);
-        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
-        vm.stopPrank();
-
+        uint256 mwBitmap = register_mw1();
         verifyTimeoutFlow(5, mwBitmap);
     }
 
     function test_timeout_via_mw2_ok() public {
-        address[] memory mwAddrs = new address[](2);
-        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID() | v2.mw2.MW_ID();
-
-        // change Earth's default middleware to mw1, which calls mw2, then UniversalChannel MW
-        vm.startPrank(address(eth1));
-        v1.earth.setDefaultMw(address(v1.mw1));
-        v1.mw1.setDefaultMw(address(v1.mw2));
-        // register middleware stack
-        mwAddrs[0] = address(v1.mw2);
-        mwAddrs[1] = address(v1.mw1);
-
-        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
-        vm.stopPrank();
-
-        vm.startPrank(address(eth2));
-        v2.earth.setDefaultMw(address(v2.mw1));
-        v2.mw1.setDefaultMw(address(v2.mw2));
-        // register middleware stack
-        mwAddrs[0] = address(v2.mw2);
-        mwAddrs[1] = address(v2.mw1);
-        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
-        vm.stopPrank();
-
+        uint256 mwBitmap = register_mw1_mw2();
         verifyTimeoutFlow(5, mwBitmap);
     }
-
-    // TODO: test timeout
-    function test_timeoutPacket_ok() public {}
 
     /**
      * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of UniversalChannel MW.
