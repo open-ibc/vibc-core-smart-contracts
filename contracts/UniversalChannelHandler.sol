@@ -104,30 +104,29 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
-    function onRecvPacket(IbcPacket memory packet) external override returns (AckPacket memory ackPacket) {
-        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
-        address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
+    function onRecvPacket(IbcPacket calldata packet) external override returns (AckPacket memory ackPacket) {
+        UniversalPacket memory ucPacket = Ibc.fromUniversalPacketBytes(packet.data);
+        address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
-            // no other middleware stack registered for this packet
-            return IbcUniversalPacketReceiver(ucPacketData.destPortAddr).onRecvUniversalPacket(
-                packet.dest.channelId, ucPacketData.srcPortAddr, ucPacketData.appData
-            );
+            // no other middleware stack registered for this packet. Deliver packet to dApp directly.
+            return
+                IbcUniversalPacketReceiver(ucPacket.destPortAddr).onRecvUniversalPacket(packet.dest.channelId, ucPacket);
         } else {
             // send packet to first MW in the stack
-            return IbcMwPacketReceiver(mwAddrs[0]).onRecvMWPacket(
-                packet.dest.channelId,
-                ucPacketData.srcPortAddr,
-                ucPacketData.destPortAddr,
-                0,
-                ucPacketData.appData,
-                mwAddrs
-            );
+            return IbcMwPacketReceiver(mwAddrs[0]).onRecvMWPacket(packet.dest.channelId, ucPacket, 0, mwAddrs);
         }
     }
 
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external override {
-        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
-        IbcUniversalPacketReceiver(ucPacketData.srcPortAddr).onUniversalAcknowledgement(ucPacketData, ack);
+        UniversalPacket memory ucPacket = Ibc.fromUniversalPacketBytes(packet.data);
+        address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
+        if (mwAddrs.length == 0) {
+            // no other middleware stack registered for this packet. Deliver ack to dApp directly.
+            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(ucPacket, ack);
+        } else {
+            // send ack to last MW in the stack
+            IbcMwPacketReceiver(mwAddrs[0]).onRecvMWAck(packet.src.channelId, ucPacket, 0, mwAddrs, ack);
+        }
     }
 
     function onTimeoutPacket(IbcPacket calldata packet) external override {

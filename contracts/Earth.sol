@@ -36,13 +36,13 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
         return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
     }
 
-    function onRecvUniversalPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
+    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
         external
         onlyIbcMw
         returns (AckPacket memory ackPacket)
     {
-        recvedPackets.push(UcPacket(channelId, srcPortAddr, appData));
-        return this.generateAckPacket(channelId, srcPortAddr, appData);
+        recvedPackets.push(UcPacket(channelId, packet.srcPortAddr, packet.appData));
+        return this.generateAckPacket(channelId, packet.srcPortAddr, packet.appData);
     }
 
     function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external onlyIbcMw {
