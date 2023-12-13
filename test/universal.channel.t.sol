@@ -109,17 +109,21 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
     // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
     function test_sendPacket_via_mw1_ok() public {
+        address[] memory mwAddrs = new address[](1);
+
         // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
         vm.startPrank(address(eth1));
         v1.earth.authorizeMiddleware(address(v1.mw1));
         v1.earth.setDefaultMw(address(v1.mw1));
+        // register mw1 as the only middleware in the stack
+        mwAddrs[0] = address(v1.mw1);
+        v1.ucHandler.registerMwStack(v1.mw1.MW_ID() | v1.ucHandler.MW_ID(), mwAddrs);
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
         v2.earth.authorizeMiddleware(address(v2.mw1));
         v2.earth.setDefaultMw(address(v2.mw1));
         // register mw1 as the only middleware in the stack
-        address[] memory mwAddrs = new address[](1);
         mwAddrs[0] = address(v2.mw1);
         v2.ucHandler.registerMwStack(v2.mw1.MW_ID() | v2.ucHandler.MW_ID(), mwAddrs);
         vm.stopPrank();
@@ -200,7 +204,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     );
                 }
             }
-            // verify event emitted by UniversalChannel MW
+            // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
             v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, setting.proof);
@@ -210,8 +214,28 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             //
             // simulate relayer calling dispatcher.acknowledgePacket on chain A
             //
+
+            // iterate over sending middleware contracts to verify each MW has witnessed the ack
+            for (uint256 j = 0; j < senderMws.length; j++) {
+                // order is reversed than the sending path. Now chain A receives ack from chain B
+                uint256 i = senderMws.length - j - 1;
+                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwIdBits)) {
+                    vm.expectEmit(true, true, true, true);
+                    emit RecvMWAck(
+                        channelId1,
+                        address(v1.earth),
+                        address(v2.earth),
+                        senderMws[i].MW_ID(),
+                        appData,
+                        abi.encodePacked(senderMws[i].MW_ID()),
+                        ackPacket
+                    );
+                }
+            }
+            // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
+            // receive ack on chain A, triggering expected events
             v1.dispatcher.acknowledgement(v1.ucHandler, recvPacket, ackPacket, setting.proof);
 
             (bool success, bytes memory data) = v1.earth.ackPackets(packetSeq - 1);

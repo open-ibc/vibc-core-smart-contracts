@@ -48,33 +48,67 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
 
     function onRecvMWPacket(
         bytes32 channelId,
-        address srcPortAddr,
-        address destPortAddr,
+        UniversalPacket calldata ucPacket,
+        // address srcPortAddr,
+        // address destPortAddr,
         // 0-based receiver middleware index in the MW stack.
         //  0 for the first MW directly called by UniversalChannel MW.
         // `mwIndex-1` is the last MW that delivers the packet to the non-MW dApp.
         // Each mw in the stack must increment mwIndex by 1 before calling the next MW.
         uint256 mwIndex,
-        bytes calldata appData,
+        // bytes calldata appData,
         address[] calldata mwAddrs
     ) external returns (AckPacket memory ackPacket) {
         // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
-        emit RecvMWPacket(channelId, srcPortAddr, destPortAddr, MW_ID, appData, abi.encodePacked(MW_ID));
+        emit RecvMWPacket(
+            channelId, ucPacket.srcPortAddr, ucPacket.destPortAddr, MW_ID, ucPacket.appData, abi.encodePacked(MW_ID)
+        );
 
         if (mwIndex == mwAddrs.length - 1) {
             // last MW in the stack, deliver packet to dApp
-            return IbcUniversalPacketReceiver(destPortAddr).onRecvUniversalPacket(channelId, srcPortAddr, appData);
+            return IbcUniversalPacketReceiver(ucPacket.destPortAddr).onRecvUniversalPacket(channelId, ucPacket);
         } else {
             // send packet to next MW
-            return IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWPacket(
-                channelId, srcPortAddr, destPortAddr, mwIndex + 1, appData, mwAddrs
-            );
+            return IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWPacket(channelId, ucPacket, mwIndex + 1, mwAddrs);
         }
     }
 
-    function onRecvUniversalPacket(bytes32 channelId, address srcPortId, bytes calldata appData)
+    function onRecvMWAck(
+        bytes32 channelId,
+        UniversalPacket calldata ucPacket,
+        // 0-based receiver middleware index in the MW stack.
+        //  0 for the first MW directly called by UniversalChannel MW.
+        // `mwIndex-1` is the last MW that delivers the packet to the non-MW dApp.
+        // Each mw in the stack must increment mwIndex by 1 before calling the next MW.
+        uint256 mwIndex,
+        address[] calldata mwAddrs,
+        AckPacket calldata ack
+    ) external override {
+        // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
+        // implementer can emit custom data fields suitable for their use cases.
+        // Here we use MW_ID as the custom MW data field.
+        emit RecvMWAck(
+            channelId,
+            ucPacket.srcPortAddr,
+            ucPacket.destPortAddr,
+            MW_ID,
+            ucPacket.appData,
+            abi.encodePacked(MW_ID),
+            ack
+        );
+
+        if (mwIndex == mwAddrs.length - 1) {
+            // last MW in the stack, deliver ack to dApp
+            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(ucPacket, ack);
+        } else {
+            // send ack to next MW
+            IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWAck(channelId, ucPacket, mwIndex + 1, mwAddrs, ack);
+        }
+    }
+
+    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
         external
         override
         returns (AckPacket memory ackPacket)
