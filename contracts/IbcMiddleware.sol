@@ -60,6 +60,13 @@ interface IbcMwPacketReceiver {
         address[] calldata mwAddrs,
         AckPacket calldata ack
     ) external;
+
+    function onRecvMWTimeout(
+        bytes32 channelId,
+        UniversalPacket calldata ucPacket,
+        uint256 mwIndex,
+        address[] calldata mwAddrs
+    ) external;
 }
 
 // dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets' final destination.
@@ -139,6 +146,15 @@ interface IbcMwEventsEmitter {
         bytes appData,
         bytes mwData,
         AckPacket ack
+    );
+    event RecvMWTimeout(
+        bytes32 indexed channelId,
+        address indexed srcPortAddr,
+        address indexed destPortAddr,
+        // middleware UID
+        uint256 mwId,
+        bytes appData,
+        bytes mwData
     );
 }
 

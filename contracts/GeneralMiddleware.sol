@@ -58,7 +58,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         uint256 mwIndex,
         // bytes calldata appData,
         address[] calldata mwAddrs
-    ) external returns (AckPacket memory ackPacket) {
+    ) external onlyIbcMw returns (AckPacket memory ackPacket) {
         // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
@@ -85,7 +85,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         uint256 mwIndex,
         address[] calldata mwAddrs,
         AckPacket calldata ack
-    ) external override {
+    ) external override onlyIbcMw {
         // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
@@ -108,18 +108,42 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         }
     }
 
+    function onRecvMWTimeout(
+        bytes32 channelId,
+        UniversalPacket calldata ucPacket,
+        uint256 mwIndex,
+        address[] calldata mwAddrs
+    ) external override onlyIbcMw {
+        // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
+        // implementer can emit custom data fields suitable for their use cases.
+        // Here we use MW_ID as the custom MW data field.
+        emit RecvMWTimeout(
+            channelId, ucPacket.srcPortAddr, ucPacket.destPortAddr, MW_ID, ucPacket.appData, abi.encodePacked(MW_ID)
+        );
+
+        if (mwIndex == mwAddrs.length - 1) {
+            // last MW in the stack, deliver timeout to dApp
+            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onTimeoutUniversalPacket(channelId, ucPacket);
+        } else {
+            // send timeout to next MW
+            IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWTimeout(channelId, ucPacket, mwIndex + 1, mwAddrs);
+        }
+    }
+
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
         external
         override
+        onlyIbcMw
         returns (AckPacket memory ackPacket)
     {}
 
     function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
         external
         override
+        onlyIbcMw
     {}
 
-    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external override {}
+    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external override onlyIbcMw {}
 
     // internal function to send packet to next MW with MW Ids bit flipped
     // param srcMwIds: MW ID bitmap excluding this MW's ID
