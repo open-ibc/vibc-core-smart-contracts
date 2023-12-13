@@ -103,33 +103,59 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
     // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
     function test_sendPacket_via_universal_channel_ok() public {
-        uint256 mwIdBits = v1.ucHandler.MW_ID();
-        verifyPacketFlow(5, mwIdBits);
+        uint256 mwBitmap = v1.ucHandler.MW_ID();
+        verifyPacketFlow(5, mwBitmap);
     }
 
     // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
-    function test_sendPacket_via_mw1_ok() public {
+    function test_packetFlow_via_mw1_ok() public {
         address[] memory mwAddrs = new address[](1);
+        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
 
         // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
         vm.startPrank(address(eth1));
-        v1.earth.authorizeMiddleware(address(v1.mw1));
         v1.earth.setDefaultMw(address(v1.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v1.mw1);
-        v1.ucHandler.registerMwStack(v1.mw1.MW_ID() | v1.ucHandler.MW_ID(), mwAddrs);
+        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
-        v2.earth.authorizeMiddleware(address(v2.mw1));
         v2.earth.setDefaultMw(address(v2.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v2.mw1);
-        v2.ucHandler.registerMwStack(v2.mw1.MW_ID() | v2.ucHandler.MW_ID(), mwAddrs);
+        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
-        uint256 mwIdBits = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
-        verifyPacketFlow(5, mwIdBits);
+        verifyPacketFlow(5, mwBitmap);
+    }
+
+    // packet flow: Earth -> MW1 -> MW2 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW2 -> MW1 -> Earth
+    function test_packetFlow_via_mw2_ok() public {
+        address[] memory mwAddrs = new address[](2);
+        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID() | v2.mw2.MW_ID();
+
+        // change Earth's default middleware to mw1, which calls mw2, then UniversalChannel MW
+        vm.startPrank(address(eth1));
+        v1.earth.setDefaultMw(address(v1.mw1));
+        v1.mw1.setDefaultMw(address(v1.mw2));
+        // register middleware stack
+        mwAddrs[0] = address(v1.mw2);
+        mwAddrs[1] = address(v1.mw1);
+
+        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        vm.stopPrank();
+
+        vm.startPrank(address(eth2));
+        v2.earth.setDefaultMw(address(v2.mw1));
+        v2.mw1.setDefaultMw(address(v2.mw2));
+        // register middleware stack
+        mwAddrs[0] = address(v2.mw2);
+        mwAddrs[1] = address(v2.mw1);
+        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        vm.stopPrank();
+
+        verifyPacketFlow(5, mwBitmap);
     }
 
     // TODO: test timeout
@@ -138,26 +164,26 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     /**
      * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of UniversalChannel MW.
      * @param numOfPackets packet sequence starts from 1, and ends at numOfPackets
-     * @param mwIdBits bit OR of all MW_IDs of all MWs in the packet flow
+     * @param mwBitmap bit OR of all MW_IDs of all MWs in the packet flow
      */
-    function verifyPacketFlow(uint64 numOfPackets, uint256 mwIdBits) internal {
+    function verifyPacketFlow(uint64 numOfPackets, uint256 mwBitmap) internal {
         // universal channelIDs
         bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
         bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
-        IbcMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
-        IbcMiddleware[2] memory recvMws = [v2.mw2, v1.mw1];
+        GeneralMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
+        GeneralMiddleware[2] memory recvMws = [v2.mw2, v1.mw1];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
             uint64 factor = packetSeq; // change packet settings for each iteration
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucData = UniversalPacket(address(v1.earth), mwIdBits, address(v2.earth), appData);
+            ucData = UniversalPacket(address(v1.earth), mwBitmap, address(v2.earth), appData);
             packetData = Ibc.toUniversalPacketBytes(ucData);
 
             // iterate over sending middleware contracts to verify each MW has witnessed the packet
             for (uint256 i = 0; i < senderMws.length; i++) {
-                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwIdBits)) {
+                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwBitmap)) {
                     vm.expectEmit(true, true, true, true);
                     emit SendMWPacket(
                         channelId1,
@@ -192,7 +218,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
             // iterate over receiving middleware contracts to verify each MW has witnessed the packet
             for (uint256 i = 0; i < recvMws.length; i++) {
-                if (recvMws[i].MW_ID() == (recvMws[i].MW_ID() & mwIdBits)) {
+                if (recvMws[i].MW_ID() == (recvMws[i].MW_ID() & mwBitmap)) {
                     vm.expectEmit(true, true, true, true);
                     emit RecvMWPacket(
                         channelId2,
@@ -219,7 +245,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             for (uint256 j = 0; j < senderMws.length; j++) {
                 // order is reversed than the sending path. Now chain A receives ack from chain B
                 uint256 i = senderMws.length - j - 1;
-                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwIdBits)) {
+                if (senderMws[i].MW_ID() == (senderMws[i].MW_ID() & mwBitmap)) {
                     vm.expectEmit(true, true, true, true);
                     emit RecvMWAck(
                         channelId1,

@@ -140,6 +140,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
      * Polymer chain will maintain a global registry of middleware stacks.
      * @param mwBitmap Bit OR of all MW IDs in the stack, excluding this MW's ID
      * @param mwAddrs addresses in the stack, from the perspective of the receiver (chain B)
+     * MW closer to UniversalChannel MW has smaller index. MW stack must be in the same order on both chains.
      */
     function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external onlyOwner {
         require(mwBitmap != 0, "mwBitmap cannot be 0");
