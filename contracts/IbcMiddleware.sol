@@ -13,7 +13,7 @@ import "./IbcReceiver.sol";
 interface IbcUniversalPacketSender {
     function sendUniversalPacket(
         bytes32 channelId,
-        address destPortAddr,
+        bytes32 destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external;
@@ -26,8 +26,8 @@ interface IbcMwPacketSender {
     function sendMWPacket(
         bytes32 channelId,
         // original source address of the packet
-        address srcPortAddr,
-        address destPortAddr,
+        bytes32 srcPortAddr,
+        bytes32 destPortAddr,
         // source middleware ids bit AND
         uint256 srcMwIds,
         bytes calldata appData,
@@ -120,8 +120,8 @@ interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcC
 interface IbcMwEventsEmitter {
     event SendMWPacket(
         bytes32 indexed channelId,
-        address indexed srcPortAddr,
-        address indexed destPortAddr,
+        bytes32 indexed srcPortAddr,
+        bytes32 indexed destPortAddr,
         // middleware UID
         uint256 mwId,
         bytes appData,
@@ -130,8 +130,8 @@ interface IbcMwEventsEmitter {
     );
     event RecvMWPacket(
         bytes32 indexed channelId,
-        address indexed srcPortAddr,
-        address indexed destPortAddr,
+        bytes32 indexed srcPortAddr,
+        bytes32 indexed destPortAddr,
         // middleware UID
         uint256 mwId,
         bytes appData,
@@ -139,8 +139,8 @@ interface IbcMwEventsEmitter {
     );
     event RecvMWAck(
         bytes32 indexed channelId,
-        address indexed srcPortAddr,
-        address indexed destPortAddr,
+        bytes32 indexed srcPortAddr,
+        bytes32 indexed destPortAddr,
         // middleware UID
         uint256 mwId,
         bytes appData,
@@ -149,8 +149,8 @@ interface IbcMwEventsEmitter {
     );
     event RecvMWTimeout(
         bytes32 indexed channelId,
-        address indexed srcPortAddr,
-        address indexed destPortAddr,
+        bytes32 indexed srcPortAddr,
+        bytes32 indexed destPortAddr,
         // middleware UID
         uint256 mwId,
         bytes appData,

@@ -161,6 +161,12 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         return mwBitmap;
     }
 
+    // test address/bytes32 conversion
+    function test_address_conversion() public {
+        assertEq(address(eth1), Ibc.toAddress(Ibc.toBytes32(address(eth1))));
+        assertEq(address(eth2), Ibc.toAddress(Ibc.toBytes32(address(eth2))));
+    }
+
     // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
     function test_packetFlow_via_universal_channel_ok() public {
         uint256 mwBitmap = v1.ucHandler.MW_ID();
@@ -210,7 +216,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             uint64 timeout = 1 seconds * 10 ** 9;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucPacket = UniversalPacket(address(v1.earth), mwBitmap, address(v2.earth), appData);
+            ucPacket =
+                UniversalPacket(Ibc.toBytes32(address(v1.earth)), mwBitmap, Ibc.toBytes32(address(v2.earth)), appData);
             packetData = Ibc.toUniversalPacketBytes(ucPacket);
 
             // iterate over sending middleware contracts to verify each MW has witnessed the packet
@@ -219,8 +226,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     vm.expectEmit(true, true, true, true);
                     emit SendMWPacket(
                         channelId1,
-                        address(v1.earth),
-                        address(v2.earth),
+                        Ibc.toBytes32(address(v1.earth)),
+                        Ibc.toBytes32(address(v2.earth)),
                         senderMws[i].MW_ID(),
                         appData,
                         timeout,
@@ -256,8 +263,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     vm.expectEmit(true, true, true, true);
                     emit RecvMWTimeout(
                         channelId1,
-                        address(v1.earth),
-                        address(v2.earth),
+                        Ibc.toBytes32(address(v1.earth)),
+                        Ibc.toBytes32(address(v2.earth)),
                         senderMws[i].MW_ID(),
                         appData,
                         abi.encodePacked(senderMws[i].MW_ID())
@@ -294,7 +301,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             uint64 timeout = 1 days * 10 ** 9 * factor;
             appData = abi.encodePacked("msg-", packetSeq);
 
-            ucPacket = UniversalPacket(address(v1.earth), mwBitmap, address(v2.earth), appData);
+            ucPacket =
+                UniversalPacket(Ibc.toBytes32(address(v1.earth)), mwBitmap, Ibc.toBytes32(address(v2.earth)), appData);
             packetData = Ibc.toUniversalPacketBytes(ucPacket);
 
             // iterate over sending middleware contracts to verify each MW has witnessed the packet
@@ -303,8 +311,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     vm.expectEmit(true, true, true, true);
                     emit SendMWPacket(
                         channelId1,
-                        address(v1.earth),
-                        address(v2.earth),
+                        Ibc.toBytes32(address(v1.earth)),
+                        Ibc.toBytes32(address(v2.earth)),
                         senderMws[i].MW_ID(),
                         appData,
                         timeout,
@@ -338,8 +346,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     vm.expectEmit(true, true, true, true);
                     emit RecvMWPacket(
                         channelId2,
-                        address(v1.earth),
-                        address(v2.earth),
+                        Ibc.toBytes32(address(v1.earth)),
+                        Ibc.toBytes32(address(v2.earth)),
                         recvMws[i].MW_ID(),
                         appData,
                         abi.encodePacked(recvMws[i].MW_ID())
@@ -368,8 +376,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     vm.expectEmit(true, true, true, true);
                     emit RecvMWAck(
                         channelId1,
-                        address(v1.earth),
-                        address(v2.earth),
+                        Ibc.toBytes32(address(v1.earth)),
+                        Ibc.toBytes32(address(v2.earth)),
                         senderMws[i].MW_ID(),
                         appData,
                         abi.encodePacked(senderMws[i].MW_ID()),
