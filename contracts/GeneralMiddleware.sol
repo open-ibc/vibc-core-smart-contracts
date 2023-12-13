@@ -101,7 +101,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
 
         if (mwIndex == mwAddrs.length - 1) {
             // last MW in the stack, deliver ack to dApp
-            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(ucPacket, ack);
+            IbcUniversalPacketReceiver(ucPacket.srcPortAddr).onUniversalAcknowledgement(channelId, ucPacket, ack);
         } else {
             // send ack to next MW
             IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWAck(channelId, ucPacket, mwIndex + 1, mwAddrs, ack);
@@ -112,13 +112,14 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         external
         override
         returns (AckPacket memory ackPacket)
-    {
-        // emit RecvMWPacket(channelId, srcPortId, MW_ID, appData);
-    }
+    {}
 
-    function onUniversalAcknowledgement(UniversalPacket memory packet, AckPacket calldata ack) external override {}
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external
+        override
+    {}
 
-    function onTimeoutUniversalPacket(UniversalPacket calldata packet) external override {}
+    function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external override {}
 
     // internal function to send packet to next MW with MW Ids bit flipped
     // param srcMwIds: MW ID bitmap excluding this MW's ID
