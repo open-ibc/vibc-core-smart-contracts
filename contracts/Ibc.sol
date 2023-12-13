@@ -27,12 +27,10 @@ struct IbcPacket {
 
 // UniversalPacke represents the data field of an IbcPacket
 struct UniversalPacket {
-    // address destPortAddress;
-    // string srcPortId;
-    address srcPortAddr;
+    bytes32 srcPortAddr;
     // source middleware ids bitmap, ie. logic OR of all MW IDs in the MW stack.
     uint256 mwBitmap;
-    address destPortAddr;
+    bytes32 destPortAddr;
     bytes appData;
 }
 
@@ -148,8 +146,8 @@ library Ibc {
     function addressToPortId(string memory portPrefix, address addr) internal pure returns (string memory) {
         return string(abi.encodePacked(portPrefix, toHexStr(addr)));
     }
-    // convert an address to its hex string, but without 0x prefix
 
+    // convert an address to its hex string, but without 0x prefix
     function toHexStr(address addr) internal pure returns (bytes memory) {
         bytes memory addrWithPrefix = abi.encodePacked(Strings.toHexString(addr));
         bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
@@ -157,5 +155,15 @@ library Ibc {
             addrWithoutPrefix[i] = addrWithPrefix[i + 2];
         }
         return addrWithoutPrefix;
+    }
+
+    // toAddress converts a bytes32 to an address
+    function toAddress(bytes32 b) internal pure returns (address) {
+        return address(uint160(uint256(b)));
+    }
+
+    // toBytes32 converts an address to a bytes32
+    function toBytes32(address a) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(a)));
     }
 }
