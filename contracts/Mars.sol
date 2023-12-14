@@ -2,14 +2,11 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './Ibc.sol';
-import './IbcReceiver.sol';
-import './IbcDispatcher.sol';
+import "./Ibc.sol";
+import "./IbcReceiver.sol";
+import "./IbcDispatcher.sol";
 
-error invalidCounterPartyPortId();
-
-contract Mars is IbcReceiver, Ownable {
+contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
     // received ack packet as chain A
@@ -18,22 +15,20 @@ contract Mars is IbcReceiver, Ownable {
     IbcPacket[] public timeoutPackets;
     bytes32[] public connectedChannels;
 
-    string[] supportedVersions = ['1.0', '2.0'];
+    string[] supportedVersions = ["1.0", "2.0"];
 
-    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
-    // An empty function body is sufficient to receive packet fee refunds.
-    receive() external payable {}
+    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
         recvedPackets.push(packet);
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external {
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {
         ackPackets.push(ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external {
+    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {
         timeoutPackets.push(packet);
     }
 
@@ -45,7 +40,7 @@ contract Mars is IbcReceiver, Ownable {
         string calldata counterpartyPortId,
         bytes32 counterpartyChannelId,
         string calldata counterpartyVersion
-    ) external returns (string memory selectedVersion) {
+    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
         if (bytes(counterpartyPortId).length <= 8) {
             revert invalidCounterPartyPortId();
         }
@@ -56,69 +51,73 @@ contract Mars is IbcReceiver, Ownable {
          * In both cases, the selected version should be in the supported versions list.
          */
         bool foundVersion = false;
-        selectedVersion = keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(''))
-            ? counterpartyVersion
-            : version;
-        for (uint i = 0; i < supportedVersions.length; i++) {
+        selectedVersion =
+            keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked("")) ? counterpartyVersion : version;
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
             if (keccak256(abi.encodePacked(selectedVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
                 foundVersion = true;
                 break;
             }
         }
-        require(foundVersion, 'Unsupported version');
+        require(foundVersion, "Unsupported version");
+        // if counterpartyVersion is not empty, then it must be the same foundVersion
+        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(""))) {
+            require(
+                keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(selectedVersion)),
+                "Version mismatch"
+            );
+        }
 
         return selectedVersion;
     }
 
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external {
+    function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
+        external
+        onlyIbcDispatcher
+    {
         // ensure negotiated version is supported
         bool foundVersion = false;
-        for (uint i = 0; i < supportedVersions.length; i++) {
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
             if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
                 foundVersion = true;
                 break;
             }
         }
-        require(foundVersion, 'Unsupported version');
+        require(foundVersion, "Unsupported version");
         connectedChannels.push(channelId);
     }
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external {
+    function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external
+        onlyIbcDispatcher
+    {
         // logic to determin if the channel should be closed
         bool channelFound = false;
-        for (uint i = 0; i < connectedChannels.length; i++) {
+        for (uint256 i = 0; i < connectedChannels.length; i++) {
             if (connectedChannels[i] == channelId) {
                 delete connectedChannels[i];
                 channelFound = true;
                 break;
             }
         }
-        require(channelFound, 'Channel not found');
+        require(channelFound, "Channel not found");
     }
 
     /**
      * This func triggers channel closure from the dApp.
      * Func args can be arbitary, as long as dispatcher.closeIbcChannel is invoked propperly.
      */
-    function triggerChannelClose(bytes32 channelId, IbcDispatcher dispatcher) external onlyOwner {
+    function triggerChannelClose(bytes32 channelId) external onlyOwner {
         dispatcher.closeIbcChannel(channelId);
     }
+    /**
+     * @dev Sends a packet with a greeting message over a specified channel.
+     * @param message The greeting message to be sent.
+     * @param channelId The ID of the channel to send the packet to.
+     * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
+     */
 
-    function greet(
-        IbcDispatcher dispatcher,
-        string calldata message,
-        bytes32 channelId,
-        uint64 timeoutTimestamp,
-        PacketFee calldata fee
-    ) external payable {
-        dispatcher.sendPacket{value: Ibc.calcEscrowFee(fee)}(channelId, bytes(message), timeoutTimestamp, fee);
+    function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp) external {
+        dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 }

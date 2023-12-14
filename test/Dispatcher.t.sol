@@ -1,514 +1,218 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import 'forge-std/Test.sol';
-import '../contracts/Ibc.sol';
-import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
-import {Escrow} from '../contracts/Escrow.sol';
-import {IbcReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/IbcVerifier.sol';
-import '../contracts/Verifier.sol';
-import '../contracts/Mars.sol';
-import '../contracts/OpConsensusStateManager.sol';
+import "../contracts/Ibc.sol";
+import {Dispatcher, InitClientMsg, UpgradeClientMsg} from "../contracts/Dispatcher.sol";
+import {IbcEventsEmitter} from "../contracts/IbcDispatcher.sol";
+import {IbcReceiver} from "../contracts/IbcReceiver.sol";
+import "../contracts/IbcVerifier.sol";
+import "../contracts/Verifier.sol";
+import "../contracts/Mars.sol";
+import "../contracts/OpConsensusStateManager.sol";
+import "./Dispatcher.base.t.sol";
 
-contract Base is Test {
-    uint64 UINT64_MAX = 18446744073709551615;
-    //
-    // channel events
-    //
+contract ChannelHandshakeTest is Base {
+    LocalEnd _local;
+    RemoteEnd _remote;
+    Mars mars;
 
-    event OpenIbcChannel(
-        address indexed portAddress,
-        string version,
-        ChannelOrder ordering,
-        bool feeEnabled,
-        string[] connectionHops,
-        string counterpartyPortId,
-        bytes32 counterpartyChannelId
-    );
-
-    event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
-
-    event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
-
-    //
-    // packet events
-    //
-
-    event SendPacket(
-        address indexed sourcePortAddress,
-        bytes32 indexed sourceChannelId,
-        bytes packet,
-        uint64 sequence,
-        // timeoutTimestamp is in UNIX nano seconds; packet will be rejected if
-        // delivered after this timestamp on the receiving chain.
-        // Timeout semantics is compliant to IBC spec and ibc-go implementation
-        uint64 timeoutTimestamp,
-        PacketFee fee
-    );
-
-    event Acknowledgement(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 sequence);
-
-    event Timeout(address indexed sourcePortAddress, bytes32 indexed sourceChannelId, uint64 indexed sequence);
-
-    event RecvPacket(address indexed destPortAddress, bytes32 indexed destChannelId, uint64 sequence);
-
-    event WriteAckPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        AckPacket ackPacket
-    );
-
-    event WriteTimeoutPacket(
-        address indexed writerPortAddress,
-        bytes32 indexed writerChannelId,
-        uint64 sequence,
-        Height timeoutHeight,
-        uint64 timeoutTimestamp
-    );
-
-    ConsensusState untrustedState =
-        ConsensusState(
-            80990,
-            590199110038530808131927832294665177527506259518072095333098842116767351199,
-            7000040,
-            1000
-        );
-    ConsensusState trustedState =
-        ConsensusState(
-            10934,
-            7064503680087416120706887577693908749828198688716609274705703517077803898371,
-            7002040,
-            1020
-        );
-    InitClientMsg initClientMsg = InitClientMsg(bytes('Polymer'), untrustedState);
-
-    ZKMintVerifier verifier = new Verifier();
-    ZkProof proof =
-        ZkProof(
-            [
-                13449388914393258752883032560537386278857542833249142697090243871249761501123,
-                5963894333042515966217276339656894890750758020607775733717462915787234629927
-            ],
-            [
-                [
-                    4811559872397934450173412387101758297072581261546553338353504577141293696514,
-                    18400634037991283592418145553628778322894277765243742619561207628896194710939
-                ],
-                [
-                    17903685207039300384995795331083569887497623740119108595975170464164316221644,
-                    9246628133289276308945311797896077179503891414159382179119544904154776510385
-                ]
-            ],
-            [
-                17432552394458345841788798376121543520587716339044416231610790827968220675517,
-                15082220514596158133191868403239442750535261032426474092101151620016661078026
-            ]
-        );
-    Height ZERO_HEIGHT = Height(0, 0);
-    uint64 maxTimeout = UINT64_MAX;
-    Escrow escrow = new Escrow();
-
-    OptimisticConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
-
-    // Proofs from Polymer chain, to verify packet or channel state on Polymer
-    Proof emptyProof;
-    Proof invalidProof = Proof(Height(0, 42), bytes('')); // invalid proof with empty proof bytes
-    Proof validProof = Proof(Height(0, 42), bytes('valid proof'));
-
-    Dispatcher dispatcher;
-    string portPrefix = 'polyibc.eth.';
-
-    // ⬇️ Utility functions for testing
-
-    // getHexStr converts an address to a hex string without the leading 0x
-    function getHexBytes(address addr) internal pure returns (bytes memory) {
-        bytes memory addrWithPrefix = abi.encodePacked(vm.toString(addr));
-        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
-        for (uint i = 0; i < addrWithoutPrefix.length; i++) {
-            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
-        }
-        return addrWithoutPrefix;
-    }
-
-    // deriveAddress derives an address from a given string deterministically for testing
-    function deriveAddress(string memory str) internal pure returns (address) {
-        return vm.addr(uint256(keccak256(abi.encodePacked(str))));
-    }
-
-    function mergeFees(PacketFee memory a, PacketFee memory b) internal pure returns (PacketFee memory) {
-        return PacketFee(a.recvFee + b.recvFee, a.ackFee + b.ackFee, a.timeoutFee + b.timeoutFee);
-    }
-}
-
-contract DispatcherCreateClientTest is Test, Base {
     function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
+        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
+        mars = new Mars(dispatcher);
+        _local = LocalEnd(mars, "channel-1", connectionHops, "1.0", "1.0");
+        _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
     }
 
-    function test_success() public {
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_mustByOwner() public {
-        vm.prank(deriveAddress('non-onwer'));
-        vm.expectRevert('Ownable: caller is not the owner');
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_onlyOnce() public {
-        dispatcher.createClient(initClientMsg);
-        vm.expectRevert(abi.encodeWithSignature('clientAlreadyCreated()'));
-        dispatcher.createClient(initClientMsg);
-    }
-}
-
-contract DispatcherUpdateClientTest is Test, Base {
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-    }
-
-    function test_updateConsensusState_success() public {
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-    }
-
-    function test_updateConsensusState_invalid() public {
-        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
-        dispatcher.updateClientWithConsensusState(untrustedState, proof);
-
-        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
-        ConsensusState memory invalidConsensusState;
-        dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
-    }
-}
-
-contract DispatcherUpgradeClientTest is Test, Base {
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-    }
-
-    function test_success() public {
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
-    }
-
-    function test_ownerOnly() public {
-        vm.prank(deriveAddress('non-onwer'));
-        vm.expectRevert('Ownable: caller is not the owner');
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
-    }
-}
-
-struct VersionSet {
-    string self;
-    string counterparty;
-    string expected;
-}
-
-contract ChannelTestBase is Test, Base {
-    Mars mars = new Mars();
-    string[] connectionHops;
-    VersionSet version = VersionSet('1.0', '1.0', '1.0');
-    ChannelOrder ordering = ChannelOrder.ORDERED;
-    bool feeEnabled = false;
-    CounterParty cp;
-
-    CounterParty cpBsc = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
-
-    function setUp() public virtual {
-        connectionHops = new string[](2);
-        connectionHops[0] = 'connection-1';
-        connectionHops[1] = 'connection-2';
-
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-
-        // channel handshake methods use optimistic consensus state
-        // for membership verification. it is necessary to update the
-        // optimistic consensus state and wait for it to pass the
-        // fraud proof window before proceeeding.
-        dispatcher.updateClientWithOptimisticConsensusState(validProof.proofHeight.revision_height, 1);
-
-        // forward the time to make the consensus state transition to trusted state
-        vm.warp(block.timestamp + 1801);
-
-        polymerProof = validProof;
-        vm.startPrank(deriveAddress('relayer'));
-    }
-
-    Proof polymerProof;
-
-    function setTestParams(VersionSet memory _version, CounterParty memory _cp, ChannelOrder _ordering) internal {
-        version = _version;
-        _cp.version = version.counterparty;
-        cp = _cp;
-        ordering = _ordering;
-
-        // 1st handshake call with unknown counterparty version or channelId
-        if (
-            cp.channelId == bytes32(0x0) && keccak256(abi.encodePacked(cp.version)) == keccak256(abi.encodePacked(''))
-        ) {
-            polymerProof = emptyProof;
-        } else {
-            // all other handshake calls requires a polymer proof
-            polymerProof = validProof;
-        }
-    }
-
-    modifier goodCases() {
-        // NOTE: counterparty version is set in VersionSet
-        ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
-        // 1st handshake with unknown counterparty version or channelId
-        cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        VersionSet[2] memory versions = [VersionSet('1.0', '', '1.0'), VersionSet('2.0', '', '2.0')];
-        for (uint i = 0; i < versions.length; i++) {
-            for (uint j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-        // 2nd handshake with known counterparty version and channelId
-        cp = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '');
-        versions = [VersionSet('', '1.0', '1.0'), VersionSet('', '2.0', '2.0')];
-        for (uint i = 0; i < versions.length; i++) {
-            for (uint j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-    }
-}
-
-contract DispatcherOpenIbcChannelTest is ChannelTestBase {
-    function test_success() public goodCases {
-        vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannel(
-            address(mars),
-            version.expected,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            cp.portId,
-            cp.channelId
-        );
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            version.self,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            cp,
-            polymerProof
-        );
-    }
-
-    modifier unsupportedVersions() {
-        // NOTE: counterparty version is set in VersionSet
-        ChannelOrder[2] memory orderings = [ChannelOrder.ORDERED, ChannelOrder.UNORDERED];
-        // 1st handshake with unknown counterparty version or channelId
-        cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        VersionSet[1] memory versions = [VersionSet('', '', '')];
-        for (uint i = 0; i < versions.length; i++) {
-            for (uint j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
-            }
-        }
-        // 2nd handshake with known counterparty version and channelId
-        cp = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), 'xxx');
-        versions = [VersionSet('', 'xxx', '')];
-        for (uint i = 0; i < versions.length; i++) {
-            for (uint j = 0; j < orderings.length; j++) {
-                setTestParams(versions[i], cp, orderings[j]);
-                _;
+    function test_openChannel_initiator_ok() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                // remoteEnd has no channelId or version if localEnd is the initiator
+                openChannel(le, re, settings[i], true);
             }
         }
     }
 
-    function test_unsupportedVersion() public unsupportedVersions {
-        vm.expectRevert(bytes('Unsupported version'));
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            version.self,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            cp,
-            polymerProof
-        );
+    function test_openChannel_receiver_ok() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                re.version = versions[j];
+                // explicit version
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                // remoteEnd version is used
+                openChannel(le, re, settings[i], true);
+
+                // auto version selection
+                le.versionCall = "";
+                openChannel(le, re, settings[i], true);
+            }
+        }
     }
 
-    function test_invalidCounterpartyPortId() public {
-        CounterParty[4] memory cps = [
-            CounterParty('', bytes32(0x0), ''),
-            CounterParty('portX', bytes32(0x0), ''),
-            CounterParty('', bytes32('channel-99'), '1.0'),
-            CounterParty('portX', bytes32('channel-99'), '1.0')
+    function test_connectChannel_ok() public {
+        ChannelHandshakeSetting[8] memory settings = createSettings2(true);
+
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                re.version = versions[j];
+                openChannel(le, re, settings[i], true);
+                connectChannel(le, re, settings[i], true);
+            }
+        }
+    }
+
+    function test_openChannel_receiver_fail_versionMismatch() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
+        string[2] memory versions = ["1.0", "2.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                re.version = versions[j];
+                // always select the wrong version
+                bool isVersionOne = keccak256(abi.encodePacked(versions[j])) == keccak256(abi.encodePacked("1.0"));
+                le.versionCall = isVersionOne ? "2.0" : "1.0";
+                vm.expectRevert(bytes("Version mismatch"));
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_openChannel_initiator_fail_unsupportedVersion() public {
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["", "xxxxxxx"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                vm.expectRevert(bytes("Unsupported version"));
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_openChannel_receiver_fail_invalidProof() public {
+        // When localEnd initiates, no proof verification is done in openIbcChannel
+        ChannelHandshakeSetting[4] memory settings = createSettings(false, false);
+        string[1] memory versions = ["1.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                vm.expectRevert("Fail to prove channel state");
+                openChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_connectChannel_fail_unsupportedVersion() public {
+        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
+        string[2] memory versions = ["", "xxxxxxx"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                // no remote version applied in openChannel
+                openChannel(le, re, settings[i], true);
+                re.version = versions[j];
+                vm.expectRevert(bytes("Unsupported version"));
+                connectChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function test_connectChannel_fail_invalidProof() public {
+        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+        ChannelHandshakeSetting[8] memory settings = createSettings2(true);
+        string[1] memory versions = ["1.0"];
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                RemoteEnd memory re = _remote;
+                // no remote version applied in openChannel
+                openChannel(le, re, settings[i], true);
+                re.version = versions[j];
+                settings[i].proof = invalidProof;
+                vm.expectRevert("Fail to prove channel state");
+                connectChannel(le, re, settings[i], false);
+            }
+        }
+    }
+
+    function createSettings(bool localInitiate, bool isProofValid)
+        internal
+        view
+        returns (ChannelHandshakeSetting[4] memory)
+    {
+        Proof memory proof = isProofValid ? validProof : invalidProof;
+        ChannelHandshakeSetting[4] memory settings = [
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, true, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, localInitiate, proof)
         ];
-        for (uint i = 0; i < cps.length; i++) {
-            cp = cps[i];
-            vm.expectRevert(abi.encodeWithSignature('invalidCounterPartyPortId()'));
-            dispatcher.openIbcChannel(
-                IbcReceiver(mars),
-                version.self,
-                ordering,
-                feeEnabled,
-                connectionHops,
-                cp,
-                polymerProof
-            );
+        return settings;
+    }
+
+    function createSettings2(bool isProofValid) internal view returns (ChannelHandshakeSetting[8] memory) {
+        // localEnd initiates
+        ChannelHandshakeSetting[4] memory settings1 = createSettings(true, isProofValid);
+        // remoteEnd initiates
+        ChannelHandshakeSetting[4] memory settings2 = createSettings(false, isProofValid);
+        ChannelHandshakeSetting[8] memory settings;
+        for (uint256 i = 0; i < settings1.length; i++) {
+            settings[i] = settings1[i];
+            settings[i + settings1.length] = settings2[i];
         }
-    }
-
-    function test_invalidProof() public {
-        vm.expectRevert('Fail to prove channel state');
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            '',
-            ChannelOrder.ORDERED,
-            feeEnabled,
-            connectionHops,
-            cpBsc,
-            invalidProof
-        );
-    }
-}
-
-contract DispatcherConnectIbcChannelTest is ChannelTestBase {
-    function test_success() public goodCases {
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            version.self,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            cp,
-            polymerProof
-        );
-        string memory cpVersion = keccak256(abi.encode(cp.version)) == keccak256(abi.encode(bytes('')))
-            ? version.self
-            : cp.version;
-
-        bytes32 channelId = 'channel-1'; // generated by IBC core on Polymer chain
-        vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannel(address(mars), channelId);
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            channelId,
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cpBsc.portId,
-            bytes32('channel-99'),
-            cpVersion,
-            validProof
-        );
-    }
-
-    function test_unsupportedVersions() public goodCases {
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            version.self,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            cp,
-            polymerProof
-        );
-        string memory cpVersion = 'xxx';
-
-        vm.expectRevert('Unsupported version');
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            bytes32('channel-1'),
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cp.portId,
-            bytes32('channel-99'),
-            cpVersion,
-            validProof
-        );
-    }
-
-    function test_invalidProof() public {
-        vm.expectRevert('Fail to prove channel state');
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            bytes32('channel-1'),
-            connectionHops,
-            ordering,
-            feeEnabled,
-            cpBsc.portId,
-            cpBsc.channelId,
-            cpBsc.version,
-            invalidProof
-        );
+        return settings;
     }
 }
 
 // This Base contract provides an open channel for sub-contract tests
-contract ChannelOpenTestBase is Test, Base {
-    Mars mars;
-    bytes32 channelId = 'channel-1';
-    address relayer = deriveAddress('relayer');
+contract ChannelOpenTestBase is Base {
+    bytes32 channelId = "channel-1";
+    address relayer = deriveAddress("relayer");
     bool feeEnabled = false;
 
+    LocalEnd _local;
+    RemoteEnd _remote;
+    Mars mars;
+    ChannelHandshakeSetting setting;
+
     function setUp() public virtual {
-        string[] memory connectionHops = new string[](2);
-        connectionHops[0] = 'connection-1';
-        connectionHops[1] = 'connection-2';
-
-        dispatcher = new Dispatcher(verifier, escrow, portPrefix, opConsensusStateManager);
-        dispatcher.createClient(initClientMsg);
-
-        Escrow myEscrow = Escrow(escrow);
-        myEscrow.setDispatcher(address(dispatcher));
+        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
+        setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
         // anyone can run Relayers
         vm.startPrank(relayer);
         vm.deal(relayer, 100000 ether);
-        mars = new Mars();
+        mars = new Mars(dispatcher);
 
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
+        _local = LocalEnd(mars, channelId, connectionHops, "1.0", "1.0");
+        _remote = RemoteEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
-        // finish channel handshake as chain A
-        CounterParty memory cp = CounterParty('polyibc.bsc.9876543210', bytes32(0x0), '');
-        dispatcher.openIbcChannel(
-            IbcReceiver(mars),
-            '1.0',
-            ChannelOrder.ORDERED,
-            feeEnabled,
-            connectionHops,
-            cp,
-            emptyProof
-        );
-        CounterParty memory cp2 = CounterParty('polyibc.bsc.9876543210', bytes32('channel-99'), '1.0');
-
-        // channel handshake methods use optimistic consensus state
-        // for membership verification. it is necessary to update the
-        // optimistic consensus state and wait for it to pass the
-        // fraud proof window before proceeeding.
-        dispatcher.updateClientWithOptimisticConsensusState(validProof.proofHeight.revision_height, 1);
-
-        // forward the time to make the consensus state transition to trusted state
-        vm.warp(block.timestamp + 1801);
-
-        dispatcher.connectIbcChannel(
-            IbcReceiver(mars),
-            channelId,
-            connectionHops,
-            ChannelOrder.ORDERED,
-            feeEnabled,
-            cp2.portId,
-            cp2.channelId,
-            cp2.version,
-            validProof
-        );
+        openChannel(_local, _remote, setting, true);
+        connectChannel(_local, _remote, setting, true);
     }
 }
 
@@ -516,13 +220,13 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     function test_closeChannelInit_success() public {
         vm.expectEmit(true, true, true, true);
         emit CloseIbcChannel(address(mars), channelId);
-        mars.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
+        mars.triggerChannelClose(channelId);
     }
 
     function test_closeChannelInit_mustOwner() public {
-        Mars earth = new Mars();
-        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
-        earth.triggerChannelClose(channelId, IbcDispatcher(dispatcher));
+        Mars earth = new Mars(dispatcher);
+        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        earth.triggerChannelClose(channelId);
     }
 
     function test_closeChannelConfirm_success() public {
@@ -532,65 +236,45 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     }
 
     function test_closeChannelConfirm_mustOwner() public {
-        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedByPortAddress()'));
-        dispatcher.onCloseIbcChannel(address(mars), 'channel-999', validProof);
+        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedByPortAddress()"));
+        dispatcher.onCloseIbcChannel(address(mars), "channel-999", validProof);
     }
 
     function test_closeChannelConfirm_invalidProof() public {
-        vm.expectRevert('Fail to prove channel state');
+        vm.expectRevert("Fail to prove channel state");
         dispatcher.onCloseIbcChannel(address(mars), channelId, invalidProof);
     }
 }
 
 contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // default params
-    string payload = 'msgPayload';
+    string payload = "msgPayload";
     uint64 timeoutTimestamp = 1000;
-    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
     function test_success() public {
         bytes memory packet = abi.encodePacked(payload);
         for (uint64 index = 0; index < 3; index++) {
-            uint256 balance = address(escrow).balance;
             vm.expectEmit(true, true, true, true);
             uint64 packetSeq = index + 1;
-            emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp, fee);
-            mars.greet{value: Ibc.calcEscrowFee(fee)}(
-                IbcDispatcher(dispatcher),
-                payload,
-                channelId,
-                timeoutTimestamp,
-                fee
-            );
-            assertEq(address(escrow).balance - balance, Ibc.calcEscrowFee(fee));
-
-            // query escrowed fee per packet
-            PacketFee memory packetFee = dispatcher.getTotalPacketFees(address(mars), channelId, packetSeq);
-            assertEq(keccak256(abi.encode(packetFee)), keccak256(abi.encode(fee)));
+            emit SendPacket(address(mars), channelId, packet, packetSeq, timeoutTimestamp);
+            mars.greet(payload, channelId, timeoutTimestamp);
         }
     }
 
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
-        Mars earth = new Mars();
-        vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
-        earth.greet{value: Ibc.calcEscrowFee(fee)}(
-            IbcDispatcher(dispatcher),
-            payload,
-            channelId,
-            timeoutTimestamp,
-            fee
-        );
+        Mars earth = new Mars(dispatcher);
+        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        earth.greet(payload, channelId, timeoutTimestamp);
     }
 }
 
-contract PacketSenderTest is ChannelOpenTestBase {
-    IbcEndpoint dest = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
+contract PacketSenderTestBase is ChannelOpenTestBase {
+    IbcEndpoint dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint src;
-    string payloadStr = 'msgPayload';
+    string payloadStr = "msgPayload";
     bytes payload = bytes(payloadStr);
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
-    PacketFee fee = PacketFee(1 ether, 2 ether, 3 ether);
 
     uint64 nextSendSeq = 1;
     // cached packet that was sent in `sendPacket`
@@ -608,7 +292,7 @@ contract PacketSenderTest is ChannelOpenTestBase {
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(nextSendSeq);
-        mars.greet{value: Ibc.calcEscrowFee(fee)}(IbcDispatcher(dispatcher), payloadStr, channelId, maxTimeout, fee);
+        mars.greet(payloadStr, channelId, maxTimeout);
         nextSendSeq += 1;
     }
 
@@ -619,15 +303,15 @@ contract PacketSenderTest is ChannelOpenTestBase {
 
     // genAckPacket generates an ack packet for the given packet sequence
     function genAckPacket(uint64 packetSeq) internal pure returns (AckPacket memory) {
-        return AckPacket(true, abi.encodePacked('ackPacket', packetSeq));
+        return AckPacket(true, abi.encodePacked("ackPacket", packetSeq));
     }
 }
 
 // Test Chains B receives a packet from Chain A
 contract DispatcherRecvPacketTest is ChannelOpenTestBase {
-    IbcEndpoint src = IbcEndpoint('polyibc.bsc.9876543210', 'channel-99');
+    IbcEndpoint src = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint dest;
-    bytes payload = bytes('msgPayload');
+    bytes payload = bytes("msgPayload");
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
 
     function setUp() public override {
@@ -644,9 +328,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
             vm.expectEmit(true, true, false, true, address(dispatcher));
             emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
             dispatcher.recvPacket(
-                IbcReceiver(mars),
-                IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout),
-                validProof
+                IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof
             );
         }
     }
@@ -676,7 +358,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
         dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
-        vm.expectRevert(abi.encodeWithSignature('unexpectedPacketSequence()'));
+        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
         dispatcher.recvPacket(IbcReceiver(mars), IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
@@ -684,7 +366,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
 }
 
 // Test Chain A receives an acknowledgement packet from Chain B
-contract DispatcherAckPacketTest is PacketSenderTest {
+contract DispatcherAckPacketTest is PacketSenderTestBase {
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             sendPacket();
@@ -701,14 +383,14 @@ contract DispatcherAckPacketTest is PacketSenderTest {
 
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
 
         sendPacket();
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
     }
 
@@ -721,13 +403,13 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket(1), validProof);
 
         // only 2nd ack is allowed; so the 3rd ack fails
-        vm.expectRevert(abi.encodeWithSignature('unexpectedPacketSequence()')); 
+        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
 
         dispatcher.acknowledgement(IbcReceiver(mars), genPacket(3), genAckPacket(3), validProof);
     }
 
     function test_invalidPort() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
 
@@ -737,7 +419,7 @@ contract DispatcherAckPacketTest is PacketSenderTest {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature('receiverNotOriginPacketSender()'));
+        vm.expectRevert(abi.encodeWithSignature("receiverNotOriginPacketSender()"));
         dispatcher.acknowledgement(IbcReceiver(mars), packetEarth, ackPacket, validProof);
     }
 
@@ -745,29 +427,17 @@ contract DispatcherAckPacketTest is PacketSenderTest {
     function test_invalidChannel() public {
         sendPacket();
 
-        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, 'channel-invalid');
+        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, "channel-invalid");
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
-    }
-
-    function test_no_incentivizedAck() public {
-        sendPacket();
-        IncentivizedAckPacket memory incAck = IncentivizedAckPacket(
-            true,
-            abi.encodePacked(deriveAddress('foward-relayer')),
-            bytes('ack')
-        );
-
-        vm.expectRevert(abi.encodeWithSignature('invalidChannelType(string)', 'non-incentivized'));
-        dispatcher.incentivizedAcknowledgement(IbcReceiver(mars), sentPacket, incAck, validProof);
     }
 }
 
 // Test Chain A receives a timeout packet from Chain B
-contract DispatcherTimeoutPacketTest is PacketSenderTest {
+contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
     // preconditions for timeout packet
     // - packet commitment exists
     // - packet timeout is verified by Polymer client
@@ -783,20 +453,20 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
 
     // cannot timeout packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.timeout(IbcReceiver(mars), genPacket(1), validProof);
 
         sendPacket();
         dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
 
         // packet commitment is removed after timeout
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
     }
 
     // cannot timeout packets if original packet port doesn't match current port
     function test_invalidPort() public {
-        Mars earth = new Mars();
+        Mars earth = new Mars(dispatcher);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
 
@@ -806,7 +476,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature('receiverNotIndtendedPacketDestination()'));
+        vm.expectRevert(abi.encodeWithSignature("receiverNotIndtendedPacketDestination()"));
         dispatcher.timeout(IbcReceiver(mars), packetEarth, validProof);
     }
 
@@ -814,11 +484,11 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
     function test_invalidChannel() public {
         sendPacket();
 
-        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, 'channel-invalid');
+        IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, "channel-invalid");
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature('packetCommitmentNotFound()'));
+        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         /* vm.expectRevert('Packet commitment not found'); */
         dispatcher.timeout(IbcReceiver(mars), packet, validProof);
     }
@@ -827,7 +497,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTest {
     function test_invalidProof() public {
         sendPacket();
 
-        vm.expectRevert('Fail to prove timeout');
+        vm.expectRevert("Fail to prove timeout");
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }

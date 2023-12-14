@@ -2,6 +2,13 @@
 
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
+
+/**
+ * Ibc.sol
+ * Basic IBC data structures and utilities.
+ */
+
 /// IbcPacket represents the packet data structure received from a remote chain
 /// over an IBC channel.
 struct IbcPacket {
@@ -16,6 +23,15 @@ struct IbcPacket {
     Height timeoutHeight;
     /// block timestamp (in nanoseconds) after which the packet times out
     uint64 timeoutTimestamp;
+}
+
+// UniversalPacke represents the data field of an IbcPacket
+struct UniversalPacket {
+    bytes32 srcPortAddr;
+    // source middleware ids bitmap, ie. logic OR of all MW IDs in the MW stack.
+    uint256 mwBitmap;
+    bytes32 destPortAddr;
+    bytes appData;
 }
 
 /// Height is a monotonically increasing data type
@@ -54,6 +70,7 @@ enum ChannelOrder {
     UNORDERED,
     ORDERED
 }
+
 struct Channel {
     string version;
     ChannelOrder ordering;
@@ -74,12 +91,6 @@ struct IbcEndpoint {
     bytes32 channelId;
 }
 
-struct PacketFee {
-    uint256 recvFee;
-    uint256 ackFee;
-    uint256 timeoutFee;
-}
-
 struct Proof {
     // block height at which the proof is valid for a membership or non-membership at the given keyPath
     Height proofHeight;
@@ -87,35 +98,72 @@ struct Proof {
     bytes proof;
 }
 
+// misc errors.
+error invalidCounterParty();
+error invalidCounterPartyPortId();
+error invalidHexStringLength();
+error invalidRelayerAddress();
+error consensusStateVerificationFailed();
+error packetNotTimedOut();
+error invalidAddress();
+
+// packet sequence related errors.
+error invalidPacketSequence();
+error unexpectedPacketSequence();
+
+// channel related errors.
+error channelNotOwnedBySender();
+error channelNotOwnedByPortAddress();
+
+// client related errors.
+error clientAlreadyCreated();
+error clientNotCreated();
+
+// packet commitment related errors.
+error packetCommitmentNotFound();
+error ackPacketCommitmentAlreadyExists();
+error packetReceiptAlreadyExists();
+
+// receiver related errors.
+error receiverNotIndtendedPacketDestination();
+error receiverNotOriginPacketSender();
+
+error invalidChannelType(string channelType);
+
 // define a library of Ibc utility functions
 library Ibc {
-    // calcEscrowFee returns the fee to be escrowed for sending a packet.
-    function calcEscrowFee(PacketFee memory fee) internal pure returns (uint256) {
-        uint256 ackFees = fee.recvFee + fee.ackFee;
-        return fee.timeoutFee > ackFees ? fee.timeoutFee : ackFees;
+    // convert params to UniversalPacketBytes with optimal gas cost
+    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory) {
+        return abi.encode(data);
     }
 
-    /**
-     * @dev Return the amount of fee to be refunded to the sender when a packet is timed out.
-     * @param fee accumulative packet fees
-     */
-    function timeoutRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.recvFee + fee.ackFee > fee.timeoutFee) {
-            return fee.recvFee + fee.ackFee - fee.timeoutFee;
-        } else {
-            return 0;
-        }
+    // fromUniversalPacketBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
+    function fromUniversalPacketBytes(bytes memory data) internal pure returns (UniversalPacket memory) {
+        return abi.decode(data, (UniversalPacket));
     }
 
-    /**
-     * @dev Return the amount of fee to be refunded to the sender when a packet is acknowledged.
-     * @param fee accumulative packet fees
-     */
-    function ackRefundAmount(PacketFee memory fee) internal pure returns (uint256) {
-        if (fee.timeoutFee > fee.ackFee + fee.recvFee) {
-            return fee.timeoutFee - fee.ackFee - fee.recvFee;
-        } else {
-            return 0;
+    // addressToPortId converts an address to a port ID
+    function addressToPortId(string memory portPrefix, address addr) internal pure returns (string memory) {
+        return string(abi.encodePacked(portPrefix, toHexStr(addr)));
+    }
+
+    // convert an address to its hex string, but without 0x prefix
+    function toHexStr(address addr) internal pure returns (bytes memory) {
+        bytes memory addrWithPrefix = abi.encodePacked(Strings.toHexString(addr));
+        bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
+        for (uint256 i = 0; i < addrWithoutPrefix.length; i++) {
+            addrWithoutPrefix[i] = addrWithPrefix[i + 2];
         }
+        return addrWithoutPrefix;
+    }
+
+    // toAddress converts a bytes32 to an address
+    function toAddress(bytes32 b) internal pure returns (address) {
+        return address(uint160(uint256(b)));
+    }
+
+    // toBytes32 converts an address to a bytes32
+    function toBytes32(address a) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(a)));
     }
 }
