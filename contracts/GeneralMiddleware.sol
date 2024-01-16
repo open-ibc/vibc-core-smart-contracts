@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import "./Ibc.sol";
-import "./IbcReceiver.sol";
-import "./IbcDispatcher.sol";
-import "./IbcMiddleware.sol";
+import './Ibc.sol';
+import './IbcReceiver.sol';
+import './IbcDispatcher.sol';
+import './IbcMiddleware.sol';
 
 contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
     /**
@@ -63,14 +63,21 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
         emit RecvMWPacket(
-            channelId, ucPacket.srcPortAddr, ucPacket.destPortAddr, MW_ID, ucPacket.appData, abi.encodePacked(MW_ID)
+            channelId,
+            ucPacket.srcPortAddr,
+            ucPacket.destPortAddr,
+            MW_ID,
+            ucPacket.appData,
+            abi.encodePacked(MW_ID)
         );
 
         if (mwIndex == mwAddrs.length - 1) {
             // last MW in the stack, deliver packet to dApp
-            return IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
-                channelId, ucPacket
-            );
+            return
+                IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
+                    channelId,
+                    ucPacket
+                );
         } else {
             // send packet to next MW
             return IbcMwPacketReceiver(mwAddrs[mwIndex + 1]).onRecvMWPacket(channelId, ucPacket, mwIndex + 1, mwAddrs);
@@ -104,7 +111,9 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         if (mwIndex == mwAddrs.length - 1) {
             // last MW in the stack, deliver ack to dApp
             IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
-                channelId, ucPacket, ack
+                channelId,
+                ucPacket,
+                ack
             );
         } else {
             // send ack to next MW
@@ -122,13 +131,19 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
         emit RecvMWTimeout(
-            channelId, ucPacket.srcPortAddr, ucPacket.destPortAddr, MW_ID, ucPacket.appData, abi.encodePacked(MW_ID)
+            channelId,
+            ucPacket.srcPortAddr,
+            ucPacket.destPortAddr,
+            MW_ID,
+            ucPacket.appData,
+            abi.encodePacked(MW_ID)
         );
 
         if (mwIndex == mwAddrs.length - 1) {
             // last MW in the stack, deliver timeout to dApp
             IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.srcPortAddr)).onTimeoutUniversalPacket(
-                channelId, ucPacket
+                channelId,
+                ucPacket
             );
         } else {
             // send timeout to next MW
@@ -136,18 +151,16 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         }
     }
 
-    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
-        external
-        override
-        onlyIbcMw
-        returns (AckPacket memory ackPacket)
-    {}
+    function onRecvUniversalPacket(
+        bytes32 channelId,
+        UniversalPacket calldata ucPacket
+    ) external override onlyIbcMw returns (AckPacket memory ackPacket) {}
 
-    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
-        external
-        override
-        onlyIbcMw
-    {}
+    function onUniversalAcknowledgement(
+        bytes32 channelId,
+        UniversalPacket memory packet,
+        AckPacket calldata ack
+    ) external override onlyIbcMw {}
 
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external override onlyIbcMw {}
 
@@ -165,12 +178,23 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
         emit SendMWPacket(
-            channelId, srcPortAddr, destPortAddr, MW_ID, appData, timeoutTimestamp, abi.encodePacked(MW_ID)
+            channelId,
+            srcPortAddr,
+            destPortAddr,
+            MW_ID,
+            appData,
+            timeoutTimestamp,
+            abi.encodePacked(MW_ID)
         );
 
         // send packet to next MW
         IbcMwPacketSender(mw).sendMWPacket(
-            channelId, srcPortAddr, destPortAddr, srcMwIds | MW_ID, appData, timeoutTimestamp
+            channelId,
+            srcPortAddr,
+            destPortAddr,
+            srcMwIds | MW_ID,
+            appData,
+            timeoutTimestamp
         );
     }
 }

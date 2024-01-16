@@ -8,7 +8,7 @@ import '../contracts/DummyVerifier.sol';
 contract OptimisticConsensusStateManagerTest is Test {
     OptimisticConsensusStateManager manager;
     DummyVerifier verifier;
-    
+
     function setUp() public {
         verifier = new DummyVerifier();
         manager = new OptimisticConsensusStateManager(1, verifier);
@@ -35,7 +35,11 @@ contract OptimisticConsensusStateManagerTest is Test {
     function test_addOpConsensusState_addingPendingOpConsensusStateWithDifferentValuesIsError() public {
         manager.addOpConsensusState(1, 1);
 
-        vm.expectRevert(bytes('cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead'));
+        vm.expectRevert(
+            bytes(
+                'cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead'
+            )
+        );
         manager.addOpConsensusState(1, 2);
     }
 
@@ -59,7 +63,7 @@ contract OptimisticConsensusStateManagerTest is Test {
         manager.addOpConsensusState(1, 1);
         (, uint256 endTime, bool ended) = manager.getState(1);
         assertEq(true, ended);
-     }
+    }
 
     function test_getState_nonExist() public {
         (uint256 appHash, , bool ended) = manager.getState(1);

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./ConsensusStateManager.sol";
+import './ConsensusStateManager.sol';
+
 /**
  * @title DummyConsensusStateManager
  * @dev This contract is a dummy implementation of a consensus state manager.
@@ -24,10 +25,12 @@ contract DummyConsensusStateManager is ConsensusStateManager {
         return 0;
     }
 
-    function verifyMembership(Proof calldata proof, bytes memory key, bytes memory expectedValue, string memory message)
-        external
-        view
-    {
+    function verifyMembership(
+        Proof calldata proof,
+        bytes memory key,
+        bytes memory expectedValue,
+        string memory message
+    ) external view {
         require(proof.proof.length > 0, message);
     }
 
