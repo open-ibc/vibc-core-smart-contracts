@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IbcDispatcher.sol";
-import {IbcChannelReceiver, IbcPacketReceiver} from "./IbcReceiver.sol";
-import "./IbcVerifier.sol";
-import "./ConsensusStateManager.sol";
+import '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
+import './IbcDispatcher.sol';
+import {IbcChannelReceiver, IbcPacketReceiver} from './IbcReceiver.sol';
+import './IbcVerifier.sol';
+import './ConsensusStateManager.sol';
 
 // InitClientMsg is used to create a new Polymer client on an EVM chain
 // TODO: replace bytes with explictly typed fields for gas cost saving
@@ -145,9 +145,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // updateClientWithConsensusState updates the client with the
     // latest consensus state. The zkproof related to this consensus
     // state is used to verify the consensus state.
-    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof)
-        external
-    {
+    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -163,10 +161,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
-    function updateClientWithOptimisticConsensusState(uint256 height, uint256 appHash)
-        external
-        returns (uint256 fraudProofEndTime, bool ended)
-    {
+    function updateClientWithOptimisticConsensusState(
+        uint256 height,
+        uint256 appHash
+    ) external returns (uint256 fraudProofEndTime, bool ended) {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -175,11 +173,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height)
-        external
-        view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
-    {
+    function getOptimisticConsensusState(
+        uint256 height
+    ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
         if (!isClientCreated) {
             revert clientNotCreated();
         }
@@ -253,9 +249,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             // TODO: fill below proof path
             consensusStateManager.verifyMembership(
                 proof,
-                "channel/path/to/be/added/here",
-                bytes("expected channel bytes constructed from params. Channel.State = {Try_Pending}"),
-                "Fail to prove channel state"
+                'channel/path/to/be/added/here',
+                bytes('expected channel bytes constructed from params. Channel.State = {Try_Pending}'),
+                'Fail to prove channel state'
             );
         }
 
@@ -298,9 +294,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     ) external {
         consensusStateManager.verifyMembership(
             proof,
-            bytes("channel/path/to/be/added/here"),
-            bytes("expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}"),
-            "Fail to prove channel state"
+            bytes('channel/path/to/be/added/here'),
+            bytes('expected channel bytes constructed from params. Channel.State = {Ack_Pending, Confirm_Pending}'),
+            'Fail to prove channel state'
         );
 
         portAddress.onConnectIbcChannel(channelId, counterpartyChannelId, counterpartyVersion);
@@ -362,9 +358,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
         consensusStateManager.verifyMembership(
             proof,
-            bytes("channel/path/to/be/added/here"),
-            bytes("expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}"),
-            "Fail to prove channel state"
+            bytes('channel/path/to/be/added/here'),
+            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}'),
+            'Fail to prove channel state'
         );
 
         // ensure port owns channel
@@ -442,7 +438,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // prove ack packet is on Polymer chain
         consensusStateManager.verifyMembership(
-            proof, bytes("ack/packet/path"), bytes("expected ack receipt hash on Polymer chain"), "Fail to prove ack"
+            proof,
+            bytes('ack/packet/path'),
+            bytes('expected ack receipt hash on Polymer chain'),
+            'Fail to prove ack'
         );
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -485,7 +484,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // prove absence of packet receipt on Polymer chain
-        consensusStateManager.verifyNonMembership(proof, "packet/receipt/path", "Fail to prove timeout");
+        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -519,9 +518,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
         consensusStateManager.verifyMembership(
             proof,
-            "packet/commitment/path",
-            "expected virtual packet commitment hash on Polymer chain",
-            "Fail to prove packet commitment"
+            'packet/commitment/path',
+            'expected virtual packet commitment hash on Polymer chain',
+            'Fail to prove packet commitment'
         );
 
         // verify packet has not been received yet
@@ -549,7 +548,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
-                writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
+                writerPortAddress,
+                packet.dest.channelId,
+                packet.sequence,
+                packet.timeoutHeight,
+                packet.timeoutTimestamp
             );
             return;
         }
@@ -580,11 +583,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
     // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
     function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
-        return (
-            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
+        return ((packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp) ||
             // TODO: check timeoutHeight.revision_number?
-            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
-        );
+            (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height));
     }
 
     // TODO: remove below writeTimeoutPacket() function
@@ -613,7 +614,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         emit WriteTimeoutPacket(
-            receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
+            receiver,
+            packet.dest.channelId,
+            packet.sequence,
+            packet.timeoutHeight,
+            packet.timeoutTimestamp
         );
     }
 }

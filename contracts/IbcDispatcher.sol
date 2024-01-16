@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.9;
 
-import "./Ibc.sol";
-import "./IbcReceiver.sol";
+import './Ibc.sol';
+import './IbcReceiver.sol';
 
 /**
  * @title IbcPacketSender
@@ -18,7 +18,8 @@ interface IbcPacketSender {
  * @title IbcDispatcher
  * @author Polymer Labs
  * @notice IBC dispatcher interface is the Polymer Core Smart Contract that implements the core IBC protocol.
- * @dev IBC-compatible contracts depend on this interface to actively participate in the IBC protocol. Other features are implemented as callback methods in the IbcReceiver interface.
+ * @dev IBC-compatible contracts depend on this interface to actively participate in the IBC protocol.
+        Other features are implemented as callback methods in the IbcReceiver interface.
  */
 interface IbcDispatcher is IbcPacketSender {
     function portPrefix() external view returns (string memory);
@@ -79,7 +80,10 @@ interface IbcEventsEmitter {
     event RecvPacket(address indexed destPortAddress, bytes32 indexed destChannelId, uint64 sequence);
 
     event WriteAckPacket(
-        address indexed writerPortAddress, bytes32 indexed writerChannelId, uint64 sequence, AckPacket ackPacket
+        address indexed writerPortAddress,
+        bytes32 indexed writerChannelId,
+        uint64 sequence,
+        AckPacket ackPacket
     );
 
     event WriteTimeoutPacket(

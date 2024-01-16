@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import "./Ibc.sol";
-import "./IbcReceiver.sol";
-import "./IbcDispatcher.sol";
-import "./IbcMiddleware.sol";
+import './Ibc.sol';
+import './IbcReceiver.sol';
+import './IbcDispatcher.sol';
+import './IbcMiddleware.sol';
 
 contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
     struct UcPacketWithChannel {
@@ -30,36 +30,39 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
 
     function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
         IbcUniversalPacketSender(mw).sendUniversalPacket(
-            channelId, Ibc.toBytes32(destPortAddr), message, timeoutTimestamp
+            channelId,
+            Ibc.toBytes32(destPortAddr),
+            message,
+            timeoutTimestamp
         );
     }
 
     // For testing only; real dApps should implment their own ack logic
-    function generateAckPacket(bytes32 channelId, address srcPortAddr, bytes calldata appData)
-        external
-        view
-        returns (AckPacket memory ackPacket)
-    {
-        return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
+    function generateAckPacket(
+        bytes32 channelId,
+        address srcPortAddr,
+        bytes calldata appData
+    ) external view returns (AckPacket memory ackPacket) {
+        return AckPacket(true, abi.encodePacked(this, srcPortAddr, 'ack-', appData));
     }
 
-    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
-        external
-        onlyIbcMw
-        returns (AckPacket memory ackPacket)
-    {
+    function onRecvUniversalPacket(
+        bytes32 channelId,
+        UniversalPacket calldata packet
+    ) external onlyIbcMw returns (AckPacket memory ackPacket) {
         recvedPackets.push(UcPacketWithChannel(channelId, packet));
         return this.generateAckPacket(channelId, Ibc.toAddress(packet.srcPortAddr), packet.appData);
     }
 
-    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
-        external
-        onlyIbcMw
-    {
+    function onUniversalAcknowledgement(
+        bytes32 channelId,
+        UniversalPacket memory packet,
+        AckPacket calldata ack
+    ) external onlyIbcMw {
         // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
-        require(ack.data.length >= 20, "ack data too short");
+        require(ack.data.length >= 20, 'ack data too short');
         address ackSender = address(bytes20(ack.data[0:20]));
-        require(Ibc.toAddress(packet.destPortAddr) == ackSender, "ack address mismatch");
+        require(Ibc.toAddress(packet.destPortAddr) == ackSender, 'ack address mismatch');
         ackPackets.push(UcAckWithChannel(channelId, packet, ack));
     }
 
