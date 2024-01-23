@@ -19,14 +19,11 @@ Running `foundryup` by itself will install the latest (nightly) precompiled bina
 
 Or go to https://book.getfoundry.sh/getting-started/installation for more installation options.
 
-### Install NPM Dependencies
+### Build contracts
 
 ```sh
-npm install
+forge build
 ```
-
-NOTE: Since we're migrating from Hardhat to Forge, we need to install both Forge and Hardhat dependencies.
-If we get rid of Hardhat completely, this step will be removed. No NPM project is needed anymore by then.
 
 ### Run Tests
 
@@ -34,21 +31,8 @@ If we get rid of Hardhat completely, this step will be removed. No NPM project i
 forge test
 ```
 
-## Quick Start with Hardhat
+### Clean environment
 
-```shell
-npm install
-
-# Run CoreSC tests
-npx hardhat test
-```
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
+```sh
+forge clean
 ```
