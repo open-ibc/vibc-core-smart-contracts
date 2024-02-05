@@ -89,8 +89,8 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
-        bytes memory packetData = Ibc.toUniversalPacketBytes(
-            UniversalPacket(Ibc.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
+        bytes memory packetData = IbcUtils.toUniversalPacketBytes(
+            UniversalPacket(IbcUtils.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
         );
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
@@ -106,7 +106,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
-        bytes memory packetData = Ibc.toUniversalPacketBytes(
+        bytes memory packetData = IbcUtils.toUniversalPacketBytes(
             UniversalPacket(srcPortAddr, srcMwIds | MW_ID, destPortAddr, appData)
         );
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
@@ -115,12 +115,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     function onRecvPacket(
         IbcPacket calldata packet
     ) external override onlyIbcDispatcher returns (AckPacket memory ackPacket) {
-        UniversalPacket memory ucPacket = Ibc.fromUniversalPacketBytes(packet.data);
+        UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver packet to dApp directly.
             return
-                IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
+                IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
                     packet.dest.channelId,
                     ucPacket
                 );
@@ -134,11 +134,11 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         IbcPacket calldata packet,
         AckPacket calldata ack
     ) external override onlyIbcDispatcher {
-        UniversalPacket memory ucPacket = Ibc.fromUniversalPacketBytes(packet.data);
+        UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver ack to dApp directly.
-            IbcUniversalPacketReceiver(Ibc.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
+            IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
                 packet.src.channelId,
                 ucPacket,
                 ack
@@ -150,11 +150,11 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     }
 
     function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {
-        UniversalPacket memory ucPacketData = Ibc.fromUniversalPacketBytes(packet.data);
+        UniversalPacket memory ucPacketData = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver timeout to dApp directly.
-            IbcUniversalPacketReceiver(Ibc.toAddress(ucPacketData.srcPortAddr)).onTimeoutUniversalPacket(
+            IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacketData.srcPortAddr)).onTimeoutUniversalPacket(
                 packet.src.channelId,
                 ucPacketData
             );
