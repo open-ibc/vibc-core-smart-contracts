@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import './Ibc.sol';
+import './ProofVerifier.sol';
 
 interface ConsensusStateManager {
     /**
@@ -9,7 +10,12 @@ interface ConsensusStateManager {
      * returns the fraud proof end time, and a bool flag indicating if
      * the fraud proof window has passed according to the block's time stamp.
      */
-    function addOpConsensusState(uint256 height, uint256 appHash) external returns (uint256, bool);
+    function addOpConsensusState(
+        L1Header calldata l1header,
+        OpL2StateProof calldata proof,
+        uint256 height,
+        uint256 appHash
+    ) external returns (uint256, bool);
 
     /**
      *
@@ -19,7 +25,7 @@ interface ConsensusStateManager {
     /**
      *
      */
-    function getFraudProofEndtime(uint256 height) external view returns (uint256);
+    function getFraudProofEndtime(uint256 height) external returns (uint256);
 
     /**
      * verifyMembership checks if the current state
@@ -27,14 +33,14 @@ interface ConsensusStateManager {
      * the verifier to perform membership check.
      */
     function verifyMembership(
-        Proof calldata proof,
+        Ics23Proof calldata proof,
         bytes memory key,
         bytes memory expectedValue,
         string memory message
-    ) external view;
+    ) external;
 
     /**
      *
      */
-    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) external view;
+    function verifyNonMembership(Ics23Proof calldata proof, bytes memory key, string memory message) external;
 }

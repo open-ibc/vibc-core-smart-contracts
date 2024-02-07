@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
+import './Proof.base.t.sol';
 import '../contracts/Ibc.sol';
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/IbcDispatcher.sol';
@@ -23,22 +24,15 @@ struct LocalEnd {
     string versionExpected;
 }
 
-struct RemoteEnd {
-    string portId;
-    // If LocalEnd initiates the first step in 4-step handshake, channelId and version fields are not passed in to openIbcChannel
-    bytes32 channelId;
-    string version;
-}
-
 struct ChannelHandshakeSetting {
     ChannelOrder ordering;
     bool feeEnabled;
     bool localInitiate;
-    Proof proof;
+    Ics23Proof proof;
 }
 
 // Base contract for testing Dispatcher
-contract Base is Test, IbcEventsEmitter {
+contract Base is IbcEventsEmitter, ProofBase {
     uint64 UINT64_MAX = 18446744073709551615;
 
     ConsensusState untrustedState =
@@ -57,38 +51,13 @@ contract Base is Test, IbcEventsEmitter {
         );
     InitClientMsg initClientMsg = InitClientMsg(bytes('Polymer'), untrustedState);
 
-    ZKMintVerifier verifier = new Verifier();
-    ZkProof proof =
-        ZkProof(
-            [
-                13449388914393258752883032560537386278857542833249142697090243871249761501123,
-                5963894333042515966217276339656894890750758020607775733717462915787234629927
-            ],
-            [
-                [
-                    4811559872397934450173412387101758297072581261546553338353504577141293696514,
-                    18400634037991283592418145553628778322894277765243742619561207628896194710939
-                ],
-                [
-                    17903685207039300384995795331083569887497623740119108595975170464164316221644,
-                    9246628133289276308945311797896077179503891414159382179119544904154776510385
-                ]
-            ],
-            [
-                17432552394458345841788798376121543520587716339044416231610790827968220675517,
-                15082220514596158133191868403239442750535261032426474092101151620016661078026
-            ]
-        );
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
-    ConsensusStateManager opConsensusStateManager = new OptimisticConsensusStateManager(1800, verifier);
-    ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
+    ConsensusStateManager opConsensusStateManager =
+        new OptimisticConsensusStateManager(1800, opProofVerifier, l1BlockProvider);
 
-    // Proofs from Polymer chain, to verify packet or channel state on Polymer
-    Proof emptyProof;
-    Proof invalidProof = Proof(Height(0, 42), bytes('')); // invalid proof with empty proof bytes
-    Proof validProof = Proof(Height(0, 42), bytes('valid proof'));
+    ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
 
     Dispatcher dispatcher;
     string portPrefix = 'polyibc.eth.';
