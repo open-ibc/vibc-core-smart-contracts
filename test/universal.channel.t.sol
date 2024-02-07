@@ -22,7 +22,14 @@ contract UniversalChannelTest is Base {
             for (uint256 j = 0; j < feesEnabled.length; j++) {
                 VirtualChain eth1 = new VirtualChain(100, 'polyibc.eth1.');
                 VirtualChain eth2 = new VirtualChain(200, 'polyibc.eth2.');
-                ChannelSetting memory setting = ChannelSetting(orders[i], '1.0', feesEnabled[j], validProof);
+                ChannelSetting memory setting = ChannelSetting(
+                    orders[i],
+                    '1.0',
+                    'polyibc.eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf',
+                    IbcUtils.toBytes32('channel-0'),
+                    feesEnabled[j],
+                    validProof
+                );
                 eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
 
                 assert_channel(eth1, eth2, setting);
@@ -58,7 +65,14 @@ contract UniversalChannelTest is Base {
     function test_channel_ok_by_anyone() public {
         VirtualChain eth1 = new VirtualChain(100, 'polyibc.eth1.');
         VirtualChain eth2 = new VirtualChain(200, 'polyibc.eth2.');
-        ChannelSetting memory setting = ChannelSetting(ChannelOrder.UNORDERED, '1.0', true, validProof);
+        ChannelSetting memory setting = ChannelSetting(
+            ChannelOrder.UNORDERED,
+            '1.0',
+            'polyibc.eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf',
+            IbcUtils.toBytes32('channel-0'),
+            true,
+            validProof
+        );
 
         IbcChannelReceiver ucHandler1 = eth1.ucHandler();
         IbcChannelReceiver ucHandler2 = eth2.ucHandler();
@@ -73,10 +87,10 @@ contract UniversalChannelTest is Base {
         eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, true);
 
         vm.prank(unauthorized);
-        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, true);
+        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, false, true);
 
         vm.prank(unauthorized);
-        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true);
+        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true, true);
     }
 }
 
@@ -89,7 +103,6 @@ struct UcPacket {
 contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     VirtualChain eth1;
     VirtualChain eth2;
-    ChannelSetting setting = ChannelSetting(ChannelOrder.UNORDERED, '1.0', true, validProof);
     VirtualChainData v1;
     VirtualChainData v2;
 
@@ -111,6 +124,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     bytes32 gotChannelId;
 
     function setUp() public virtual {
+        ChannelSetting memory setting = ChannelSetting(
+            ChannelOrder.UNORDERED,
+            '1.0',
+            'polyibc.eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf',
+            IbcUtils.toBytes32('channel-0'),
+            true,
+            validProof
+        );
         eth1 = new VirtualChain(100, 'polyibc.eth1.');
         eth2 = new VirtualChain(200, 'polyibc.eth2.');
         eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
@@ -287,7 +308,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Timeout(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcher.timeout(v1.ucHandler, recvPacket, setting.proof);
+            v1.dispatcher.timeout(v1.ucHandler, recvPacket, validProof);
 
             // verify timeout packet received by Earth on chain A
             (gotChannelId, gotUcPacket) = v1.earth.timeoutPackets(packetSeq - 1);
@@ -373,7 +394,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
-            v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, setting.proof);
+            v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, validProof);
 
             // verify packet received by Earth on chain B
             (gotChannelId, gotUcPacket) = v2.earth.recvedPackets(packetSeq - 1);
@@ -405,7 +426,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcher.acknowledgement(v1.ucHandler, recvPacket, ackPacket, setting.proof);
+            v1.dispatcher.acknowledgement(v1.ucHandler, recvPacket, ackToBytes(ackPacket), validProof);
 
             // verify ack packet received by Earth on chain A
             (gotChannelId, gotUcPacket, gotAckPacket) = v1.earth.ackPackets(packetSeq - 1);
