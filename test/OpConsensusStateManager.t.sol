@@ -65,7 +65,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     function test_zero_proof_window() public {
         manager = new OptimisticConsensusStateManager(0, verifier, l1BlockProvider);
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
-        (, uint256 endTime, bool ended) = manager.getState(1);
+        (, , bool ended) = manager.getState(1);
         assertEq(true, ended);
     }
 

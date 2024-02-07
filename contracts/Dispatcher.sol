@@ -181,7 +181,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
                 proof,
                 channelProofKey(local.portId, local.channelId),
                 channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
-                'Fail to prove channel state'
             );
         }
 
@@ -190,9 +189,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             ordering,
             feeEnabled,
             connectionHops,
-            counterparty.portId,
-            counterparty.channelId,
-            counterparty.version
+            counterparty
         );
 
         emit OpenIbcChannel(
@@ -223,8 +220,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
                 local.version,
                 connectionHops,
                 counterparty
-            ),
-            'Fail to prove channel state'
+            )
         );
     }
 
@@ -305,8 +301,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             bytes('channel/path/to/be/added/here'),
-            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}'),
-            'Fail to prove channel state'
+            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
         );
 
         // ensure port owns channel
@@ -383,12 +378,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         // prove ack packet is on Polymer chain
-        consensusStateManager.verifyMembership(
-            proof,
-            ackProofKey(packet),
-            abi.encode(ackProofValue(ack)),
-            'Fail to prove ack'
-        );
+        consensusStateManager.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -431,7 +421,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path', 'Fail to prove timeout');
+        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path');
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -466,8 +456,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             packetCommitmentProofKey(packet),
-            abi.encode(packetCommitmentProofValue(packet)),
-            'Fail to prove packet commitment'
+            abi.encode(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet

@@ -30,16 +30,11 @@ contract DummyConsensusStateManager is ConsensusStateManager {
         return 0;
     }
 
-    function verifyMembership(
-        Ics23Proof calldata proof,
-        bytes memory key,
-        bytes memory expectedValue,
-        string memory message
-    ) external view {
-        require(proof.height > 0, message);
+    function verifyMembership(Ics23Proof calldata proof, bytes memory, bytes memory) external pure {
+        require(proof.height > 0, 'Invalid dummy membership proof');
     }
 
-    function verifyNonMembership(Ics23Proof calldata proof, bytes memory key, string memory message) external view {
-        require(proof.height > 0, message);
+    function verifyNonMembership(Ics23Proof calldata proof, bytes memory) external pure {
+        require(proof.height > 0, 'Invalid dummy non membership proof');
     }
 }

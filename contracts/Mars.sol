@@ -24,7 +24,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack) external onlyIbcDispatcher {
+    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external onlyIbcDispatcher {
         ackPackets.push(ack);
     }
 
@@ -34,14 +34,12 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     function onOpenIbcChannel(
         string calldata version,
-        ChannelOrder ordering,
-        bool feeEnabled,
-        string[] calldata connectionHops,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (bytes(counterpartyPortId).length <= 8) {
+        ChannelOrder,
+        bool,
+        string[] calldata,
+        CounterParty calldata counterparty
+    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
+        if (bytes(counterparty.portId).length <= 8) {
             revert invalidCounterPartyPortId();
         }
         /**
@@ -52,7 +50,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
          */
         bool foundVersion = false;
         selectedVersion = keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(''))
-            ? counterpartyVersion
+            ? counterparty.version
             : version;
         for (uint256 i = 0; i < supportedVersions.length; i++) {
             if (keccak256(abi.encodePacked(selectedVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
@@ -62,9 +60,9 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         }
         require(foundVersion, 'Unsupported version');
         // if counterpartyVersion is not empty, then it must be the same foundVersion
-        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(''))) {
+        if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(''))) {
             require(
-                keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(selectedVersion)),
+                keccak256(abi.encodePacked(counterparty.version)) == keccak256(abi.encodePacked(selectedVersion)),
                 'Version mismatch'
             );
         }
@@ -74,7 +72,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     function onConnectIbcChannel(
         bytes32 channelId,
-        bytes32 counterpartyChannelId,
+        bytes32,
         string calldata counterpartyVersion
     ) external onlyIbcDispatcher {
         // ensure negotiated version is supported
@@ -89,11 +87,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         connectedChannels.push(channelId);
     }
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external onlyIbcDispatcher {
+    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
         for (uint256 i = 0; i < connectedChannels.length; i++) {
