@@ -16,8 +16,8 @@ contract ChannelHandshakeTest is Base {
     CounterParty _remote;
     Mars mars;
 
-    function setUp() public {
-        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
+    function setUp() public override {
+        dispatcher = new Dispatcher(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcher);
         _local = LocalEnd(mars, portId, 'channel-1', connectionHops, '1.0', '1.0');
         _remote = CounterParty('eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf', 'channel-2', '1.0');
@@ -163,7 +163,7 @@ contract ChannelHandshakeTest is Base {
         bool localInitiate,
         bool isProofValid
     ) internal view returns (ChannelHandshakeSetting[4] memory) {
-        Proof memory proof = isProofValid ? validProof : invalidProof;
+        Ics23Proof memory proof = isProofValid ? validProof : invalidProof;
         ChannelHandshakeSetting[4] memory settings = [
             ChannelHandshakeSetting(ChannelOrder.ORDERED, false, localInitiate, proof),
             ChannelHandshakeSetting(ChannelOrder.UNORDERED, false, localInitiate, proof),
@@ -198,8 +198,8 @@ contract ChannelOpenTestBase is Base {
     CounterParty _remote;
     Mars mars;
 
-    function setUp() public virtual {
-        dispatcher = new Dispatcher(verifier, portPrefix, dummyConsStateManager);
+    function setUp() public virtual override {
+        dispatcher = new Dispatcher(portPrefix, dummyConsStateManager);
         ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(
             ChannelOrder.ORDERED,
             feeEnabled,

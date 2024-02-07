@@ -123,7 +123,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     // channelId stored in Earth for test assertion
     bytes32 gotChannelId;
 
-    function setUp() public virtual {
+    function setUp() public virtual override {
         ChannelSetting memory setting = ChannelSetting(
             ChannelOrder.UNORDERED,
             '1.0',

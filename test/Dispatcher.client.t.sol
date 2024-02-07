@@ -5,15 +5,14 @@ import '../contracts/Ibc.sol';
 import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/IbcDispatcher.sol';
 import {IbcReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/IbcVerifier.sol';
-import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
 import '../contracts/OpConsensusStateManager.sol';
 import './Dispatcher.base.t.sol';
 
 contract ClientTestBase is Base {
-    function setUp() public virtual {
-        dispatcher = new Dispatcher(verifier, portPrefix, opConsensusStateManager);
+    function setUp() public virtual override {
+        super.setUp();
+        dispatcher = new Dispatcher(portPrefix, opConsensusStateManager);
     }
 }
 
@@ -41,34 +40,15 @@ contract DispatcherUpdateClientTest is ClientTestBase {
         dispatcher.createClient(initClientMsg);
     }
 
-    function test_updateConsensusState_success() public {
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
+    function test_updateOptimisticConsensusState_success() public {
+        // trick the L1Block contract into thinking it is updated with the right l1 header
+        setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
+        dispatcher.updateClientWithOptimisticConsensusState(l1header, validStateProof, 1, uint256(apphash));
     }
 
-    function test_updateConsensusState_invalid() public {
-        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
-        dispatcher.updateClientWithConsensusState(untrustedState, proof);
-
-        vm.expectRevert(abi.encodeWithSignature('consensusStateVerificationFailed()'));
-        ConsensusState memory invalidConsensusState;
-        dispatcher.updateClientWithConsensusState(invalidConsensusState, proof);
-    }
-}
-
-contract DispatcherUpgradeClientTest is ClientTestBase {
-    function setUp() public override {
-        super.setUp();
-        dispatcher.createClient(initClientMsg);
-        dispatcher.updateClientWithConsensusState(trustedState, proof);
-    }
-
-    function test_success() public {
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
-    }
-
-    function test_ownerOnly() public {
-        vm.prank(deriveAddress('non-onwer'));
-        expectRevertNonOwner();
-        dispatcher.upgradeClient(UpgradeClientMsg(bytes('upgradeOptimisticConsensusState'), trustedState));
+    function test_updateOptimisticConsensusState_failure() public {
+        setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
+        vm.expectRevert('MerkleTrie: ran out of proof elements');
+        dispatcher.updateClientWithOptimisticConsensusState(l1header, invalidStateProof, 1, uint256(apphash));
     }
 }

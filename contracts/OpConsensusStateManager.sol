@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import './IbcVerifier.sol';
 import './Ibc.sol';
 import './ConsensusStateManager.sol';
+import {L1Block} from 'lib/optimism/packages/contracts-bedrock/src/L2/L1Block.sol';
 
 // OptimisticConsensusStateManager manages the appHash at different
 // heights and track the fraud proof end time for them.
 contract OptimisticConsensusStateManager is ConsensusStateManager {
-    uint32 fraudProofWindowSeconds;
-    ZKMintVerifier verifier;
-
     // consensusStates maps from the height to the appHash.
-    mapping(uint256 => uint256) consensusStates;
+    mapping(uint256 => uint256) public consensusStates;
 
     // fraudProofEndtime maps from the appHash to the fraud proof end time.
     mapping(uint256 => uint256) fraudProofEndtime;
 
-    constructor(uint32 fraudProofWindowSeconds_, ZKMintVerifier verifier_) {
+    uint256 fraudProofWindowSeconds;
+    ProofVerifier verifier;
+    L1Block l1BlockProvider;
+
+    constructor(uint32 fraudProofWindowSeconds_, ProofVerifier verifier_, L1Block _l1BlockProvider) {
         fraudProofWindowSeconds = fraudProofWindowSeconds_;
         verifier = verifier_;
+        l1BlockProvider = _l1BlockProvider;
     }
 
     // addOpConsensusState adds an appHash to internal store and
@@ -27,15 +29,26 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
     // the fraud proof window has passed according to the block's
     // timestamp.
     function addOpConsensusState(
+        L1Header calldata l1header,
+        OpL2StateProof calldata proof,
         uint256 height,
         uint256 appHash
     ) external override returns (uint256 fraudProofEndTime, bool ended) {
         uint256 hash = consensusStates[height];
         if (hash == 0) {
+            // if this is a new apphash we need to verify the provided proof. This method will revert in case
+            // of invalid proof.
+            verifier.verifyStateUpdate(
+                l1header,
+                proof,
+                bytes32(appHash),
+                l1BlockProvider.hash(),
+                l1BlockProvider.number()
+            );
+
             // a new appHash
             consensusStates[height] = appHash;
             uint256 endTime = block.timestamp + fraudProofWindowSeconds;
-            consensusStates[height] = appHash;
             fraudProofEndtime[appHash] = endTime;
             return (endTime, false);
         }
@@ -77,19 +90,22 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
      * the verifier to perform membership check.
      */
     function verifyMembership(
-        Proof calldata proof,
-        bytes memory key,
-        bytes memory expectedValue,
-        string memory message
+        Ics23Proof calldata proof,
+        bytes calldata key,
+        bytes calldata expectedValue,
+        string calldata message
     ) external view {
-        (uint256 appHash, , bool ended) = getInternalState(proof.proofHeight.revision_height);
+        // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
+        // this means the relayer must have updated the contract with the app hash from the previous block and
+        // that is why we use proof.height - 1 here.
+        (uint256 appHash, , bool ended) = getInternalState(proof.height - 1);
         require(ended, "appHash hasn't passed the fraud proof window");
-        require(verifier.verifyMembership(appHash, proof, key, expectedValue), message);
+        verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
-    function verifyNonMembership(Proof calldata proof, bytes memory key, string memory message) external view {
-        (uint256 appHash, , bool ended) = getInternalState(proof.proofHeight.revision_height);
+    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key, string calldata message) external view {
+        (uint256 appHash, , bool ended) = getInternalState(proof.height - 1);
         require(ended, "appHash hasn't passed the fraud proof window");
-        require(verifier.verifyNonMembership(appHash, proof, key), message);
+        verifier.verifyNonMembership(bytes32(appHash), key, proof);
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 
 import './Ibc.sol';
 import './IbcReceiver.sol';
+import './ProofVerifier.sol';
 
 /**
  * @title IbcPacketSender
@@ -31,7 +32,7 @@ interface IbcDispatcher is IbcPacketSender {
         bool feeEnabled,
         string[] calldata connectionHops,
         CounterParty calldata counterparty,
-        Proof calldata proof
+        Ics23Proof calldata proof
     ) external;
 
     function closeIbcChannel(bytes32 channelId) external;

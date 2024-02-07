@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '../contracts/Ibc.sol';
 import '../contracts/Dispatcher.sol';
 import '../contracts/Verifier.sol';
+import '../contracts/ProofVerifier.sol';
 import {UniversalChannelHandler} from '../contracts/UniversalChannelHandler.sol';
 import {Mars} from '../contracts/Mars.sol';
 import {Earth} from '../contracts/Earth.sol';
@@ -19,7 +20,7 @@ struct ChannelSetting {
     string portId;
     bytes32 channelId;
     bool feeEnabled;
-    Proof proof;
+    Ics23Proof proof;
 }
 
 struct VirtualChainData {
@@ -54,7 +55,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     // ChannelIds are not initialized until channel handshake is started
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
-        dispatcher = new Dispatcher(new Verifier(), portPrefix, new DummyConsensusStateManager());
+        dispatcher = new Dispatcher(portPrefix, new DummyConsensusStateManager());
         ucHandler = new UniversalChannelHandler(dispatcher);
 
         mars = new Mars(dispatcher);
