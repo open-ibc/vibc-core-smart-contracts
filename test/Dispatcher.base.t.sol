@@ -4,11 +4,9 @@ pragma solidity ^0.8.13;
 import 'forge-std/Test.sol';
 import './Proof.base.t.sol';
 import '../contracts/Ibc.sol';
-import {Dispatcher, InitClientMsg, UpgradeClientMsg} from '../contracts/Dispatcher.sol';
+import {Dispatcher} from '../contracts/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/IbcDispatcher.sol';
 import {IbcChannelReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/IbcVerifier.sol';
-import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
 import '../contracts/OpConsensusStateManager.sol';
 import '../contracts/DummyConsensusStateManager.sol';
@@ -34,22 +32,6 @@ struct ChannelHandshakeSetting {
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase {
     uint64 UINT64_MAX = 18446744073709551615;
-
-    ConsensusState untrustedState =
-        ConsensusState(
-            80990,
-            590199110038530808131927832294665177527506259518072095333098842116767351199,
-            7000040,
-            1000
-        );
-    ConsensusState trustedState =
-        ConsensusState(
-            10934,
-            7064503680087416120706887577693908749828198688716609274705703517077803898371,
-            7002040,
-            1020
-        );
-    InitClientMsg initClientMsg = InitClientMsg(bytes('Polymer'), untrustedState);
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;

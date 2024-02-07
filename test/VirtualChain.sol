@@ -5,7 +5,6 @@ import 'forge-std/Test.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '../contracts/Ibc.sol';
 import '../contracts/Dispatcher.sol';
-import '../contracts/Verifier.sol';
 import '../contracts/ProofVerifier.sol';
 import {UniversalChannelHandler} from '../contracts/UniversalChannelHandler.sol';
 import {Mars} from '../contracts/Mars.sol';
