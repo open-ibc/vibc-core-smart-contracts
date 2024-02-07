@@ -39,7 +39,7 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
 
     // For testing only; real dApps should implment their own ack logic
     function generateAckPacket(
-        bytes32 channelId,
+        bytes32,
         address srcPortAddr,
         bytes calldata appData
     ) external view returns (AckPacket memory ackPacket) {

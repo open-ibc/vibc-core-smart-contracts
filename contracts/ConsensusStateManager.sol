@@ -32,15 +32,10 @@ interface ConsensusStateManager {
      * can be used to perform the membership test and if so, it uses
      * the verifier to perform membership check.
      */
-    function verifyMembership(
-        Ics23Proof calldata proof,
-        bytes memory key,
-        bytes memory expectedValue,
-        string memory message
-    ) external;
+    function verifyMembership(Ics23Proof calldata proof, bytes memory key, bytes memory expectedValue) external;
 
     /**
      *
      */
-    function verifyNonMembership(Ics23Proof calldata proof, bytes memory key, string memory message) external;
+    function verifyNonMembership(Ics23Proof calldata proof, bytes memory key) external;
 }

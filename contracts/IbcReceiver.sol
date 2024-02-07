@@ -16,9 +16,7 @@ interface IbcChannelReceiver {
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
+        CounterParty calldata counterparty
     ) external returns (string memory selectedVersion);
 
     function onConnectIbcChannel(

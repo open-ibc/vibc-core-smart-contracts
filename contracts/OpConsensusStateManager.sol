@@ -93,8 +93,7 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
     function verifyMembership(
         Ics23Proof calldata proof,
         bytes calldata key,
-        bytes calldata expectedValue,
-        string calldata message
+        bytes calldata expectedValue
     ) external view {
         // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
         // this means the relayer must have updated the contract with the app hash from the previous block and
@@ -104,7 +103,7 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
         verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
-    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key, string calldata message) external view {
+    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
         (uint256 appHash, , bool ended) = getInternalState(proof.height - 1);
         require(ended, "appHash hasn't passed the fraud proof window");
         verifier.verifyNonMembership(bytes32(appHash), key, proof);
