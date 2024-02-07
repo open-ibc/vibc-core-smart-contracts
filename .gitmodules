@@ -7,3 +7,6 @@
 [submodule "lib/protobuf3-solidity-lib"]
 	path = lib/protobuf3-solidity-lib
 	url = https://github.com/celestiaorg/protobuf3-solidity-lib
+[submodule "lib/optimism"]
+	path = lib/optimism
+	url = https://github.com/ethereum-optimism/optimism.git
