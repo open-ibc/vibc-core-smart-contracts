@@ -117,7 +117,7 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
-                vm.expectRevert('Fail to prove channel state');
+                vm.expectRevert('Invalid dummy membership proof');
                 openChannel(le, re, settings[i], false);
             }
         }
@@ -152,7 +152,7 @@ contract ChannelHandshakeTest is Base {
                 openChannel(le, re, settings[i], true);
                 re.version = versions[j];
                 settings[i].proof = invalidProof;
-                vm.expectRevert('Fail to prove channel state');
+                vm.expectRevert('Invalid dummy membership proof');
                 connectChannel(le, re, settings[i], false, false);
             }
         }
@@ -244,7 +244,7 @@ contract DispatcherCloseChannelTest is ChannelOpenTestBase {
     }
 
     function test_closeChannelConfirm_invalidProof() public {
-        vm.expectRevert('Fail to prove channel state');
+        vm.expectRevert('Invalid dummy membership proof');
         dispatcher.onCloseIbcChannel(address(mars), channelId, invalidProof);
     }
 }
@@ -503,7 +503,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
     function test_invalidProof() public {
         sendPacket();
 
-        vm.expectRevert('Fail to prove timeout');
+        vm.expectRevert('Invalid dummy non membership proof');
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }

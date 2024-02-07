@@ -31,14 +31,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onOpenIbcChannel(
         string calldata version,
-        ChannelOrder ordering,
-        bool feeEnabled,
-        string[] calldata connectionHops,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (counterpartyChannelId == bytes32(0)) {
+        ChannelOrder,
+        bool,
+        string[] calldata,
+        CounterParty calldata counterparty
+    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
+        if (counterparty.channelId == bytes32(0)) {
             // ChanOpenInit
             require(
                 keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(VERSION)),
@@ -47,7 +45,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         } else {
             // ChanOpenTry
             require(
-                keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(VERSION)),
+                keccak256(abi.encodePacked(counterparty.version)) == keccak256(abi.encodePacked(VERSION)),
                 'Unsupported version'
             );
         }
@@ -56,7 +54,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onConnectIbcChannel(
         bytes32 channelId,
-        bytes32 counterpartyChannelId,
+        bytes32,
         string calldata counterpartyVersion
     ) external onlyIbcDispatcher {
         require(
@@ -66,11 +64,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         connectedChannels.push(channelId);
     }
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external onlyIbcDispatcher {
+    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
         for (uint256 i = 0; i < connectedChannels.length; i++) {

@@ -239,7 +239,6 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         GeneralMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
-            uint64 factor = packetSeq; // change packet settings for each iteration
             uint64 timeout = 1 seconds * 10 ** 9;
             appData = abi.encodePacked('msg-', packetSeq);
 
@@ -328,8 +327,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         GeneralMiddleware[2] memory recvMws = [v2.mw2, v1.mw1];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
-            uint64 factor = packetSeq; // change packet settings for each iteration
-            uint64 timeout = 1 days * 10 ** 9 * factor;
+            uint64 timeout = 1 days * 10 ** 9 * packetSeq; // change packet settings for each iteration
             appData = abi.encodePacked('msg-', packetSeq);
 
             ucPacket = UniversalPacket(
