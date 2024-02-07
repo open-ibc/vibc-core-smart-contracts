@@ -6,23 +6,7 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import './IbcDispatcher.sol';
 import {IbcChannelReceiver, IbcPacketReceiver} from './IbcReceiver.sol';
-import './IbcVerifier.sol';
 import './ConsensusStateManager.sol';
-
-// InitClientMsg is used to create a new Polymer client on an EVM chain
-// TODO: replace bytes with explictly typed fields for gas cost saving
-struct InitClientMsg {
-    bytes clientState;
-    ConsensusState consensusState;
-}
-
-// UpgradeClientMsg is used to upgrade an existing Polymer client on an EVM chain.
-// It should only be run by CoreSC maintainer with a social consensus.
-// TODO: replace bytes with explictly typed fields for gas cost saving
-struct UpgradeClientMsg {
-    bytes clientState;
-    ConsensusState consensusState;
-}
 
 /**
  * @title Dispatcher
@@ -35,8 +19,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     //
     // fields
     //
-    bool isClientCreated = false;
-    ConsensusState public latestConsensusState;
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string public portPrefix;
     uint32 portPrefixLen;
@@ -123,38 +105,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         portPrefixLen = uint32(bytes(_portPrefix).length);
     }
 
-    //
-    // Client methods
-    //
-
-    /**
-     * @dev Creates a new Polymer client.
-     * @param initClientMsg The initial client state and consensus state.
-     */
-    function createClient(InitClientMsg calldata initClientMsg) external onlyOwner {
-        if (isClientCreated) {
-            revert clientAlreadyCreated();
-        }
-
-        isClientCreated = true;
-        latestConsensusState = initClientMsg.consensusState;
-    }
-
-    // updateClientWithConsensusState updates the client with the
-    // latest consensus state. The zkproof related to this consensus
-    // state is used to verify the consensus state.
-    function updateClientWithConsensusState(ConsensusState calldata consensusState, ZkProof calldata zkProof) external {
-        if (!isClientCreated) {
-            revert clientNotCreated();
-        }
-        //if (!verifier.verifyConsensusState(latestConsensusState, consensusState, zkProof)) {
-        //    revert consensusStateVerificationFailed();
-        //}
-
-        latestConsensusState = consensusState;
-        return;
-    }
-
     // updateClientWithOptimisticConsensusState updates the client
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
@@ -165,10 +115,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         uint256 height,
         uint256 appHash
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        if (!isClientCreated) {
-            revert clientNotCreated();
-        }
-
         return consensusStateManager.addOpConsensusState(l1header, proof, height, appHash);
     }
 
@@ -176,24 +122,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     function getOptimisticConsensusState(
         uint256 height
     ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
-        if (!isClientCreated) {
-            revert clientNotCreated();
-        }
-
         return consensusStateManager.getState(height);
-    }
-
-    /**
-     * @dev Upgrades the Polymer client.
-     * It can only be run by CoreSC maintainer with a social consensus.
-     * @param upgradeClientMsg The new client state and consensus state.
-     */
-    function upgradeClient(UpgradeClientMsg calldata upgradeClientMsg) external onlyOwner {
-        if (!isClientCreated) {
-            revert clientNotCreated();
-        }
-
-        latestConsensusState = upgradeClientMsg.consensusState;
     }
 
     //
