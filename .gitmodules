@@ -10,3 +10,6 @@
 [submodule "lib/optimism"]
 	path = lib/optimism
 	url = https://github.com/ethereum-optimism/optimism.git
+[submodule "lib/base64"]
+	path = lib/base64
+	url = https://github.com/Brechtpd/base64.git
