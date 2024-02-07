@@ -26,7 +26,7 @@ interface IbcDispatcher is IbcPacketSender {
 
     function openIbcChannel(
         IbcChannelReceiver portAddress,
-        string calldata version,
+        CounterParty calldata self,
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,

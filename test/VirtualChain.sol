@@ -16,6 +16,8 @@ import '../contracts/DummyConsensusStateManager.sol';
 struct ChannelSetting {
     ChannelOrder ordering;
     string version;
+    string portId;
+    bytes32 channelId;
     bool feeEnabled;
     Proof proof;
 }
@@ -133,10 +135,10 @@ contract VirtualChain is Test, IbcEventsEmitter {
         remoteChain.channelOpenTry(remoteEnd, this, localEnd, setting, true); // step-2
 
         vm.prank(address(this));
-        this.channelOpenAckOrConfirm(localEnd, remoteChain, remoteEnd, setting, true); // step-3
+        this.channelOpenAckOrConfirm(localEnd, remoteChain, remoteEnd, setting, false, true); // step-3
 
         vm.prank(address(remoteChain));
-        remoteChain.channelOpenAckOrConfirm(remoteEnd, this, localEnd, setting, true); // step-4
+        remoteChain.channelOpenAckOrConfirm(remoteEnd, this, localEnd, setting, true, true); // step-4
     }
 
     function channelOpenInit(
@@ -166,7 +168,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         }
         dispatcher.openIbcChannel(
             localEnd,
-            setting.version,
+            CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,
             setting.feeEnabled,
             connectionHops,
@@ -206,7 +208,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         }
         dispatcher.openIbcChannel(
             localEnd,
-            setting.version,
+            CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,
             setting.feeEnabled,
             connectionHops,
@@ -220,6 +222,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         VirtualChain remoteChain,
         IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting,
+        bool isChanConfirm,
         bool expPass
     ) external {
         // local channel Id must be known
@@ -241,13 +244,12 @@ contract VirtualChain is Test, IbcEventsEmitter {
         }
         dispatcher.connectIbcChannel(
             localEnd,
-            chanId,
+            CounterParty(setting.portId, chanId, setting.version),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
-            cpPortId,
-            cpChanId,
-            setting.version,
+            isChanConfirm,
+            CounterParty(cpPortId, cpChanId, setting.version),
             setting.proof
         );
     }

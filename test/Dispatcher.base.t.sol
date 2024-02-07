@@ -11,9 +11,11 @@ import '../contracts/Verifier.sol';
 import '../contracts/Mars.sol';
 import '../contracts/OpConsensusStateManager.sol';
 import '../contracts/DummyConsensusStateManager.sol';
+import '../contracts/OpProofVerifier.sol';
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
+    string portId;
     // channelId is only used in connectIbcChannel
     bytes32 channelId;
     string[] connectionHops;
@@ -121,7 +123,7 @@ contract Base is Test, IbcEventsEmitter {
      */
     function openChannel(
         LocalEnd memory le,
-        RemoteEnd memory re,
+        CounterParty memory re,
         ChannelHandshakeSetting memory s,
         bool expPass
     ) public {
@@ -145,7 +147,7 @@ contract Base is Test, IbcEventsEmitter {
         }
         dispatcher.openIbcChannel(
             le.receiver,
-            le.versionCall,
+            CounterParty(le.portId, le.channelId, le.versionCall),
             s.ordering,
             s.feeEnabled,
             le.connectionHops,
@@ -164,8 +166,9 @@ contract Base is Test, IbcEventsEmitter {
      */
     function connectChannel(
         LocalEnd memory le,
-        RemoteEnd memory re,
+        CounterParty memory re,
         ChannelHandshakeSetting memory s,
+        bool isChannConfirm,
         bool expPass
     ) public {
         if (expPass) {
@@ -174,13 +177,12 @@ contract Base is Test, IbcEventsEmitter {
         }
         dispatcher.connectIbcChannel(
             le.receiver,
-            le.channelId,
+            CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,
-            re.portId,
-            re.channelId,
-            re.version,
+            isChannConfirm,
+            re,
             s.proof
         );
     }
@@ -189,5 +191,12 @@ contract Base is Test, IbcEventsEmitter {
     // Error msg is defined by OpenZeppelin Ownable contract.
     function expectRevertNonOwner() internal {
         vm.expectRevert('Ownable: caller is not the owner');
+    }
+
+    function ackToBytes(AckPacket memory ack) public pure returns (bytes memory) {
+        return
+            ack.success
+                ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
+                : abi.encodePacked('{"error":"', ack.data, '"}');
     }
 }
