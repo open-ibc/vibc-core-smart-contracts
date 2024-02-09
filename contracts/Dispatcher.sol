@@ -179,8 +179,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (isChannelOpenTry(counterparty)) {
             consensusStateManager.verifyMembership(
                 proof,
-                Ibc.channelProofKey(local.portId, local.channelId),
-                Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+                channelProofKey(local.portId, local.channelId),
+                channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
             );
         }
 
@@ -213,8 +213,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     ) internal {
         consensusStateManager.verifyMembership(
             proof,
-            Ibc.channelProofKey(local.portId, local.channelId),
-            Ibc.channelProofValue(
+            channelProofKey(local.portId, local.channelId),
+            channelProofValue(
                 isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
                 ordering,
                 local.version,
@@ -378,7 +378,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // prove ack packet is on Polymer chain
-        consensusStateManager.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
+        consensusStateManager.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -396,7 +396,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        receiver.onAcknowledgementPacket(packet, Ibc.parseAckData(ack));
+        receiver.onAcknowledgementPacket(packet, parseAckData(ack));
 
         // delete packet commitment to avoid double ack
         delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -455,8 +455,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
         consensusStateManager.verifyMembership(
             proof,
-            Ibc.packetCommitmentProofKey(packet),
-            abi.encode(Ibc.packetCommitmentProofValue(packet))
+            packetCommitmentProofKey(packet),
+            abi.encode(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
@@ -556,5 +556,116 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             packet.timeoutHeight,
             packet.timeoutTimestamp
         );
+    }
+
+    function channelProofKey(string calldata portId, bytes32 channelId) internal pure returns (bytes memory) {
+        return abi.encodePacked('channelEnds/ports/', portId, '/channels/', toStr(channelId));
+    }
+
+    function channelProofValue(ChannelState state,
+                               ChannelOrder ordering,
+                               string calldata version,
+                               string[] calldata connectionHops,
+                               CounterParty calldata counterparty
+    ) internal pure returns (bytes memory) {
+        return
+            ProtoChannel.encode(
+                                ProtoChannel.Data(
+                                                  int32(uint32(state)),
+                                                  int32(uint32(ordering)),
+                                                  ProtoCounterparty.Data(counterparty.portId, toStr(counterparty.channelId)),
+                                                  connectionHops,
+                                                  version
+                                )
+            );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
+    function ackProofKey(IbcPacket calldata packet) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                'acks/ports/',
+                packet.dest.portId,
+                '/channels/',
+                toStr(packet.dest.channelId),
+                '/sequences/',
+                toStr(packet.sequence)
+            );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
+    function ackProofValue(bytes calldata ack) internal pure returns (bytes32) {
+        return sha256(ack);
+    }
+
+    function parseAckData(bytes calldata ack) internal pure returns (AckPacket memory) {
+        return
+            // this hex value is '"result"'
+            (keccak256(ack[1:9]) == keccak256(hex'22726573756c7422'))
+                ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
+                : AckPacket(false, ack[10:ack.length - 2]); // this is an error
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
+    function packetCommitmentProofKey(IbcPacket calldata packet) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                'commitments/ports/',
+                packet.src.portId,
+                '/channels/',
+                toStr(packet.src.channelId),
+                '/sequences/',
+                toStr(packet.sequence)
+            );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
+    function packetCommitmentProofValue(IbcPacket calldata packet) internal pure returns (bytes32) {
+        return
+            sha256(
+                abi.encodePacked(
+                    packet.timeoutTimestamp,
+                    packet.timeoutHeight.revision_number,
+                    packet.timeoutHeight.revision_height,
+                    sha256(packet.data)
+                )
+            );
+    }
+
+    function toStr(bytes32 b) internal pure returns (string memory) {
+        uint8 i = 0;
+        while (i < 32 && b[i] != 0) {
+            i++;
+        }
+        bytes memory bytesArray = new bytes(i);
+        for (uint8 j = 0; j < i; j++) {
+            bytesArray[j] = b[j];
+        }
+        return string(bytesArray);
+    }
+
+    function toStr(uint256 _number) internal pure returns (string memory) {
+        if (_number == 0) {
+            return '0';
+        }
+
+        uint256 length;
+        uint256 number = _number;
+
+        // Determine the length of the string
+        while (number != 0) {
+            length++;
+            number /= 10;
+        }
+
+        bytes memory buffer = new bytes(length);
+
+        // Convert each digit to its ASCII representation
+        for (uint256 i = length; i > 0; i--) {
+            buffer[i - 1] = bytes1(uint8(48 + (_number % 10)));
+            _number /= 10;
+        }
+
+        return string(buffer);
     }
 }
