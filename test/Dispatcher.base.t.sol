@@ -3,14 +3,14 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 import './Proof.base.t.sol';
-import '../contracts/Ibc.sol';
-import {Dispatcher} from '../contracts/Dispatcher.sol';
-import {IbcEventsEmitter} from '../contracts/IbcDispatcher.sol';
-import {IbcChannelReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/Mars.sol';
-import '../contracts/OpConsensusStateManager.sol';
-import '../contracts/DummyConsensusStateManager.sol';
-import '../contracts/OpProofVerifier.sol';
+import '../contracts/libs/Ibc.sol';
+import {Dispatcher} from '../contracts/core/Dispatcher.sol';
+import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
+import {IbcChannelReceiver} from '../contracts/interfaces/IbcReceiver.sol';
+import '../contracts/examples/Mars.sol';
+import '../contracts/core/OpConsensusStateManager.sol';
+import '../contracts/utils/DummyConsensusStateManager.sol';
+import '../contracts/core/OpProofVerifier.sol';
 
 struct LocalEnd {
     IbcChannelReceiver receiver;

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import '../contracts/Ibc.sol';
-import {Dispatcher} from '../contracts/Dispatcher.sol';
-import {IbcEventsEmitter} from '../contracts/IbcDispatcher.sol';
-import {IbcReceiver} from '../contracts/IbcReceiver.sol';
-import '../contracts/Mars.sol';
-import '../contracts/OpConsensusStateManager.sol';
+import '../contracts/libs/Ibc.sol';
+import {Dispatcher} from '../contracts/core/Dispatcher.sol';
+import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
+import {IbcReceiver} from '../contracts/interfaces/IbcReceiver.sol';
+import '../contracts/examples/Mars.sol';
+import '../contracts/core/OpConsensusStateManager.sol';
 import './Dispatcher.base.t.sol';
 
 contract ClientTestBase is Base {

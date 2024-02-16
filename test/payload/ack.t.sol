@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 
-import '../../contracts/Ibc.sol';
+import '../../contracts/libs/Ibc.sol';
 
 contract AckContract {
     // getAckPacketBytes returns the bytes representation of the AckPacket

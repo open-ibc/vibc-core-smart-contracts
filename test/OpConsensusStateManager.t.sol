@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
-import '../contracts/OpConsensusStateManager.sol';
-import '../contracts/DummyProofVerifier.sol';
+import '../contracts/core/OpConsensusStateManager.sol';
+import '../contracts/utils/DummyProofVerifier.sol';
 import './Proof.base.t.sol';
 
 contract OptimisticConsensusStateManagerTest is ProofBase {

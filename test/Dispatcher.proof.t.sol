@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import '../contracts/Ibc.sol';
-import {Dispatcher} from '../contracts/Dispatcher.sol';
-import '../contracts/Mars.sol';
-import '../contracts/OpConsensusStateManager.sol';
+import '../contracts/libs/Ibc.sol';
+import {Dispatcher} from '../contracts/core/Dispatcher.sol';
+import '../contracts/examples/Mars.sol';
+import '../contracts/core/OpConsensusStateManager.sol';
 import './Proof.base.t.sol';
 import {stdStorage, StdStorage} from 'forge-std/Test.sol';
 

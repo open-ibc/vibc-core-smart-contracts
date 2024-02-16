@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import '../contracts/Ibc.sol';
+import '../contracts/libs/Ibc.sol';
 import 'forge-std/Test.sol';
 
 contract IbcTest is Ibc, Test {
