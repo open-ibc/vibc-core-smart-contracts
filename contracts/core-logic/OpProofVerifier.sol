@@ -5,7 +5,7 @@ import {SecureMerkleTrie} from 'optimism/libraries/trie/SecureMerkleTrie.sol';
 import {RLPReader} from 'optimism/libraries/rlp/RLPReader.sol';
 import {RLPWriter} from 'optimism/libraries/rlp/RLPWriter.sol';
 
-import './ProofVerifier.sol';
+import '../interfaces/ProofVerifier.sol';
 
 contract OpProofVerifier is ProofVerifier {
     using RLPReader for RLPReader.RLPItem;

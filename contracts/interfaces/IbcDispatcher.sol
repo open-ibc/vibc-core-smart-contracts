@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import './Ibc.sol';
+import '../libs/Ibc.sol';
 import './IbcReceiver.sol';
 import './ProofVerifier.sol';
 

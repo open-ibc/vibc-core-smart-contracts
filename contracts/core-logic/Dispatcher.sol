@@ -4,9 +4,9 @@ pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import {IbcChannelReceiver, IbcPacketReceiver} from './IbcReceiver.sol';
-import './ConsensusStateManager.sol';
+import '../interfaces/IbcDispatcher.sol';
+import {IbcChannelReceiver, IbcPacketReceiver} from '../interfaces/IbcReceiver.sol';
+import '../interfaces/ConsensusStateManager.sol';
 
 /**
  * @title Dispatcher

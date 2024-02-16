@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import './Ibc.sol';
-import './ConsensusStateManager.sol';
+import '../libs/Ibc.sol';
+import '../interfaces/ConsensusStateManager.sol';
 
 import {L1Block} from 'optimism/L2/L1Block.sol';
 

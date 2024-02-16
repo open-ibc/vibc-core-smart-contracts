@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import './ProofVerifier.sol';
+import '../interfaces/ProofVerifier.sol';
 
 contract DummyProofVerifier is ProofVerifier {
     function verifyStateUpdate(L1Header calldata, OpL2StateProof calldata, bytes32, bytes32, uint64) external pure {}
