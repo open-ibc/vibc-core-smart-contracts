@@ -10,7 +10,7 @@ import {UniversalChannelHandler} from '../contracts/core/UniversalChannelHandler
 import {Mars} from '../contracts/examples/Mars.sol';
 import {Earth} from '../contracts/examples/Earth.sol';
 import {IbcMiddleware} from '../contracts/interfaces/IbcMiddleware.sol';
-import {GeneralMiddleware} from '../contracts/examples/GeneralMiddleware.sol';
+import {GeneralMiddleware} from '../contracts/base/GeneralMiddleware.sol';
 import '../contracts/utils/DummyConsensusStateManager.sol';
 
 struct ChannelSetting {
