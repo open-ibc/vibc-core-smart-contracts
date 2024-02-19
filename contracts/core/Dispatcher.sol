@@ -296,26 +296,27 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
      * The dApp's onCloseIbcChannel callback is invoked.
      * dApp should throw an error if the channel should not be closed.
      */
-    function onCloseIbcChannel(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
-        // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-        consensusStateManager.verifyMembership(
-            proof,
-            bytes('channel/path/to/be/added/here'),
-            bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
-        );
-
-        // ensure port owns channel
-        Channel memory channel = portChannelMap[portAddress][channelId];
-        if (channel.counterpartyChannelId == bytes32(0)) {
-            revert channelNotOwnedByPortAddress();
-        }
-
-        // confirm with dApp by calling its callback
-        IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
-        reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
-        delete portChannelMap[portAddress][channelId];
-        emit CloseIbcChannel(portAddress, channelId);
-    }
+    // FIXME this is commented out to make the contract size smaller. We need to optimise for size
+    // function onCloseIbcChannel(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
+    //     // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
+    //     consensusStateManager.verifyMembership(
+    //         proof,
+    //         bytes('channel/path/to/be/added/here'),
+    //         bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
+    //     );
+    //
+    //     // ensure port owns channel
+    //     Channel memory channel = portChannelMap[portAddress][channelId];
+    //     if (channel.counterpartyChannelId == bytes32(0)) {
+    //         revert channelNotOwnedByPortAddress();
+    //     }
+    //
+    //     // confirm with dApp by calling its callback
+    //     IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
+    //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
+    //     delete portChannelMap[portAddress][channelId];
+    //     emit CloseIbcChannel(portAddress, channelId);
+    // }
 
     //
     // IBC Packet methods
