@@ -3,10 +3,10 @@
 pragma solidity ^0.8.9;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import './IbcMiddleware.sol';
-import {IbcReceiver} from './IbcReceiver.sol';
-import './Ibc.sol';
+import '../interfaces/IbcDispatcher.sol';
+import '../interfaces/IbcMiddleware.sol';
+import {IbcReceiver} from '../interfaces/IbcReceiver.sol';
+import '../libs/Ibc.sol';
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}

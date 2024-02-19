@@ -3,15 +3,15 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
-import '../contracts/Ibc.sol';
-import '../contracts/Dispatcher.sol';
-import '../contracts/ProofVerifier.sol';
-import {UniversalChannelHandler} from '../contracts/UniversalChannelHandler.sol';
-import {Mars} from '../contracts/Mars.sol';
-import {Earth} from '../contracts/Earth.sol';
-import {IbcMiddleware} from '../contracts/IbcMiddleware.sol';
-import {GeneralMiddleware} from '../contracts/GeneralMiddleware.sol';
-import '../contracts/DummyConsensusStateManager.sol';
+import '../contracts/libs/Ibc.sol';
+import '../contracts/core/Dispatcher.sol';
+import '../contracts/interfaces/ProofVerifier.sol';
+import {UniversalChannelHandler} from '../contracts/core/UniversalChannelHandler.sol';
+import {Mars} from '../contracts/examples/Mars.sol';
+import {Earth} from '../contracts/examples/Earth.sol';
+import {IbcMiddleware} from '../contracts/interfaces/IbcMiddleware.sol';
+import {GeneralMiddleware} from '../contracts/base/GeneralMiddleware.sol';
+import '../contracts/utils/DummyConsensusStateManager.sol';
 
 struct ChannelSetting {
     ChannelOrder ordering;

@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import './Ibc.sol';
-import './IbcReceiver.sol';
-import './IbcDispatcher.sol';
+import '../libs/Ibc.sol';
+import '../interfaces/IbcReceiver.sol';
+import '../interfaces/IbcDispatcher.sol';
 
 contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B

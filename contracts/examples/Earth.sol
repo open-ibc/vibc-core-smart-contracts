@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.9;
 
-import './Ibc.sol';
-import './IbcReceiver.sol';
-import './IbcDispatcher.sol';
-import './IbcMiddleware.sol';
+import '../libs/Ibc.sol';
+import '../interfaces/IbcReceiver.sol';
+import '../interfaces/IbcDispatcher.sol';
+import '../interfaces/IbcMiddleware.sol';
 
 contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
     struct UcPacketWithChannel {
