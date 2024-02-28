@@ -8,8 +8,8 @@ import {Dispatcher} from '../contracts/core/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
 import {IbcChannelReceiver} from '../contracts/interfaces/IbcReceiver.sol';
 import '../contracts/examples/Mars.sol';
-import '../contracts/core/OpConsensusStateManager.sol';
-import '../contracts/utils/DummyConsensusStateManager.sol';
+import '../contracts/core/OpLightClient.sol';
+import '../contracts/utils/DummyLightClient.sol';
 import '../contracts/core/OpProofVerifier.sol';
 
 struct LocalEnd {
@@ -36,10 +36,10 @@ contract Base is IbcEventsEmitter, ProofBase {
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
-    ConsensusStateManager opConsensusStateManager =
-        new OptimisticConsensusStateManager(1800, opProofVerifier, l1BlockProvider);
+    LightClient opLightClient =
+        new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
 
-    ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
+    LightClient dummyConsStateManager = new DummyLightClient();
 
     Dispatcher dispatcher;
     string portPrefix = 'polyibc.eth.';

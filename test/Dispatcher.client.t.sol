@@ -6,13 +6,13 @@ import {Dispatcher} from '../contracts/core/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
 import {IbcReceiver} from '../contracts/interfaces/IbcReceiver.sol';
 import '../contracts/examples/Mars.sol';
-import '../contracts/core/OpConsensusStateManager.sol';
+import '../contracts/core/OpLightClient.sol';
 import './Dispatcher.base.t.sol';
 
 contract ClientTestBase is Base {
     function setUp() public virtual override {
         super.setUp();
-        dispatcher = new Dispatcher(portPrefix, opConsensusStateManager);
+        dispatcher = new Dispatcher(portPrefix, opLightClient);
     }
 }
 

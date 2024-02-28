@@ -6,7 +6,7 @@ import {Dispatcher} from '../contracts/core/Dispatcher.sol';
 import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
 import {IbcReceiver} from '../contracts/interfaces/IbcReceiver.sol';
 import '../contracts/examples/Mars.sol';
-import '../contracts/core/OpConsensusStateManager.sol';
+import '../contracts/core/OpLightClient.sol';
 import './Dispatcher.base.t.sol';
 
 contract ChannelHandshakeTest is Base {

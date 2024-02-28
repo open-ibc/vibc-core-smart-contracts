@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {Ics23Proof, L1Header, OpL2StateProof} from './ProofVerifier.sol';
+import {Ics23Proof, L1Header, OpL2StateProof} from "./ProofVerifier.sol";
 
-interface ConsensusStateManager {
+interface LightClient {
     /**
      * addOpConsensusState adds an appHash to internal store and
      * returns the fraud proof end time, and a bool flag indicating if
