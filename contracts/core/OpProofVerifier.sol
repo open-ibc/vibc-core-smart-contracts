@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 import {SecureMerkleTrie} from 'optimism/libraries/trie/SecureMerkleTrie.sol';
 import {RLPReader} from 'optimism/libraries/rlp/RLPReader.sol';
 import {RLPWriter} from 'optimism/libraries/rlp/RLPWriter.sol';
-
-import '../interfaces/ProofVerifier.sol';
+import {ProofVerifier, L1Header, OpL2StateProof, Ics23Proof, OpIcs23Proof} from '../interfaces/ProofVerifier.sol';
 
 contract OpProofVerifier is ProofVerifier {
     using RLPReader for RLPReader.RLPItem;

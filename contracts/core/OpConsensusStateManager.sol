@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import '../libs/Ibc.sol';
-import '../interfaces/ConsensusStateManager.sol';
-
+import {L1Header, ProofVerifier, OpL2StateProof, Ics23Proof} from '../interfaces/ProofVerifier.sol';
+import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
 import {L1Block} from 'optimism/L2/L1Block.sol';
 
 // OptimisticConsensusStateManager manages the appHash at different

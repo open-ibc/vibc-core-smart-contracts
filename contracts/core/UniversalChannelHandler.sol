@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '../interfaces/IbcDispatcher.sol';
-import '../interfaces/IbcMiddleware.sol';
-import {IbcReceiver} from '../interfaces/IbcReceiver.sol';
-import '../libs/Ibc.sol';
+import {Ownable} from '@openzeppelin/contracts/access/Ownable.sol';
+import {IbcDispatcher} from '../interfaces/IbcDispatcher.sol';
+import {IbcMiddleware, IbcUniversalChannelMW, IbcUniversalPacketReceiver, IbcMwPacketReceiver , IbcMwEventsEmitter} from  '../interfaces/IbcMiddleware.sol';
+import {IbcReceiver, IbcReceiverBase} from '../interfaces/IbcReceiver.sol';
+import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}

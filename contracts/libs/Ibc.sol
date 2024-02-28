@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-import 'proto/channel.sol';
-import 'base64/base64.sol';
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
+import {Base64} from "base64/base64.sol";
 
 /**
  * Ibc.sol
@@ -131,36 +131,38 @@ struct Proof {
 }
 
 // misc errors.
-error invalidCounterParty();
-error invalidCounterPartyPortId();
-error invalidHexStringLength();
-error invalidRelayerAddress();
-error consensusStateVerificationFailed();
-error packetNotTimedOut();
-error invalidAddress();
+library IBCErrors {
+    error invalidCounterParty();
+    error invalidCounterPartyPortId();
+    error invalidHexStringLength();
+    error invalidRelayerAddress();
+    error consensusStateVerificationFailed();
+    error packetNotTimedOut();
+    error invalidAddress();
 
-// packet sequence related errors.
-error invalidPacketSequence();
-error unexpectedPacketSequence();
+    // packet sequence related errors.
+    error invalidPacketSequence();
+    error unexpectedPacketSequence();
 
-// channel related errors.
-error channelNotOwnedBySender();
-error channelNotOwnedByPortAddress();
+    // channel related errors.
+    error channelNotOwnedBySender();
+    error channelNotOwnedByPortAddress();
 
-// client related errors.
-error clientAlreadyCreated();
-error clientNotCreated();
+    // client related errors.
+    error clientAlreadyCreated();
+    error clientNotCreated();
 
-// packet commitment related errors.
-error packetCommitmentNotFound();
-error ackPacketCommitmentAlreadyExists();
-error packetReceiptAlreadyExists();
+    // packet commitment related errors.
+    error packetCommitmentNotFound();
+    error ackPacketCommitmentAlreadyExists();
+    error packetReceiptAlreadyExists();
 
-// receiver related errors.
-error receiverNotIndtendedPacketDestination();
-error receiverNotOriginPacketSender();
+    // receiver related errors.
+    error receiverNotIndtendedPacketDestination();
+    error receiverNotOriginPacketSender();
 
-error invalidChannelType(string channelType);
+    error invalidChannelType(string channelType);
+}
 
 // define a library of Ibc utility functions
 library IbcUtils {
@@ -201,7 +203,7 @@ library IbcUtils {
 
     function toBytes32(string memory s) internal pure returns (bytes32 result) {
         bytes memory b = bytes(s);
-        require(b.length <= 32, 'String too long');
+        require(b.length <= 32, "String too long");
 
         assembly {
             result := mload(add(b, 32))
@@ -224,7 +226,7 @@ contract Ibc {
 
     function toStr(uint256 _number) public pure returns (string memory) {
         if (_number == 0) {
-            return '0';
+            return "0";
         }
 
         uint256 length;
@@ -249,7 +251,7 @@ contract Ibc {
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
     function channelProofKey(string calldata portId, bytes32 channelId) public pure returns (bytes memory) {
-        return abi.encodePacked('channelEnds/ports/', portId, '/channels/', toStr(channelId));
+        return abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
     }
 
     // protobuf encoding of a channel object
@@ -261,55 +263,51 @@ contract Ibc {
         string[] calldata connectionHops,
         CounterParty calldata counterparty
     ) public pure returns (bytes memory) {
-        return
-            ProtoChannel.encode(
-                ProtoChannel.Data(
-                    int32(uint32(state)),
-                    int32(uint32(ordering)),
-                    ProtoCounterparty.Data(counterparty.portId, toStr(counterparty.channelId)),
-                    connectionHops,
-                    version
-                )
-            );
+        return ProtoChannel.encode(
+            ProtoChannel.Data(
+                int32(uint32(state)),
+                int32(uint32(ordering)),
+                ProtoCounterparty.Data(counterparty.portId, toStr(counterparty.channelId)),
+                connectionHops,
+                version
+            )
+        );
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
     function packetCommitmentProofKey(IbcPacket calldata packet) public pure returns (bytes memory) {
-        return
-            abi.encodePacked(
-                'commitments/ports/',
-                packet.src.portId,
-                '/channels/',
-                toStr(packet.src.channelId),
-                '/sequences/',
-                toStr(packet.sequence)
-            );
+        return abi.encodePacked(
+            "commitments/ports/",
+            packet.src.portId,
+            "/channels/",
+            toStr(packet.src.channelId),
+            "/sequences/",
+            toStr(packet.sequence)
+        );
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
     function packetCommitmentProofValue(IbcPacket calldata packet) public pure returns (bytes32) {
-        return
-            sha256(
-                abi.encodePacked(
-                    packet.timeoutTimestamp,
-                    packet.timeoutHeight.revision_number,
-                    packet.timeoutHeight.revision_height,
-                    sha256(packet.data)
-                )
-            );
+        return sha256(
+            abi.encodePacked(
+                packet.timeoutTimestamp,
+                packet.timeoutHeight.revision_number,
+                packet.timeoutHeight.revision_height,
+                sha256(packet.data)
+            )
+        );
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
     function ackProofKey(IbcPacket calldata packet) public pure returns (bytes memory) {
-        return
-            abi.encodePacked(
-                'acks/ports/',
-                packet.dest.portId,
-                '/channels/',
-                toStr(packet.dest.channelId),
-                '/sequences/',
-                toStr(packet.sequence)
-            );
+        return abi.encodePacked(
+            "acks/ports/",
+            packet.dest.portId,
+            "/channels/",
+            toStr(packet.dest.channelId),
+            "/sequences/",
+            toStr(packet.sequence)
+        );
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
@@ -319,9 +317,9 @@ contract Ibc {
 
     function parseAckData(bytes calldata ack) public pure returns (AckPacket memory) {
         return
-            // this hex value is '"result"'
-            (keccak256(ack[1:9]) == keccak256(hex'22726573756c7422'))
-                ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
-                : AckPacket(false, ack[10:ack.length - 2]); // this is an error
+        // this hex value is '"result"'
+        (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
+            ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
+            : AckPacket(false, ack[10:ack.length - 2]); // this is an error
     }
 }

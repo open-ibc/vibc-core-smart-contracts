@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import '../libs/Ibc.sol';
-import './ProofVerifier.sol';
+import {Ics23Proof, L1Header, OpL2StateProof} from './ProofVerifier.sol';
 
 interface ConsensusStateManager {
     /**

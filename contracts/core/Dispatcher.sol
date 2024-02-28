@@ -2,11 +2,15 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '../interfaces/IbcDispatcher.sol';
-import {IbcChannelReceiver, IbcPacketReceiver} from '../interfaces/IbcReceiver.sol';
-import '../interfaces/ConsensusStateManager.sol';
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IbcDispatcher, IbcEventsEmitter} from "../interfaces/IbcDispatcher.sol";
+import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
+import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
+import {
+    Channel, CounterParty, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc
+} from "../libs/Ibc.sol";
 
 /**
  * @title Dispatcher
@@ -59,7 +63,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
      */
     function hexStrToAddress(string memory hexStr) internal pure returns (address) {
         if (bytes(hexStr).length != 40) {
-            revert invalidHexStringLength();
+            revert IBCErrors.invalidHexStringLength();
         }
 
         bytes memory strBytes = bytes(hexStr);
@@ -119,9 +123,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(
-        uint256 height
-    ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getOptimisticConsensusState(uint256 height)
+        external
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
         return consensusStateManager.getState(height);
     }
 
@@ -152,7 +158,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             // this is the ChanOpenTry; counterparty must not be zero-value
             return true;
         } else {
-            revert invalidCounterParty();
+            revert IBCErrors.invalidCounterParty();
         }
     }
 
@@ -173,7 +179,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         Ics23Proof calldata proof
     ) external {
         if (bytes(counterparty.portId).length == 0) {
-            revert invalidCounterPartyPortId();
+            revert IBCErrors.invalidCounterPartyPortId();
         }
 
         if (isChannelOpenTry(counterparty)) {
@@ -184,13 +190,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             );
         }
 
-        string memory selectedVersion = portAddress.onOpenIbcChannel(
-            local.version,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty
-        );
+        string memory selectedVersion =
+            portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty);
 
         emit OpenIbcChannel(
             address(portAddress),
@@ -283,7 +284,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function closeIbcChannel(bytes32 channelId) external {
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
-            revert channelNotOwnedBySender();
+            revert IBCErrors.channelNotOwnedBySender();
         }
 
         IbcChannelReceiver reciever = IbcChannelReceiver(msg.sender);
@@ -334,7 +335,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // ensure port owns channel
         Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
-            revert channelNotOwnedBySender();
+            revert IBCErrors.channelNotOwnedBySender();
         }
 
         _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
@@ -345,7 +346,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // current packet sequence
         uint64 sequence = nextSequenceSend[sender][channelId];
         if (sequence == 0) {
-            revert invalidPacketSequence();
+            revert IBCErrors.invalidPacketSequence();
         }
 
         // packet commitment
@@ -375,7 +376,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     ) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert receiverNotOriginPacketSender();
+            revert IBCErrors.receiverNotOriginPacketSender();
         }
 
         // prove ack packet is on Polymer chain
@@ -383,7 +384,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
-            revert packetCommitmentNotFound();
+            revert IBCErrors.packetCommitmentNotFound();
         }
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
@@ -391,7 +392,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         if (channel.ordering == ChannelOrder.ORDERED) {
             if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
-                revert unexpectedPacketSequence();
+                revert IBCErrors.unexpectedPacketSequence();
             }
 
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
@@ -417,17 +418,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIndtendedPacketDestination();
         }
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path');
+        consensusStateManager.verifyNonMembership(proof, "packet/receipt/path");
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
-            revert packetCommitmentNotFound();
+            revert IBCErrors.packetCommitmentNotFound();
         }
 
         receiver.onTimeoutPacket(packet);
@@ -452,18 +453,16 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
-            revert receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIndtendedPacketDestination();
         }
         consensusStateManager.verifyMembership(
-            proof,
-            packetCommitmentProofKey(packet),
-            abi.encode(packetCommitmentProofValue(packet))
+            proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
         bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
-            revert packetReceiptAlreadyExists();
+            revert IBCErrors.packetReceiptAlreadyExists();
         }
 
         recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
@@ -472,7 +471,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
             if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
-                revert unexpectedPacketSequence();
+                revert IBCErrors.unexpectedPacketSequence();
             }
 
             nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
@@ -485,11 +484,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
-                writerPortAddress,
-                packet.dest.channelId,
-                packet.sequence,
-                packet.timeoutHeight,
-                packet.timeoutTimestamp
+                writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
             );
             return;
         }
@@ -500,7 +495,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
-            revert ackPacketCommitmentAlreadyExists();
+            revert IBCErrors.ackPacketCommitmentAlreadyExists();
         }
 
         ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
@@ -520,9 +515,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
     // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
     function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
-        return ((packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp) ||
+        return (
+            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
             // TODO: check timeoutHeight.revision_number?
-            (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height));
+            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+        );
     }
 
     // TODO: remove below writeTimeoutPacket() function
@@ -536,26 +533,22 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(receiver, packet.src.portId)) {
-            revert receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIndtendedPacketDestination();
         }
 
         // verify packet does not have a receipt
         bool hasReceipt = recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
-            revert packetReceiptAlreadyExists();
+            revert IBCErrors.packetReceiptAlreadyExists();
         }
 
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
         if (!isPacketTimeout(packet)) {
-            revert packetNotTimedOut();
+            revert IBCErrors.packetNotTimedOut();
         }
 
         emit WriteTimeoutPacket(
-            receiver,
-            packet.dest.channelId,
-            packet.sequence,
-            packet.timeoutHeight,
-            packet.timeoutTimestamp
+            receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
         );
     }
 }
