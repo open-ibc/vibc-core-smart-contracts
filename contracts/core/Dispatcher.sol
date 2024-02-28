@@ -146,27 +146,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         );
     }
 
-    function verifyConnectIbcChannelProof(
-        CounterParty calldata local,
-        string[] calldata connectionHops,
-        ChannelOrder ordering,
-        bool isChanConfirm,
-        CounterParty calldata counterparty,
-        Ics23Proof calldata proof
-    ) internal {
-        consensusStateManager.verifyMembership(
-            proof,
-            channelProofKey(local.portId, local.channelId),
-            channelProofValue(
-                isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
-                ordering,
-                local.version,
-                connectionHops,
-                counterparty
-            )
-        );
-    }
-
     /**
      * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the onOpenIbcChannel event.
      * The dApp should implement the onConnectIbcChannel method to handle the last two channel handshake methods, ie.
@@ -182,7 +161,18 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
+        consensusStateManager.verifyMembership(
+            proof,
+            channelProofKey(local.portId, local.channelId),
+            channelProofValue(
+                isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
+                ordering,
+                local.version,
+                connectionHops,
+                counterparty
+            )
+        );
+        // verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
 
         portAddress.onConnectIbcChannel(local.channelId, counterparty.channelId, counterparty.version);
 
@@ -280,23 +270,20 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.channelNotOwnedBySender();
         }
 
-        _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
-    }
+        // Execute on sending packet
 
-    // Prerequisite: must verify sender is authorized to send packet on the channel
-    function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
-        uint64 sequence = nextSequenceSend[sender][channelId];
+        uint64 sequence = nextSequenceSend[msg.sender][channelId];
         if (sequence == 0) {
             revert IBCErrors.invalidPacketSequence();
         }
 
         // packet commitment
-        sendPacketCommitment[sender][channelId][sequence] = true;
+        sendPacketCommitment[msg.sender][channelId][sequence] = true;
         // increment nextSendPacketSequence
-        nextSequenceSend[sender][channelId] = sequence + 1;
+        nextSequenceSend[msg.sender][channelId] = sequence + 1;
 
-        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
+        emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
     /**
@@ -423,7 +410,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
 
         // If pkt is already timed out, then return early so dApps won't receive it.
-        if (isPacketTimeout(packet)) {
+        if (isPacketTimeout(packet.timeoutTimestamp, packet.timeoutHeight.revision_number)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
                 writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
@@ -447,7 +434,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
     // TODO: add async writeAckPacket
     // this can be invoked sync or async by the IBC-dApp
-    function writeAckPacket(IbcPacket calldata packet, AckPacket calldata ackPacket) external view {
+    function writeAckPacket(IbcPacket calldata packet) external view {
         // verify `receiver` is the original packet sender
         require(
             portIdAddressMatch(address(msg.sender), packet.src.portId), "Receiver is not the original packet sender"
@@ -455,11 +442,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     }
 
     // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
-    function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
+    function isPacketTimeout(uint64 timeoutTimestamp, uint64 revision_height) internal view returns (bool) {
         return (
-            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
+            (timeoutTimestamp != 0 && block.timestamp >= timeoutTimestamp)
             // TODO: check timeoutHeight.revision_number?
-            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+            || (revision_height != 0 && block.number >= revision_height)
         );
     }
 
@@ -484,7 +471,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        if (!isPacketTimeout(packet)) {
+        if (!isPacketTimeout(packet.timeoutTimestamp, packet.timeoutHeight.revision_number)) {
             revert IBCErrors.packetNotTimedOut();
         }
 
