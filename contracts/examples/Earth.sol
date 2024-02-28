@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.15;
 
 import {IbcUtils, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
 import {IbcMwUser, IbcUniversalPacketReceiver, IbcUniversalPacketSender} from "../interfaces/IbcMiddleware.sol";
