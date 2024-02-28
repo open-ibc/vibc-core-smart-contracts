@@ -9,7 +9,15 @@ import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.s
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
 import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
 import {
-    Channel, CounterParty, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc
+    Channel,
+    CounterParty,
+    ChannelOrder,
+    IbcPacket,
+    ChannelState,
+    AckPacket,
+    IBCErrors,
+    IbcUtils,
+    Ibc
 } from "../libs/Ibc.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -48,6 +56,20 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     //
+    // Utility functions
+    //
+
+    // verify an EVM address matches an IBC portId.
+    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
+    function portIdAddressMatch(address addr, string calldata portId) public view returns (bool) {
+        if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
+            return false;
+        }
+        string memory portSuffix = portId[portPrefixLen:];
+        return IbcUtils.hexStrToAddress(portSuffix) == addr;
+    }
+
+    //
     // CoreSC maaintainer methods, only invoked by the owner
     //
     function setPortPrefix(string calldata _portPrefix) external onlyOwner {
@@ -67,6 +89,19 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     ) external returns (uint256 fraudProofEndTime, bool ended) {
         return consensusStateManager.addOpConsensusState(l1header, proof, height, appHash);
     }
+
+    // getOptimisticConsensusState
+    function getOptimisticConsensusState(uint256 height)
+        external
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
+        return consensusStateManager.getState(height);
+    }
+
+    //
+    // IBC Channel methods
+    //
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
