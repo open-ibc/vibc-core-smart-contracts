@@ -5,7 +5,7 @@ import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
@@ -14,7 +14,7 @@ using stdStorage for StdStorage;
 contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     Mars mars;
     Dispatcher dispatcher;
-    OptimisticConsensusStateManager consensusStateManager;
+    OptimisticLightClient consensusStateManager;
 
     CounterParty ch0 =
         CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
@@ -25,7 +25,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
 
     function setUp() public override {
         super.setUp();
-        consensusStateManager = new OptimisticConsensusStateManager(1, opProofVerifier, l1BlockProvider);
+        consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         dispatcher = new Dispatcher("polyibc.eth1.", consensusStateManager);
         mars = new Mars(dispatcher);
     }

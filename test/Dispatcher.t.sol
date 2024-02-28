@@ -4,9 +4,10 @@ pragma solidity ^0.8.13;
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcReceiver, IbcReceiverBase} from "../contracts/interfaces/IbcReceiver.sol";
+import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
+import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
 import "../contracts/examples/Mars.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
@@ -106,8 +107,7 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
-
-                vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
+                vm.expectRevert(DummyLightClient.InvalidDummyMembershipProof.selector);
                 channelOpenTry(le, re, settings[i], false);
             }
         }
@@ -148,8 +148,7 @@ contract ChannelHandshakeTest is Base {
                 channelOpenTry(le, re, settings[i], true);
                 re.version = versions[j];
                 settings[i].proof = invalidProof;
-
-                vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
+                vm.expectRevert(DummyLightClient.InvalidDummyMembershipProof.selector);
                 channelOpenAck(le, re, settings[i], false);
             }
         }
@@ -519,7 +518,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
     // cannot timeout packets if proof from Polymer is invalid
     function test_invalidProof() public {
         sendPacket();
-        vm.expectRevert(DummyConsensusStateManager.InvalidDummyNonMembershipProof.selector);
+        vm.expectRevert(DummyLightClient.InvalidDummyNonMembershipProof.selector);
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }
