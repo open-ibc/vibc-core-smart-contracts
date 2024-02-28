@@ -9,7 +9,15 @@ import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.s
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
 import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
 import {
-    Channel, CounterParty, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc
+    Channel,
+    CounterParty,
+    ChannelOrder,
+    IbcPacket,
+    ChannelState,
+    AckPacket,
+    IBCErrors,
+    IbcUtils,
+    Ibc
 } from "../libs/Ibc.sol";
 
 /**
@@ -25,7 +33,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     //
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string public portPrefix;
-    uint32 portPrefixLen;
+    uint32 portPrefixLen; // TO DO: Will need to change this to reflect dispatchers having multiple clients
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
     mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
@@ -56,41 +64,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     // Utility functions
     //
 
-    /**
-     * Convert a non-0x-prefixed hex string to an address
-     * @param hexStr hex string to convert to address. Note that the hex string must not include a 0x prefix.
-     * hexStr is case-insensitive.
-     */
-    function hexStrToAddress(string memory hexStr) internal pure returns (address) {
-        if (bytes(hexStr).length != 40) {
-            revert IBCErrors.invalidHexStringLength();
-        }
-
-        bytes memory strBytes = bytes(hexStr);
-        bytes memory addrBytes = new bytes(20);
-
-        for (uint256 i = 0; i < 20; i++) {
-            uint8 high = uint8(strBytes[i * 2]);
-            uint8 low = uint8(strBytes[1 + i * 2]);
-            // Convert to lowercase if the character is in uppercase
-            if (high >= 65 && high <= 90) {
-                high += 32;
-            }
-            if (low >= 65 && low <= 90) {
-                low += 32;
-            }
-            uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
-            addrBytes[i] = bytes1(digit);
-        }
-
-        address addr;
-        assembly {
-            addr := mload(add(addrBytes, 20))
-        }
-
-        return addr;
-    }
-
     // verify an EVM address matches an IBC portId.
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
     function portIdAddressMatch(address addr, string calldata portId) public view returns (bool) {
@@ -98,7 +71,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             return false;
         }
         string memory portSuffix = portId[portPrefixLen:];
-        return hexStrToAddress(portSuffix) == addr;
+        return IbcUtils.hexStrToAddress(portSuffix) == addr;
     }
 
     //
@@ -132,35 +105,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     }
 
     //
-    // Utility functions
-    //
-
-    // return the concatenation of two strings in bytes
-    function concatStrings(string memory str1, string memory str2) internal pure returns (bytes memory) {
-        return abi.encodePacked(str1, str2);
-    }
-
-    function max(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a > b ? a : b;
-    }
-
-    //
     // IBC Channel methods
     //
-
-    // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
-    // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function isChannelOpenTry(CounterParty calldata counterparty) internal pure returns (bool) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
-            return false;
-            // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
-            // this is the ChanOpenTry; counterparty must not be zero-value
-            return true;
-        } else {
-            revert IBCErrors.invalidCounterParty();
-        }
-    }
 
     /**
      * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcChannelHandler.
@@ -182,7 +128,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        if (isChannelOpenTry(counterparty)) {
+        if (IbcUtils.isChannelOpenTry(counterparty)) {
             consensusStateManager.verifyMembership(
                 proof,
                 channelProofKey(local.portId, local.channelId),
