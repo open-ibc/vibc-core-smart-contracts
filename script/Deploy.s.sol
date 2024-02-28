@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "../contracts/utils/DummyProofVerifier.sol";
-import "../contracts/utils/DummyConsensusStateManager.sol";
+import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/Dispatcher.sol";
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpProofVerifier.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
 import "../contracts/core/UniversalChannelHandler.sol";
 import "../contracts/examples/Earth.sol";
 
@@ -31,7 +31,7 @@ contract Deploy is Script {
 
         console.log("Deploying dummy contracts to %s...", chain);
 
-        address stateManager = deployDummyConsensusStateManager();
+        address stateManager = deployDummyLightClient();
         address dispatcher = deployDispatcher(portPrefix, stateManager);
         deployMars(dispatcher);
 
@@ -44,7 +44,7 @@ contract Deploy is Script {
 
         address l1BlockProvider = vm.envOr("L1_BLOCK_PROVIDER", 0x4200000000000000000000000000000000000015);
         uint32 fraudProofWindowSecs = 0;
-        address opStateManager = deployOpConsensusStateManager(fraudProofWindowSecs, proofVerifierAddr, l1BlockProvider);
+        address opStateManager = deployOpLightClient(fraudProofWindowSecs, proofVerifierAddr, l1BlockProvider);
 
         dispatcher = deployDispatcher(portPrefix, opStateManager);
         deployMars(dispatcher);
@@ -53,9 +53,9 @@ contract Deploy is Script {
         deployEarth(universalChannelHandler);
     }
 
-    function deployDummyConsensusStateManager() public broadcast returns (address addr_) {
-        DummyConsensusStateManager manager = new DummyConsensusStateManager{salt: _implSalt()}();
-        console.log("DummyConsensusStateManager deployed at %s", address(manager));
+    function deployDummyLightClient() public broadcast returns (address addr_) {
+        DummyLightClient manager = new DummyLightClient{salt: _implSalt()}();
+        console.log("DummyLightClient deployed at %s", address(manager));
         return address(manager);
     }
 
@@ -64,7 +64,7 @@ contract Deploy is Script {
         broadcast
         returns (address addr_)
     {
-        Dispatcher dispatcher = new Dispatcher{salt: _implSalt()}(portPrefix, DummyConsensusStateManager(stateManager_));
+        Dispatcher dispatcher = new Dispatcher{salt: _implSalt()}(portPrefix, DummyLightClient(stateManager_));
         console.log("Dispatcher deployed at %s", address(dispatcher));
         return address(dispatcher);
     }
@@ -81,15 +81,15 @@ contract Deploy is Script {
         return address(verifier);
     }
 
-    function deployOpConsensusStateManager(
-        uint32 fraudProofWindowSecs,
-        address proofVerifierAddr,
-        address l1BlockProvider
-    ) public broadcast returns (address addr_) {
-        OptimisticConsensusStateManager manager = new OptimisticConsensusStateManager{salt: _implSalt()}(
+    function deployOpLightClient(uint32 fraudProofWindowSecs, address proofVerifierAddr, address l1BlockProvider)
+        public
+        broadcast
+        returns (address addr_)
+    {
+        OptimisticLightClient manager = new OptimisticLightClient{salt: _implSalt()}(
             fraudProofWindowSecs, ProofVerifier(proofVerifierAddr), L1Block(l1BlockProvider)
         );
-        console.log("OptimisticConsensusStateManager deployed at %s", address(manager));
+        console.log("OptimisticLightClient deployed at %s", address(manager));
         return address(manager);
     }
 

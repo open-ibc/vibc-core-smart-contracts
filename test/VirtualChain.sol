@@ -11,7 +11,7 @@ import {Mars} from "../contracts/examples/Mars.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
-import "../contracts/utils/DummyConsensusStateManager.sol";
+import "../contracts/utils/DummyLightClient.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;
@@ -54,7 +54,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     // ChannelIds are not initialized until channel handshake is started
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
-        dispatcher = new Dispatcher(portPrefix, new DummyConsensusStateManager());
+        dispatcher = new Dispatcher(portPrefix, new DummyLightClient());
         ucHandler = new UniversalChannelHandler(dispatcher);
 
         mars = new Mars(dispatcher);

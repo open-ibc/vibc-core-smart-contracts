@@ -7,7 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../interfaces/IbcDispatcher.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
-import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
+import {LightClient} from "../interfaces/LightClient.sol";
 import {
     Channel,
     CounterParty,
@@ -47,26 +47,15 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public ackPacketCommitment;
 
-    ConsensusStateManager public consensusStateManager;
+    LightClient lightClient;
 
-    constructor(string memory initPortPrefix, ConsensusStateManager _consensusStateManager) {
+    //
+    // methods
+    //
+    constructor(string memory initPortPrefix, LightClient _lightClient) {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        consensusStateManager = _consensusStateManager;
-    }
-
-    //
-    // Utility functions
-    //
-
-    // verify an EVM address matches an IBC portId.
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
-    function portIdAddressMatch(address addr, string calldata portId) public view returns (bool) {
-        if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
-            return false;
-        }
-        string memory portSuffix = portId[portPrefixLen:];
-        return IbcUtils.hexStrToAddress(portSuffix) == addr;
+        lightClient = _lightClient;
     }
 
     //
@@ -87,21 +76,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         uint256 height,
         uint256 appHash
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        return consensusStateManager.addOpConsensusState(l1header, proof, height, appHash);
+        return lightClient.addOpConsensusState(l1header, proof, height, appHash);
     }
-
-    // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height)
-        external
-        view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
-    {
-        return consensusStateManager.getState(height);
-    }
-
-    //
-    // IBC Channel methods
-    //
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
@@ -151,7 +127,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        consensusStateManager.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -189,7 +165,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        consensusStateManager.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -222,7 +198,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        consensusStateManager.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -276,7 +252,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // FIXME this is commented out to make the contract size smaller. We need to optimise for size
     // function onCloseIbcChannel(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
     //     // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-    //     consensusStateManager.verifyMembership(
+    //     lightClient.verifyMembership(
     //         proof,
     //         bytes('channel/path/to/be/added/here'),
     //         bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
@@ -343,7 +319,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // prove ack packet is on Polymer chain
-        consensusStateManager.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
+        lightClient.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -392,7 +368,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        consensusStateManager.verifyNonMembership(proof, "packet/receipt/path");
+        lightClient.verifyNonMembership(proof, "packet/receipt/path");
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -428,8 +404,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
         }
-        consensusStateManager.verifyMembership(
-            proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
+        lightClient.verifyMembership(
+            proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
@@ -543,7 +519,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
-        return consensusStateManager.getState(height);
+        return lightClient.getState(height);
     }
 
     // verify an EVM address matches an IBC portId.
