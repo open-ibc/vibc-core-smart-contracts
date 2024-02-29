@@ -68,7 +68,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
             ucPacket.destPortAddr,
             MW_ID,
             ucPacket.appData,
-            abi.encodePacked(MW_ID)
+            bytes.concat(bytes32(MW_ID))
         );
 
         if (mwIndex == mwAddrs.length - 1) {
@@ -104,7 +104,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
             ucPacket.destPortAddr,
             MW_ID,
             ucPacket.appData,
-            abi.encodePacked(MW_ID),
+            bytes.concat(bytes32(MW_ID)),
             ack
         );
 
@@ -136,7 +136,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
             ucPacket.destPortAddr,
             MW_ID,
             ucPacket.appData,
-            abi.encodePacked(MW_ID)
+            bytes.concat(bytes32(MW_ID))
         );
 
         if (mwIndex == mwAddrs.length - 1) {
@@ -184,7 +184,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
             MW_ID,
             appData,
             timeoutTimestamp,
-            abi.encodePacked(MW_ID)
+            bytes.concat(bytes32(MW_ID))
         );
 
         // send packet to next MW

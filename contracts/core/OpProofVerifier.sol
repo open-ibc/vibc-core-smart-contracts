@@ -18,7 +18,7 @@ contract OpProofVerifier is ProofVerifier {
     uint internal constant L1_NUMBER_INDEX = 8;
 
     // @notice known L2 Output Oracle contract address to verify state update proofs against
-    address l2OutputOracleAddress;
+    address immutable l2OutputOracleAddress;
 
     constructor(address _l2OutputOracleAddress) {
         l2OutputOracleAddress = _l2OutputOracleAddress;

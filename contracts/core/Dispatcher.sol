@@ -8,6 +8,18 @@ import '../interfaces/IbcDispatcher.sol';
 import {IbcChannelReceiver, IbcPacketReceiver} from '../interfaces/IbcReceiver.sol';
 import '../interfaces/ConsensusStateManager.sol';
 
+struct PackedNextSequence {
+    uint64 send;
+    uint64 recv;
+    uint64 ack;
+}
+
+struct PackedCommits {
+    bool sendPacked;
+    bool recvPacked;
+    bool ackPacked;
+}
+
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -24,25 +36,19 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     uint32 portPrefixLen;
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceRecv;
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceAck;
+    mapping(address => mapping(bytes32 => PackedNextSequence)) nextSequence;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
-    // Keep track of sent packets
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public sendPacketCommitment;
-    // keep track of received packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) recvPacketReceipt;
-    // keep track of outbound ack packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
+    // keep track of packets to prevent replay attack
+    mapping(address => mapping(bytes32 => mapping(uint64 => PackedCommits))) public packetCommitment;
 
     ConsensusStateManager consensusStateManager;
 
     //
     // methods
     //
-    constructor(string memory initPortPrefix, ConsensusStateManager _consensusStateManager) {
+    constructor(string memory initPortPrefix, ConsensusStateManager _consensusStateManager) payable {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
         consensusStateManager = _consensusStateManager;
@@ -65,18 +71,27 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         bytes memory strBytes = bytes(hexStr);
         bytes memory addrBytes = new bytes(20);
 
-        for (uint256 i = 0; i < 20; i++) {
-            uint8 high = uint8(strBytes[i * 2]);
-            uint8 low = uint8(strBytes[1 + i * 2]);
-            // Convert to lowercase if the character is in uppercase
-            if (high >= 65 && high <= 90) {
-                high += 32;
+
+        for (uint256 i = 0; i < 20;) {
+            uint8 high; uint8 low;
+            unchecked {
+                high = uint8(strBytes[i * 2]); // unchecked: i is bound by 20 => 20*2 = 40.
+                low = uint8(strBytes[1 + i * 2]); // unchecked: i is bound by 20 => 20*2 + 1 = 41.
+                // Convert to lowercase if the character is in uppercase
+                if (high >= 65 && high <= 90) {
+                    high += 32; // unchecked: high is bound by 90 => max 122
+                }
+                if (low >= 65 && low <= 90) {
+                    low += 32; // unchecked: low is bound by 90 => max 122
+                }
             }
-            if (low >= 65 && low <= 90) {
-                low += 32;
-            }
+
             uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
             addrBytes[i] = bytes1(digit);
+
+            unchecked {
+                ++i;
+            }
         }
 
         address addr;
@@ -145,15 +160,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
     // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
     function isChannelOpenTry(CounterParty calldata counterparty) internal pure returns (bool) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
+        bytes32 counterPartyChannelId = counterparty.channelId;
+        uint256 counterPartyVersionLength = bytes(counterparty.version).length;
+        if (counterPartyChannelId == bytes32(0) && counterPartyVersionLength == 0) {
             return false;
             // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
+        }
+        if (counterPartyChannelId != bytes32(0) && counterPartyVersionLength != 0) {
             // this is the ChanOpenTry; counterparty must not be zero-value
             return true;
-        } else {
-            revert invalidCounterParty();
         }
+        revert invalidCounterParty();
     }
 
     /**
@@ -256,10 +273,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             counterparty.channelId
         );
 
+        PackedNextSequence storage _nextSequence = nextSequence[address(portAddress)][local.channelId];
+
         // initialize channel sequences
-        nextSequenceSend[address(portAddress)][local.channelId] = 1;
-        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
-        nextSequenceAck[address(portAddress)][local.channelId] = 1;
+        _nextSequence.send = 1;
+        _nextSequence.recv = 1;
+        _nextSequence.ack = 1;
 
         emit ConnectIbcChannel(address(portAddress), local.channelId);
     }
@@ -343,15 +362,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     // Prerequisite: must verify sender is authorized to send packet on the channel
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
-        uint64 sequence = nextSequenceSend[sender][channelId];
+        uint64 sequence = nextSequence[sender][channelId].send;
         if (sequence == 0) {
             revert invalidPacketSequence();
         }
 
         // packet commitment
-        sendPacketCommitment[sender][channelId][sequence] = true;
+        packetCommitment[sender][channelId][sequence].sendPacked = true;
         // increment nextSendPacketSequence
-        nextSequenceSend[sender][channelId] = sequence + 1;
+        unchecked {
+            nextSequence[sender][channelId].send = sequence + 1;
+        }
 
         emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
@@ -381,7 +402,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // prove ack packet is on Polymer chain
         consensusStateManager.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = packetCommitment[address(receiver)][packet.src.channelId][packet.sequence].sendPacked;
         if (!hasCommitment) {
             revert packetCommitmentNotFound();
         }
@@ -390,17 +411,19 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
 
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
+            if (packet.sequence != nextSequence[address(receiver)][packet.src.channelId].ack) {
                 revert unexpectedPacketSequence();
             }
 
-            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+            unchecked {
+                nextSequence[address(receiver)][packet.src.channelId].ack = packet.sequence + 1;
+            }
         }
 
         receiver.onAcknowledgementPacket(packet, parseAckData(ack));
 
         // delete packet commitment to avoid double ack
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        delete packetCommitment[address(receiver)][packet.src.channelId][packet.sequence].sendPacked;
 
         emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
     }
@@ -425,7 +448,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path');
 
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = packetCommitment[address(receiver)][packet.src.channelId][packet.sequence].sendPacked;
         if (!hasCommitment) {
             revert packetCommitmentNotFound();
         }
@@ -433,7 +456,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         receiver.onTimeoutPacket(packet);
 
         // delete packet commitment to avoid double timeout
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        delete packetCommitment[address(receiver)][packet.src.channelId][packet.sequence].sendPacked;
 
         emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
     }
@@ -457,25 +480,27 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             packetCommitmentProofKey(packet),
-            abi.encode(packetCommitmentProofValue(packet))
+            bytes.concat(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
-        bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = packetCommitment[address(receiver)][packet.dest.channelId][packet.sequence].recvPacked;
         if (hasReceipt) {
             revert packetReceiptAlreadyExists();
         }
 
-        recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        packetCommitment[address(receiver)][packet.dest.channelId][packet.sequence].recvPacked = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+            if (packet.sequence != nextSequence[address(receiver)][packet.dest.channelId].recv) {
                 revert unexpectedPacketSequence();
             }
 
-            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            unchecked {
+                nextSequence[address(receiver)][packet.dest.channelId].recv = packet.sequence + 1;
+            }
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
@@ -497,13 +522,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
         AckPacket memory ack = receiver.onRecvPacket(pkt);
-        bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasAckPacketCommitment = packetCommitment[address(receiver)][packet.dest.channelId][packet.sequence].ackPacked;
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
             revert ackPacketCommitmentAlreadyExists();
         }
 
-        ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        packetCommitment[address(receiver)][packet.dest.channelId][packet.sequence].ackPacked = true;
 
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
@@ -540,7 +565,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         // verify packet does not have a receipt
-        bool hasReceipt = recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = packetCommitment[receiver][packet.dest.channelId][packet.sequence].recvPacked;
         if (hasReceipt) {
             revert packetReceiptAlreadyExists();
         }
