@@ -35,6 +35,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     string public portPrefix;
     uint32 portPrefixLen; // TO DO: Will need to change this to reflect dispatchers having multiple clients
 
+    mapping(string => uint256) public connectionIdToClientId;
+    mapping(uint256 => LightClient) public clientIdToLightClient;
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
     mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
@@ -49,15 +51,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
 
-    LightClient lightClient;
-
     //
     // methods
     //
-    constructor(string memory initPortPrefix, LightClient _lightClient) {
+    constructor(string memory initPortPrefix) {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        lightClient = _lightClient;
     }
 
     //
@@ -90,17 +89,28 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
         uint256 height,
-        uint256 appHash
+        uint256 appHash,
+        uint256 clientId
     ) external returns (uint256 fraudProofEndTime, bool ended) {
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.clientNotFound();
+        }
+
         return lightClient.addOpConsensusState(l1header, proof, height, appHash);
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height)
+    function getOptimisticConsensusState(uint256 height, uint256 clientId)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.clientNotFound();
+        }
+
         return lightClient.getState(height);
     }
 
@@ -129,6 +139,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         if (IbcUtils.isChannelOpenTry(counterparty)) {
+            uint256 clientId = connectionIdToClientId[connectionHops[0]];
+            LightClient lightClient = clientIdToLightClient[clientId];
+            if (address(lightClient) == address(0) || clientId == 0) {
+                revert IBCErrors.clientNotFound();
+            }
             lightClient.verifyMembership(
                 proof,
                 channelProofKey(local.portId, local.channelId),
@@ -158,6 +173,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) internal {
+        uint256 clientId = connectionIdToClientId[connectionHops[0]];
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0) || clientId == 0) {
+            revert IBCErrors.clientNotFound();
+        }
         lightClient.verifyMembership(
             proof,
             channelProofKey(local.portId, local.channelId),
@@ -318,11 +338,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         IbcPacketReceiver receiver,
         IbcPacket calldata packet,
         bytes calldata ack,
-        Ics23Proof calldata proof
+        Ics23Proof calldata proof,
+        uint256 clientId
     ) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert IBCErrors.receiverNotOriginPacketSender();
+        }
+
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0) || clientId == 0) {
+            revert IBCErrors.clientNotFound();
         }
 
         // prove ack packet is on Polymer chain
@@ -361,7 +387,9 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
      * @param packet The IbcPacket data for the timed-out packet
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
-    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
+    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof, uint256 clientId)
+        external
+    {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert IBCErrors.receiverNotIndtendedPacketDestination();
@@ -369,6 +397,10 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0) || clientId == 0) {
+            revert IBCErrors.clientNotFound();
+        }
         lightClient.verifyNonMembership(proof, "packet/receipt/path");
 
         // verify packet has been committed and not yet ack'ed or timed out
@@ -385,6 +417,25 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
     }
 
+    function addNewLightClient(string calldata connectionId, uint256 clientId, LightClient newLightClient)
+        external
+        onlyOwner
+    {
+        if (address(newLightClient) == address(0)) {
+            revert IBCErrors.invalidInput();
+        }
+        if (clientId == 0 || bytes(connectionId).length == 0) {
+            revert IBCErrors.invalidInput();
+        }
+
+        if (connectionIdToClientId[connectionId] != 0 || clientIdToLightClient[clientId] != LightClient(address(0))) {
+            revert IBCErrors.invalidInput();
+        }
+
+        connectionIdToClientId[connectionId] = clientId;
+        clientIdToLightClient[clientId] = newLightClient;
+    }
+
     /**
      * @notice Receive an IBC packet and then pass it to the IBC-dApp for processing if verification succeeds.
      * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
@@ -396,11 +447,21 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
-    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
+    function recvPacket(
+        IbcPacketReceiver receiver,
+        IbcPacket calldata packet,
+        Ics23Proof calldata proof,
+        uint256 clientId
+    ) external {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIndtendedPacketDestination();
         }
+        LightClient lightClient = clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0) || clientId == 0) {
+            revert IBCErrors.clientNotFound();
+        }
+
         lightClient.verifyMembership(
             proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
         );

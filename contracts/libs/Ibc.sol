@@ -151,6 +151,8 @@ library IBCErrors {
     // client related errors.
     error clientAlreadyCreated();
     error clientNotCreated();
+    error clientNotFound();
+    error invalidInput();
 
     // packet commitment related errors.
     error packetCommitmentNotFound();
@@ -247,7 +249,7 @@ library IbcUtils {
 
     // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
     // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function isChannelOpenTry(CounterParty calldata counterparty) public returns (bool) {
+    function isChannelOpenTry(CounterParty calldata counterparty) public pure returns (bool) {
         if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
             return false;
             // ChanOpenInit with unknow conterparty
