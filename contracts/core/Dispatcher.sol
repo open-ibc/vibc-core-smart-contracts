@@ -319,7 +319,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         // prove ack packet is on Polymer chain
-        lightClient.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
+        lightClient.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -405,7 +405,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.receiverNotIntendedPacketDestination();
         }
         lightClient.verifyMembership(
-            proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
+            proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
