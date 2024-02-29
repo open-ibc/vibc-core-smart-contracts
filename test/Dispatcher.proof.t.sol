@@ -71,10 +71,10 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         // plant a fake packet commitment so the ack checks go through
         stdstore
             .target(address(dispatcher))
-            .sig(dispatcher.sendPacketCommitment.selector)
+            .sig(dispatcher.packetCommitment.selector)
             .with_key(address(mars))
             .with_key(ch0.channelId)
-            .with_key(uint256(1))
+            .with_key(uint256(1)) // SendPacked is stored as the first byte. (from right)
             .checked_write(true);
 
         IbcPacket memory packet;

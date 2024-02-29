@@ -183,8 +183,12 @@ library IbcUtils {
     function toHexStr(address addr) internal pure returns (bytes memory) {
         bytes memory addrWithPrefix = abi.encodePacked(Strings.toHexString(addr));
         bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
-        for (uint256 i = 0; i < addrWithoutPrefix.length; i++) {
+        uint256 addrWithoutPrefixLength = addrWithoutPrefix.length;
+        for (uint256 i = 0; i < addrWithoutPrefixLength;) {
             addrWithoutPrefix[i] = addrWithPrefix[i + 2];
+            unchecked {
+                ++i;
+            }
         }
         return addrWithoutPrefix;
     }
@@ -213,11 +217,16 @@ contract Ibc {
     function toStr(bytes32 b) public pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && b[i] != 0) {
-            i++;
+            unchecked {
+                ++i;
+            }
         }
         bytes memory bytesArray = new bytes(i);
-        for (uint8 j = 0; j < i; j++) {
+        for (uint8 j = 0; j < i;) {
             bytesArray[j] = b[j];
+            unchecked {
+                ++j;
+            }
         }
         return string(bytesArray);
     }
@@ -232,16 +241,21 @@ contract Ibc {
 
         // Determine the length of the string
         while (number != 0) {
-            length++;
-            number /= 10;
+            unchecked {
+                ++length;
+                number /= 10;
+            }
         }
 
         bytes memory buffer = new bytes(length);
 
         // Convert each digit to its ASCII representation
-        for (uint256 i = length; i > 0; i--) {
+        for (uint256 i = length; i > 0; ) {
             buffer[i - 1] = bytes1(uint8(48 + (_number % 10)));
-            _number /= 10;
+            unchecked {
+                _number /= 10;
+                --i;
+            }
         }
 
         return string(buffer);
@@ -290,10 +304,10 @@ contract Ibc {
     function packetCommitmentProofValue(IbcPacket calldata packet) public pure returns (bytes32) {
         return
             sha256(
-                abi.encodePacked(
-                    packet.timeoutTimestamp,
-                    packet.timeoutHeight.revision_number,
-                    packet.timeoutHeight.revision_height,
+                bytes.concat(
+                    bytes8(packet.timeoutTimestamp),
+                    bytes8(packet.timeoutHeight.revision_number),
+                    bytes8(packet.timeoutHeight.revision_height),
                     sha256(packet.data)
                 )
             );

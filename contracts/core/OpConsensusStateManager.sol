@@ -16,8 +16,8 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
     mapping(uint256 => uint256) fraudProofEndtime;
 
     uint256 fraudProofWindowSeconds;
-    ProofVerifier verifier;
-    L1Block l1BlockProvider;
+    ProofVerifier immutable verifier;
+    L1Block immutable l1BlockProvider;
 
     constructor(uint32 fraudProofWindowSeconds_, ProofVerifier verifier_, L1Block _l1BlockProvider) {
         fraudProofWindowSeconds = fraudProofWindowSeconds_;

@@ -67,11 +67,15 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
-        for (uint256 i = 0; i < connectedChannels.length; i++) {
+        for (uint256 i = 0; i < connectedChannels.length;) {
             if (connectedChannels[i] == channelId) {
                 delete connectedChannels[i];
                 channelFound = true;
                 break;
+            }
+
+            unchecked {
+                ++i;
             }
         }
         require(channelFound, 'Channel not found');
