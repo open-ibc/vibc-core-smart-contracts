@@ -520,8 +520,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         // Not timeout yet, then do normal handling
-        IbcPacket memory pkt = packet;
-        AckPacket memory ack = receiver.onRecvPacket(pkt);
+        AckPacket memory ack = receiver.onRecvPacket(packet);
         bool hasAckPacketCommitment = packetCommitment[address(receiver)][packet.dest.channelId][packet.sequence].ackPacked;
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
