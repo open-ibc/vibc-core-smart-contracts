@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import "../contracts/libs/Ibc.sol";
 import "../contracts/core/Dispatcher.sol";
 import "../contracts/interfaces/ProofVerifier.sol";
