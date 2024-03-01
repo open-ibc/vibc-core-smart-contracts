@@ -1,0 +1,29 @@
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - uses: bahmutov/npm-install@v1
+        with:
+          install-command: npm install
+      - run: npm run lint
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Check formatting
+        run: forge fmt --check
