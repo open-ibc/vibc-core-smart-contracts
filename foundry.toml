@@ -1,5 +1,5 @@
 [profile.default]
-solc-version = '0.8.15'
+auto_detect_solc = true
 src = 'contracts'
 out = 'out'
 libs = ['lib']
@@ -7,5 +7,8 @@ test = 'test'
 cache_path  = 'forge-cache'
 gas_reports = ['*']
 fs_permissions = [{ access = 'read', path = './test/payload'}]
+[fmt]
+wrap_comments = true
+number_underscore = "thousands"
 
 # See more config options https://book.getfoundry.sh/reference/config.html
