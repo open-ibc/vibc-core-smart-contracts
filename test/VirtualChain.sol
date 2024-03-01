@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
+import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/libs/Ibc.sol";
 import "../contracts/core/Dispatcher.sol";
 import "../contracts/interfaces/ProofVerifier.sol";
@@ -13,6 +14,7 @@ import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
+import {DeploymentUtils} from "./TestUtils.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;
@@ -24,7 +26,7 @@ struct ChannelSetting {
 }
 
 struct VirtualChainData {
-    Dispatcher dispatcher;
+    IDispatcher dispatcher;
     UniversalChannelHandler ucHandler;
     Mars mars;
     Earth earth;
@@ -35,7 +37,7 @@ struct VirtualChainData {
 
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
 contract VirtualChain is Test, IbcEventsEmitter {
-    Dispatcher public dispatcher;
+    IDispatcher public dispatcher;
     UniversalChannelHandler public ucHandler;
     GeneralMiddleware public mw1;
     GeneralMiddleware public mw2;
@@ -55,7 +57,8 @@ contract VirtualChain is Test, IbcEventsEmitter {
     // ChannelIds are not initialized until channel handshake is started
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
-        dispatcher = new Dispatcher(portPrefix, new DummyLightClient());
+
+        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
         ucHandler = new UniversalChannelHandler(dispatcher);
 
         mars = new Mars(dispatcher);

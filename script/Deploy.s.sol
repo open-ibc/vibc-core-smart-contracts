@@ -6,6 +6,8 @@ import "../contracts/utils/DummyProofVerifier.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/Dispatcher.sol";
 import "../contracts/examples/Mars.sol";
+import {IDispatcher} from "../contracts/core/Dispatcher.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../contracts/core/OpProofVerifier.sol";
 import "../contracts/core/OpLightClient.sol";
 import "../contracts/core/UniversalChannelHandler.sol";
@@ -64,9 +66,19 @@ contract Deploy is Script {
         broadcast
         returns (address addr_)
     {
-        Dispatcher dispatcher = new Dispatcher{salt: _implSalt()}(portPrefix, DummyLightClient(stateManager_));
-        console.log("Dispatcher deployed at %s", address(dispatcher));
-        return address(dispatcher);
+        Dispatcher impl = new Dispatcher{salt: _implSalt()}();
+        IDispatcher proxy = IDispatcher(
+            address(
+                new ERC1967Proxy{salt: _implSalt()}(
+                    address(impl),
+                    abi.encodeWithSelector(Dispatcher.initialize.selector, portPrefix, DummyLightClient(stateManager_))
+                )
+            )
+        );
+
+        console.log("Dispatcher imnplementation at %s", address(impl));
+        console.log("Dispatcher proxy at %s", address(proxy));
+        return address(proxy);
     }
 
     function deployMars(address dispatcher) public broadcast returns (address addr_) {
