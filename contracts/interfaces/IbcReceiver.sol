@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import '../libs/Ibc.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IbcDispatcher.sol";
+import "../libs/Ibc.sol";
 
 /**
  * @title IbcChannelReceiver
@@ -19,17 +19,11 @@ interface IbcChannelReceiver {
         CounterParty calldata counterparty
     ) external returns (string memory selectedVersion);
 
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external;
+    function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
+        external;
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external;
+    function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external;
 }
 
 /**
@@ -51,9 +45,7 @@ interface IbcPacketReceiver {
  * @notice IBC receiver interface must be implemented by a IBC-enabled contract.
  * The implementer, aka. dApp devs, should implement channel handshake and packet handling methods.
  */
-interface IbcReceiver is IbcChannelReceiver, IbcPacketReceiver {
-
-}
+interface IbcReceiver is IbcChannelReceiver, IbcPacketReceiver {}
 
 contract IbcReceiverBase is Ownable {
     IbcDispatcher public dispatcher;
@@ -76,7 +68,7 @@ contract IbcReceiverBase is Ownable {
      * Should add this modifier to all IBC-related callback functions.
      */
     modifier onlyIbcDispatcher() {
-        require(msg.sender == address(dispatcher), 'only IBC dispatcher');
+        require(msg.sender == address(dispatcher), "only IBC dispatcher");
         _;
     }
 }

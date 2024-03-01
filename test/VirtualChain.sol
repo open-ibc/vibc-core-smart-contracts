@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import 'forge-std/Test.sol';
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '../contracts/libs/Ibc.sol';
-import '../contracts/core/Dispatcher.sol';
-import '../contracts/interfaces/ProofVerifier.sol';
-import {UniversalChannelHandler} from '../contracts/core/UniversalChannelHandler.sol';
-import {Mars} from '../contracts/examples/Mars.sol';
-import {Earth} from '../contracts/examples/Earth.sol';
-import {IbcMiddleware} from '../contracts/interfaces/IbcMiddleware.sol';
-import {GeneralMiddleware} from '../contracts/base/GeneralMiddleware.sol';
-import '../contracts/utils/DummyConsensusStateManager.sol';
+import "forge-std/Test.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "../contracts/libs/Ibc.sol";
+import "../contracts/core/Dispatcher.sol";
+import "../contracts/interfaces/ProofVerifier.sol";
+import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";
+import {Mars} from "../contracts/examples/Mars.sol";
+import {Earth} from "../contracts/examples/Earth.sol";
+import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
+import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
+import "../contracts/utils/DummyConsensusStateManager.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;
@@ -85,15 +85,14 @@ contract VirtualChain is Test, IbcEventsEmitter {
         string[] memory counterpartyConnectionHops,
         ChannelSetting memory setting
     ) public view returns (Channel memory) {
-        return
-            Channel(
-                setting.version,
-                setting.ordering,
-                setting.feeEnabled,
-                counterpartyConnectionHops,
-                portIds[localAddr],
-                localChanId
-            );
+        return Channel(
+            setting.version,
+            setting.ordering,
+            setting.feeEnabled,
+            counterpartyConnectionHops,
+            portIds[localAddr],
+            localChanId
+        );
     }
 
     function getConnectionHops() external view returns (string[] memory) {
@@ -101,11 +100,9 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     // Assign new channelIds to both ends of the channel
-    function assignChanelIds(
-        IbcChannelReceiver localEnd,
-        IbcChannelReceiver remoteEnd,
-        VirtualChain remoteChain
-    ) external {
+    function assignChanelIds(IbcChannelReceiver localEnd, IbcChannelReceiver remoteEnd, VirtualChain remoteChain)
+        external
+    {
         bytes32 localChannelId = this.newChannelId();
         bytes32 remoteChannelId = remoteChain.newChannelId();
         // save channelIds on each virtual chain
@@ -149,7 +146,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         bool expPass
     ) external {
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
-        require(bytes(cpPortId).length > 0, 'channelOpenTry: portId does not exist');
+        require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
 
         // set dispatcher's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
@@ -173,7 +170,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
             setting.feeEnabled,
             connectionHops,
             // counterparty channelId and version are not known at this point
-            CounterParty(cpPortId, bytes32(0), ''),
+            CounterParty(cpPortId, bytes32(0), ""),
             setting.proof
         );
     }
@@ -186,10 +183,10 @@ contract VirtualChain is Test, IbcEventsEmitter {
         bool expPass
     ) external {
         bytes32 cpChanId = remoteChain.channelIds(address(remoteEnd), address(localEnd));
-        require(cpChanId != bytes32(0), 'channelOpenTry: channel does not exist');
+        require(cpChanId != bytes32(0), "channelOpenTry: channel does not exist");
 
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
-        require(bytes(cpPortId).length > 0, 'channelOpenTry: portId does not exist');
+        require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
 
         // set dispatcher's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
@@ -227,13 +224,13 @@ contract VirtualChain is Test, IbcEventsEmitter {
     ) external {
         // local channel Id must be known
         bytes32 chanId = channelIds[address(localEnd)][address(remoteEnd)];
-        require(chanId != bytes32(0), 'channelOpenAckOrConfirm: channel does not exist');
+        require(chanId != bytes32(0), "channelOpenAckOrConfirm: channel does not exist");
 
         bytes32 cpChanId = remoteChain.channelIds(address(remoteEnd), address(localEnd));
-        require(cpChanId != bytes32(0), 'channelOpenAckOrConfirm: channel does not exist');
+        require(cpChanId != bytes32(0), "channelOpenAckOrConfirm: channel does not exist");
 
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
-        require(bytes(cpPortId).length > 0, 'channelOpenAckOrConfirm: counterparty portId does not exist');
+        require(bytes(cpPortId).length > 0, "channelOpenAckOrConfirm: counterparty portId does not exist");
 
         // set dispatcher's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
@@ -256,7 +253,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
     // Converts a local dApp address on this virtual chain to a Counterparty struct for a remote chain
     function localEndToCounterparty(address localEnd) external view returns (CounterParty memory) {
-        return CounterParty(portIds[localEnd], channelIds[localEnd][address(this)], '');
+        return CounterParty(portIds[localEnd], channelIds[localEnd][address(this)], "");
     }
 
     function setChannelId(IbcChannelReceiver localEnd, IbcChannelReceiver remoteEnd, bytes32 channelId) external {
@@ -264,13 +261,13 @@ contract VirtualChain is Test, IbcEventsEmitter {
     }
 
     function newChannelId() external returns (bytes32) {
-        bytes memory channelId = abi.encodePacked('channel-', Strings.toString(_seed));
+        bytes memory channelId = abi.encodePacked("channel-", Strings.toString(_seed));
         _seed += 1;
         return bytes32(channelId);
     }
 
     function newConnectionId() internal returns (string memory) {
-        string memory connectionId = string(abi.encodePacked('connection-', Strings.toString(_seed)));
+        string memory connectionId = string(abi.encodePacked("connection-", Strings.toString(_seed)));
         _seed += 1;
         return connectionId;
     }

@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '../interfaces/IbcDispatcher.sol';
-import {IbcChannelReceiver, IbcPacketReceiver} from '../interfaces/IbcReceiver.sol';
-import '../interfaces/ConsensusStateManager.sol';
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IbcDispatcher.sol";
+import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
+import "../interfaces/ConsensusStateManager.sol";
 
 /**
  * @title Dispatcher
@@ -119,9 +119,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(
-        uint256 height
-    ) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getOptimisticConsensusState(uint256 height)
+        external
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
         return consensusStateManager.getState(height);
     }
 
@@ -184,13 +186,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             );
         }
 
-        string memory selectedVersion = portAddress.onOpenIbcChannel(
-            local.version,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty
-        );
+        string memory selectedVersion =
+            portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty);
 
         emit OpenIbcChannel(
             address(portAddress),
@@ -422,7 +419,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        consensusStateManager.verifyNonMembership(proof, 'packet/receipt/path');
+        consensusStateManager.verifyNonMembership(proof, "packet/receipt/path");
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -455,9 +452,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert receiverNotIndtendedPacketDestination();
         }
         consensusStateManager.verifyMembership(
-            proof,
-            packetCommitmentProofKey(packet),
-            abi.encode(packetCommitmentProofValue(packet))
+            proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
@@ -485,11 +480,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         if (isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
-                writerPortAddress,
-                packet.dest.channelId,
-                packet.sequence,
-                packet.timeoutHeight,
-                packet.timeoutTimestamp
+                writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
             );
             return;
         }
@@ -520,9 +511,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
     // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and timestamp
     function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
-        return ((packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp) ||
+        return (
+            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
             // TODO: check timeoutHeight.revision_number?
-            (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height));
+            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+        );
     }
 
     // TODO: remove below writeTimeoutPacket() function
@@ -551,11 +544,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         emit WriteTimeoutPacket(
-            receiver,
-            packet.dest.channelId,
-            packet.sequence,
-            packet.timeoutHeight,
-            packet.timeoutTimestamp
+            receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
         );
     }
 }

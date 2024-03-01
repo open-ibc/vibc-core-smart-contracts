@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import '../libs/Ibc.sol';
-import '../interfaces/ConsensusStateManager.sol';
+import "../libs/Ibc.sol";
+import "../interfaces/ConsensusStateManager.sol";
 
-import {L1Block} from 'optimism/L2/L1Block.sol';
+import {L1Block} from "optimism/L2/L1Block.sol";
 
 // OptimisticConsensusStateManager manages the appHash at different
 // heights and track the fraud proof end time for them.
@@ -40,11 +40,7 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
             // if this is a new apphash we need to verify the provided proof. This method will revert in case
             // of invalid proof.
             verifier.verifyStateUpdate(
-                l1header,
-                proof,
-                bytes32(appHash),
-                l1BlockProvider.hash(),
-                l1BlockProvider.number()
+                l1header, proof, bytes32(appHash), l1BlockProvider.hash(), l1BlockProvider.number()
             );
 
             // a new appHash
@@ -60,7 +56,7 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
         }
 
         revert(
-            'cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead'
+            "cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead"
         );
     }
 
@@ -73,9 +69,11 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
         return getInternalState(height);
     }
 
-    function getInternalState(
-        uint256 height
-    ) public view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
+    function getInternalState(uint256 height)
+        public
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
         uint256 hash = consensusStates[height];
         return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
     }
@@ -90,21 +88,20 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
      * can be used to perform the membership test and if so, it uses
      * the verifier to perform membership check.
      */
-    function verifyMembership(
-        Ics23Proof calldata proof,
-        bytes calldata key,
-        bytes calldata expectedValue
-    ) external view {
+    function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
+        external
+        view
+    {
         // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
         // this means the relayer must have updated the contract with the app hash from the previous block and
         // that is why we use proof.height - 1 here.
-        (uint256 appHash, , bool ended) = getInternalState(proof.height - 1);
+        (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
         require(ended, "appHash hasn't passed the fraud proof window");
         verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
-        (uint256 appHash, , bool ended) = getInternalState(proof.height - 1);
+        (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
         require(ended, "appHash hasn't passed the fraud proof window");
         verifier.verifyNonMembership(bytes32(appHash), key, proof);
     }

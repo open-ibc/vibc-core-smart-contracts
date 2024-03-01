@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '../libs/Ibc.sol';
-import './IbcDispatcher.sol';
-import './IbcReceiver.sol';
+import "../libs/Ibc.sol";
+import "./IbcDispatcher.sol";
+import "./IbcReceiver.sol";
 
 /**
  * @title IbcUniversalPacketSender
@@ -71,16 +71,12 @@ interface IbcMwPacketReceiver {
 
 // dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets' final destination.
 interface IbcUniversalPacketReceiver {
-    function onRecvUniversalPacket(
-        bytes32 channelId,
-        UniversalPacket calldata ucPacket
-    ) external returns (AckPacket memory ackPacket);
+    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
+        external
+        returns (AckPacket memory ackPacket);
 
-    function onUniversalAcknowledgement(
-        bytes32 channelId,
-        UniversalPacket memory packet,
-        AckPacket calldata ack
-    ) external;
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external;
 
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external;
 }
@@ -105,9 +101,7 @@ interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
  *   - IbcMiddleware must sit on top of a UniversalChannel MW or another IbcMiddleware.
  *   - IbcMiddleware cannnot own an IBC channel. Instead, UniversalChannel MW owns channels.
  */
-interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUniversalPacketReceiver {
-
-}
+interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUniversalPacketReceiver {}
 
 /**
  * @title IbcUniversalChannelMW
@@ -115,9 +109,7 @@ interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUnivers
  * IbcUniversalChannelMW is a special type of IbcMiddleware that owns IBC channels, which are multiplexed for other IbcMiddleware.
  * IbcUniversalChannelMW cannot sit on top of other MW, and must talk to IbcDispatcher directly.
  */
-interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcChannelReceiver {
-
-}
+interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcChannelReceiver {}
 
 /**
  * @title IbcMwEventsEmitter
@@ -220,7 +212,7 @@ contract IbcMwUser is Ownable {
      * Should add this modifier to all IBC-related callback functions.
      */
     modifier onlyIbcMw() {
-        require(authorizedMws[msg.sender], 'unauthorized IBC middleware');
+        require(authorizedMws[msg.sender], "unauthorized IBC middleware");
         _;
     }
 }

@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {SecureMerkleTrie} from 'optimism/libraries/trie/SecureMerkleTrie.sol';
-import {RLPReader} from 'optimism/libraries/rlp/RLPReader.sol';
-import {RLPWriter} from 'optimism/libraries/rlp/RLPWriter.sol';
+import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
+import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
+import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
 
-import '../interfaces/ProofVerifier.sol';
+import "../interfaces/ProofVerifier.sol";
 
 contract OpProofVerifier is ProofVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
     // @notice index of the l1 state root in the "l1 header"
-    uint internal constant L1_STATE_ROOT_INDEX = 3;
+    uint256 internal constant L1_STATE_ROOT_INDEX = 3;
 
     // @notice index of the l1 number in the "l1 header"
-    uint internal constant L1_NUMBER_INDEX = 8;
+    uint256 internal constant L1_NUMBER_INDEX = 8;
 
     // @notice known L2 Output Oracle contract address to verify state update proofs against
     address l2OutputOracleAddress;
@@ -59,22 +59,22 @@ contract OpProofVerifier is ProofVerifier {
         bytes32 trustedL1BlockHash,
         uint64 trustedL1BlockNumber
     ) external view {
-        require(trustedL1BlockNumber == l1header.number, 'Invalid L1 block number');
+        require(trustedL1BlockNumber == l1header.number, "Invalid L1 block number");
 
         // this computes the L1 header hash
-        require(trustedL1BlockHash == keccak256(RLPWriter.writeList(l1header.header)), 'Invalid L1 block hash');
+        require(trustedL1BlockHash == keccak256(RLPWriter.writeList(l1header.header)), "Invalid L1 block hash");
 
         // these two checks are here to verify that the "plain" (i.e. not RLP encoded) values in the l1header are
         // the same ones found in l1header.header (i.e. RLP encoded). This is because it is cheaper to RLP
         // encode that decode
         require(
             keccak256(RLPWriter.writeUint(l1header.number)) == keccak256(l1header.header[L1_NUMBER_INDEX]),
-            'Invalid RLP encoded L1 block number'
+            "Invalid RLP encoded L1 block number"
         );
         require(
-            keccak256(RLPWriter.writeBytes(abi.encode(l1header.stateRoot))) ==
-                keccak256(l1header.header[L1_STATE_ROOT_INDEX]),
-            'Invalid RLP encoded L1 state root'
+            keccak256(RLPWriter.writeBytes(abi.encode(l1header.stateRoot)))
+                == keccak256(l1header.header[L1_STATE_ROOT_INDEX]),
+            "Invalid RLP encoded L1 state root"
         );
 
         //  stateAccount looks like this struct. We are interested in the Root field which is the one at index 2
@@ -84,15 +84,12 @@ contract OpProofVerifier is ProofVerifier {
         //     Root     common.Hash  // index 2
         //     CodeHash []byte       // index 3
         //  }
-        RLPReader.RLPItem[] memory stateAccount = SecureMerkleTrie
-            .get(abi.encodePacked(l2OutputOracleAddress), proof.accountProof, l1header.stateRoot)
-            .toRLPItem()
-            .readList();
+        RLPReader.RLPItem[] memory stateAccount = SecureMerkleTrie.get(
+            abi.encodePacked(l2OutputOracleAddress), proof.accountProof, l1header.stateRoot
+        ).toRLPItem().readList();
 
         bytes memory outputRoot = SecureMerkleTrie.get(
-            abi.encode(proof.l2OutputProposalKey),
-            proof.outputRootProof,
-            bytes32(bytes(stateAccount[2].readBytes()))
+            abi.encode(proof.l2OutputProposalKey), proof.outputRootProof, bytes32(bytes(stateAccount[2].readBytes()))
         );
 
         // now that the output root is verified, we need to verify the app hash. To do so we try to derive the
@@ -107,12 +104,12 @@ contract OpProofVerifier is ProofVerifier {
                     proof.l2BlockHash
                 )
             ) == bytes32(bytes(outputRoot.toRLPItem().readBytes())),
-            'Invalid apphash'
+            "Invalid apphash"
         );
     }
 
     function verifyNonMembership(bytes32, bytes calldata, Ics23Proof calldata) external pure {
-        revert('verifyNonMembership is not implemented');
+        revert("verifyNonMembership is not implemented");
     }
 
     /**
@@ -121,20 +118,18 @@ contract OpProofVerifier is ProofVerifier {
      * The cosmos SDK and ics23 support chained proofs to switch between different proof specs.
      * Custom proof specs are not supported here. Only Iavl and Tendermint or similar proof specs are supported.
      */
-    function verifyMembership(
-        bytes32 appHash,
-        bytes calldata key,
-        bytes calldata value,
-        Ics23Proof calldata proofs
-    ) external pure {
+    function verifyMembership(bytes32 appHash, bytes calldata key, bytes calldata value, Ics23Proof calldata proofs)
+        external
+        pure
+    {
         // first check that the provided proof indeed proves the keys and values.
-        require(keccak256(key) == keccak256(proofs.proof[0].key), 'Invalid proof key');
-        require(keccak256(value) == keccak256(proofs.proof[0].value), 'Invalid proof value');
+        require(keccak256(key) == keccak256(proofs.proof[0].key), "Invalid proof key");
+        require(keccak256(value) == keccak256(proofs.proof[0].value), "Invalid proof value");
         // proofs are chained backwards. First proof in the list (proof[0]) corresponds to the packet proof, meaning
         // that can be checked against the next subroot value (i.e. ibc root). Once the first proof is verified,
         // we can check the second that corresponds to the ibc proof, that is checked against the app hash (app root)
-        require(bytes32(proofs.proof[1].value) == verify(proofs.proof[0]), 'Invalid packet proof');
-        require(appHash == verify(proofs.proof[1]), 'Invalid ibc state proof');
+        require(bytes32(proofs.proof[1].value) == verify(proofs.proof[0]), "Invalid packet proof");
+        require(appHash == verify(proofs.proof[1]), "Invalid ibc state proof");
     }
 
     // this code was adapted from the ICS23 membership verification found here:
@@ -143,11 +138,7 @@ contract OpProofVerifier is ProofVerifier {
         bytes32 hashedData = sha256(proof.value);
         bytes32 computed = sha256(
             abi.encodePacked(
-                proof.prefix,
-                encodeVarint(proof.key.length),
-                proof.key,
-                encodeVarint(hashedData.length),
-                hashedData
+                proof.prefix, encodeVarint(proof.key.length), proof.key, encodeVarint(hashedData.length), hashedData
             )
         );
 

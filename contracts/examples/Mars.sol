@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '../libs/Ibc.sol';
-import '../interfaces/IbcReceiver.sol';
-import '../interfaces/IbcDispatcher.sol';
+import "../libs/Ibc.sol";
+import "../interfaces/IbcReceiver.sol";
+import "../interfaces/IbcDispatcher.sol";
 
 contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
@@ -15,7 +15,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     IbcPacket[] public timeoutPackets;
     bytes32[] public connectedChannels;
 
-    string[] supportedVersions = ['1.0', '2.0'];
+    string[] supportedVersions = ["1.0", "2.0"];
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
@@ -49,32 +49,30 @@ contract Mars is IbcReceiverBase, IbcReceiver {
          * In both cases, the selected version should be in the supported versions list.
          */
         bool foundVersion = false;
-        selectedVersion = keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(''))
-            ? counterparty.version
-            : version;
+        selectedVersion =
+            keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked("")) ? counterparty.version : version;
         for (uint256 i = 0; i < supportedVersions.length; i++) {
             if (keccak256(abi.encodePacked(selectedVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
                 foundVersion = true;
                 break;
             }
         }
-        require(foundVersion, 'Unsupported version');
+        require(foundVersion, "Unsupported version");
         // if counterpartyVersion is not empty, then it must be the same foundVersion
-        if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(''))) {
+        if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(""))) {
             require(
                 keccak256(abi.encodePacked(counterparty.version)) == keccak256(abi.encodePacked(selectedVersion)),
-                'Version mismatch'
+                "Version mismatch"
             );
         }
 
         return selectedVersion;
     }
 
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32,
-        string calldata counterpartyVersion
-    ) external onlyIbcDispatcher {
+    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
+        external
+        onlyIbcDispatcher
+    {
         // ensure negotiated version is supported
         bool foundVersion = false;
         for (uint256 i = 0; i < supportedVersions.length; i++) {
@@ -83,7 +81,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
                 break;
             }
         }
-        require(foundVersion, 'Unsupported version');
+        require(foundVersion, "Unsupported version");
         connectedChannels.push(channelId);
     }
 
@@ -97,7 +95,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
                 break;
             }
         }
-        require(channelFound, 'Channel not found');
+        require(channelFound, "Channel not found");
     }
 
     /**
@@ -114,7 +112,6 @@ contract Mars is IbcReceiverBase, IbcReceiver {
      * @param channelId The ID of the channel to send the packet to.
      * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
      */
-
     function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp) external {
         dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }

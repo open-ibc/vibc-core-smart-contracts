@@ -63,12 +63,9 @@ interface ProofVerifier {
      * @param value value to be proven
      * @param proof ICS23 membership proof
      */
-    function verifyMembership(
-        bytes32 appHash,
-        bytes calldata key,
-        bytes calldata value,
-        Ics23Proof calldata proof
-    ) external pure;
+    function verifyMembership(bytes32 appHash, bytes calldata key, bytes calldata value, Ics23Proof calldata proof)
+        external
+        pure;
 
     /**
      * @dev verifies the provided ICS23 proof given the trusted app hash. Reverts in case of failure.

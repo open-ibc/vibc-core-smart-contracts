@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
-import '../contracts/libs/Ibc.sol';
-import '../contracts/core/OpProofVerifier.sol';
-import {L1Block} from 'optimism/L2/L1Block.sol';
+import "forge-std/Test.sol";
+import "../contracts/libs/Ibc.sol";
+import "../contracts/core/OpProofVerifier.sol";
+import {L1Block} from "optimism/L2/L1Block.sol";
 
 contract ProofBase is Test, Ibc {
     using stdJson for string;
+
     string rootDir = vm.projectRoot();
 
     OpL2StateProof validStateProof;
@@ -32,8 +33,7 @@ contract ProofBase is Test, Ibc {
         // this is the "rlp" half-encoded header that would be sent by the relayer. this was produced
         // by the test-data-generator tool.
         l1header = abi.decode(
-            vm.parseBytes(vm.readFile(string.concat(rootDir, '/test/payload/l1_block_0x4df537.hex'))),
-            (L1Header)
+            vm.parseBytes(vm.readFile(string.concat(rootDir, "/test/payload/l1_block_0x4df537.hex"))), (L1Header)
         );
 
         // this calculates the key for the given output proposal in the list of proposals that live on the
@@ -43,18 +43,17 @@ contract ProofBase is Test, Ibc {
 
         // this happens to be the polymer height when the L2OO was updated with the output proposal
         // we are using in the test
-        string memory l2BlockJson = vm.readFile(string.concat(rootDir, '/test/payload/l2_block_0x4b0.json'));
-        l2BlockHash = abi.decode(l2BlockJson.parseRaw('.result.hash'), (bytes32));
-        apphash = abi.decode(l2BlockJson.parseRaw('.result.stateRoot'), (bytes32));
+        string memory l2BlockJson = vm.readFile(string.concat(rootDir, "/test/payload/l2_block_0x4b0.json"));
+        l2BlockHash = abi.decode(l2BlockJson.parseRaw(".result.hash"), (bytes32));
+        apphash = abi.decode(l2BlockJson.parseRaw(".result.stateRoot"), (bytes32));
 
         // the output proof height must match that of the l1 header
-        string memory outputProposalJson = vm.readFile(
-            string.concat(rootDir, '/test/payload/output_at_block_l1_0x4df537_with_proof.json')
-        );
+        string memory outputProposalJson =
+            vm.readFile(string.concat(rootDir, "/test/payload/output_at_block_l1_0x4df537_with_proof.json"));
 
         validStateProof = OpL2StateProof(
-            abi.decode(outputProposalJson.parseRaw('.result.accountProof'), (bytes[])),
-            abi.decode(outputProposalJson.parseRaw('.result.storageProof[0].proof'), (bytes[])),
+            abi.decode(outputProposalJson.parseRaw(".result.accountProof"), (bytes[])),
+            abi.decode(outputProposalJson.parseRaw(".result.storageProof[0].proof"), (bytes[])),
             l2OutputProposalKey,
             l2BlockHash
         );
