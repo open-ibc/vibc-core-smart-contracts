@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
-import '../contracts/core/OpConsensusStateManager.sol';
-import '../contracts/utils/DummyProofVerifier.sol';
-import './Proof.base.t.sol';
+import "forge-std/Test.sol";
+import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/utils/DummyProofVerifier.sol";
+import "./Proof.base.t.sol";
 
 contract OptimisticConsensusStateManagerTest is ProofBase {
     OptimisticConsensusStateManager manager;
@@ -33,7 +33,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
         // the fraud proof window has passed.
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
 
-        (, , bool ended) = manager.getState(1);
+        (,, bool ended) = manager.getState(1);
         assertEq(true, ended);
     }
 
@@ -42,7 +42,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
 
         vm.expectRevert(
             bytes(
-                'cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead'
+                "cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead"
             )
         );
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 2);
@@ -51,26 +51,26 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     function test_addOpConsensusState_addingSameOpConsensusStateIsNoop() public {
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
 
-        (, uint256 originalFraudProofEndTime, ) = manager.getState(1);
+        (, uint256 originalFraudProofEndTime,) = manager.getState(1);
 
         vm.warp(block.timestamp + 1);
 
         // adding the same appHash later doesn't update the fraud
         // proof end time.
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
-        (, uint256 newFraudProofEndTime, ) = manager.getState(1);
+        (, uint256 newFraudProofEndTime,) = manager.getState(1);
         assertEq(originalFraudProofEndTime, newFraudProofEndTime);
     }
 
     function test_zero_proof_window() public {
         manager = new OptimisticConsensusStateManager(0, verifier, l1BlockProvider);
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
-        (, , bool ended) = manager.getState(1);
+        (,, bool ended) = manager.getState(1);
         assertEq(true, ended);
     }
 
     function test_getState_nonExist() public {
-        (uint256 appHash, , bool ended) = manager.getState(1);
+        (uint256 appHash,, bool ended) = manager.getState(1);
         assertEq(0, appHash);
         assertEq(false, ended);
     }
@@ -96,7 +96,7 @@ contract OptimisticConsensusStateManagerWithRealVerifierTest is ProofBase {
 
     function test_addOpConsensusState_newAppHashWithInvalidProof() public {
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
-        vm.expectRevert('MerkleTrie: ran out of proof elements');
+        vm.expectRevert("MerkleTrie: ran out of proof elements");
         manager.addOpConsensusState(l1header, invalidStateProof, 1, uint256(apphash));
     }
 }
