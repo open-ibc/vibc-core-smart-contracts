@@ -40,11 +40,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     function test_addOpConsensusState_addingPendingOpConsensusStateWithDifferentValuesIsError() public {
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
 
-        vm.expectRevert(
-            bytes(
-                "cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead"
-            )
-        );
+        vm.expectRevert(OptimisticConsensusStateManager.CannotUpdatePendingOptimisticConsensusState.selector);
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 2);
     }
 

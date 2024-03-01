@@ -31,7 +31,7 @@ struct ChannelHandshakeSetting {
 
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase {
-    uint64 UINT64_MAX = 18446744073709551615;
+    uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;

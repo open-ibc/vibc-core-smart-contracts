@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {L1Header, ProofVerifier, OpL2StateProof, Ics23Proof} from '../interfaces/ProofVerifier.sol';
+import {L1Header, ProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
 import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
-import {L1Block} from 'optimism/L2/L1Block.sol';
+import {L1Block} from "optimism/L2/L1Block.sol";
 
 // OptimisticConsensusStateManager manages the appHash at different
 // heights and track the fraud proof end time for them.
@@ -12,11 +12,13 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
     mapping(uint256 => uint256) public consensusStates;
 
     // fraudProofEndtime maps from the appHash to the fraud proof end time.
-    mapping(uint256 => uint256) fraudProofEndtime;
+    mapping(uint256 => uint256) public fraudProofEndtime;
+    uint256 public fraudProofWindowSeconds;
+    ProofVerifier public verifier;
+    L1Block public l1BlockProvider;
 
-    uint256 fraudProofWindowSeconds;
-    ProofVerifier verifier;
-    L1Block l1BlockProvider;
+    error CannotUpdatePendingOptimisticConsensusState();
+    error AppHashHasNotPassedFraudProofWindow();
 
     constructor(uint32 fraudProofWindowSeconds_, ProofVerifier verifier_, L1Block _l1BlockProvider) {
         fraudProofWindowSeconds = fraudProofWindowSeconds_;
@@ -54,9 +56,7 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
             return (endTime, block.timestamp >= endTime);
         }
 
-        revert(
-            "cannot update a pending optimistic consensus state with a different appHash, please submit fraud proof instead"
-        );
+        revert CannotUpdatePendingOptimisticConsensusState();
     }
 
     /**
@@ -67,26 +67,12 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
     function getState(uint256 height) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
         return getInternalState(height);
     }
-
-    function getInternalState(uint256 height)
-        public
-        view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
-    {
-        uint256 hash = consensusStates[height];
-        return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
-    }
-
-    function getFraudProofEndtime(uint256 height) external view returns (uint256 fraudProofEndTime) {
-        uint256 hash = consensusStates[height];
-        return fraudProofEndtime[hash];
-    }
-
     /**
      * verifyMembership checks if the current trustedOptimisticConsensusState state
      * can be used to perform the membership test and if so, it uses
      * the verifier to perform membership check.
      */
+
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
         view
@@ -95,13 +81,27 @@ contract OptimisticConsensusStateManager is ConsensusStateManager {
         // this means the relayer must have updated the contract with the app hash from the previous block and
         // that is why we use proof.height - 1 here.
         (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
-        require(ended, "appHash hasn't passed the fraud proof window");
+        if (!ended) revert AppHashHasNotPassedFraudProofWindow();
         verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
         (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
-        require(ended, "appHash hasn't passed the fraud proof window");
+        if (!ended) revert AppHashHasNotPassedFraudProofWindow();
         verifier.verifyNonMembership(bytes32(appHash), key, proof);
+    }
+
+    function getFraudProofEndtime(uint256 height) external view returns (uint256 fraudProofEndTime) {
+        uint256 hash = consensusStates[height];
+        return fraudProofEndtime[hash];
+    }
+
+    function getInternalState(uint256 height)
+        public
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
+        uint256 hash = consensusStates[height];
+        return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
     }
 }

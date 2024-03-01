@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
+import {IbcReceiver, IbcReceiverBase} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpConsensusStateManager.sol";
 import "./Dispatcher.base.t.sol";
@@ -86,7 +86,7 @@ contract ChannelHandshakeTest is Base {
                 // always select the wrong version
                 bool isVersionOne = keccak256(abi.encodePacked(versions[j])) == keccak256(abi.encodePacked("1.0"));
                 le.versionCall = isVersionOne ? "2.0" : "1.0";
-                vm.expectRevert(bytes("Version mismatch"));
+                vm.expectRevert(IbcReceiverBase.VersionMismatch.selector);
                 openChannel(le, re, settings[i], false);
             }
         }
@@ -101,7 +101,7 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
-                vm.expectRevert(bytes("Unsupported version"));
+                vm.expectRevert(IbcReceiverBase.UnsupportedVersion.selector);
                 openChannel(le, re, settings[i], false);
             }
         }
@@ -117,7 +117,7 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
-                vm.expectRevert("Invalid dummy membership proof");
+                vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
                 openChannel(le, re, settings[i], false);
             }
         }
@@ -134,7 +134,7 @@ contract ChannelHandshakeTest is Base {
                 // no remote version applied in openChannel
                 openChannel(le, re, settings[i], true);
                 re.version = versions[j];
-                vm.expectRevert(bytes("Unsupported version"));
+                vm.expectRevert(IbcReceiverBase.UnsupportedVersion.selector);
                 connectChannel(le, re, settings[i], false, false);
             }
         }
@@ -152,7 +152,7 @@ contract ChannelHandshakeTest is Base {
                 openChannel(le, re, settings[i], true);
                 re.version = versions[j];
                 settings[i].proof = invalidProof;
-                vm.expectRevert("Invalid dummy membership proof");
+                vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
                 connectChannel(le, re, settings[i], false, false);
             }
         }
@@ -205,7 +205,7 @@ contract ChannelOpenTestBase is Base {
 
         // anyone can run Relayers
         vm.startPrank(relayer);
-        vm.deal(relayer, 100000 ether);
+        vm.deal(relayer, 100_000 ether);
         mars = new Mars(dispatcher);
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
@@ -498,8 +498,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
     // cannot timeout packets if proof from Polymer is invalid
     function test_invalidProof() public {
         sendPacket();
-
-        vm.expectRevert("Invalid dummy non membership proof");
+        vm.expectRevert(DummyConsensusStateManager.InvalidDummyNonMembershipProof.selector);
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }

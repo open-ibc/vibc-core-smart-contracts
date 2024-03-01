@@ -23,8 +23,6 @@ interface IbcPacketSender {
  *         Other features are implemented as callback methods in the IbcReceiver interface.
  */
 interface IbcDispatcher is IbcPacketSender {
-    function portPrefix() external view returns (string memory);
-
     function openIbcChannel(
         IbcChannelReceiver portAddress,
         CounterParty calldata self,
@@ -36,6 +34,8 @@ interface IbcDispatcher is IbcPacketSender {
     ) external;
 
     function closeIbcChannel(bytes32 channelId) external;
+
+    function portPrefix() external view returns (string memory portPrefix);
 }
 
 /**

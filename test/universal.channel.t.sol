@@ -220,7 +220,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     }
 
     /**
-     * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of UniversalChannel MW.
+     * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of
+     * UniversalChannel MW.
      * @param numOfPackets packet sequence starts from 1, and ends at numOfPackets
      * @param mwBitmap bit OR of all MW_IDs of all MWs in the packet flow
      */
@@ -304,7 +305,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     }
 
     /**
-     * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of UniversalChannel MW.
+     * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of
+     * UniversalChannel MW.
      * @param numOfPackets packet sequence starts from 1, and ends at numOfPackets
      * @param mwBitmap bit OR of all MW_IDs of all MWs in the packet flow
      */

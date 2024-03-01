@@ -37,6 +37,17 @@ struct L1Header {
 }
 
 interface ProofVerifier {
+    error InvalidL1BlockNumber();
+    error InvalidL1BlockHash();
+    error InvalidRLPEncodedL1BlockNumber();
+    error InvalidRLPEncodedL1StateRoot();
+    error InvalidAppHash();
+    error InvalidProofKey();
+    error InvalidProofValue();
+    error InvalidPacketProof();
+    error InvalidIbcStateProof();
+    error MethodNotImplemented();
+
     /**
      * @dev verifies if a state update (apphash) is valid, given the provided proofs.
      *      Reverts in case of failure.

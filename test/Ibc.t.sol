@@ -39,7 +39,7 @@ contract IbcTest is Ibc, Test {
 
     function test_uint256_to_string() public {
         assertEq("1", toStr(1));
-        assertEq("112233445566", toStr(112233445566));
+        assertEq("112233445566", toStr(112_233_445_566));
         assertEq("16", toStr(16));
     }
 

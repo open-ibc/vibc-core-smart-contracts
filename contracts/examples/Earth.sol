@@ -32,15 +32,6 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
         );
     }
 
-    // For testing only; real dApps should implment their own ack logic
-    function generateAckPacket(bytes32, address srcPortAddr, bytes calldata appData)
-        external
-        view
-        returns (AckPacket memory ackPacket)
-    {
-        return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
-    }
-
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
         external
         onlyIbcMw
@@ -55,13 +46,22 @@ contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
         onlyIbcMw
     {
         // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
-        require(ack.data.length >= 20, "ack data too short");
+        if (ack.data.length < 20) revert ackDataTooShort();
         address ackSender = address(bytes20(ack.data[0:20]));
-        require(IbcUtils.toAddress(packet.destPortAddr) == ackSender, "ack address mismatch");
+        if (IbcUtils.toAddress(packet.destPortAddr) != ackSender) revert ackAddressMismatch();
         ackPackets.push(UcAckWithChannel(channelId, packet, ack));
     }
 
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external onlyIbcMw {
         timeoutPackets.push(UcPacketWithChannel(channelId, packet));
+    }
+
+    // For testing only; real dApps should implment their own ack logic
+    function generateAckPacket(bytes32, address srcPortAddr, bytes calldata appData)
+        external
+        view
+        returns (AckPacket memory ackPacket)
+    {
+        return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
     }
 }

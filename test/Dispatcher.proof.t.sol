@@ -75,7 +75,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
-        packet.timeoutTimestamp = 15566401733896437760;
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
         packet.src.channelId = ch0.channelId;
         packet.src.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
         packet.dest.portId = ch1.portId;
@@ -98,7 +98,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
-        packet.timeoutTimestamp = 15566401733896437760;
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
         packet.dest.channelId = ch1.channelId;
         packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
         packet.src.portId = ch0.portId;

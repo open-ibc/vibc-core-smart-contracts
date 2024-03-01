@@ -26,19 +26,19 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
     }
 
     function test_verify_state_update_invalid_l1_number() public {
-        vm.expectRevert("Invalid L1 block number");
+        vm.expectRevert(ProofVerifier.InvalidL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 42);
     }
 
     function test_verify_state_update_invalid_l1_hash() public {
-        vm.expectRevert("Invalid L1 block hash");
+        vm.expectRevert(ProofVerifier.InvalidL1BlockHash.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 0);
     }
 
     function test_verify_state_update_invalid_rlp_computed_hash() public {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
-        vm.expectRevert("Invalid RLP encoded L1 block number");
+        vm.expectRevert(ProofVerifier.InvalidRLPEncodedL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -48,7 +48,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
         emptyl1header.header[8] = RLPWriter.writeUint(0);
-        vm.expectRevert("Invalid RLP encoded L1 state root");
+        vm.expectRevert(ProofVerifier.InvalidRLPEncodedL1StateRoot.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -65,7 +65,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
     }
 
     function test_verify_state_update_invalid_apphash() public {
-        vm.expectRevert("Invalid apphash");
+        vm.expectRevert(ProofVerifier.InvalidAppHash.selector);
         opProofVerifier.verifyStateUpdate(
             l1header, validStateProof, bytes32(0), keccak256(RLPWriter.writeList(l1header.header)), l1header.number
         );
@@ -74,7 +74,8 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
 
 contract OpProofVerifierMembershipVerificationTest is ProofBase {
     function test_channel_try_pending_proof_success() public view {
-        // cd test-data-generator && go run ./cmd/ --type channel_try_pending > ../test/payload/channel_try_pending_proof.hex
+        // cd test-data-generator && go run ./cmd/ --type channel_try_pending >
+        // ../test/payload/channel_try_pending_proof.hex
         string memory input = vm.readFile(string.concat(rootDir, "/test/payload/channel_try_pending_proof.hex"));
 
         string[] memory connectionHops = new string[](2);
@@ -94,7 +95,8 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
     }
 
     function test_channel_ack_pending_proof_success() public view {
-        // cd test-data-generator && go run ./cmd/ --type channel_ack_pending > ../test/payload/channel_ack_pending_proof.hex
+        // cd test-data-generator && go run ./cmd/ --type channel_ack_pending >
+        // ../test/payload/channel_ack_pending_proof.hex
         string memory input = vm.readFile(string.concat(rootDir, "/test/payload/channel_ack_pending_proof.hex"));
 
         string[] memory connectionHops = new string[](2);
@@ -113,7 +115,8 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
     }
 
     function test_channel_confirm_pending_proof_success() public view {
-        // cd test-data-generator && go run ./cmd/ --type channel_confirm_pending > ../test/payload/channel_confirm_pending_proof.hex
+        // cd test-data-generator && go run ./cmd/ --type channel_confirm_pending >
+        // ../test/payload/channel_confirm_pending_proof.hex
         string memory input = vm.readFile(string.concat(rootDir, "/test/payload/channel_confirm_pending_proof.hex"));
 
         string[] memory connectionHops = new string[](2);
@@ -140,7 +143,7 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
-        packet.timeoutTimestamp = 15566401733896437760;
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
         packet.src.portId = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";
         packet.src.channelId = IbcUtils.toBytes32("channel-0");
         packet.sequence = 1;
@@ -157,7 +160,7 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
-        packet.timeoutTimestamp = 15566401733896437760;
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
         packet.dest.portId = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
         packet.dest.channelId = IbcUtils.toBytes32("channel-1");
         packet.sequence = 1;

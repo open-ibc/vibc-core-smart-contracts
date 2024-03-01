@@ -2,10 +2,15 @@
 
 pragma solidity ^0.8.9;
 
-import "../libs/Ibc.sol";
-import "../interfaces/IbcReceiver.sol";
-import "../interfaces/IbcDispatcher.sol";
-import "../interfaces/IbcMiddleware.sol";
+import {Ibc, IbcUtils, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {
+    IbcUniversalPacketReceiver,
+    IbcMwUser,
+    IbcMiddleware,
+    IbcMwEventsEmitter,
+    IbcMwPacketReceiver,
+    IbcMwPacketSender
+} from "../interfaces/IbcMiddleware.sol";
 
 contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
     /**
@@ -13,7 +18,8 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
      * MW_ID must:
      * - be globally unique, ie. no two MWs should have the same MW_ID registered on Polymer chain.
      * - be identical on all supported virtual chains.
-     * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to one MW stack.
+     * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to
+     * one MW stack.
      * - be 1 << N, where N is a non-negative integer, and not in conflict with other MWs.
      */
     uint256 public MW_ID;

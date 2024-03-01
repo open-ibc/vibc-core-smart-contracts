@@ -60,7 +60,8 @@ struct AckPacket {
 
 struct IncentivizedAckPacket {
     bool success;
-    // Forward relayer's payee address, an EMV address registered on Polymer chain with `RegisterCounterpartyPayee` endpoint.
+    // Forward relayer's payee address, an EMV address registered on Polymer chain with `RegisterCounterpartyPayee`
+    // endpoint.
     // In case of missing payee, zero address is used on Polymer.
     // The relayer payee address is set when incentivized ack is created on Polymer.
     bytes relayer;
@@ -95,7 +96,8 @@ enum ChannelState {
     // A channel has finished the ChanOpenAck handshake step on chain A, but not yet confirmed with the corresponding
     // virtual chain. Virtual channel end ONLY.
     ACK_PENDING,
-    // A channel has finished the ChanOpenConfirm handshake step on chain B, but not yet confirmed with the corresponding
+    // A channel has finished the ChanOpenConfirm handshake step on chain B, but not yet confirmed with the
+    // corresponding
     // virtual chain. Virtual channel end ONLY.
     CONFIRM_PENDING,
     // A channel has finished the ChanCloseConfirm step on chainB, but not yet confirmed with the corresponding
@@ -166,44 +168,51 @@ library IBCErrors {
 
 // define a library of Ibc utility functions
 library IbcUtils {
+    error StringTooLong();
+
     // convert params to UniversalPacketBytes with optimal gas cost
-    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory) {
-        return abi.encode(data);
+
+    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
+        packetBytes = abi.encode(data);
     }
 
     // fromUniversalPacketBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
-    function fromUniversalPacketBytes(bytes memory data) internal pure returns (UniversalPacket memory) {
-        return abi.decode(data, (UniversalPacket));
+    function fromUniversalPacketBytes(bytes memory data)
+        internal
+        pure
+        returns (UniversalPacket memory universalPacketData)
+    {
+        universalPacketData = abi.decode(data, (UniversalPacket));
     }
 
     // addressToPortId converts an address to a port ID
-    function addressToPortId(string memory portPrefix, address addr) internal pure returns (string memory) {
-        return string(abi.encodePacked(portPrefix, toHexStr(addr)));
+    function addressToPortId(string memory portPrefix, address addr) internal pure returns (string memory portId) {
+        portId = string(abi.encodePacked(portPrefix, toHexStr(addr)));
     }
 
     // convert an address to its hex string, but without 0x prefix
-    function toHexStr(address addr) internal pure returns (bytes memory) {
+    function toHexStr(address addr) internal pure returns (bytes memory hexStr) {
         bytes memory addrWithPrefix = abi.encodePacked(Strings.toHexString(addr));
         bytes memory addrWithoutPrefix = new bytes(addrWithPrefix.length - 2);
         for (uint256 i = 0; i < addrWithoutPrefix.length; i++) {
             addrWithoutPrefix[i] = addrWithPrefix[i + 2];
         }
-        return addrWithoutPrefix;
+        hexStr = addrWithoutPrefix;
     }
 
     // toAddress converts a bytes32 to an address
-    function toAddress(bytes32 b) internal pure returns (address) {
-        return address(uint160(uint256(b)));
+    function toAddress(bytes32 b) internal pure returns (address out) {
+        out = address(uint160(uint256(b)));
     }
 
     // toBytes32 converts an address to a bytes32
-    function toBytes32(address a) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(a)));
+    function toBytes32(address a) internal pure returns (bytes32 out) {
+        out = bytes32(uint256(uint160(a)));
     }
 
     function toBytes32(string memory s) internal pure returns (bytes32 result) {
         bytes memory b = bytes(s);
-        require(b.length <= 32, "String too long");
+        if (b.length > 32) revert StringTooLong();
 
         assembly {
             result := mload(add(b, 32))
@@ -212,7 +221,7 @@ library IbcUtils {
 }
 
 contract Ibc {
-    function toStr(bytes32 b) public pure returns (string memory) {
+    function toStr(bytes32 b) public pure returns (string memory outStr) {
         uint8 i = 0;
         while (i < 32 && b[i] != 0) {
             i++;
@@ -221,10 +230,10 @@ contract Ibc {
         for (uint8 j = 0; j < i; j++) {
             bytesArray[j] = b[j];
         }
-        return string(bytesArray);
+        outStr = string(bytesArray);
     }
 
-    function toStr(uint256 _number) public pure returns (string memory) {
+    function toStr(uint256 _number) public pure returns (string memory outStr) {
         if (_number == 0) {
             return "0";
         }
@@ -246,12 +255,12 @@ contract Ibc {
             _number /= 10;
         }
 
-        return string(buffer);
+        outStr = string(buffer);
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
-    function channelProofKey(string calldata portId, bytes32 channelId) public pure returns (bytes memory) {
-        return abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
+    function channelProofKey(string calldata portId, bytes32 channelId) public pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
     }
 
     // protobuf encoding of a channel object
@@ -262,8 +271,8 @@ contract Ibc {
         string calldata version,
         string[] calldata connectionHops,
         CounterParty calldata counterparty
-    ) public pure returns (bytes memory) {
-        return ProtoChannel.encode(
+    ) public pure returns (bytes memory proofValue) {
+        proofValue = ProtoChannel.encode(
             ProtoChannel.Data(
                 int32(uint32(state)),
                 int32(uint32(ordering)),
@@ -275,8 +284,8 @@ contract Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
-    function packetCommitmentProofKey(IbcPacket calldata packet) public pure returns (bytes memory) {
-        return abi.encodePacked(
+    function packetCommitmentProofKey(IbcPacket calldata packet) public pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked(
             "commitments/ports/",
             packet.src.portId,
             "/channels/",
@@ -287,8 +296,8 @@ contract Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
-    function packetCommitmentProofValue(IbcPacket calldata packet) public pure returns (bytes32) {
-        return sha256(
+    function packetCommitmentProofValue(IbcPacket calldata packet) public pure returns (bytes32 proofValue) {
+        proofValue = sha256(
             abi.encodePacked(
                 packet.timeoutTimestamp,
                 packet.timeoutHeight.revision_number,
@@ -299,8 +308,8 @@ contract Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
-    function ackProofKey(IbcPacket calldata packet) public pure returns (bytes memory) {
-        return abi.encodePacked(
+    function ackProofKey(IbcPacket calldata packet) public pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked(
             "acks/ports/",
             packet.dest.portId,
             "/channels/",
@@ -311,14 +320,13 @@ contract Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
-    function ackProofValue(bytes calldata ack) public pure returns (bytes32) {
-        return sha256(ack);
+    function ackProofValue(bytes calldata ack) public pure returns (bytes32 proofValue) {
+        proofValue = sha256(ack);
     }
 
-    function parseAckData(bytes calldata ack) public pure returns (AckPacket memory) {
-        return
+    function parseAckData(bytes calldata ack) public pure returns (AckPacket memory ackData) {
         // this hex value is '"result"'
-        (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
+        ackData = (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
             ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
             : AckPacket(false, ack[10:ack.length - 2]); // this is an error
     }
