@@ -3,17 +3,19 @@ pragma solidity ^0.8.15;
 
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import {Mars} from "../contracts/examples/Mars.sol";
+import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
+import "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
+import {DeploymentUtils} from "./TestUtils.sol";
 
 using stdStorage for StdStorage;
 
 contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     Mars mars;
-    Dispatcher dispatcher;
+    IDispatcher dispatcher;
     OptimisticLightClient consensusStateManager;
 
     CounterParty ch0 =
@@ -26,7 +28,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     function setUp() public override {
         super.setUp();
         consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        dispatcher = new Dispatcher("polyibc.eth1.", consensusStateManager);
+        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
         mars = new Mars(dispatcher);
     }
 

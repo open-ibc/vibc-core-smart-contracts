@@ -4,10 +4,13 @@ pragma solidity ^0.8.9;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IbcDispatcher, IbcEventsEmitter} from "../interfaces/IbcDispatcher.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
 import {LightClient} from "../interfaces/LightClient.sol";
+import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {
     Channel,
     CounterParty,
@@ -28,7 +31,10 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
+contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
+    //
+    // fields
+    //
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string public portPrefix;
     uint32 public portPrefixLen;
@@ -52,7 +58,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     //
     // methods
     //
-    constructor(string memory initPortPrefix, LightClient _lightClient) {
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(string memory initPortPrefix, LightClient _lightClient) public initializer {
+        __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
         lightClient = _lightClient;
@@ -588,6 +599,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         // https://docs.soliditylang.org/en/latest/cheatsheet.html#members-of-address
         (success, message) = receiver.call(args);
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
     // timestamp
