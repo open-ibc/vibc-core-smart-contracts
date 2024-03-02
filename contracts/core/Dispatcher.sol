@@ -279,7 +279,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert IBCErrors.receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIntendedPacketDestination();
         }
 
         // prove absence of packet receipt on Polymer chain
@@ -314,7 +314,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
-            revert IBCErrors.receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIntendedPacketDestination();
         }
         consensusStateManager.verifyMembership(
             proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
@@ -387,7 +387,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(receiver, packet.src.portId)) {
-            revert IBCErrors.receiverNotIndtendedPacketDestination();
+            revert IBCErrors.receiverNotIntendedPacketDestination();
         }
 
         // verify packet does not have a receipt

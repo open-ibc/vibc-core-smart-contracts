@@ -66,7 +66,7 @@ contract UniversalChannelTest is Base {
 
         IbcChannelReceiver ucHandler1 = eth1.ucHandler();
         IbcChannelReceiver ucHandler2 = eth2.ucHandler();
-        eth1.assignChanelIds(ucHandler1, ucHandler2, eth2);
+        eth1.assignChannelIds(ucHandler1, ucHandler2, eth2);
 
         address unauthorized = deriveAddress("unauthorized");
         vm.deal(unauthorized, 100 ether);

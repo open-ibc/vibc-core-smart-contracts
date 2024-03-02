@@ -160,7 +160,7 @@ library IBCErrors {
     error packetReceiptAlreadyExists();
 
     // receiver related errors.
-    error receiverNotIndtendedPacketDestination();
+    error receiverNotIntendedPacketDestination();
     error receiverNotOriginPacketSender();
 
     error invalidChannelType(string channelType);

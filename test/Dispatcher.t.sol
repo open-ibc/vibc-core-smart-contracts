@@ -478,7 +478,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature("receiverNotIndtendedPacketDestination()"));
+        vm.expectRevert(IBCErrors.receiverNotIntendedPacketDestination.selector);
         dispatcher.timeout(IbcReceiver(mars), packetEarth, validProof);
     }
 
