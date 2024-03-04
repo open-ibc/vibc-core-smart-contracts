@@ -39,23 +39,6 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
-    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
-        external
-        virtual
-        onlyIbcDispatcher
-    {
-        // ensure negotiated version is supported
-        bool foundVersion = false;
-        for (uint256 i = 0; i < supportedVersions.length; i++) {
-            if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
-                foundVersion = true;
-                break;
-            }
-        }
-        if (!foundVersion) revert UnsupportedVersion();
-        connectedChannels.push(channelId);
-    }
-
     function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
@@ -87,6 +70,14 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external virtual onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
     function onChanOpenInit(string calldata version)
         external
         view
@@ -105,6 +96,17 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         returns (string memory selectedVersion)
     {
         return _openChannel(counterpartyVersion);
+    }
+
+    function _connectChannel(bytes32 channelId, string calldata counterpartyVersion) private {
+        // ensure negotiated version is supported
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
+            if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
+                connectedChannels.push(channelId);
+                return;
+            }
+        }
+        revert UnsupportedVersion();
     }
 
     function _openChannel(string calldata version) private view returns (string memory selectedVersion) {
@@ -139,7 +141,7 @@ contract RevertingStringMars is Mars {
     }
 
     // solhint-disable-next-line
-    function onConnectIbcChannel(bytes32, bytes32, string calldata) external view override onlyIbcDispatcher {
+    function onChanOpenAck(bytes32, string calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "connect ibc channel is reverting");
     }

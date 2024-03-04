@@ -142,53 +142,67 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     /**
-     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the onOpenIbcChannel event.
-     * The dApp should implement the onConnectIbcChannel method to handle the last two channel handshake methods, ie.
-     * ChanOpenAck or ChanOpenConfirm.
+     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
+     * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
-    function connectIbcChannel(
-        IbcChannelReceiver portAddress,
+    function channelOpenAck(
+        IbcChannelReceiver receiver,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        bool isChanConfirm,
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        _verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
+        consensusStateManager.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
 
         (bool success, bytes memory data) = _callIfContract(
-            address(portAddress),
-            abi.encodeWithSelector(
-                IbcChannelReceiver.onConnectIbcChannel.selector,
-                local.channelId,
-                counterparty.channelId,
-                counterparty.version
-            )
+            address(receiver),
+            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.version)
         );
+
         if (success) {
-            emit ConnectIbcChannel(address(portAddress), local.channelId);
-
-            // Register port and channel mapping
-            // TODO: check duplicated channel registration?
-            // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
-            //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
-            portChannelMap[address(portAddress)][local.channelId] = Channel(
-                counterparty.version, // TODO: this should be self version instead of counterparty version
-                ordering,
-                feeEnabled,
-                connectionHops,
-                counterparty.portId,
-                counterparty.channelId
-            );
-
-            // initialize channel sequences
-            nextSequenceSend[address(portAddress)][local.channelId] = 1;
-            nextSequenceRecv[address(portAddress)][local.channelId] = 1;
-            nextSequenceAck[address(portAddress)][local.channelId] = 1;
+            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenAck(address(receiver), local.channelId);
         } else {
-            emit ConnectIbcChannelError(address(portAddress), data);
+            emit ChannelOpenAckError(address(receiver), data);
+        }
+    }
+
+    /**
+     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
+     * The dApp should implement the onChannelConnect method to handle the last channel handshake method:
+     * ChannelOpenConfirm
+     */
+    function channelOpenConfirm(
+        IbcChannelReceiver receiver,
+        CounterParty calldata local,
+        string[] calldata connectionHops,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        CounterParty calldata counterparty,
+        Ics23Proof calldata proof
+    ) external {
+        consensusStateManager.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
+
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver),
+            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenConfirm.selector, local.channelId, counterparty.version)
+        );
+
+        if (success) {
+            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenConfirm(address(receiver), local.channelId);
+        } else {
+            emit ChannelOpenConfirmError(address(receiver), data);
         }
     }
 
@@ -523,25 +537,31 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
-    function _verifyConnectIbcChannelProof(
+    function _connectChannel(
+        IbcChannelReceiver portAddress,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
-        bool isChanConfirm,
-        CounterParty calldata counterparty,
-        Ics23Proof calldata proof
+        bool feeEnabled,
+        CounterParty calldata counterparty
     ) internal {
-        consensusStateManager.verifyMembership(
-            proof,
-            Ibc.channelProofKey(local.portId, local.channelId),
-            Ibc.channelProofValue(
-                isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
-                ordering,
-                local.version,
-                connectionHops,
-                counterparty
-            )
+        // Register port and channel mapping
+        // TODO: check duplicated channel registration?
+        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
+        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
+        portChannelMap[address(portAddress)][local.channelId] = Channel(
+            counterparty.version, // TODO: this should be self version instead of counterparty version
+            ordering,
+            feeEnabled,
+            connectionHops,
+            counterparty.portId,
+            counterparty.channelId
         );
+
+        // initialize channel sequences
+        nextSequenceSend[address(portAddress)][local.channelId] = 1;
+        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
+        nextSequenceAck[address(portAddress)][local.channelId] = 1;
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.

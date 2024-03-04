@@ -66,8 +66,11 @@ interface IbcEventsEmitter {
     );
     event ChannelOpenTryError(address indexed receiver, bytes error);
 
-    event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
-    event ConnectIbcChannelError(address indexed portAddress, bytes error);
+    event ChannelOpenAck(address indexed receiver, bytes32 channelId);
+    event ChannelOpenAckError(address indexed receiver, bytes error);
+
+    event ChannelOpenConfirm(address indexed receiver, bytes32 channelId);
+    event ChannelOpenConfirmError(address indexed receiver, bytes error);
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
 

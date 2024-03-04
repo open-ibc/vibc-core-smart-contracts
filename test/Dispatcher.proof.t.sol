@@ -51,18 +51,18 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         Ics23Proof memory proof = load_proof("/test/payload/channel_ack_pending_proof.hex");
 
         vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannel(address(mars), ch0.channelId);
+        emit ChannelOpenAck(address(mars), ch0.channelId);
 
-        dispatcher.connectIbcChannel(mars, ch0, connectionHops0, ChannelOrder.NONE, false, false, ch1, proof);
+        dispatcher.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
     }
 
     function test_ibc_channel_confirm() public {
         Ics23Proof memory proof = load_proof("/test/payload/channel_confirm_pending_proof.hex");
 
         vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannel(address(mars), ch1.channelId);
+        emit ChannelOpenConfirm(address(mars), ch1.channelId);
 
-        dispatcher.connectIbcChannel(mars, ch1, connectionHops1, ChannelOrder.NONE, false, true, ch0, proof);
+        dispatcher.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
     }
 
     function test_ack_packet() public {

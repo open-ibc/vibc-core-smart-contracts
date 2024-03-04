@@ -72,7 +72,8 @@ contract ChannelHandshakeTest is Base {
                 re.version = versions[j];
                 channelOpenInit(le, re, settings[i], true);
                 channelOpenTry(le, re, settings[i], true);
-                connectChannel(le, re, settings[i], false, true);
+                channelOpenAck(le, re, settings[i], true);
+                channelOpenConfirm(le, re, settings[i], true);
             }
         }
     }
@@ -112,8 +113,8 @@ contract ChannelHandshakeTest is Base {
         }
     }
 
-    function test_connectChannel_revert_unsupportedVersion() public {
-        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+    function test_connectChannel_fail_unsupportedVersion() public {
+        // When localEnd initiates, counterparty version is only available in channelOpenAck
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
         string[2] memory versions = ["", "xxxxxxx"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -125,16 +126,17 @@ contract ChannelHandshakeTest is Base {
                 channelOpenTry(le, re, settings[i], true);
                 re.version = versions[j];
                 vm.expectEmit(true, true, true, true);
-                emit IbcEventsEmitter.ConnectIbcChannelError(
+                emit IbcEventsEmitter.ChannelOpenAckError(
                     address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
                 );
-                connectChannel(le, re, settings[i], false, false);
+
+                channelOpenAck(le, re, settings[i], false);
             }
         }
     }
 
-    function test_connectChannel_revert_invalidProof() public {
-        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+    function test_connectChannel_fail_invalidProof() public {
+        // When localEnd initiates, counterparty version is only available in channelOpenAck
         ChannelHandshakeSetting[8] memory settings = createSettings2(true);
         string[1] memory versions = ["1.0"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -146,8 +148,9 @@ contract ChannelHandshakeTest is Base {
                 channelOpenTry(le, re, settings[i], true);
                 re.version = versions[j];
                 settings[i].proof = invalidProof;
+
                 vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
-                connectChannel(le, re, settings[i], false, false);
+                channelOpenAck(le, re, settings[i], false);
             }
         }
     }
@@ -213,8 +216,8 @@ contract ChannelOpenTestBase is Base {
         channelOpenInit(_local, _remote, setting, true);
         channelOpenTry(_localRevertingMars, _remote, setting, true);
 
-        connectChannel(_local, _remote, setting, false, true);
-        connectChannel(_localRevertingMars, _remote, setting, false, true);
+        channelOpenAck(_local, _remote, setting, true);
+        channelOpenConfirm(_localRevertingMars, _remote, setting, true);
     }
 }
 
@@ -649,11 +652,9 @@ contract DappRevertTests is Base {
 
     function test_ibc_channel_ack_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannelError(
+        emit ChannelOpenAckError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
         );
-        dispatcher.connectIbcChannel(
-            revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, false, ch1, validProof
-        );
+        dispatcher.channelOpenAck(revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof);
     }
 }
