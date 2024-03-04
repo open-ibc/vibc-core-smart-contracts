@@ -37,6 +37,17 @@ struct L1Header {
 }
 
 interface ProofVerifier {
+    error InvalidL1BlockNumber();
+    error InvalidL1BlockHash();
+    error InvalidRLPEncodedL1BlockNumber();
+    error InvalidRLPEncodedL1StateRoot();
+    error InvalidAppHash();
+    error InvalidProofKey();
+    error InvalidProofValue();
+    error InvalidPacketProof();
+    error InvalidIbcStateProof();
+    error MethodNotImplemented();
+
     /**
      * @dev verifies if a state update (apphash) is valid, given the provided proofs.
      *      Reverts in case of failure.
@@ -63,12 +74,9 @@ interface ProofVerifier {
      * @param value value to be proven
      * @param proof ICS23 membership proof
      */
-    function verifyMembership(
-        bytes32 appHash,
-        bytes calldata key,
-        bytes calldata value,
-        Ics23Proof calldata proof
-    ) external pure;
+    function verifyMembership(bytes32 appHash, bytes calldata key, bytes calldata value, Ics23Proof calldata proof)
+        external
+        pure;
 
     /**
      * @dev verifies the provided ICS23 proof given the trusted app hash. Reverts in case of failure.

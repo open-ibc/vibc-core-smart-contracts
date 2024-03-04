@@ -1,0 +1,13 @@
+{
+  "name": "vibc-core-smart-contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/open-ibc/vibc-core-smart-contracts",
+  "license": "MIT",
+  "dependencies": {
+    "solhint": "^4.1.1"
+  },
+  "scripts": {
+    "lint": "solhint contracts/**/*.sol"
+  }
+}

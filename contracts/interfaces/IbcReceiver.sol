@@ -2,13 +2,14 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import './IbcDispatcher.sol';
-import '../libs/Ibc.sol';
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IbcDispatcher} from "./IbcDispatcher.sol";
+import {ChannelOrder, CounterParty, IbcPacket, AckPacket} from "../libs/Ibc.sol";
 
 /**
  * @title IbcChannelReceiver
- * @dev This interface must be implemented by IBC-enabled contracts that act as channel owners and process channel handshake callbacks.
+ * @dev This interface must be implemented by IBC-enabled contracts that act as channel owners and process channel
+ * handshake callbacks.
  */
 interface IbcChannelReceiver {
     function onOpenIbcChannel(
@@ -19,17 +20,11 @@ interface IbcChannelReceiver {
         CounterParty calldata counterparty
     ) external returns (string memory selectedVersion);
 
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32 counterpartyChannelId,
-        string calldata counterpartyVersion
-    ) external;
+    function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
+        external;
 
-    function onCloseIbcChannel(
-        bytes32 channelId,
-        string calldata counterpartyPortId,
-        bytes32 counterpartyChannelId
-    ) external;
+    function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external;
 }
 
 /**
@@ -51,15 +46,31 @@ interface IbcPacketReceiver {
  * @notice IBC receiver interface must be implemented by a IBC-enabled contract.
  * The implementer, aka. dApp devs, should implement channel handshake and packet handling methods.
  */
-interface IbcReceiver is IbcChannelReceiver, IbcPacketReceiver {
-
-}
+interface IbcReceiver is IbcChannelReceiver, IbcPacketReceiver {}
 
 contract IbcReceiverBase is Ownable {
     IbcDispatcher public dispatcher;
 
+    error notIbcDispatcher();
+    error UnsupportedVersion();
+    error VersionMismatch();
+    error ChannelNotFound();
+
     /**
-     * @dev Constructor function that takes an IbcDispatcher address and grants the IBC_ROLE to the Polymer IBC Dispatcher.
+     * @dev Modifier to restrict access to only the IBC dispatcher.
+     * Only the address with the IBC_ROLE can execute the function.
+     * Should add this modifier to all IBC-related callback functions.
+     */
+    modifier onlyIbcDispatcher() {
+        if (msg.sender != address(dispatcher)) {
+            revert notIbcDispatcher();
+        }
+        _;
+    }
+
+    /**
+     * @dev Constructor function that takes an IbcDispatcher address and grants the IBC_ROLE to the Polymer IBC
+     * Dispatcher.
      * @param _dispatcher The address of the IbcDispatcher contract.
      */
     constructor(IbcDispatcher _dispatcher) Ownable() {
@@ -69,14 +80,4 @@ contract IbcReceiverBase is Ownable {
     /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
     // An empty function body is sufficient to receive packet fee refunds.
     receive() external payable {}
-
-    /**
-     * @dev Modifier to restrict access to only the IBC dispatcher.
-     * Only the address with the IBC_ROLE can execute the function.
-     * Should add this modifier to all IBC-related callback functions.
-     */
-    modifier onlyIbcDispatcher() {
-        require(msg.sender == address(dispatcher), 'only IBC dispatcher');
-        _;
-    }
 }

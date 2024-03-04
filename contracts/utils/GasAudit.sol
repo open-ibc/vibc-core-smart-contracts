@@ -3,22 +3,16 @@
 pragma solidity ^0.8.9;
 
 contract GasAudit {
+    mapping(bytes32 => bool) public channelIds1;
+    mapping(string => bool) public channelIds2;
+
     event OpenIbcChannel1(
-        address indexed portAddress,
-        bytes32 indexed channelId,
-        string counterpartyPortId,
-        bytes32 coutnerpartyChannelId
+        address indexed portAddress, bytes32 indexed channelId, string counterpartyPortId, bytes32 coutnerpartyChannelId
     );
 
     event OpenIbcChannel2(
-        address indexed portAddress,
-        string channelId,
-        string counterpartyPortId,
-        string coutnerpartyChannelId
+        address indexed portAddress, string channelId, string counterpartyPortId, string coutnerpartyChannelId
     );
-
-    mapping(bytes32 => bool) channelIds1;
-    mapping(string => bool) channelIds2;
 
     function callWithBytes32(
         address portAddress,

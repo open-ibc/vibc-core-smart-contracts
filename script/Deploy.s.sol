@@ -59,13 +59,17 @@ contract Deploy is Script {
         return address(manager);
     }
 
-    function deployDispatcher(string memory portPrefix, address stateManager_) public broadcast returns (address addr_)     {
+    function deployDispatcher(string memory portPrefix, address stateManager_)
+        public
+        broadcast
+        returns (address addr_)
+    {
         Dispatcher dispatcher = new Dispatcher{salt: _implSalt()}(portPrefix, DummyConsensusStateManager(stateManager_));
         console.log("Dispatcher deployed at %s", address(dispatcher));
         return address(dispatcher);
     }
 
-    function deployMars(address dispatcher) public broadcast  returns (address addr_) {
+    function deployMars(address dispatcher) public broadcast returns (address addr_) {
         Mars mars = new Mars{salt: _implSalt()}(IbcDispatcher(dispatcher));
         console.log("Mars deployed at %s", address(mars));
         return address(mars);
@@ -77,19 +81,25 @@ contract Deploy is Script {
         return address(verifier);
     }
 
-    function deployOpConsensusStateManager(uint32 fraudProofWindowSecs, address proofVerifierAddr, address l1BlockProvider) public broadcast returns (address addr_) {
-        OptimisticConsensusStateManager manager = new OptimisticConsensusStateManager{salt: _implSalt()}(fraudProofWindowSecs, ProofVerifier(proofVerifierAddr), L1Block(l1BlockProvider));
+    function deployOpConsensusStateManager(
+        uint32 fraudProofWindowSecs,
+        address proofVerifierAddr,
+        address l1BlockProvider
+    ) public broadcast returns (address addr_) {
+        OptimisticConsensusStateManager manager = new OptimisticConsensusStateManager{salt: _implSalt()}(
+            fraudProofWindowSecs, ProofVerifier(proofVerifierAddr), L1Block(l1BlockProvider)
+        );
         console.log("OptimisticConsensusStateManager deployed at %s", address(manager));
         return address(manager);
     }
 
-    function deployUniversalChannelHandler(address dispatcher) public broadcast  returns (address addr_) {
+    function deployUniversalChannelHandler(address dispatcher) public broadcast returns (address addr_) {
         UniversalChannelHandler handler = new UniversalChannelHandler{salt: _implSalt()}(IbcDispatcher(dispatcher));
         console.log("UniversalChannelHandler deployed at %s", address(handler));
         return address(handler);
     }
 
-    function deployEarth(address middleware) public broadcast  returns (address addr_) {
+    function deployEarth(address middleware) public broadcast returns (address addr_) {
         Earth earth = new Earth{salt: _implSalt()}(middleware);
         console.log("Earth deployed at %s", address(earth));
         return address(earth);

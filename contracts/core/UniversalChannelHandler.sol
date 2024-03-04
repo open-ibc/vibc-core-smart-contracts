@@ -2,65 +2,45 @@
 
 pragma solidity ^0.8.9;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '../interfaces/IbcDispatcher.sol';
-import '../interfaces/IbcMiddleware.sol';
-import {IbcReceiver} from '../interfaces/IbcReceiver.sol';
-import '../libs/Ibc.sol';
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
+import {
+    IbcMiddleware,
+    IbcUniversalChannelMW,
+    IbcUniversalPacketReceiver,
+    IbcMwPacketReceiver,
+    IbcMwEventsEmitter
+} from "../interfaces/IbcMiddleware.sol";
+import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
+import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
-    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
-
     bytes32[] public connectedChannels;
-    string constant VERSION = '1.0';
+    string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
     // Key: middleware bitmap, Value: middleware address from receiver(chain B)'s perspective
     mapping(uint256 => address[]) public mwStackAddrs;
 
+    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
     /**
      * @dev Close a universal channel.
      * Cannot send or receive packets after the channel is closed.
      * @param channelId The channel id of the channel to be closed.
      */
+
     function closeChannel(bytes32 channelId) external onlyOwner {
         dispatcher.closeIbcChannel(channelId);
     }
 
     // IBC callback functions
-
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder,
-        bool,
-        string[] calldata,
-        CounterParty calldata counterparty
-    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (counterparty.channelId == bytes32(0)) {
-            // ChanOpenInit
-            require(
-                keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(VERSION)),
-                'Unsupported version'
-            );
-        } else {
-            // ChanOpenTry
-            require(
-                keccak256(abi.encodePacked(counterparty.version)) == keccak256(abi.encodePacked(VERSION)),
-                'Unsupported version'
-            );
+    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
+        external
+        onlyIbcDispatcher
+    {
+        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(VERSION))) {
+            revert UnsupportedVersion();
         }
-        return VERSION;
-    }
-
-    function onConnectIbcChannel(
-        bytes32 channelId,
-        bytes32,
-        string calldata counterpartyVersion
-    ) external onlyIbcDispatcher {
-        require(
-            keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(VERSION)),
-            'Unsupported version'
-        );
         connectedChannels.push(channelId);
     }
 
@@ -74,7 +54,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
                 break;
             }
         }
-        require(channelFound, 'Channel not found');
+        if (!channelFound) revert ChannelNotFound();
     }
 
     function sendUniversalPacket(
@@ -100,42 +80,41 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external {
-        bytes memory packetData = IbcUtils.toUniversalPacketBytes(
-            UniversalPacket(srcPortAddr, srcMwIds | MW_ID, destPortAddr, appData)
-        );
+        bytes memory packetData =
+            IbcUtils.toUniversalPacketBytes(UniversalPacket(srcPortAddr, srcMwIds | MW_ID, destPortAddr, appData));
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
-    function onRecvPacket(
-        IbcPacket calldata packet
-    ) external override onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket calldata packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
         UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver packet to dApp directly.
-            return
-                IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
-                    packet.dest.channelId,
-                    ucPacket
-                );
+            return IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
+                packet.dest.channelId, ucPacket
+            );
         } else {
             // send packet to first MW in the stack
             return IbcMwPacketReceiver(mwAddrs[0]).onRecvMWPacket(packet.dest.channelId, ucPacket, 0, mwAddrs);
         }
     }
 
-    function onAcknowledgementPacket(
-        IbcPacket calldata packet,
-        AckPacket calldata ack
-    ) external override onlyIbcDispatcher {
+    function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack)
+        external
+        override
+        onlyIbcDispatcher
+    {
         UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver ack to dApp directly.
             IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
-                packet.src.channelId,
-                ucPacket,
-                ack
+                packet.src.channelId, ucPacket, ack
             );
         } else {
             // send ack to last MW in the stack
@@ -149,8 +128,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         if (mwAddrs.length == 0) {
             // no other middleware stack registered for this packet. Deliver timeout to dApp directly.
             IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacketData.srcPortAddr)).onTimeoutUniversalPacket(
-                packet.src.channelId,
-                ucPacketData
+                packet.src.channelId, ucPacketData
             );
         } else {
             // send timeout to last MW in the stack
@@ -167,7 +145,28 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
      * MW closer to UniversalChannel MW has smaller index. MW stack must be in the same order on both chains.
      */
     function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external onlyOwner {
-        require(mwBitmap != 0, 'mwBitmap cannot be 0');
+        if (mwBitmap == 0) revert MwBitmpaCannotBeZero();
         mwStackAddrs[mwBitmap] = mwAddrs;
+    }
+
+    function onOpenIbcChannel(
+        string calldata version,
+        ChannelOrder,
+        bool,
+        string[] calldata,
+        CounterParty calldata counterparty
+    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
+        if (counterparty.channelId == bytes32(0)) {
+            // ChanOpenInit
+            if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
+                revert UnsupportedVersion();
+            }
+        } else {
+            // ChanOpenTry
+            if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(VERSION))) {
+                revert UnsupportedVersion();
+            }
+        }
+        return VERSION;
     }
 }

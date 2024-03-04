@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.9;
 
-import '../libs/Ibc.sol';
-import './IbcDispatcher.sol';
-import './IbcReceiver.sol';
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {IbcPacketReceiver, IbcChannelReceiver} from "./IbcReceiver.sol";
 
 /**
  * @title IbcUniversalPacketSender
@@ -35,8 +35,10 @@ interface IbcMwPacketSender {
     ) external;
 }
 
-// IBC middleware contracts must implement this interface to relay universal channel packets to other IBC middleware contracts.
-// If the MW contract also receives ucPacket as the final destination, it must also implement IbcUniversalPacketReceiver.
+// IBC middleware contracts must implement this interface to relay universal channel packets to other IBC middleware
+// contracts.
+// If the MW contract also receives ucPacket as the final destination, it must also implement
+// IbcUniversalPacketReceiver.
 interface IbcMwPacketReceiver {
     function onRecvMWPacket(
         bytes32 channelId,
@@ -69,18 +71,15 @@ interface IbcMwPacketReceiver {
     ) external;
 }
 
-// dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets' final destination.
+// dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets'
+// final destination.
 interface IbcUniversalPacketReceiver {
-    function onRecvUniversalPacket(
-        bytes32 channelId,
-        UniversalPacket calldata ucPacket
-    ) external returns (AckPacket memory ackPacket);
+    function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
+        external
+        returns (AckPacket memory ackPacket);
 
-    function onUniversalAcknowledgement(
-        bytes32 channelId,
-        UniversalPacket memory packet,
-        AckPacket calldata ack
-    ) external;
+    function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
+        external;
 
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external;
 }
@@ -91,10 +90,11 @@ interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
      * MW_ID must:
      * - be globally unique, ie. no two MWs should have the same MW_ID registered on Polymer chain.
      * - be identical on all supported virtual chains.
-     * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to one MW stack.
+     * - be identical on one virtual chain across multiple deployed MW instances. Each MW instance belong exclusively to
+     * one MW stack.
      * - be 1 << N, where N is a non-negative integer [0,255], and not in conflict with other MWs.
      */
-    function MW_ID() external view returns (uint256);
+    function MW_ID() external view returns (uint256 MWID);
 }
 
 /**
@@ -105,18 +105,17 @@ interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
  *   - IbcMiddleware must sit on top of a UniversalChannel MW or another IbcMiddleware.
  *   - IbcMiddleware cannnot own an IBC channel. Instead, UniversalChannel MW owns channels.
  */
-interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUniversalPacketReceiver {
-
-}
+interface IbcMiddleware is IbcMiddlwareProvider, IbcMwPacketReceiver, IbcUniversalPacketReceiver {}
 
 /**
  * @title IbcUniversalChannelMW
  * @notice This interface must be implemented by IBC universal channel middleware contracts.
- * IbcUniversalChannelMW is a special type of IbcMiddleware that owns IBC channels, which are multiplexed for other IbcMiddleware.
+ * IbcUniversalChannelMW is a special type of IbcMiddleware that owns IBC channels, which are multiplexed for other
+ * IbcMiddleware.
  * IbcUniversalChannelMW cannot sit on top of other MW, and must talk to IbcDispatcher directly.
  */
 interface IbcUniversalChannelMW is IbcMiddlwareProvider, IbcPacketReceiver, IbcChannelReceiver {
-
+    error MwBitmpaCannotBeZero();
 }
 
 /**
@@ -168,7 +167,8 @@ interface IbcMwEventsEmitter {
 
 /**
  * @title IbcMwUser
- * @dev Contracts that send and recv universal packets via IBC MW should inherit IbcMwUser or implement similiar functions.
+ * @dev Contracts that send and recv universal packets via IBC MW should inherit IbcMwUser or implement similiar
+ * functions.
  * @notice IbcMwUser ensures only authorized IBC middleware can call IBC callback functions.
  */
 contract IbcMwUser is Ownable {
@@ -176,14 +176,35 @@ contract IbcMwUser is Ownable {
     address public mw;
     mapping(address => bool) public authorizedMws;
 
+    error UnauthorizedIbcMiddleware();
+    error ackDataTooShort();
+    error ackAddressMismatch();
+
     /**
-     * @dev Constructor function that takes an IbcMiddleware address and grants the IBC_ROLE to the Polymer IBC Dispatcher.
+     * @dev Modifier to restrict access to only the IBC middleware.
+     * Only the address with the IBC_ROLE can execute the function.
+     * Should add this modifier to all IBC-related callback functions.
+     */
+    modifier onlyIbcMw() {
+        if (!authorizedMws[msg.sender]) {
+            revert UnauthorizedIbcMiddleware();
+        }
+        _;
+    }
+
+    /**
+     * @dev Constructor function that takes an IbcMiddleware address and grants the IBC_ROLE to the Polymer IBC
+     * Dispatcher.
      * @param _middleware The address of the IbcMiddleware contract.
      */
     constructor(address _middleware) Ownable() {
         mw = _middleware;
         _authorizeMiddleware(_middleware);
     }
+
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    // An empty function body is sufficient to receive packet fee refunds.
+    receive() external payable {}
 
     /**
      * @dev Set the default IBC middleware contract in the MW stack.
@@ -198,7 +219,8 @@ contract IbcMwUser is Ownable {
     }
 
     /**
-     * @dev register an authorized middleware so that modifier onlyIbcMw can be used to restrict access to only authorized middleware.
+     * @dev register an authorized middleware so that modifier onlyIbcMw can be used to restrict access to only
+     * authorized middleware.
      * Only the address with the IBC_ROLE can execute the function.
      * @notice Should add this modifier to all IBC-related callback functions.
      */
@@ -208,19 +230,5 @@ contract IbcMwUser is Ownable {
 
     function _authorizeMiddleware(address middleware) internal {
         authorizedMws[address(middleware)] = true;
-    }
-
-    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
-    // An empty function body is sufficient to receive packet fee refunds.
-    receive() external payable {}
-
-    /**
-     * @dev Modifier to restrict access to only the IBC middleware.
-     * Only the address with the IBC_ROLE can execute the function.
-     * Should add this modifier to all IBC-related callback functions.
-     */
-    modifier onlyIbcMw() {
-        require(authorizedMws[msg.sender], 'unauthorized IBC middleware');
-        _;
     }
 }

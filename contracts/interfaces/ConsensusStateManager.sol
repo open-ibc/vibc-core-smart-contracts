@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import '../libs/Ibc.sol';
-import './ProofVerifier.sol';
+import {Ics23Proof, L1Header, OpL2StateProof} from "./ProofVerifier.sol";
 
 interface ConsensusStateManager {
     /**
@@ -15,17 +14,12 @@ interface ConsensusStateManager {
         OpL2StateProof calldata proof,
         uint256 height,
         uint256 appHash
-    ) external returns (uint256, bool);
+    ) external returns (uint256 endTime, bool ended);
 
     /**
      *
      */
-    function getState(uint256 height) external view returns (uint256, uint256, bool);
-
-    /**
-     *
-     */
-    function getFraudProofEndtime(uint256 height) external returns (uint256);
+    function getFraudProofEndtime(uint256 height) external returns (uint256 endTime);
 
     /**
      * verifyMembership checks if the current state
@@ -38,4 +32,9 @@ interface ConsensusStateManager {
      *
      */
     function verifyNonMembership(Ics23Proof calldata proof, bytes memory key) external;
+
+    /**
+     *
+     */
+    function getState(uint256 height) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);
 }

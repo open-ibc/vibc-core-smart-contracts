@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import 'forge-std/Test.sol';
-import './Proof.base.t.sol';
-import '../contracts/libs/Ibc.sol';
-import {Dispatcher} from '../contracts/core/Dispatcher.sol';
-import {IbcEventsEmitter} from '../contracts/interfaces/IbcDispatcher.sol';
-import {IbcChannelReceiver} from '../contracts/interfaces/IbcReceiver.sol';
-import '../contracts/examples/Mars.sol';
-import '../contracts/core/OpConsensusStateManager.sol';
-import '../contracts/utils/DummyConsensusStateManager.sol';
-import '../contracts/core/OpProofVerifier.sol';
+import "forge-std/Test.sol";
+import "./Proof.base.t.sol";
+import "../contracts/libs/Ibc.sol";
+import {Dispatcher} from "../contracts/core/Dispatcher.sol";
+import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
+import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
+import "../contracts/examples/Mars.sol";
+import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/utils/DummyConsensusStateManager.sol";
+import "../contracts/core/OpProofVerifier.sol";
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
@@ -31,7 +31,7 @@ struct ChannelHandshakeSetting {
 
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase {
-    uint64 UINT64_MAX = 18446744073709551615;
+    uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
@@ -42,8 +42,8 @@ contract Base is IbcEventsEmitter, ProofBase {
     ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
 
     Dispatcher dispatcher;
-    string portPrefix = 'polyibc.eth.';
-    string[] connectionHops = ['connection-1', 'connection-2'];
+    string portPrefix = "polyibc.eth.";
+    string[] connectionHops = ["connection-1", "connection-2"];
 
     // ⬇️ Utility functions for testing
 
@@ -72,12 +72,9 @@ contract Base is IbcEventsEmitter, ProofBase {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function openChannel(
-        LocalEnd memory le,
-        CounterParty memory re,
-        ChannelHandshakeSetting memory s,
-        bool expPass
-    ) public {
+    function openChannel(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
         CounterParty memory cp;
         cp.portId = re.portId;
         if (!s.localInitiate) {
@@ -141,13 +138,12 @@ contract Base is IbcEventsEmitter, ProofBase {
     // A helper function to expect revert with message when contract is called with non-owner.
     // Error msg is defined by OpenZeppelin Ownable contract.
     function expectRevertNonOwner() internal {
-        vm.expectRevert('Ownable: caller is not the owner');
+        vm.expectRevert("Ownable: caller is not the owner");
     }
 
     function ackToBytes(AckPacket memory ack) public pure returns (bytes memory) {
-        return
-            ack.success
-                ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
-                : abi.encodePacked('{"error":"', ack.data, '"}');
+        return ack.success
+            ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
+            : abi.encodePacked('{"error":"', ack.data, '"}');
     }
 }
