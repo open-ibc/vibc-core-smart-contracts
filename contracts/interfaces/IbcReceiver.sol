@@ -16,8 +16,9 @@ interface IbcChannelReceiver {
 
     function onChanOpenTry(string calldata counterpartyVersion) external returns (string memory selectedVersion);
 
-    function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
-        external;
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external;
+
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external;
 
     function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
         external;

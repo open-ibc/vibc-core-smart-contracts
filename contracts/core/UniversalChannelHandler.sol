@@ -33,16 +33,6 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.closeIbcChannel(channelId);
     }
 
-    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
-        external
-        onlyIbcDispatcher
-    {
-        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(VERSION))) {
-            revert UnsupportedVersion();
-        }
-        connectedChannels.push(channelId);
-    }
-
     function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
@@ -149,6 +139,14 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     }
 
     // IBC callback functions
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
     function onChanOpenInit(string calldata version)
         external
         view
@@ -165,6 +163,13 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         returns (string memory selectedVersion)
     {
         return _openChannel(counterpartyVersion);
+    }
+
+    function _connectChannel(bytes32 channelId, string calldata version) private {
+        if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
+            revert UnsupportedVersion();
+        }
+        connectedChannels.push(channelId);
     }
 
     function _openChannel(string calldata version) private pure returns (string memory selectedVersion) {

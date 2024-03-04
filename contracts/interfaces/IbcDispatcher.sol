@@ -64,7 +64,9 @@ interface IbcEventsEmitter {
         bytes32 counterpartyChannelId
     );
 
-    event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
+    event ChannelOpenAck(address indexed portAddress, bytes32 channelId);
+
+    event ChannelOpenConfirm(address indexed portAddress, bytes32 channelId);
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
 
