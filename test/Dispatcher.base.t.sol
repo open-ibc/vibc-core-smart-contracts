@@ -120,31 +120,55 @@ contract Base is IbcEventsEmitter, ProofBase {
     }
 
     /**
-     * @dev Step-3/4 of the 4-step handshake to open an IBC channel.
+     * @dev Step-3 of the 4-step handshake to open an IBC channel.
      * @param le Local end settings for the channel.
      * @param re Remote end settings for the channel.
      * @param s Channel handshake settings.
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function connectChannel(
-        LocalEnd memory le,
-        CounterParty memory re,
-        ChannelHandshakeSetting memory s,
-        bool isChannConfirm,
-        bool expPass
-    ) public {
+    function channelOpenAck(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit ConnectIbcChannel(address(le.receiver), le.channelId);
+            emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
-        dispatcher.connectIbcChannel(
+        dispatcher.channelOpenAck(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,
-            isChannConfirm,
+            re,
+            s.proof
+        );
+    }
+
+    /**
+     * @dev Step-4 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function channelOpenConfirm(
+        LocalEnd memory le,
+        CounterParty memory re,
+        ChannelHandshakeSetting memory s,
+        bool expPass
+    ) public {
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ChannelOpenConfirm(address(le.receiver), le.channelId);
+        }
+        dispatcher.channelOpenConfirm(
+            le.receiver,
+            CounterParty(le.portId, le.channelId, le.versionCall),
+            le.connectionHops,
+            s.ordering,
+            s.feeEnabled,
             re,
             s.proof
         );
