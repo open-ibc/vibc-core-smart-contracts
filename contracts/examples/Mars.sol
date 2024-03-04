@@ -81,39 +81,30 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder,
-        bool,
-        string[] calldata,
-        CounterParty calldata counterparty
-    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (bytes(counterparty.portId).length <= 8) {
-            revert IBCErrors.invalidCounterPartyPortId();
-        }
-        /**
-         * Version selection is determined by if the callback is invoked on behalf of ChanOpenInit or ChanOpenTry.
-         * ChanOpenInit: self version should be provided whereas the counterparty version is empty.
-         * ChanOpenTry: counterparty version should be provided whereas the self version is empty.
-         * In both cases, the selected version should be in the supported versions list.
-         */
-        bool foundVersion = false;
-        selectedVersion =
-            keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked("")) ? counterparty.version : version;
-        for (uint256 i = 0; i < supportedVersions.length; i++) {
-            if (keccak256(abi.encodePacked(selectedVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
-                foundVersion = true;
-                break;
-            }
-        }
-        if (!foundVersion) revert UnsupportedVersion();
-        // if counterpartyVersion is not empty, then it must be the same foundVersion
-        if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(""))) {
-            if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(selectedVersion))) {
-                revert VersionMismatch();
-            }
-        }
+    function onChanOpenInit(string calldata version)
+        external
+        view
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(version);
+    }
 
-        return selectedVersion;
+    function onChanOpenTry(string calldata counterpartyVersion)
+        external
+        view
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(counterpartyVersion);
+    }
+
+    function _openChannel(string calldata version) private view returns (string memory selectedVersion) {
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
+            if (keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
+                return version;
+            }
+        }
+        revert UnsupportedVersion();
     }
 }
