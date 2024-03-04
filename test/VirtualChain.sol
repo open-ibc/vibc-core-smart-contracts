@@ -153,25 +153,17 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit OpenIbcChannel(
+            emit ChannelOpenInit(
                 address(localEnd),
                 setting.version,
                 setting.ordering,
                 setting.feeEnabled,
                 connectionHops,
-                remoteChain.portIds(address(remoteEnd)),
-                bytes32(0)
+                remoteChain.portIds(address(remoteEnd))
             );
         }
-        dispatcher.openIbcChannel(
-            localEnd,
-            CounterParty(setting.portId, setting.channelId, setting.version),
-            setting.ordering,
-            setting.feeEnabled,
-            connectionHops,
-            // counterparty channelId and version are not known at this point
-            CounterParty(cpPortId, bytes32(0), ""),
-            setting.proof
+        dispatcher.channelOpenInit(
+            localEnd, setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId
         );
     }
 
@@ -193,7 +185,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit OpenIbcChannel(
+            emit ChannelOpenTry(
                 address(localEnd),
                 setting.version,
                 setting.ordering,
@@ -203,7 +195,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
                 cpChanId
             );
         }
-        dispatcher.openIbcChannel(
+        dispatcher.channelOpenTry(
             localEnd,
             CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,

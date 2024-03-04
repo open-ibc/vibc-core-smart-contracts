@@ -23,14 +23,13 @@ interface IbcPacketSender {
  *         Other features are implemented as callback methods in the IbcReceiver interface.
  */
 interface IbcDispatcher is IbcPacketSender {
-    function openIbcChannel(
-        IbcChannelReceiver portAddress,
-        CounterParty calldata self,
+    function channelOpenInit(
+        IbcChannelReceiver receiver,
+        string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,
-        CounterParty calldata counterparty,
-        Ics23Proof calldata proof
+        string calldata counterpartyPortId
     ) external;
 
     function closeIbcChannel(bytes32 channelId) external;
@@ -46,8 +45,18 @@ interface IbcEventsEmitter {
     //
     // channel events
     //
-    event OpenIbcChannel(
-        address indexed portAddress,
+    event ChannelOpenInit(
+        address indexed recevier,
+        string version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] connectionHops,
+        string counterpartyPortId
+    );
+    event ChannelOpenInitError(address indexed receiver, bytes error);
+
+    event ChannelOpenTry(
+        address indexed receiver,
         string version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -55,13 +64,13 @@ interface IbcEventsEmitter {
         string counterpartyPortId,
         bytes32 counterpartyChannelId
     );
+    event ChannelOpenTryError(address indexed receiver, bytes error);
 
     event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
     event ConnectIbcChannelError(address indexed portAddress, bytes error);
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
 
-    event OpenIbcChannelError(address indexed portAddress, bytes error);
     event CloseIbcChannelError(address indexed receiver, bytes error);
     event AcknowledgementError(address indexed receiver, bytes error);
     event TimeoutError(address indexed receiver, bytes error);

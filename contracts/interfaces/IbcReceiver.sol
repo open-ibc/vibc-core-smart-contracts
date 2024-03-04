@@ -12,13 +12,9 @@ import {ChannelOrder, CounterParty, IbcPacket, AckPacket} from "../libs/Ibc.sol"
  * handshake callbacks.
  */
 interface IbcChannelReceiver {
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder ordering,
-        bool feeEnabled,
-        string[] calldata connectionHops,
-        CounterParty calldata counterparty
-    ) external returns (string memory selectedVersion);
+    function onChanOpenInit(string calldata version) external returns (string memory selectedVersion);
+
+    function onChanOpenTry(string calldata counterpartyVersion) external returns (string memory selectedVersion);
 
     function onConnectIbcChannel(bytes32 channelId, bytes32 counterpartyChannelId, string calldata counterpartyVersion)
         external;
@@ -53,7 +49,6 @@ contract IbcReceiverBase is Ownable {
 
     error notIbcDispatcher();
     error UnsupportedVersion();
-    error VersionMismatch();
     error ChannelNotFound();
 
     /**

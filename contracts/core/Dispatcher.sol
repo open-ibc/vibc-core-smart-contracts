@@ -69,14 +69,42 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     /**
-     * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcChannelHandler.
-     * The dApp should implement the onOpenIbcChannel method to handle one of the first two channel handshake methods,
-     * ie. ChanOpenInit or ChanOpenTry.
-     * If callback succeeds, the dApp should return the selected version, and an emitted event will be relayed to the
-     * IBC/VIBC hub chain.
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
      */
-    function openIbcChannel(
-        IbcChannelReceiver portAddress,
+    function channelOpenInit(
+        IbcChannelReceiver receiver,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external {
+        if (bytes(counterpartyPortId).length == 0) {
+            revert IBCErrors.invalidCounterPartyPortId();
+        }
+
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version)
+        );
+
+        if (success) {
+            emit ChannelOpenInit(
+                address(receiver), abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
+            );
+        } else {
+            emit ChannelOpenInitError(address(receiver), data);
+        }
+    }
+
+    /**
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenTry. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
+     */
+    function channelOpenTry(
+        IbcChannelReceiver receiver,
         CounterParty calldata local,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -88,28 +116,19 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        if (Ibc._isChannelOpenTry(counterparty)) {
-            consensusStateManager.verifyMembership(
-                proof,
-                Ibc.channelProofKey(local.portId, local.channelId),
-                Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
-            );
-        }
+        consensusStateManager.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
 
         (bool success, bytes memory data) = _callIfContract(
-            address(portAddress),
-            abi.encodeWithSelector(
-                IbcChannelReceiver.onOpenIbcChannel.selector,
-                local.version,
-                ordering,
-                feeEnabled,
-                connectionHops,
-                counterparty
-            )
+            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
         );
+
         if (success) {
-            emit OpenIbcChannel(
-                address(portAddress),
+            emit ChannelOpenTry(
+                address(receiver),
                 abi.decode(data, (string)),
                 ordering,
                 feeEnabled,
@@ -118,7 +137,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
                 counterparty.channelId
             );
         } else {
-            emit OpenIbcChannelError(address(portAddress), data);
+            emit ChannelOpenTryError(address(receiver), data);
         }
     }
 
@@ -526,17 +545,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
-    function _callIfContract(address portAddress, bytes memory args)
+    function _callIfContract(address receiver, bytes memory args)
         internal
         returns (bool success, bytes memory message)
     {
-        if (!Address.isContract(portAddress)) {
+        if (!Address.isContract(receiver)) {
             return (false, bytes("call to non-contract"));
         }
-        // Only call if we are sure portAddress is a contract
+        // Only call if we are sure receiver is a contract
         // Note: This tx won't revert if the low-level call fails, see
         // https://docs.soliditylang.org/en/latest/cheatsheet.html#members-of-address
-        (success, message) = portAddress.call(args);
+        (success, message) = receiver.call(args);
     }
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and

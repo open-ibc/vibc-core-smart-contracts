@@ -31,21 +31,20 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     }
 
     function test_ibc_channel_open_init() public {
-        CounterParty memory counterparty = CounterParty(ch1.portId, bytes32(0), "");
-
         vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannel(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId, bytes32(0));
+        emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+
         // since this is open chann init, the proof is not used. so use an invalid one
-        dispatcher.openIbcChannel(mars, ch1, ChannelOrder.NONE, false, connectionHops1, counterparty, invalidProof);
+        dispatcher.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
     function test_ibc_channel_open_try() public {
         Ics23Proof memory proof = load_proof("/test/payload/channel_try_pending_proof.hex");
 
         vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannel(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch0.portId, ch0.channelId);
+        emit ChannelOpenTry(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch0.portId, ch0.channelId);
 
-        dispatcher.openIbcChannel(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
+        dispatcher.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
     function test_ibc_channel_ack() public {
