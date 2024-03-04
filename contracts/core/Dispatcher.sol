@@ -68,13 +68,35 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     }
 
     /**
-     * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcChannelHandler.
-     * The dApp should implement the onOpenIbcChannel method to handle one of the first two channel handshake methods,
-     * ie. ChanOpenInit or ChanOpenTry.
-     * If callback succeeds, the dApp should return the selected version, and an emitted event will be relayed to the
-     * IBC/VIBC hub chain.
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
      */
-    function openIbcChannel(
+    function channelOpenInit(
+        IbcChannelReceiver portAddress,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external {
+        if (bytes(counterpartyPortId).length == 0) {
+            revert IBCErrors.invalidCounterPartyPortId();
+        }
+
+        string memory selectedVersion = portAddress.onChanOpenInit(version);
+
+        emit ChannelOpenInit(
+            address(portAddress), selectedVersion, ordering, feeEnabled, connectionHops, counterpartyPortId
+        );
+    }
+
+    /**
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenTry. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
+     */
+    function channelOpenTry(
         IbcChannelReceiver portAddress,
         CounterParty calldata local,
         ChannelOrder ordering,
@@ -87,18 +109,15 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        if (_isChannelOpenTry(counterparty)) {
-            consensusStateManager.verifyMembership(
-                proof,
-                channelProofKey(local.portId, local.channelId),
-                channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
-            );
-        }
+        consensusStateManager.verifyMembership(
+            proof,
+            channelProofKey(local.portId, local.channelId),
+            channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
 
-        string memory selectedVersion =
-            portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty);
+        string memory selectedVersion = portAddress.onChanOpenTry(counterparty.version);
 
-        emit OpenIbcChannel(
+        emit ChannelOpenTry(
             address(portAddress),
             selectedVersion,
             ordering,
@@ -513,20 +532,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         assembly {
             addr := mload(add(addrBytes, 20))
-        }
-    }
-
-    // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
-    // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function _isChannelOpenTry(CounterParty calldata counterparty) internal pure returns (bool open) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
-            open = false;
-            // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
-            // this is the ChanOpenTry; counterparty must not be zero-value
-            open = true;
-        } else {
-            revert IBCErrors.invalidCounterParty();
         }
     }
 }
