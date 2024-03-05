@@ -10,21 +10,9 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
-import {DeploymentUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.sol";
 
-contract ClientTestBase is Base {
-    function setUp() public virtual override {
-        super.setUp();
-
-        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl(portPrefix, opLightClient);
-    }
-}
-
-contract DispatcherUpdateClientTest is ClientTestBase {
-    function setUp() public override {
-        super.setUp();
-    }
-
+abstract contract DispatcherUpdateClientTestSuite is Base {
     function test_updateOptimisticConsensusState_success() public {
         // trick the L1Block contract into thinking it is updated with the right l1 header
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
@@ -35,5 +23,11 @@ contract DispatcherUpdateClientTest is ClientTestBase {
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
         vm.expectRevert("MerkleTrie: ran out of proof elements");
         dispatcher.updateClientWithOptimisticConsensusState(l1header, invalidStateProof, 1, uint256(apphash));
+    }
+}
+
+contract DispatcherUpdateClientTest is DispatcherUpdateClientTestSuite {
+    function setUp() public virtual override {
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, opLightClient);
     }
 }

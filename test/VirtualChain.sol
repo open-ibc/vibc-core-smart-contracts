@@ -14,7 +14,7 @@ import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
-import {DeploymentUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;
@@ -38,6 +38,7 @@ struct VirtualChainData {
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
 contract VirtualChain is Test, IbcEventsEmitter {
     IDispatcher public dispatcher;
+    Dispatcher public impl;
     UniversalChannelHandler public ucHandler;
     GeneralMiddleware public mw1;
     GeneralMiddleware public mw2;
@@ -58,7 +59,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
 
-        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
         ucHandler = new UniversalChannelHandler(dispatcher);
 
         mars = new Mars(dispatcher);
