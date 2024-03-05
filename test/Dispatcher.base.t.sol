@@ -41,7 +41,8 @@ contract Base is IbcEventsEmitter, ProofBase {
 
     LightClient dummyConsStateManager = new DummyLightClient();
 
-    IDispatcher dispatcher;
+    IDispatcher public dispatcher;
+    Dispatcher public impl;
     string portPrefix = "polyibc.eth.";
     string[] connectionHops = ["connection-1", "connection-2"];
 

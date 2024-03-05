@@ -7,13 +7,13 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {DeploymentUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
-import {DeploymentUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.sol";
 
-contract DispatcherIbcWithRealProofs is IbcEventsEmitter, Base {
+abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     using stdStorage for StdStorage;
 
     Mars mars;
@@ -25,13 +25,6 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, Base {
         CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
-
-    function setUp() public override {
-        super.setUp();
-        consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
-        mars = new Mars(dispatcher);
-    }
 
     function test_ibc_channel_open_init() public {
         vm.expectEmit(true, true, true, true);
@@ -135,5 +128,14 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, Base {
         vm.warp(block.timestamp + 1);
 
         return proof;
+    }
+}
+
+contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
+    function setUp() public override {
+        super.setUp();
+        consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
+        mars = new Mars(dispatcher);
     }
 }

@@ -6,7 +6,7 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import {DeploymentUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.sol";
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
@@ -19,7 +19,7 @@ contract ChannelHandshakeTest is Base {
     Mars mars;
 
     function setUp() public override {
-        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcher);
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
@@ -199,7 +199,7 @@ contract ChannelOpenTestBase is Base {
     RevertingBytesMars revertingBytesMars;
 
     function setUp() public virtual override {
-        dispatcher = DeploymentUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         ChannelHandshakeSetting memory setting =
             ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
