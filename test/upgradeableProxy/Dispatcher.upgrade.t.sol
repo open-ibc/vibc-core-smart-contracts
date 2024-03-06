@@ -17,6 +17,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 import {OptimisticLightClient} from "../../contracts/core/OpLightClient.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 import {ProofVerifier} from "../../contracts/core/OpProofVerifier.sol";
+import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
@@ -82,14 +83,16 @@ contract ChannelOpenTestBaseSetup is Base {
 
         // anyone can run Relayers
         vm.startPrank(relayer);
-        vm.deal(relayer, 100000 ether);
+        vm.deal(relayer, 100_000 ether);
         mars = new Mars(dispatcher);
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
-        openChannel(_local, _remote, setting, true);
-        connectChannel(_local, _remote, setting, false, true);
+        channelOpenInit(_local, _remote, setting, true);
+        channelOpenTry(_local, _remote, setting, true);
+        channelOpenAck(_local, _remote, setting, true);
+        channelOpenConfirm(_local, _remote, setting, true);
     }
 }
 
@@ -324,7 +327,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature("receiverNotIndtendedPacketDestination()"));
+        vm.expectRevert(abi.encodeWithSignature("receiverNotIntendedPacketDestination()"));
         dispatcher.timeout(IbcReceiver(mars), packetEarth, validProof);
     }
 
@@ -345,7 +348,8 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
     function test_invalidProof() public {
         sendPacket();
 
-        vm.expectRevert("Invalid dummy non membership proof");
+        // vm.expectRevert("Invalid dummy non membership proof");
+        vm.expectRevert(DummyLightClient.InvalidDummyNonMembershipProof.selector);
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
     }
 }

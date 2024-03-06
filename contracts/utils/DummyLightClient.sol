@@ -12,6 +12,7 @@ import {LightClient, L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/L
 contract DummyLightClient is LightClient {
     error InvalidDummyMembershipProof();
     error InvalidDummyNonMembershipProof();
+
     constructor() {}
 
     function addOpConsensusState(L1Header calldata, OpL2StateProof calldata, uint256, uint256)
