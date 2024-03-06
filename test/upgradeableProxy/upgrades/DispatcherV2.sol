@@ -36,23 +36,23 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string public portPrefix;
-    uint32 portPrefixLen; // TO DO: Will need to change this to reflect dispatchers having multiple clients
+    uint32 public portPrefixLen;
 
     mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceRecv;
-    mapping(address => mapping(bytes32 => uint64)) nextSequenceAck;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceRecv;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceAck;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
     // Keep track of sent packets
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public sendPacketCommitment;
     // keep track of received packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) recvPacketReceipt;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public recvPacketReceipt;
     // keep track of outbound ack packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public ackPacketCommitment;
 
-    LightClient lightClient;
+    LightClient public lightClient;
 
     //
     // methods
@@ -66,20 +66,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
         lightClient = _lightClient;
-    }
-
-    //
-    // Utility functions
-    //
-
-    // verify an EVM address matches an IBC portId.
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
-    function portIdAddressMatch(address addr, string calldata portId) public view returns (bool) {
-        if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
-            return false;
-        }
-        string memory portSuffix = portId[portPrefixLen:];
-        return IbcUtils.hexStrToAddress(portSuffix) == addr;
     }
 
     //
@@ -103,27 +89,36 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         return lightClient.addOpConsensusState(l1header, proof, height, appHash);
     }
 
-    // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height)
-        external
-        view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
-    {
-        return lightClient.getState(height);
+    /**
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
+     */
+    function channelOpenInit(
+        IbcChannelReceiver portAddress,
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external {
+        if (bytes(counterpartyPortId).length == 0) {
+            revert IBCErrors.invalidCounterPartyPortId();
+        }
+
+        string memory selectedVersion = portAddress.onChanOpenInit(version);
+
+        emit ChannelOpenInit(
+            address(portAddress), selectedVersion, ordering, feeEnabled, connectionHops, counterpartyPortId
+        );
     }
 
-    //
-    // IBC Channel methods
-    //
-
     /**
-     * This func is called by a 'relayer' on behalf of a dApp. The dApp should be implements IbcChannelHandler.
-     * The dApp should implement the onOpenIbcChannel method to handle one of the first two channel handshake methods,
-     * ie. ChanOpenInit or ChanOpenTry.
-     * If callback succeeds, the dApp should return the selected version, and an emitted event will be relayed to the
-     * IBC/VIBC hub chain.
+     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
+     * onChanOpenTry. If the callback succeeds, the dApp should return the selected version and the emitted event
+     * will be relayed to the  IBC/VIBC hub chain.
      */
-    function openIbcChannel(
+    function channelOpenTry(
         IbcChannelReceiver portAddress,
         CounterParty calldata local,
         ChannelOrder ordering,
@@ -136,18 +131,15 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        if (IbcUtils.isChannelOpenTry(counterparty)) {
-            lightClient.verifyMembership(
-                proof,
-                Ibc.channelProofKey(local.portId, local.channelId),
-                Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
-            );
-        }
+        lightClient.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
 
-        string memory selectedVersion =
-            portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty);
+        string memory selectedVersion = portAddress.onChanOpenTry(counterparty.version);
 
-        emit OpenIbcChannel(
+        emit ChannelOpenTry(
             address(portAddress),
             selectedVersion,
             ordering,
@@ -158,76 +150,57 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         );
     }
 
-    function verifyConnectIbcChannelProof(
-        CounterParty calldata local,
-        string[] calldata connectionHops,
-        ChannelOrder ordering,
-        bool isChanConfirm,
-        CounterParty calldata counterparty,
-        Ics23Proof calldata proof
-    ) internal {
-        lightClient.verifyMembership(
-            proof,
-            Ibc.channelProofKey(local.portId, local.channelId),
-            Ibc.channelProofValue(
-                isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
-                ordering,
-                local.version,
-                connectionHops,
-                counterparty
-            )
-        );
-    }
-
     /**
-     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the onOpenIbcChannel event.
-     * The dApp should implement the onConnectIbcChannel method to handle the last two channel handshake methods, ie.
-     * ChanOpenAck or ChanOpenConfirm.
+     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
+     * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
-    function connectIbcChannel(
+    function channelOpenAck(
         IbcChannelReceiver portAddress,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        bool isChanConfirm,
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
-
-        portAddress.onConnectIbcChannel(local.channelId, counterparty.channelId, counterparty.version);
-
-        // Register port and channel mapping
-        // TODO: check duplicated channel registration?
-        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
-        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
-        portChannelMap[address(portAddress)][local.channelId] = Channel(
-            counterparty.version, // TODO: this should be self version instead of counterparty version
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty.portId,
-            counterparty.channelId
+        lightClient.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
-        // initialize channel sequences
-        nextSequenceSend[address(portAddress)][local.channelId] = 1;
-        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
-        nextSequenceAck[address(portAddress)][local.channelId] = 1;
+        _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
 
-        emit ConnectIbcChannel(address(portAddress), local.channelId);
+        portAddress.onChanOpenAck(local.channelId, counterparty.version);
+
+        emit ChannelOpenAck(address(portAddress), local.channelId);
     }
 
     /**
-     * @notice Get the IBC channel with the specified port and channel ID
-     * @param portAddress EVM address of the IBC port
-     * @param channelId IBC channel ID from the port perspective
-     * @return A channel struct is always returned. If it doesn't exists, the channel struct is populated with default
-     *    values per EVM.
+     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
+     * The dApp should implement the onChannelConnect method to handle the last channel handshake method:
+     * ChannelOpenConfirm
      */
-    function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory) {
-        return portChannelMap[portAddress][channelId];
+    function channelOpenConfirm(
+        IbcChannelReceiver portAddress,
+        CounterParty calldata local,
+        string[] calldata connectionHops,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        CounterParty calldata counterparty,
+        Ics23Proof calldata proof
+    ) external {
+        lightClient.verifyMembership(
+            proof,
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
+        );
+
+        _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
+
+        portAddress.onChanOpenConfirm(local.channelId, counterparty.version);
+
+        emit ChannelOpenConfirm(address(portAddress), local.channelId);
     }
 
     /**
@@ -297,23 +270,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
     }
-
-    // Prerequisite: must verify sender is authorized to send packet on the channel
-    function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
-        // current packet sequence
-        uint64 sequence = nextSequenceSend[sender][channelId];
-        if (sequence == 0) {
-            revert IBCErrors.invalidPacketSequence();
-        }
-
-        // packet commitment
-        sendPacketCommitment[sender][channelId][sequence] = true;
-        // increment nextSendPacketSequence
-        nextSequenceSend[sender][channelId] = sequence + 1;
-
-        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
-    }
-
     /**
      * @notice Handle the acknowledgement of an IBC packet by the counterparty
      * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
@@ -325,6 +281,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @param ack The acknowledgement receipt for the packet
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
+
     function acknowledgement(
         IbcPacketReceiver receiver,
         IbcPacket calldata packet,
@@ -439,7 +396,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
 
         // If pkt is already timed out, then return early so dApps won't receive it.
-        if (isPacketTimeout(packet)) {
+        if (_isPacketTimeout(packet)) {
             address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
                 writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
@@ -471,16 +428,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //     );
     // }
 
-    // isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
-    // timestamp
-    function isPacketTimeout(IbcPacket calldata packet) internal view returns (bool) {
-        return (
-            (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
-            // TODO: check timeoutHeight.revision_number?
-            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
-        );
-    }
-
     // TODO: remove below writeTimeoutPacket() function
     //       1. core SC is responsible to generate timeout packet
     //       2. user contract are not free to generate timeout with different criteria
@@ -504,7 +451,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        if (!isPacketTimeout(packet)) {
+        if (!_isPacketTimeout(packet)) {
             revert IBCErrors.packetNotTimedOut();
         }
 
@@ -513,5 +460,121 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         );
     }
 
+    /**
+     * @notice Get the IBC channel with the specified port and channel ID
+     * @param portAddress EVM address of the IBC port
+     * @param channelId IBC channel ID from the port perspective
+     * @return channel A channel struct is always returned. If it doesn't exists, the channel struct is populated with
+     * default
+     *    values per EVM.
+     */
+    function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel) {
+        channel = portChannelMap[portAddress][channelId];
+    }
+
+    // getOptimisticConsensusState
+    function getOptimisticConsensusState(uint256 height)
+        external
+        view
+        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+    {
+        return lightClient.getState(height);
+    }
+
+    // verify an EVM address matches an IBC portId.
+    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
+    function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
+        if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
+            return false;
+        }
+        string memory portSuffix = portId[portPrefixLen:];
+        isMatch = _hexStrToAddress(portSuffix) == addr;
+    }
+
+    // Prerequisite: must verify sender is authorized to send packet on the channel
+    function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
+        // current packet sequence
+        uint64 sequence = nextSequenceSend[sender][channelId];
+        if (sequence == 0) {
+            revert IBCErrors.invalidPacketSequence();
+        }
+
+        // packet commitment
+        sendPacketCommitment[sender][channelId][sequence] = true;
+        // increment nextSendPacketSequence
+        nextSequenceSend[sender][channelId] = sequence + 1;
+
+        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
+    }
+
+    function _connectChannel(
+        IbcChannelReceiver portAddress,
+        CounterParty calldata local,
+        string[] calldata connectionHops,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        CounterParty calldata counterparty
+    ) internal {
+        // Register port and channel mapping
+        // TODO: check duplicated channel registration?
+        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
+        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
+        portChannelMap[address(portAddress)][local.channelId] = Channel(
+            counterparty.version, // TODO: this should be self version instead of counterparty version
+            ordering,
+            feeEnabled,
+            connectionHops,
+            counterparty.portId,
+            counterparty.channelId
+        );
+
+        // initialize channel sequences
+        nextSequenceSend[address(portAddress)][local.channelId] = 1;
+        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
+        nextSequenceAck[address(portAddress)][local.channelId] = 1;
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
+    // timestamp
+    function _isPacketTimeout(IbcPacket calldata packet) internal view returns (bool isTimeOut) {
+        return (
+            isTimeOut = (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
+            // TODO: check timeoutHeight.revision_number?
+            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+        );
+    }
+
+    /**
+     * Convert a non-0x-prefixed hex string to an address
+     * @param hexStr hex string to convert to address. Note that the hex string must not include a 0x prefix.
+     * hexStr is case-insensitive.
+     */
+    function _hexStrToAddress(string memory hexStr) internal pure returns (address addr) {
+        if (bytes(hexStr).length != 40) {
+            revert IBCErrors.invalidHexStringLength();
+        }
+
+        bytes memory strBytes = bytes(hexStr);
+        bytes memory addrBytes = new bytes(20);
+
+        for (uint256 i = 0; i < 20; i++) {
+            uint8 high = uint8(strBytes[i * 2]);
+            uint8 low = uint8(strBytes[1 + i * 2]);
+            // Convert to lowercase if the character is in uppercase
+            if (high >= 65 && high <= 90) {
+                high += 32;
+            }
+            if (low >= 65 && low <= 90) {
+                low += 32;
+            }
+            uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
+            addrBytes[i] = bytes1(digit);
+        }
+
+        assembly {
+            addr := mload(add(addrBytes, 20))
+        }
+    }
 }
