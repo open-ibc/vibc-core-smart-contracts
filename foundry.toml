@@ -10,5 +10,6 @@ fs_permissions = [{ access = 'read', path = './test/payload'}]
 [fmt]
 wrap_comments = true
 number_underscore = "thousands"
+ignore = ["lib/*"]
 
 # See more config options https://book.getfoundry.sh/reference/config.html
