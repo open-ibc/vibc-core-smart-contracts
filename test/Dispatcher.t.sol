@@ -12,18 +12,11 @@ import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
-contract ChannelHandshakeTest is Base {
+abstract contract ChannelHandshakeTestSuite is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
     LocalEnd _local;
-    CounterParty _remote;
     Mars mars;
-
-    function setUp() public override {
-        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
-        mars = new Mars(dispatcher);
-        _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
-    }
+    CounterParty _remote;
 
     function test_openChannel_initiator_ok() public {
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
@@ -184,8 +177,17 @@ contract ChannelHandshakeTest is Base {
     }
 }
 
+contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
+    function setUp() public override {
+        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        mars = new Mars(dispatcher);
+        _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
+        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+    }
+}
+
 // This Base contract provides an open channel for sub-contract tests
-contract ChannelOpenTestBase is Base {
+contract ChannelOpenTestBaseSetup is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
     string invalidPortId = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
     bytes32 channelId = "channel-1";
@@ -252,7 +254,7 @@ contract ChannelOpenTestBase is Base {
 //     }
 // }
 
-contract DispatcherSendPacketTest is ChannelOpenTestBase {
+contract DispatcherSendPacketTestSuite is ChannelOpenTestBaseSetup {
     // default params
     string payload = "msgPayload";
     uint64 timeoutTimestamp = 1000;
@@ -275,7 +277,7 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
     }
 }
 
-contract PacketSenderTestBase is ChannelOpenTestBase {
+contract PacketSenderTestBase is ChannelOpenTestBaseSetup {
     IbcEndpoint dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint src;
     IbcEndpoint srcRevertingMars;
@@ -319,7 +321,7 @@ contract PacketSenderTestBase is ChannelOpenTestBase {
 }
 
 // Test Chains B receives a packet from Chain A
-contract DispatcherRecvPacketTest is ChannelOpenTestBase {
+contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
     IbcEndpoint src = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint dest;
     bytes payload = bytes("msgPayload");
@@ -377,7 +379,7 @@ contract DispatcherRecvPacketTest is ChannelOpenTestBase {
 }
 
 // Test Chain A receives an acknowledgement packet from Chain B
-contract DispatcherAckPacketTest is PacketSenderTestBase {
+contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
     function test_success() public {
         for (uint64 index = 0; index < 3; index++) {
             sendPacket();
@@ -449,7 +451,7 @@ contract DispatcherAckPacketTest is PacketSenderTestBase {
 }
 
 // Test Chain A receives a timeout packet from Chain B
-contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
+contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
     // preconditions for timeout packet
     // - packet commitment exists
     // - packet timeout is verified by Polymer client
