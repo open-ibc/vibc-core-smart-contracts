@@ -13,6 +13,7 @@ using stdStorage for StdStorage;
 
 contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     Mars mars;
+    RevertingMars revertingMars;
     Dispatcher dispatcher;
     OptimisticConsensusStateManager consensusStateManager;
 
@@ -28,6 +29,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         consensusStateManager = new OptimisticConsensusStateManager(1, opProofVerifier, l1BlockProvider);
         dispatcher = new Dispatcher("polyibc.eth1.", consensusStateManager);
         mars = new Mars(dispatcher);
+        revertingMars = new RevertingMars(dispatcher);
     }
 
     function test_ibc_channel_open_init() public {
@@ -112,6 +114,24 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
             AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
         );
         dispatcher.recvPacket(mars, packet, proof);
+    }
+
+    function test_recv_packet_callback_revert() public {
+        Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
+
+        // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
+        IbcPacket memory packet;
+        packet.data = bytes("packet-1");
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
+        packet.dest.channelId = ch1.channelId;
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(revertingMars))));
+        packet.src.portId = ch0.portId;
+        packet.src.channelId = ch0.channelId;
+        packet.sequence = 1;
+
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(address(revertingMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
+        dispatcher.recvPacket(revertingMars, packet, proof);
     }
 
     function test_timeout_packet() public {

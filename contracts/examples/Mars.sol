@@ -19,7 +19,12 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        virtual
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
         recvedPackets.push(packet);
 
         // solhint-disable-next-line quotes
@@ -109,5 +114,23 @@ contract Mars is IbcReceiverBase, IbcReceiver {
             }
         }
         revert UnsupportedVersion();
+    }
+}
+
+/**
+ * Exact same as Mars, but reverts - used to test that transport error is seperated from errors thrown in onRecvPacket
+ */
+contract RevertingMars is Mars {
+    error OnRecvPacketRevert();
+
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        revert OnRecvPacketRevert();
     }
 }
