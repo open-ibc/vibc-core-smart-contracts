@@ -384,7 +384,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
-        AckPacket memory ack = receiver.onRecvPacket(pkt);
+        AckPacket memory ack;
+        try receiver.onRecvPacket(pkt) returns (AckPacket memory receivedAck) {
+            ack = AckPacket(true, receivedAck.data);
+        } catch {
+            ack = AckPacket(false, ""); // Since the call to receiver.onRecvPacket failed; we have an empty ack data
+        }
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
