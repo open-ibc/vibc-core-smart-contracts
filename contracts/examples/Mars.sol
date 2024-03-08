@@ -130,6 +130,7 @@ contract RevertingStringMars is Mars {
         onlyIbcDispatcher
         returns (AckPacket memory ackPacket)
     {
+        // solhint-disable-next-line
         require(false, "on recv packet is reverting");
     }
 }
@@ -158,6 +159,7 @@ contract RevertingEmptyMars is Mars {
         onlyIbcDispatcher
         returns (AckPacket memory ackPacket)
     {
+        // solhint-disable-next-line
         require(false);
     }
 }
