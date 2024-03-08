@@ -387,8 +387,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         AckPacket memory ack;
         try receiver.onRecvPacket(pkt) returns (AckPacket memory receivedAck) {
             ack = AckPacket(receivedAck.success, receivedAck.data);
-        } catch {
-            ack = AckPacket(false, ""); // Since the call to receiver.onRecvPacket failed; we have an empty ack data
+        } catch Error(string memory reason) {
+            ack = AckPacket(false, bytes(reason));
+        } catch Panic(uint256 code) {
+            ack = AckPacket(false, bytes.concat("panic: ", bytes32(code)));
+        } catch (bytes memory reason) {
+            // Catch all for general revert
+            ack = AckPacket(false, reason);
         }
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks

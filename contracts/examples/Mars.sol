@@ -118,9 +118,23 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 }
 
 /**
- * Exact same as Mars, but reverts - used to test that transport error is seperated from errors thrown in onRecvPacket
+ * These contracts are the exact same as Mars, but they revert/panick in different ways.
+ * they are used to test that transport error is seperated from errors thrown in onRecvPacket
  */
-contract RevertingMars is Mars {
+contract RevertingStringMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        require(false, "on recv packet is reverting");
+    }
+}
+
+contract RevertingBytesMars is Mars {
     error OnRecvPacketRevert();
 
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
@@ -132,5 +146,31 @@ contract RevertingMars is Mars {
         returns (AckPacket memory ackPacket)
     {
         revert OnRecvPacketRevert();
+    }
+}
+
+contract RevertingEmptyMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        require(false);
+    }
+}
+
+contract PanickingMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        assert(false);
     }
 }

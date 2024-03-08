@@ -3,7 +3,13 @@ pragma solidity ^0.8.15;
 
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import "../contracts/examples/Mars.sol";
+import {
+    Mars,
+    RevertingBytesMars,
+    PanickingMars,
+    RevertingStringMars,
+    RevertingEmptyMars
+} from "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import "../contracts/core/OpConsensusStateManager.sol";
 import "./Proof.base.t.sol";
@@ -13,7 +19,6 @@ using stdStorage for StdStorage;
 
 contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     Mars mars;
-    RevertingMars revertingMars;
     Dispatcher dispatcher;
     OptimisticConsensusStateManager consensusStateManager;
 
@@ -29,7 +34,6 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         consensusStateManager = new OptimisticConsensusStateManager(1, opProofVerifier, l1BlockProvider);
         dispatcher = new Dispatcher("polyibc.eth1.", consensusStateManager);
         mars = new Mars(dispatcher);
-        revertingMars = new RevertingMars(dispatcher);
     }
 
     function test_ibc_channel_open_init() public {
@@ -116,22 +120,60 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         dispatcher.recvPacket(mars, packet, proof);
     }
 
-    function test_recv_packet_callback_revert() public {
+    function test_recv_packet_callback_revert_and_panic() public {
         Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
+        RevertingBytesMars revertingBytesMars = new RevertingBytesMars(dispatcher);
+        PanickingMars panickingMars = new PanickingMars(dispatcher);
+        RevertingEmptyMars revertingEmptyMars = new RevertingEmptyMars(dispatcher);
+        RevertingStringMars revertingStringMars = new RevertingStringMars(dispatcher);
 
         // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
         packet.timeoutTimestamp = 15_566_401_733_896_437_760;
         packet.dest.channelId = ch1.channelId;
-        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(revertingMars))));
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(revertingBytesMars))));
         packet.src.portId = ch0.portId;
         packet.src.channelId = ch0.channelId;
         packet.sequence = 1;
 
+        // Test Revert Memory
         vm.expectEmit(true, true, true, true);
-        emit WriteAckPacket(address(revertingMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
-        dispatcher.recvPacket(revertingMars, packet, proof);
+        emit WriteAckPacket(
+            address(revertingBytesMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
+        );
+        dispatcher.recvPacket(revertingBytesMars, packet, proof);
+
+        // Test Revert String
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(revertingStringMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(
+            address(revertingStringMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, bytes("on recv packet is reverting"))
+        );
+        dispatcher.recvPacket(revertingStringMars, packet, proof);
+
+        // Test Revert empty
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(revertingEmptyMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
+        dispatcher.recvPacket(revertingEmptyMars, packet, proof);
+
+        // Test Panic
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(panickingMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(
+            address(panickingMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, bytes.concat("panic: ", bytes32(uint256(1))))
+        );
+        dispatcher.recvPacket(panickingMars, packet, proof);
     }
 
     function test_timeout_packet() public {
