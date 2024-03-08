@@ -172,10 +172,6 @@ library IbcUtils {
 
     // convert params to UniversalPacketBytes with optimal gas cost
 
-    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
-        packetBytes = bytes.concat(data.srcPortAddr, bytes32(data.mwBitmap), data.destPortAddr, data.appData);
-    }
-
     // fromUniversalPacketBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
     function fromUniversalPacketBytes(bytes calldata data)
         public
@@ -195,6 +191,10 @@ library IbcUtils {
             destPortAddr := mload(0x0)
         }
         universalPacketData = UniversalPacket(srcPortAddr, uint256(mwBitmap), destPortAddr, data[96:data.length]);
+    }
+
+    function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
+        packetBytes = bytes.concat(data.srcPortAddr, bytes32(data.mwBitmap), data.destPortAddr, data.appData);
     }
 
     // addressToPortId converts an address to a port ID
