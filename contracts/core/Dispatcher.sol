@@ -386,7 +386,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         IbcPacket memory pkt = packet;
         AckPacket memory ack;
         try receiver.onRecvPacket(pkt) returns (AckPacket memory receivedAck) {
-            ack = AckPacket(true, receivedAck.data);
+            ack = AckPacket(receivedAck.success, receivedAck.data);
         } catch {
             ack = AckPacket(false, ""); // Since the call to receiver.onRecvPacket failed; we have an empty ack data
         }
