@@ -174,7 +174,7 @@ library IbcUtils {
 
     // fromUniversalPacketBytes converts UniversalPacketDataBytes to UniversalPacketData, per how its packed into bytes
     function fromUniversalPacketBytes(bytes calldata data)
-        public
+        external
         pure
         returns (UniversalPacket memory universalPacketData)
     {
