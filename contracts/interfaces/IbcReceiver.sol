@@ -31,7 +31,6 @@ interface IbcChannelReceiver {
     function onChanOpenAck(bytes32 channelId, bytes32 counterpartychannelId, string calldata counterpartyVersion)
         external;
 
-    function onChanOpenConfirm(bytes32 channelId) external;
     /**
      * @notice Handles the channel close init event
      * @param channelId The unique identifier of the channel
@@ -51,6 +50,8 @@ interface IbcChannelReceiver {
      */
     function onChanCloseConfirm(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
         external;
+
+    function onChanOpenConfirm(bytes32 channelId) external;
 }
 
 /**

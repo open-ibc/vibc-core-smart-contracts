@@ -66,10 +66,10 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     function test_ack_packet() public {
         Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex");
 
-        // plant a fake packet commitment so the ack checks go through
+        // Plant a fake packet commitment so the ack checks go through
         // Stdstore doesn't work for proxies so we have to use store
-        // use "forge inspect --storage" to find the nested mapping slot
-        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(156))); // current nested mapping slot: 157
+        // use "forge inspect Dispatcher storage" to find the nested mapping slot
+        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(156)));
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
         vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
@@ -116,8 +116,20 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         dispatcherProxy.recvPacket(packet, proof);
     }
 
-    function test_timeout_packet() public {
-        vm.skip(true); // not implemented
+    function test_timeout_packet_revert() public {
+        // Timeout reverts since it is not yet implemented
+        Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
+        IbcPacket memory packet;
+        packet.data = bytes("packet-1");
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
+        packet.dest.channelId = ch1.channelId;
+        packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
+        packet.src.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
+        packet.src.channelId = ch0.channelId;
+        packet.sequence = 1;
+
+        vm.expectRevert(abi.encodeWithSelector(ProofVerifier.MethodNotImplemented.selector));
+        dispatcherProxy.timeout(packet, proof);
     }
 
     function load_proof(string memory filepath) internal returns (Ics23Proof memory) {

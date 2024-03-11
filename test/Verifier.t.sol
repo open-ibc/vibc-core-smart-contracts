@@ -89,7 +89,14 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
             Ibc.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            Ibc.channelProofValue(ChannelState.TRY_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(
+                ChannelState.TRY_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
     }
 
@@ -109,7 +116,14 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
             Ibc.channelProofKey(
                 "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0")
             ),
-            Ibc.channelProofValue(ChannelState.ACK_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(
+                ChannelState.ACK_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
     }
 
@@ -129,7 +143,14 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
             Ibc.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(
+                ChannelState.CONFIRM_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
     }
 

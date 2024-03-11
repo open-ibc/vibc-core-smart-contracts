@@ -237,37 +237,6 @@ contract ChannelOpenTestBaseSetup is Base {
     }
 }
 
-// FIXME this is commented out to make the contract size smaller. We need to optimise for size
-// contract DispatcherCloseChannelTest is ChannelOpenTestBase {
-//     function test_closeChannelInit_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         mars.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelInit_mustOwner() public {
-//         Mars earth = new Mars(dispatcherProxy);
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
-//         earth.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelConfirm_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         dispatcherProxy.onCloseIbcChannel(address(mars), channelId, validProof);
-//     }
-//
-//     function test_closeChannelConfirm_mustOwner() public {
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedByPortAddress()'));
-//         dispatcherProxy.onCloseIbcChannel(address(mars), 'channel-999', validProof);
-//     }
-//
-//     function test_closeChannelConfirm_invalidProof() public {
-//         vm.expectRevert('Invalid dummy membership proof');
-//         dispatcherProxy.onCloseIbcChannel(address(mars), channelId, invalidProof);
-//     }
-// }
-
 contract DispatcherSendPacketTestSuite is ChannelOpenTestBaseSetup {
     // default params
     string payload = "msgPayload";
@@ -286,7 +255,7 @@ contract DispatcherSendPacketTestSuite is ChannelOpenTestBaseSetup {
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
         Mars earth = new Mars(dispatcherProxy);
-        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedBySender.selector));
         earth.greet(payload, channelId, timeoutTimestamp);
     }
 }
@@ -383,7 +352,7 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
-        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.unexpectedPacketSequence.selector));
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
@@ -427,14 +396,14 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
 
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         sendPacket();
         dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
     }
 
@@ -447,7 +416,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         // only 2nd ack is allowed; so the 3rd ack fails
-        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.unexpectedPacketSequence.selector));
 
         dispatcherProxy.acknowledgement(genPacket(3), genAckPacket("3"), validProof);
     }
@@ -491,7 +460,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(packet, ackPacket, validProof);
     }
 }
@@ -524,14 +493,14 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
 
     // cannot timeout packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(genPacket(1), validProof);
 
         sendPacket();
         dispatcherProxy.timeout(sentPacket, validProof);
 
         // packet commitment is removed after timeout
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(sentPacket, validProof);
     }
 
@@ -559,8 +528,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        /* vm.expectRevert('Packet commitment not found'); */
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(packet, validProof);
     }
 
@@ -584,7 +552,7 @@ contract DappRevertTests is Base {
     ChannelEnd ch1 =
         ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
-    function setUp() public override {
+    function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) =
             TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);

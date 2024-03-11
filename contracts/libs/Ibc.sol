@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
 import {Base64} from "base64/base64.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * Ibc.sol
@@ -23,7 +24,7 @@ struct IbcPacket {
     bytes data;
     /// block height after which the packet times out
     Height timeoutHeight;
-    /// block timestamp (in nanoseconds) after which the packet times out
+    /// block timestamp (in seconds after the unix epoch) after which the packet times out
     uint64 timeoutTimestamp;
 }
 
@@ -106,6 +107,7 @@ enum ChannelState {
 }
 
 struct Channel {
+    string portId;
     string version;
     ChannelOrder ordering;
     bool feeEnabled;
@@ -312,18 +314,105 @@ library Ibc {
         }
     }
 
-    // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
-    // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function _isChannelOpenTry(ChannelEnd calldata counterparty) external pure returns (bool open) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
-            open = false;
-            // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
-            // this is the ChanOpenTry; counterparty must not be zero-value
-            open = true;
-        } else {
-            revert IBCErrors.invalidCounterParty();
-        }
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
+    function channelProofKey(string calldata portId, bytes32 channelId) external pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
+    }
+
+    function channelProofKeyMemory(string memory portId, bytes32 channelId)
+        external
+        pure
+        returns (bytes memory proofKey)
+    {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
+    }
+
+    // protobuf encoding of a channel object
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/keeper/keeper.go#L92
+    function channelProofValue(
+        ChannelState state,
+        ChannelOrder ordering,
+        string calldata version,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId,
+        bytes32 counterpartyChannelId
+    ) external pure returns (bytes memory proofValue) {
+        proofValue = ProtoChannel.encode(
+            ProtoChannel.Data(
+                int32(uint32(state)),
+                int32(uint32(ordering)),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
+                connectionHops,
+                version
+            )
+        );
+    }
+
+    function channelProofValueMemory(
+        ChannelState state,
+        ChannelOrder ordering,
+        string memory version,
+        string[] memory connectionHops,
+        string memory counterpartyPortId,
+        bytes32 counterpartyChannelId
+    ) external pure returns (bytes memory proofValue) {
+        proofValue = ProtoChannel.encode(
+            ProtoChannel.Data(
+                int32(uint32(state)),
+                int32(uint32(ordering)),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
+                connectionHops,
+                version
+            )
+        );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
+    function packetCommitmentProofKey(IbcPacket calldata packet) external pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked(
+            "commitments/ports/",
+            packet.src.portId,
+            "/channels/",
+            toStr(packet.src.channelId),
+            "/sequences/",
+            toStr(packet.sequence)
+        );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
+    function packetCommitmentProofValue(IbcPacket calldata packet) external pure returns (bytes32 proofValue) {
+        proofValue = sha256(
+            abi.encodePacked(
+                packet.timeoutTimestamp,
+                packet.timeoutHeight.revision_number,
+                packet.timeoutHeight.revision_height,
+                sha256(packet.data)
+            )
+        );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
+    function ackProofKey(IbcPacket calldata packet) external pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked(
+            "acks/ports/",
+            packet.dest.portId,
+            "/channels/",
+            toStr(packet.dest.channelId),
+            "/sequences/",
+            toStr(packet.sequence)
+        );
+    }
+
+    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
+    function ackProofValue(bytes calldata ack) external pure returns (bytes32 proofValue) {
+        proofValue = sha256(ack);
+    }
+
+    function parseAckData(bytes calldata ack) external pure returns (AckPacket memory ackData) {
+        // this hex value is '"result"'
+        ackData = (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
+            ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
+            : AckPacket(false, ack[10:ack.length - 2]); // this is an error
     }
 
     function toStr(bytes32 b) public pure returns (string memory outStr) {
@@ -361,78 +450,5 @@ library Ibc {
         }
 
         outStr = string(buffer);
-    }
-
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
-    function channelProofKey(string calldata portId, bytes32 channelId) public pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
-    }
-
-    // protobuf encoding of a channel object
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/keeper/keeper.go#L92
-    function channelProofValue(
-        ChannelState state,
-        ChannelOrder ordering,
-        string calldata version,
-        string[] calldata connectionHops,
-        ChannelEnd calldata counterparty
-    ) public pure returns (bytes memory proofValue) {
-        proofValue = ProtoChannel.encode(
-            ProtoChannel.Data(
-                int32(uint32(state)),
-                int32(uint32(ordering)),
-                ProtoCounterparty.Data(counterparty.portId, toStr(counterparty.channelId)),
-                connectionHops,
-                version
-            )
-        );
-    }
-
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
-    function packetCommitmentProofKey(IbcPacket calldata packet) public pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked(
-            "commitments/ports/",
-            packet.src.portId,
-            "/channels/",
-            toStr(packet.src.channelId),
-            "/sequences/",
-            toStr(packet.sequence)
-        );
-    }
-
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
-    function packetCommitmentProofValue(IbcPacket calldata packet) public pure returns (bytes32 proofValue) {
-        proofValue = sha256(
-            abi.encodePacked(
-                packet.timeoutTimestamp,
-                packet.timeoutHeight.revision_number,
-                packet.timeoutHeight.revision_height,
-                sha256(packet.data)
-            )
-        );
-    }
-
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
-    function ackProofKey(IbcPacket calldata packet) public pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked(
-            "acks/ports/",
-            packet.dest.portId,
-            "/channels/",
-            toStr(packet.dest.channelId),
-            "/sequences/",
-            toStr(packet.sequence)
-        );
-    }
-
-    // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
-    function ackProofValue(bytes calldata ack) public pure returns (bytes32 proofValue) {
-        proofValue = sha256(ack);
-    }
-
-    function parseAckData(bytes calldata ack) public pure returns (AckPacket memory ackData) {
-        // this hex value is '"result"'
-        ackData = (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
-            ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
-            : AckPacket(false, ack[10:ack.length - 2]); // this is an error
     }
 }
