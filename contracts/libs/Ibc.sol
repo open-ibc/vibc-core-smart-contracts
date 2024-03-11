@@ -270,13 +270,14 @@ contract Ibc {
         ChannelOrder ordering,
         string calldata version,
         string[] calldata connectionHops,
-        CounterParty calldata counterparty
+        string calldata counterpartyPortId,
+        bytes32 counterpartyChannelId
     ) public pure returns (bytes memory proofValue) {
         proofValue = ProtoChannel.encode(
             ProtoChannel.Data(
                 int32(uint32(state)),
                 int32(uint32(ordering)),
-                ProtoCounterparty.Data(counterparty.portId, toStr(counterparty.channelId)),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
                 connectionHops,
                 version
             )

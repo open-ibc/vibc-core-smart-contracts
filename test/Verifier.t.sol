@@ -82,15 +82,19 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         connectionHops[0] = "connection-2";
         connectionHops[1] = "connection-1";
 
-        CounterParty memory counterparty = CounterParty(
-            "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0"
-        );
         this.run_packet_proof_verification(
             input,
             this.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            this.channelProofValue(ChannelState.TRY_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            this.channelProofValue(
+                ChannelState.TRY_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e",
+                IbcUtils.toBytes32("channel-0")
+            )
         );
     }
 
@@ -103,14 +107,19 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         connectionHops[0] = "connection-0";
         connectionHops[1] = "connection-3";
 
-        CounterParty memory counterparty =
-            CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "");
         this.run_packet_proof_verification(
             input,
             this.channelProofKey(
                 "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0")
             ),
-            this.channelProofValue(ChannelState.ACK_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            this.channelProofValue(
+                ChannelState.ACK_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e",
+                IbcUtils.toBytes32("channel-1")
+            )
         );
     }
 
@@ -123,15 +132,19 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         connectionHops[0] = "connection-2";
         connectionHops[1] = "connection-1";
 
-        CounterParty memory counterparty = CounterParty(
-            "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0"
-        );
         this.run_packet_proof_verification(
             input,
             this.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            this.channelProofValue(ChannelState.CONFIRM_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            this.channelProofValue(
+                ChannelState.CONFIRM_PENDING,
+                ChannelOrder.NONE,
+                "1.0",
+                connectionHops,
+                "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e",
+                IbcUtils.toBytes32("channel-0")
+            )
         );
     }
 

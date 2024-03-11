@@ -112,7 +112,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             channelProofKey(local.portId, local.channelId),
-            channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+            channelProofValue(
+                ChannelState.TRY_PENDING,
+                ordering,
+                local.version,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
 
         string memory selectedVersion = portAddress.onChanOpenTry(counterparty.version);
@@ -144,7 +151,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             channelProofKey(local.portId, local.channelId),
-            channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
+            channelProofValue(
+                ChannelState.ACK_PENDING,
+                ordering,
+                local.version,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
 
         _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
@@ -171,7 +185,14 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         consensusStateManager.verifyMembership(
             proof,
             channelProofKey(local.portId, local.channelId),
-            channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
+            channelProofValue(
+                ChannelState.CONFIRM_PENDING,
+                ordering,
+                local.version,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            )
         );
 
         _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
