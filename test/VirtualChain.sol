@@ -91,6 +91,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         ChannelSetting memory setting
     ) public view returns (Channel memory) {
         return Channel(
+            setting.portId,
             setting.version,
             setting.ordering,
             setting.feeEnabled,
