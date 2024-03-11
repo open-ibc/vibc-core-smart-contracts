@@ -16,19 +16,20 @@ library TestUtils {
 
     function deployDispatcherProxyAndImpl(string memory initPortPrefix, LightClient lightClient)
         public
-        returns (IDispatcher proxy, Dispatcher impl)
+        returns (IDispatcher proxy, Dispatcher dispatcherImplementation)
     {
-        impl = new Dispatcher();
+        dispatcherImplementation = new Dispatcher();
         proxy = IDispatcher(
             address(
                 new ERC1967Proxy(
-                    address(impl), abi.encodeWithSelector(Dispatcher.initialize.selector, initPortPrefix, lightClient)
+                    address(dispatcherImplementation),
+                    abi.encodeWithSelector(Dispatcher.initialize.selector, initPortPrefix, lightClient)
                 )
             )
         );
     }
 
-    function getProxyImplementation(address proxy, Vm vm) public returns (address impl) {
-        impl = address(uint160(uint256(vm.load(address(proxy), _IMPLEMENTATION_SLOT))));
+    function getProxyImplementation(address proxy, Vm vm) public returns (address dispatcherImplementation) {
+        dispatcherImplementation = address(uint160(uint256(vm.load(address(proxy), _IMPLEMENTATION_SLOT))));
     }
 }
