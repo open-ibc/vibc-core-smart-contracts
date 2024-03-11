@@ -1,4 +1,4 @@
-name: Tests
+name: Foundry
 
 on:
   pull_request:
@@ -21,5 +21,8 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Test
+      - name: Check contract sizes
+        run: forge build --sizes --deny-warnings
+
+      - name: Tests
         run: forge test
