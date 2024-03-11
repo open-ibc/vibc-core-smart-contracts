@@ -224,22 +224,30 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
      * dApp should throw an error if the channel should not be closed.
      */
     function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
-        // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-        consensusStateManager.verifyMembership(
-            proof,
-            bytes("channel/path/to/be/added/here"),
-            bytes("expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}")
-        );
-
         // ensure port owns channel
         Channel memory channel = portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedByPortAddress();
         }
 
+        // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
+        consensusStateManager.verifyMembership(
+            proof,
+            channelProofKeyMemory(channel.portId, channelId),
+            channelProofValueMemory(
+                ChannelState.CLOSE_CONFIRM_PENDING,
+                channel.ordering,
+                channel.version,
+                channel.connectionHops,
+                channel.counterpartyPortId,
+                channel.counterpartyChannelId
+            )
+        );
+
         // confirm with dApp by calling its callback
-        IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
-        reciever.onChanCloseConfirm(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
+        IbcChannelReceiver(portAddress).onChanCloseConfirm(
+            channelId, channel.counterpartyPortId, channel.counterpartyChannelId
+        );
         delete portChannelMap[portAddress][channelId];
         emit ChannelCloseConfirm(portAddress, channelId);
     }

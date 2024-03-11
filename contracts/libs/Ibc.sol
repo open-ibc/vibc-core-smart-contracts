@@ -264,6 +264,14 @@ contract Ibc {
         proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
     }
 
+    function channelProofKeyMemory(string memory portId, bytes32 channelId)
+        public
+        pure
+        returns (bytes memory proofKey)
+    {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
+    }
+
     // protobuf encoding of a channel object
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/keeper/keeper.go#L92
     function channelProofValue(
@@ -272,6 +280,25 @@ contract Ibc {
         string calldata version,
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
+        bytes32 counterpartyChannelId
+    ) public pure returns (bytes memory proofValue) {
+        proofValue = ProtoChannel.encode(
+            ProtoChannel.Data(
+                int32(uint32(state)),
+                int32(uint32(ordering)),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
+                connectionHops,
+                version
+            )
+        );
+    }
+
+    function channelProofValueMemory(
+        ChannelState state,
+        ChannelOrder ordering,
+        string memory version,
+        string[] memory connectionHops,
+        string memory counterpartyPortId,
         bytes32 counterpartyChannelId
     ) public pure returns (bytes memory proofValue) {
         proofValue = ProtoChannel.encode(
