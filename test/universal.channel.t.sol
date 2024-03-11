@@ -41,8 +41,8 @@ contract UniversalChannelTest is Base {
         assertEq(vc1.ucHandler().connectedChannels(0), channelId1);
         assertEq(vc2.ucHandler().connectedChannels(0), channelId2);
 
-        Channel memory channel1 = vc1.dispatcher().getChannel(address(vc1.ucHandler()), channelId1);
-        Channel memory channel2 = vc2.dispatcher().getChannel(address(vc2.ucHandler()), channelId2);
+        Channel memory channel1 = vc1.dispatcherProxy().getChannel(address(vc1.ucHandler()), channelId1);
+        Channel memory channel2 = vc2.dispatcherProxy().getChannel(address(vc2.ucHandler()), channelId2);
         Channel memory channel2Expected =
             vc1.expectedChannel(address(vc1.ucHandler()), channelId1, vc2.getConnectionHops(), setting);
         Channel memory channel1Expected =
@@ -260,7 +260,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
-            // simulate relayer calling dispatcher.recvPacket on chain B
+            // simulate relayer calling dispatcherProxy.recvPacket on chain B
             // recvPacket is an IBC packet
             recvPacket = IbcPacket(
                 IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
@@ -272,7 +272,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             );
 
             //
-            // simulate relayer calling dispatcher.timeout on chain A
+            // simulate relayer calling dispatcherProxy.timeout on chain A
             //
 
             // iterate over sending middleware contracts to verify each MW has witnessed the ack
@@ -295,7 +295,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Timeout(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcher.timeout(v1.ucHandler, recvPacket, validProof);
+            v1.dispatcherProxy.timeout(v1.ucHandler, recvPacket, validProof);
 
             // verify timeout packet received by Earth on chain A
             (gotChannelId, gotUcPacket) = v1.earth.timeoutPackets(packetSeq - 1);
@@ -346,7 +346,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
-            // simulate relayer calling dispatcher.recvPacket on chain B
+            // simulate relayer calling dispatcherProxy.recvPacket on chain B
             // recvPacket is an IBC packet
             recvPacket = IbcPacket(
                 IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
@@ -378,7 +378,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
-            v2.dispatcher.recvPacket(v2.ucHandler, recvPacket, validProof);
+            v2.dispatcherProxy.recvPacket(v2.ucHandler, recvPacket, validProof);
 
             // verify packet received by Earth on chain B
             (gotChannelId, gotUcPacket) = v2.earth.recvedPackets(packetSeq - 1);
@@ -386,7 +386,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             assertEq(abi.encode(gotUcPacket), abi.encode(ucPacket));
 
             //
-            // simulate relayer calling dispatcher.acknowledgePacket on chain A
+            // simulate relayer calling dispatcherProxy.acknowledgePacket on chain A
             //
 
             // iterate over sending middleware contracts to verify each MW has witnessed the ack
@@ -410,7 +410,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcher.acknowledgement(v1.ucHandler, recvPacket, ackToBytes(ackPacket), validProof);
+            v1.dispatcherProxy.acknowledgement(v1.ucHandler, recvPacket, ackToBytes(ackPacket), validProof);
 
             // verify ack packet received by Earth on chain A
             (gotChannelId, gotUcPacket, gotAckPacket) = v1.earth.ackPackets(packetSeq - 1);

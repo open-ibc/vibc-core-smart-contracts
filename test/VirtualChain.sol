@@ -26,7 +26,7 @@ struct ChannelSetting {
 }
 
 struct VirtualChainData {
-    IDispatcher dispatcher;
+    IDispatcher dispatcherProxy;
     UniversalChannelHandler ucHandler;
     Mars mars;
     Earth earth;
@@ -37,8 +37,8 @@ struct VirtualChainData {
 
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
 contract VirtualChain is Test, IbcEventsEmitter {
-    IDispatcher public dispatcher;
-    Dispatcher public impl;
+    IDispatcher public dispatcherProxy;
+    Dispatcher public dispatcherImplementation;
     UniversalChannelHandler public ucHandler;
     GeneralMiddleware public mw1;
     GeneralMiddleware public mw2;
@@ -59,10 +59,11 @@ contract VirtualChain is Test, IbcEventsEmitter {
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
 
-        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
-        ucHandler = new UniversalChannelHandler(dispatcher);
+        (dispatcherProxy, dispatcherImplementation) =
+            TestUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
+        ucHandler = new UniversalChannelHandler(dispatcherProxy);
 
-        mars = new Mars(dispatcher);
+        mars = new Mars(dispatcherProxy);
         earth = new Earth(address(ucHandler));
         // initialize portIds for counterparty chains
         address[3] memory portContracts = [address(ucHandler), address(mars), address(earth)];
@@ -79,7 +80,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
     // return virtualChainData
     function getVirtualChainData() external view returns (VirtualChainData memory) {
-        return VirtualChainData(dispatcher, ucHandler, mars, earth, mw1, mw2, connectionHops);
+        return VirtualChainData(dispatcherProxy, ucHandler, mars, earth, mw1, mw2, connectionHops);
     }
 
     // expectedChannel returns a Channel struct with expected values
@@ -153,7 +154,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
 
-        // set dispatcher's msg.sender to this function's msg.sender
+        // set dispatcherProxy's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
 
         if (expPass) {
@@ -167,7 +168,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
                 remoteChain.portIds(address(remoteEnd))
             );
         }
-        dispatcher.channelOpenInit(
+        dispatcherProxy.channelOpenInit(
             localEnd, setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId
         );
     }
@@ -185,7 +186,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenTry: portId does not exist");
 
-        // set dispatcher's msg.sender to this function's msg.sender
+        // set dispatcherProxy's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
 
         if (expPass) {
@@ -200,7 +201,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
                 cpChanId
             );
         }
-        dispatcher.channelOpenTry(
+        dispatcherProxy.channelOpenTry(
             localEnd,
             CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,
@@ -228,14 +229,14 @@ contract VirtualChain is Test, IbcEventsEmitter {
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
         require(bytes(cpPortId).length > 0, "channelOpenAck: counterparty portId does not exist");
 
-        // set dispatcher's msg.sender to this function's msg.sender
+        // set dispatcherProxy's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenAck(address(localEnd), chanId);
         }
-        dispatcher.channelOpenAck(
+        dispatcherProxy.channelOpenAck(
             localEnd,
             CounterParty(setting.portId, chanId, setting.version),
             connectionHops,
@@ -270,7 +271,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenConfirm(address(localEnd), chanId);
         }
-        dispatcher.channelOpenConfirm(
+        dispatcherProxy.channelOpenConfirm(
             localEnd,
             CounterParty(setting.portId, chanId, setting.version),
             connectionHops,

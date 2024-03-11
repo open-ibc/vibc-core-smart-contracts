@@ -31,7 +31,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
 
         // since this is open chann init, the proof is not used. so use an invalid one
-        dispatcher.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+        dispatcherProxy.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
     function test_ibc_channel_open_try() public {
@@ -40,7 +40,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenTry(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch0.portId, ch0.channelId);
 
-        dispatcher.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
+        dispatcherProxy.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
     function test_ibc_channel_ack() public {
@@ -49,7 +49,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenAck(address(mars), ch0.channelId);
 
-        dispatcher.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
+        dispatcherProxy.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
     }
 
     function test_ibc_channel_confirm() public {
@@ -58,7 +58,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenConfirm(address(mars), ch1.channelId);
 
-        dispatcher.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
+        dispatcherProxy.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
     }
 
     function test_ack_packet() public {
@@ -66,10 +66,11 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
 
         // plant a fake packet commitment so the ack checks go through
         // Stdstore doesn't work for proxies so we have to use store
+        // use "forge inspect --storage" to find the nested mapping slot
         bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(107))); // current nested mapping slot: 107
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
-        vm.store(address(dispatcher), slot3, bytes32(uint256(1)));
+        vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
@@ -86,7 +87,8 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
 
         vm.expectEmit(true, true, true, true);
         emit Acknowledgement(address(mars), packet.src.channelId, packet.sequence);
-        dispatcher.acknowledgement(mars, packet, ack, proof);
+
+        dispatcherProxy.acknowledgement(mars, packet, ack, proof);
     }
 
     function test_recv_packet() public {
@@ -109,7 +111,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
             packet.sequence,
             AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
         );
-        dispatcher.recvPacket(mars, packet, proof);
+        dispatcherProxy.recvPacket(mars, packet, proof);
     }
 
     function test_timeout_packet() public {
@@ -135,7 +137,8 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
     function setUp() public override {
         super.setUp();
         consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        (dispatcher, impl) = TestUtils.deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
-        mars = new Mars(dispatcher);
+        (dispatcherProxy, dispatcherImplementation) =
+            TestUtils.deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
+        mars = new Mars(dispatcherProxy);
     }
 }

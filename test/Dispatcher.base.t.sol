@@ -41,8 +41,8 @@ contract Base is IbcEventsEmitter, ProofBase {
 
     LightClient dummyConsStateManager = new DummyLightClient();
 
-    IDispatcher public dispatcher;
-    Dispatcher public impl;
+    IDispatcher public dispatcherProxy;
+    Dispatcher public dispatcherImplementation;
     string portPrefix = "polyibc.eth.";
     string[] connectionHops = ["connection-1", "connection-2"];
 
@@ -82,7 +82,9 @@ contract Base is IbcEventsEmitter, ProofBase {
                 address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
             );
         }
-        dispatcher.channelOpenInit(le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        dispatcherProxy.channelOpenInit(
+            le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId
+        );
     }
 
     /**
@@ -109,7 +111,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             );
         }
         CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
-        dispatcher.channelOpenTry(
+        dispatcherProxy.channelOpenTry(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             s.ordering,
@@ -135,7 +137,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
-        dispatcher.channelOpenAck(
+        dispatcherProxy.channelOpenAck(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
@@ -164,7 +166,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenConfirm(address(le.receiver), le.channelId);
         }
-        dispatcher.channelOpenConfirm(
+        dispatcherProxy.channelOpenConfirm(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
