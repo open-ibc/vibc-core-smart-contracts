@@ -24,28 +24,42 @@ contract UniversalChannelTest is Base {
                 ChannelSetting memory setting = ChannelSetting(
                     orders[i],
                     "1.0",
-                    "polyibc.eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
+                    IbcUtils.addressToPortId("polyibc.eth1.", address(eth1.ucHandlerProxy())),
                     IbcUtils.toBytes32("channel-0"),
                     feesEnabled[j],
                     validProof
                 );
                 eth1.finishHandshake(eth1.ucHandlerProxy(), eth2, eth2.ucHandlerProxy(), setting);
 
-                assert_channel(eth1, eth2, setting);
+                ChannelSetting memory setting2 = ChannelSetting(
+                    setting.ordering,
+                    setting.version,
+                    IbcUtils.addressToPortId("polyibc.eth2.", address(eth2.ucHandlerProxy())),
+                    setting.channelId,
+                    setting.feeEnabled,
+                    validProof
+                );
+
+                assert_channel(eth1, eth2, setting, setting2);
             }
         }
     }
 
-    function assert_channel(VirtualChain vc1, VirtualChain vc2, ChannelSetting memory setting) internal {
+    function assert_channel(
+        VirtualChain vc1,
+        VirtualChain vc2,
+        ChannelSetting memory setting,
+        ChannelSetting memory setting2
+    ) internal {
         bytes32 channelId1 = vc1.channelIds(address(vc1.ucHandlerProxy()), address(vc2.ucHandlerProxy()));
         bytes32 channelId2 = vc2.channelIds(address(vc2.ucHandlerProxy()), address(vc1.ucHandlerProxy()));
-        assertEq(vc1.ucHandlerProxy().connectedChannels(0), channelId1, "channels not equal 1");
-        assertEq(vc2.ucHandlerProxy().connectedChannels(0), channelId2, "channels not equal 2");
+        assertEq(vc1.ucHandlerProxy().connectedChannels(0), channelId1);
+        assertEq(vc2.ucHandlerProxy().connectedChannels(0), channelId2);
 
         Channel memory channel1 = vc1.dispatcherProxy().getChannel(address(vc1.ucHandlerProxy()), channelId1);
         Channel memory channel2 = vc2.dispatcherProxy().getChannel(address(vc2.ucHandlerProxy()), channelId2);
         Channel memory channel2Expected =
-            vc1.expectedChannel(address(vc1.ucHandlerProxy()), channelId1, vc2.getConnectionHops(), setting);
+            vc1.expectedChannel(address(vc1.ucHandlerProxy()), channelId1, vc2.getConnectionHops(), setting2);
         Channel memory channel1Expected =
             vc2.expectedChannel(address(vc2.ucHandlerProxy()), channelId2, vc1.getConnectionHops(), setting);
         assertEq(abi.encode(channel1), abi.encode(channel1Expected));

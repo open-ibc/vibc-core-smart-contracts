@@ -237,37 +237,6 @@ contract ChannelOpenTestBaseSetup is Base {
     }
 }
 
-// FIXME this is commented out to make the contract size smaller. We need to optimise for size
-// contract DispatcherCloseChannelTest is ChannelOpenTestBase {
-//     function test_closeChannelInit_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         mars.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelInit_mustOwner() public {
-//         Mars earth = new Mars(dispatcherProxy);
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
-//         earth.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelConfirm_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         dispatcherProxy.onCloseIbcChannel(address(mars), channelId, validProof);
-//     }
-//
-//     function test_closeChannelConfirm_mustOwner() public {
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedByPortAddress()'));
-//         dispatcherProxy.onCloseIbcChannel(address(mars), 'channel-999', validProof);
-//     }
-//
-//     function test_closeChannelConfirm_invalidProof() public {
-//         vm.expectRevert('Invalid dummy membership proof');
-//         dispatcherProxy.onCloseIbcChannel(address(mars), channelId, invalidProof);
-//     }
-// }
-
 contract DispatcherSendPacketTestSuite is ChannelOpenTestBaseSetup {
     // default params
     string payload = "msgPayload";
@@ -584,7 +553,7 @@ contract DappRevertTests is Base {
     ChannelEnd ch1 =
         ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
-    function setUp() public override {
+    function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) =
             TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);

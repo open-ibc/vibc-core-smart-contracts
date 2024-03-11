@@ -49,6 +49,27 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
+    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
+        // logic to determine if the channel should be closed
+        bool channelFound = false;
+        for (uint256 i = 0; i < connectedChannels.length; i++) {
+            if (connectedChannels[i] == channelId) {
+                delete connectedChannels[i];
+                channelFound = true;
+                break;
+            }
+        }
+        if (!channelFound) revert ChannelNotFound();
+    }
+
+    /**
+     * This func triggers channel closure from the dApp.
+     * Func args can be arbitary, as long as dispatcher.channelCloseInit is invoked propperly.
+     */
+    function triggerChannelClose(bytes32 channelId) external onlyOwner {
+        dispatcher.channelCloseInit(channelId);
+    }
+
     /**
      * @dev Sends a packet with a greeting message over a specified channel.
      * @param message The greeting message to be sent.
@@ -115,8 +136,6 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     }
 
     function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
-
-    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 }
 
 /*
@@ -157,6 +176,18 @@ contract RevertingStringMars is Mars {
     function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "acknowledgement packet is reverting");
+    }
+}
+
+/// Used to only test reverts for close channel (seperate from RevertingStringMars to avoid reverts on setting up the
+/// channel)
+contract RevertingStringCloseChannelMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+    // solhint-disable-next-line
+
+    function onChanCloseConfirm(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
+        // solhint-disable-next-line
+        require(false, "close ibc channel is reverting");
     }
 }
 
