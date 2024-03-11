@@ -106,6 +106,7 @@ enum ChannelState {
 }
 
 struct Channel {
+    string portId;
     string version;
     ChannelOrder ordering;
     bool feeEnabled;

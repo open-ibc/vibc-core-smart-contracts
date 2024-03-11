@@ -518,6 +518,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
         //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
         portChannelMap[address(portAddress)][local.channelId] = Channel(
+            local.portId,
             counterparty.version, // TODO: this should be self version instead of counterparty version
             ordering,
             feeEnabled,
