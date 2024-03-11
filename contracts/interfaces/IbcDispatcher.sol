@@ -32,7 +32,7 @@ interface IbcDispatcher is IbcPacketSender {
         string calldata counterpartyPortId
     ) external;
 
-    function closeIbcChannel(bytes32 channelId) external;
+    function channelCloseInit(bytes32 channelId) external;
 
     function portPrefix() external view returns (string memory portPrefix);
 }
@@ -68,7 +68,9 @@ interface IbcEventsEmitter {
 
     event ChannelOpenConfirm(address indexed portAddress, bytes32 channelId);
 
-    event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
+    event ChannelCloseInit(address indexed portAddress, bytes32 indexed channelId);
+
+    event ChannelCloseConfirm(address indexed portAddress, bytes32 indexed channelId);
 
     //
     // packet events

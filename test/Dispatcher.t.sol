@@ -208,36 +208,35 @@ contract ChannelOpenTestBase is Base {
     }
 }
 
-// FIXME this is commented out to make the contract size smaller. We need to optimise for size
-// contract DispatcherCloseChannelTest is ChannelOpenTestBase {
-//     function test_closeChannelInit_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         mars.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelInit_mustOwner() public {
-//         Mars earth = new Mars(dispatcher);
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedBySender()'));
-//         earth.triggerChannelClose(channelId);
-//     }
-//
-//     function test_closeChannelConfirm_success() public {
-//         vm.expectEmit(true, true, true, true);
-//         emit CloseIbcChannel(address(mars), channelId);
-//         dispatcher.onCloseIbcChannel(address(mars), channelId, validProof);
-//     }
-//
-//     function test_closeChannelConfirm_mustOwner() public {
-//         vm.expectRevert(abi.encodeWithSignature('channelNotOwnedByPortAddress()'));
-//         dispatcher.onCloseIbcChannel(address(mars), 'channel-999', validProof);
-//     }
-//
-//     function test_closeChannelConfirm_invalidProof() public {
-//         vm.expectRevert('Invalid dummy membership proof');
-//         dispatcher.onCloseIbcChannel(address(mars), channelId, invalidProof);
-//     }
-// }
+contract DispatcherCloseChannelTest is ChannelOpenTestBase {
+    function test_closeChannelInit_success() public {
+        vm.expectEmit(true, true, true, true);
+        emit ChannelCloseInit(address(mars), channelId);
+        mars.triggerChannelClose(channelId);
+    }
+
+    function test_closeChannelInit_mustOwner() public {
+        Mars earth = new Mars(dispatcher);
+        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        earth.triggerChannelClose(channelId);
+    }
+
+    function test_closeChannelConfirm_success() public {
+        vm.expectEmit(true, true, true, true);
+        emit ChannelCloseConfirm(address(mars), channelId);
+        dispatcher.channelCloseConfirm(address(mars), channelId, validProof);
+    }
+
+    function test_closeChannelConfirm_mustOwner() public {
+        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedByPortAddress()"));
+        dispatcher.channelCloseConfirm(address(mars), "channel-999", validProof);
+    }
+
+    function test_closeChannelConfirm_invalidProof() public {
+        vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
+        dispatcher.channelCloseConfirm(address(mars), channelId, invalidProof);
+    }
+}
 
 contract DispatcherSendPacketTest is ChannelOpenTestBase {
     // default params

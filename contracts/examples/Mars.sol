@@ -34,7 +34,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
-    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
+    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
         for (uint256 i = 0; i < connectedChannels.length; i++) {
@@ -49,10 +49,10 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     /**
      * This func triggers channel closure from the dApp.
-     * Func args can be arbitary, as long as dispatcher.closeIbcChannel is invoked propperly.
+     * Func args can be arbitary, as long as dispatcher.channelCloseInit is invoked propperly.
      */
     function triggerChannelClose(bytes32 channelId) external onlyOwner {
-        dispatcher.closeIbcChannel(channelId);
+        dispatcher.channelCloseInit(channelId);
     }
 
     /**
