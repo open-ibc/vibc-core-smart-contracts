@@ -87,7 +87,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        if (_isChannelOpenTry(counterparty)) {
+        if (Ibc._isChannelOpenTry(counterparty)) {
             consensusStateManager.verifyMembership(
                 proof,
                 Ibc.channelProofKey(local.portId, local.channelId),
@@ -456,7 +456,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             return false;
         }
         string memory portSuffix = portId[portPrefixLen:];
-        isMatch = _hexStrToAddress(portSuffix) == addr;
+        isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
@@ -504,51 +504,5 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             // TODO: check timeoutHeight.revision_number?
             || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
         );
-    }
-
-    /**
-     * Convert a non-0x-prefixed hex string to an address
-     * @param hexStr hex string to convert to address. Note that the hex string must not include a 0x prefix.
-     * hexStr is case-insensitive.
-     */
-    function _hexStrToAddress(string memory hexStr) internal pure returns (address addr) {
-        if (bytes(hexStr).length != 40) {
-            revert IBCErrors.invalidHexStringLength();
-        }
-
-        bytes memory strBytes = bytes(hexStr);
-        bytes memory addrBytes = new bytes(20);
-
-        for (uint256 i = 0; i < 20; i++) {
-            uint8 high = uint8(strBytes[i * 2]);
-            uint8 low = uint8(strBytes[1 + i * 2]);
-            // Convert to lowercase if the character is in uppercase
-            if (high >= 65 && high <= 90) {
-                high += 32;
-            }
-            if (low >= 65 && low <= 90) {
-                low += 32;
-            }
-            uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
-            addrBytes[i] = bytes1(digit);
-        }
-
-        assembly {
-            addr := mload(add(addrBytes, 20))
-        }
-    }
-
-    // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
-    // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function _isChannelOpenTry(CounterParty calldata counterparty) internal pure returns (bool open) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
-            open = false;
-            // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
-            // this is the ChanOpenTry; counterparty must not be zero-value
-            open = true;
-        } else {
-            revert IBCErrors.invalidCounterParty();
-        }
     }
 }
