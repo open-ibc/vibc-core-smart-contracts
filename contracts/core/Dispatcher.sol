@@ -19,7 +19,7 @@ import {
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
+contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
     string public portPrefix;
     uint32 public portPrefixLen;
@@ -90,23 +90,28 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         if (_isChannelOpenTry(counterparty)) {
             consensusStateManager.verifyMembership(
                 proof,
-                channelProofKey(local.portId, local.channelId),
-                channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
+                Ibc.channelProofKey(local.portId, local.channelId),
+                Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
             );
         }
 
-        string memory selectedVersion =
-            portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty);
-
-        emit OpenIbcChannel(
-            address(portAddress),
-            selectedVersion,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty.portId,
-            counterparty.channelId
-        );
+        string memory selectedVersion;
+        try portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty) returns (
+            string memory version
+        ) {
+            selectedVersion = version;
+            emit OpenIbcChannel(
+                address(portAddress),
+                selectedVersion,
+                ordering,
+                feeEnabled,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            );
+        } catch {
+            emit OpenIbcChannelError(address(portAddress));
+        }
     }
 
     /**
@@ -126,8 +131,6 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     ) external {
         _verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
 
-        portAddress.onConnectIbcChannel(local.channelId, counterparty.channelId, counterparty.version);
-
         // Register port and channel mapping
         // TODO: check duplicated channel registration?
         // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
@@ -146,7 +149,11 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         nextSequenceAck[address(portAddress)][local.channelId] = 1;
 
-        emit ConnectIbcChannel(address(portAddress), local.channelId);
+        try portAddress.onConnectIbcChannel(local.channelId, counterparty.channelId, counterparty.version) {
+            emit ConnectIbcChannel(address(portAddress), local.channelId);
+        } catch {
+            emit ConnectIbcChannelError(address(portAddress));
+        }
     }
 
     /**
@@ -160,9 +167,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.channelNotOwnedBySender();
         }
 
-        IbcChannelReceiver reciever = IbcChannelReceiver(msg.sender);
-        reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
-        emit CloseIbcChannel(msg.sender, channelId);
+        IbcChannelReceiver receiver = IbcChannelReceiver(msg.sender);
+        try receiver.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId) {
+            emit CloseIbcChannel(msg.sender, channelId);
+        } catch {
+            emit CloseIbcChannelError(address(receiver));
+        }
     }
 
     /**
@@ -240,7 +250,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
         }
 
         // prove ack packet is on Polymer chain
-        consensusStateManager.verifyMembership(proof, ackProofKey(packet), abi.encode(ackProofValue(ack)));
+        consensusStateManager.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -258,12 +268,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        receiver.onAcknowledgementPacket(packet, parseAckData(ack));
-
-        // delete packet commitment to avoid double ack
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-
-        emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
+        try receiver.onAcknowledgementPacket(packet, Ibc.parseAckData(ack)) {
+            // delete packet commitment to avoid double ack
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
+        } catch {
+            emit AcknowledgementError(address(receiver));
+        }
     }
 
     /**
@@ -292,12 +303,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
-        receiver.onTimeoutPacket(packet);
-
-        // delete packet commitment to avoid double timeout
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-
-        emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
+        try receiver.onTimeoutPacket(packet) {
+            // delete packet commitment to avoid double timeout
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
+        } catch {
+            emit TimeOutError(address(receiver));
+        }
     }
 
     /**
@@ -317,7 +329,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
             revert IBCErrors.receiverNotIntendedPacketDestination();
         }
         consensusStateManager.verifyMembership(
-            proof, packetCommitmentProofKey(packet), abi.encode(packetCommitmentProofValue(packet))
+            proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
@@ -352,7 +364,17 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
 
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
-        AckPacket memory ack = receiver.onRecvPacket(pkt);
+        AckPacket memory ack;
+        try receiver.onRecvPacket(pkt) returns (AckPacket memory receivedAck) {
+            ack = AckPacket(receivedAck.success, receivedAck.data);
+        } catch Error(string memory reason) {
+            ack = AckPacket(false, bytes(reason));
+        } catch Panic(uint256 code) {
+            ack = AckPacket(false, bytes.concat("panic: ", bytes32(code)));
+        } catch (bytes memory reason) {
+            // Catch all for general revert
+            ack = AckPacket(false, reason);
+        }
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
@@ -463,8 +485,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable, Ibc {
     ) internal {
         consensusStateManager.verifyMembership(
             proof,
-            channelProofKey(local.portId, local.channelId),
-            channelProofValue(
+            Ibc.channelProofKey(local.portId, local.channelId),
+            Ibc.channelProofValue(
                 isChanConfirm ? ChannelState.CONFIRM_PENDING : ChannelState.ACK_PENDING,
                 ordering,
                 local.version,

@@ -220,7 +220,7 @@ library IbcUtils {
     }
 }
 
-contract Ibc {
+library Ibc {
     function toStr(bytes32 b) public pure returns (string memory outStr) {
         uint8 i = 0;
         while (i < 32 && b[i] != 0) {

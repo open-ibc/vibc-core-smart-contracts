@@ -86,13 +86,14 @@ contract ChannelHandshakeTest is Base {
                 // always select the wrong version
                 bool isVersionOne = keccak256(abi.encodePacked(versions[j])) == keccak256(abi.encodePacked("1.0"));
                 le.versionCall = isVersionOne ? "2.0" : "1.0";
-                vm.expectRevert(IbcReceiverBase.VersionMismatch.selector);
+                vm.expectEmit(true, true, true, true);
+                emit IbcEventsEmitter.OpenIbcChannelError(address(le.receiver));
                 openChannel(le, re, settings[i], false);
             }
         }
     }
 
-    function test_openChannel_initiator_fail_unsupportedVersion() public {
+    function test_openChannel_initiator_revert_unsupportedVersion() public {
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
         string[2] memory versions = ["", "xxxxxxx"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -101,7 +102,8 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
-                vm.expectRevert(IbcReceiverBase.UnsupportedVersion.selector);
+                vm.expectEmit(true, true, true, true);
+                emit IbcEventsEmitter.OpenIbcChannelError(address(le.receiver));
                 openChannel(le, re, settings[i], false);
             }
         }
@@ -123,7 +125,7 @@ contract ChannelHandshakeTest is Base {
         }
     }
 
-    function test_connectChannel_fail_unsupportedVersion() public {
+    function test_connectChannel_revert_unsupportedVersion() public {
         // When localEnd initiates, counterparty version is only available in connectIbcChannel
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
         string[2] memory versions = ["", "xxxxxxx"];
@@ -134,13 +136,14 @@ contract ChannelHandshakeTest is Base {
                 // no remote version applied in openChannel
                 openChannel(le, re, settings[i], true);
                 re.version = versions[j];
-                vm.expectRevert(IbcReceiverBase.UnsupportedVersion.selector);
+                vm.expectEmit(true, true, true, true);
+                emit IbcEventsEmitter.ConnectIbcChannelError(address(le.receiver));
                 connectChannel(le, re, settings[i], false, false);
             }
         }
     }
 
-    function test_connectChannel_fail_invalidProof() public {
+    function test_connectChannel_revert_invalidProof() public {
         // When localEnd initiates, counterparty version is only available in connectIbcChannel
         ChannelHandshakeSetting[8] memory settings = createSettings2(true);
         string[1] memory versions = ["1.0"];
@@ -190,13 +193,16 @@ contract ChannelHandshakeTest is Base {
 // This Base contract provides an open channel for sub-contract tests
 contract ChannelOpenTestBase is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
+    string portIdI = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
     bool feeEnabled = false;
 
     LocalEnd _local;
+    LocalEnd _localRevertingMars;
     CounterParty _remote;
     Mars mars;
+    RevertingBytesMars revertingBytesMars;
 
     function setUp() public virtual override {
         dispatcher = new Dispatcher(portPrefix, dummyConsStateManager);
@@ -207,12 +213,16 @@ contract ChannelOpenTestBase is Base {
         vm.startPrank(relayer);
         vm.deal(relayer, 100_000 ether);
         mars = new Mars(dispatcher);
+        revertingBytesMars = new RevertingBytesMars(dispatcher);
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
+        _localRevertingMars = LocalEnd(revertingBytesMars, portIdI, channelId, connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
         openChannel(_local, _remote, setting, true);
+        openChannel(_localRevertingMars, _remote, setting, true);
         connectChannel(_local, _remote, setting, false, true);
+        connectChannel(_localRevertingMars, _remote, setting, false, true);
     }
 }
 
@@ -273,6 +283,8 @@ contract DispatcherSendPacketTest is ChannelOpenTestBase {
 contract PacketSenderTestBase is ChannelOpenTestBase {
     IbcEndpoint dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
     IbcEndpoint src;
+    IbcEndpoint srcRevertingMars;
+
     string payloadStr = "msgPayload";
     bytes payload = bytes(payloadStr);
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
@@ -286,13 +298,16 @@ contract PacketSenderTestBase is ChannelOpenTestBase {
     function setUp() public virtual override {
         super.setUp();
         string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
+        string memory revertingMarsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(revertingBytesMars))));
+
         src = IbcEndpoint(marsPort, channelId);
+        srcRevertingMars = IbcEndpoint(revertingMarsPort, channelId);
     }
 
     // sendPacket writes a packet commitment, and updates cached `sentPacket` and `ackPacket`
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
-        ackPacket = genAckPacket(this.toStr(nextSendSeq));
+        ackPacket = genAckPacket(Ibc.toStr(nextSendSeq));
         mars.greet(payloadStr, channelId, maxTimeout);
         nextSendSeq += 1;
     }
@@ -377,7 +392,7 @@ contract DispatcherAckPacketTest is PacketSenderTestBase {
             dispatcher.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
             // confirm dapp recieved the ack
             (bool success, bytes memory data) = mars.ackPackets(sentPacket.sequence - 1);
-            AckPacket memory parsed = this.parseAckData(ackPacket);
+            AckPacket memory parsed = Ibc.parseAckData(ackPacket);
             assertEq(success, parsed.success);
             assertEq(data, parsed.data);
         }
@@ -451,6 +466,15 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
             emit Timeout(address(mars), channelId, sentPacket.sequence);
             dispatcher.timeout(IbcReceiver(mars), sentPacket, validProof);
         }
+    }
+
+    function test_timeout_dapp_revert() public {
+        sentPacket = IbcPacket(srcRevertingMars, dest, 1, payload, ZERO_HEIGHT, maxTimeout);
+        revertingBytesMars.greet(payloadStr, channelId, maxTimeout);
+        nextSendSeq += 1;
+        vm.expectEmit(true, true, true, true, address(dispatcher));
+        emit TimeOutError(address(revertingBytesMars));
+        dispatcher.timeout(IbcReceiver(revertingBytesMars), sentPacket, validProof);
     }
 
     // cannot timeout packets if packet commitment is missing

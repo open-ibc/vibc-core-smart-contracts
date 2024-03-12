@@ -87,10 +87,10 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         );
         this.run_packet_proof_verification(
             input,
-            this.channelProofKey(
+            Ibc.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            this.channelProofValue(ChannelState.TRY_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(ChannelState.TRY_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
         );
     }
 
@@ -107,10 +107,10 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
             CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "");
         this.run_packet_proof_verification(
             input,
-            this.channelProofKey(
+            Ibc.channelProofKey(
                 "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0")
             ),
-            this.channelProofValue(ChannelState.ACK_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(ChannelState.ACK_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
         );
     }
 
@@ -128,10 +128,10 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         );
         this.run_packet_proof_verification(
             input,
-            this.channelProofKey(
+            Ibc.channelProofKey(
                 "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1")
             ),
-            this.channelProofValue(ChannelState.CONFIRM_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
+            Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ChannelOrder.NONE, "1.0", connectionHops, counterparty)
         );
     }
 
@@ -149,7 +149,7 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         packet.sequence = 1;
 
         this.run_packet_proof_verification(
-            input, this.packetCommitmentProofKey(packet), abi.encode(this.packetCommitmentProofValue(packet))
+            input, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
     }
 
@@ -169,7 +169,7 @@ contract OpProofVerifierMembershipVerificationTest is ProofBase {
         bytes memory ack =
             bytes('{"result":"eyAiYWNjb3VudCI6ICJhY2NvdW50IiwgInJlcGx5IjogImdvdCB0aGUgbWVzc2FnZSIgfQ=="}');
 
-        this.run_packet_proof_verification(input, this.ackProofKey(packet), abi.encode(this.ackProofValue(ack)));
+        this.run_packet_proof_verification(input, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
     }
 
     // helpers -----------------------------------------------------------------

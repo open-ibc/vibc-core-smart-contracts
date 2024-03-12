@@ -19,23 +19,29 @@ contract Mars is IbcReceiverBase, IbcReceiver {
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory packet) external onlyIbcDispatcher returns (AckPacket memory ackPacket) {
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        virtual
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
         recvedPackets.push(packet);
 
         // solhint-disable-next-line quotes
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external onlyIbcDispatcher {
+    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external virtual onlyIbcDispatcher {
         ackPackets.push(ack);
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external onlyIbcDispatcher {
+    function onTimeoutPacket(IbcPacket calldata packet) external virtual onlyIbcDispatcher {
         timeoutPackets.push(packet);
     }
 
     function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
         external
+        virtual
         onlyIbcDispatcher
     {
         // ensure negotiated version is supported
@@ -50,7 +56,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         connectedChannels.push(channelId);
     }
 
-    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
+    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
         for (uint256 i = 0; i < connectedChannels.length; i++) {
@@ -87,7 +93,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         bool,
         string[] calldata,
         CounterParty calldata counterparty
-    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
+    ) external view virtual onlyIbcDispatcher returns (string memory selectedVersion) {
         if (bytes(counterparty.portId).length <= 8) {
             revert IBCErrors.invalidCounterPartyPortId();
         }
@@ -115,5 +121,106 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         }
 
         return selectedVersion;
+    }
+}
+
+/*
+ * These contracts are the exact same as Mars, but they revert/panick in different ways.
+ * they are used to test that transport error is seperated from errors thrown in onRecvPacket
+ */
+contract RevertingStringMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    // solhint-disable-next-line
+    function onOpenIbcChannel(
+        string calldata version,
+        ChannelOrder,
+        bool,
+        string[] calldata,
+        CounterParty calldata counterparty
+    ) external view override onlyIbcDispatcher returns (string memory selectedVersion) {
+        // solhint-disable-next-line
+        require(false, "open ibc channel is reverting");
+    }
+
+    // solhint-disable-next-line
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        // solhint-disable-next-line
+        require(false, "on recv packet is reverting");
+    }
+
+    // solhint-disable-next-line
+    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
+        external
+        override
+        onlyIbcDispatcher
+    {
+        // solhint-disable-next-line
+        require(false, "connect ibc channel is reverting");
+    }
+
+    // solhint-disable-next-line
+    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external override onlyIbcDispatcher {
+        // solhint-disable-next-line
+        require(false, "close ibc channel is reverting");
+    }
+
+    // solhint-disable-next-line
+    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external override onlyIbcDispatcher {
+        // solhint-disable-next-line
+        require(false, "acknowledgement packet is reverting");
+    }
+}
+
+contract RevertingBytesMars is Mars {
+    error OnRecvPacketRevert();
+    error OnTimeoutPacket();
+
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        revert OnRecvPacketRevert();
+    }
+
+    function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {
+        // solhint-disable-next-line
+        revert OnTimeoutPacket();
+    }
+}
+
+contract RevertingEmptyMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        // solhint-disable-next-line
+        require(false);
+    }
+}
+
+contract PanickingMars is Mars {
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
+
+    function onRecvPacket(IbcPacket memory packet)
+        external
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ackPacket)
+    {
+        assert(false);
     }
 }
