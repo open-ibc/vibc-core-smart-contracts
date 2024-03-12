@@ -77,10 +77,10 @@ contract UniversalChannelTest is Base {
         eth2.channelOpenTry(ucHandler2, eth1, ucHandler1, setting, true);
 
         vm.prank(unauthorized);
-        eth1.channelOpenAck(ucHandler1, eth2, ucHandler2, setting, true);
+        eth1.channelOpenAckOrConfirm(ucHandler1, eth2, ucHandler2, setting, false, true);
 
         vm.prank(unauthorized);
-        eth2.channelOpenConfirm(ucHandler2, eth1, ucHandler1, setting, true);
+        eth2.channelOpenAckOrConfirm(ucHandler2, eth1, ucHandler1, setting, true, true);
     }
 }
 
