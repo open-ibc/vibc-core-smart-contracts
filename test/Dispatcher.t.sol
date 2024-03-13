@@ -193,7 +193,7 @@ contract ChannelHandshakeTest is Base {
 // This Base contract provides an open channel for sub-contract tests
 contract ChannelOpenTestBase is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
-    string portIdI = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
+    string invalidPortId = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
     bool feeEnabled = false;
