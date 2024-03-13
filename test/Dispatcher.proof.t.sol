@@ -3,15 +3,8 @@ pragma solidity ^0.8.15;
 
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import {
-    Mars,
-    RevertingBytesMars,
-    PanickingMars,
-    RevertingStringMars,
-    RevertingEmptyMars
-} from "../contracts/examples/Mars.sol";
+import {Mars} from "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/core/OpConsensusStateManager.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
