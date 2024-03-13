@@ -96,7 +96,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             );
         }
 
-        (bool success, bytes memory data) = try_catch(
+        (bool success, bytes memory data) = _try_catch(
             address(portAddress),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onOpenIbcChannel.selector,
@@ -157,7 +157,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         nextSequenceAck[address(portAddress)][local.channelId] = 1;
 
-        (bool success, bytes memory data) = try_catch(
+        (bool success, bytes memory data) = _try_catch(
             address(portAddress),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onConnectIbcChannel.selector,
@@ -185,7 +185,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         IbcChannelReceiver receiver = IbcChannelReceiver(msg.sender);
-        (bool success, bytes memory data) = try_catch(
+        (bool success, bytes memory data) = _try_catch(
             address(receiver),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onCloseIbcChannel.selector,
@@ -294,7 +294,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        (bool success, bytes memory data) = try_catch(
+        (bool success, bytes memory data) = _try_catch(
             address(receiver),
             abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
         );
@@ -335,7 +335,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         (bool success, bytes memory data) =
-            try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
+            _try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
         if (success) {
             // delete packet commitment to avoid double timeout
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -399,7 +399,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         IbcPacket memory pkt = packet;
         AckPacket memory ack;
         (bool success, bytes memory data) =
-            try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
+            _try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
         if (success) {
             (ack) = abi.decode(data, (AckPacket));
         } else {
@@ -527,7 +527,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
-    function try_catch(address portAddress, bytes memory args) internal returns (bool success, bytes memory message) {
+    function _try_catch(address portAddress, bytes memory args) internal returns (bool success, bytes memory message) {
         if (!Address.isContract(portAddress)) {
             return (false, bytes("call to non-contract"));
         }
