@@ -64,7 +64,7 @@ interface IbcEventsEmitter {
     event OpenIbcChannelError(address indexed portAddress);
     event CloseIbcChannelError(address indexed receiver);
     event AcknowledgementError(address indexed receiver);
-    event TimeOutError(address indexed receiver);
+    event TimeoutError(address indexed receiver);
 
     //
     // packet events

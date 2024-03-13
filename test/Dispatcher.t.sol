@@ -8,6 +8,7 @@ import {IbcReceiver, IbcReceiverBase} from "../contracts/interfaces/IbcReceiver.
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpConsensusStateManager.sol";
 import "./Dispatcher.base.t.sol";
+import {Earth} from "../contracts/examples/Earth.sol";
 
 contract ChannelHandshakeTest is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
@@ -216,7 +217,7 @@ contract ChannelOpenTestBase is Base {
         revertingBytesMars = new RevertingBytesMars(dispatcher);
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
-        _localRevertingMars = LocalEnd(revertingBytesMars, portIdI, channelId, connectionHops, "1.0", "1.0");
+        _localRevertingMars = LocalEnd(revertingBytesMars, portId, channelId, connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
         openChannel(_local, _remote, setting, true);
@@ -473,7 +474,7 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
         revertingBytesMars.greet(payloadStr, channelId, maxTimeout);
         nextSendSeq += 1;
         vm.expectEmit(true, true, true, true, address(dispatcher));
-        emit TimeOutError(address(revertingBytesMars));
+        emit TimeoutError(address(revertingBytesMars));
         dispatcher.timeout(IbcReceiver(revertingBytesMars), sentPacket, validProof);
     }
 
@@ -524,5 +525,133 @@ contract DispatcherTimeoutPacketTest is PacketSenderTestBase {
         sendPacket();
         vm.expectRevert(DummyConsensusStateManager.InvalidDummyNonMembershipProof.selector);
         dispatcher.timeout(IbcReceiver(mars), sentPacket, invalidProof);
+    }
+}
+
+contract DappRevertTests is Base {
+    RevertingBytesMars revertingBytesMars;
+    PanickingMars panickingMars;
+    RevertingEmptyMars revertingEmptyMars;
+    RevertingStringMars revertingStringMars;
+    string[] connectionHops0 = ["connection-0", "connection-3"];
+    string[] connectionHops1 = ["connection-2", "connection-1"];
+    CounterParty ch0 =
+        CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
+    CounterParty ch1 =
+        CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
+
+    function setUp() public override {
+        dispatcher = new Dispatcher(portPrefix, dummyConsStateManager);
+        revertingBytesMars = new RevertingBytesMars(dispatcher);
+        panickingMars = new PanickingMars(dispatcher);
+        revertingEmptyMars = new RevertingEmptyMars(dispatcher);
+        revertingStringMars = new RevertingStringMars(dispatcher);
+    }
+
+    function test_ibc_channel_open_non_dapp_call() public {
+        address nonDappAddr = vm.addr(1);
+
+        emit OpenIbcChannelError(nonDappAddr);
+        dispatcher.openIbcChannel(
+            IbcChannelReceiver(nonDappAddr), ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof
+        );
+    }
+
+    function test_ibc_channel_open_dapp_without_handler() public {
+        Earth earth = new Earth(vm.addr(1));
+        emit OpenIbcChannelError(address(earth));
+        dispatcher.openIbcChannel(
+            IbcChannelReceiver(address(earth)), ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof
+        );
+    }
+
+    function test_recv_packet_callback_revert_and_panic() public {
+        // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
+        IbcPacket memory packet;
+        packet.data = bytes("packet-1");
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
+        packet.dest.channelId = ch1.channelId;
+        packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingBytesMars))));
+        packet.src.portId = ch0.portId;
+        packet.src.channelId = ch0.channelId;
+        packet.sequence = 1;
+
+        // Test Revert Memory
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(
+            address(revertingBytesMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
+        );
+        dispatcher.recvPacket(revertingBytesMars, packet, validProof);
+
+        // Test Revert String
+        packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingStringMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(
+            address(revertingStringMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, abi.encodeWithSignature("Error(string)", "on recv packet is reverting"))
+        );
+        dispatcher.recvPacket(revertingStringMars, packet, validProof);
+
+        // Test Revert empty
+        packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingEmptyMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
+        dispatcher.recvPacket(revertingEmptyMars, packet, validProof);
+
+        // Test Panic
+        packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(panickingMars))));
+        vm.expectEmit(true, true, true, true);
+        emit WriteAckPacket(
+            address(panickingMars),
+            packet.dest.channelId,
+            packet.sequence,
+            AckPacket(false, abi.encodeWithSignature("Panic(uint256)", uint256(1)))
+        );
+        dispatcher.recvPacket(panickingMars, packet, validProof);
+    }
+
+    function test_ack_packet_dapp_revert() public {
+        // plant a fake packet commitment so the ack checks go through
+        // use "forge inspect --storage" to find the slot
+        bytes32 slot1 = keccak256(abi.encode(address(revertingStringMars), uint32(7))); // current nested mapping slot:
+        bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
+        bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
+        vm.store(address(dispatcher), slot3, bytes32(uint256(1)));
+
+        IbcPacket memory packet;
+        packet.data = bytes("packet-1");
+        packet.timeoutTimestamp = 15_566_401_733_896_437_760;
+        packet.src.channelId = ch0.channelId;
+        packet.src.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingStringMars))));
+        packet.dest.portId = ch1.portId;
+        packet.dest.channelId = ch1.channelId;
+        packet.sequence = 1;
+
+        // this data is taken from the write_acknowledgement event emitted by polymer
+        bytes memory ack =
+            bytes('{"result":"eyAiYWNjb3VudCI6ICJhY2NvdW50IiwgInJlcGx5IjogImdvdCB0aGUgbWVzc2FnZSIgfQ=="}');
+
+        vm.expectEmit(true, true, true, true);
+        emit AcknowledgementError(address(revertingStringMars));
+        dispatcher.acknowledgement(revertingStringMars, packet, ack, validProof);
+    }
+
+    function test_ibc_channel_open_dapp_revert() public {
+        vm.expectEmit(true, true, true, true);
+        emit OpenIbcChannelError(address(revertingStringMars));
+        dispatcher.openIbcChannel(revertingStringMars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof);
+    }
+
+    function test_ibc_channel_ack_dapp_revert() public {
+        vm.expectEmit(true, true, true, true);
+        emit ConnectIbcChannelError(address(revertingStringMars));
+        dispatcher.connectIbcChannel(
+            revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, false, ch1, validProof
+        );
     }
 }

@@ -11,6 +11,7 @@ import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
 import {
     Channel, CounterParty, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc
 } from "../libs/Ibc.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * @title Dispatcher
@@ -95,21 +96,28 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             );
         }
 
-        string memory selectedVersion;
-        try portAddress.onOpenIbcChannel(local.version, ordering, feeEnabled, connectionHops, counterparty) returns (
-            string memory version
-        ) {
-            selectedVersion = version;
+        (bool success, bytes memory data) = try_catch(
+            address(portAddress),
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onOpenIbcChannel.selector,
+                local.version,
+                ordering,
+                feeEnabled,
+                connectionHops,
+                counterparty
+            )
+        );
+        if (success) {
             emit OpenIbcChannel(
                 address(portAddress),
-                selectedVersion,
+                abi.decode(data, (string)),
                 ordering,
                 feeEnabled,
                 connectionHops,
                 counterparty.portId,
                 counterparty.channelId
             );
-        } catch {
+        } else {
             emit OpenIbcChannelError(address(portAddress));
         }
     }
@@ -149,9 +157,18 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         nextSequenceAck[address(portAddress)][local.channelId] = 1;
 
-        try portAddress.onConnectIbcChannel(local.channelId, counterparty.channelId, counterparty.version) {
+        (bool success, bytes memory data) = try_catch(
+            address(portAddress),
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onConnectIbcChannel.selector,
+                local.channelId,
+                counterparty.channelId,
+                counterparty.version
+            )
+        );
+        if (success) {
             emit ConnectIbcChannel(address(portAddress), local.channelId);
-        } catch {
+        } else {
             emit ConnectIbcChannelError(address(portAddress));
         }
     }
@@ -168,9 +185,18 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         IbcChannelReceiver receiver = IbcChannelReceiver(msg.sender);
-        try receiver.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId) {
+        (bool success, bytes memory data) = try_catch(
+            address(receiver),
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onCloseIbcChannel.selector,
+                channelId,
+                channel.counterpartyPortId,
+                channel.counterpartyChannelId
+            )
+        );
+        if (success) {
             emit CloseIbcChannel(msg.sender, channelId);
-        } catch {
+        } else {
             emit CloseIbcChannelError(address(receiver));
         }
     }
@@ -268,11 +294,16 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        try receiver.onAcknowledgementPacket(packet, Ibc.parseAckData(ack)) {
+        (bool success, bytes memory data) = try_catch(
+            address(receiver),
+            abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
+        );
+
+        if (success) {
             // delete packet commitment to avoid double ack
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
-        } catch {
+        } else {
             emit AcknowledgementError(address(receiver));
         }
     }
@@ -303,11 +334,13 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
-        try receiver.onTimeoutPacket(packet) {
+        (bool success, bytes memory data) =
+            try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
+        if (success) {
             // delete packet commitment to avoid double timeout
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
-        } catch {
+        } else {
             emit TimeoutError(address(receiver));
         }
     }
@@ -365,15 +398,12 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
         AckPacket memory ack;
-        try receiver.onRecvPacket(pkt) returns (AckPacket memory receivedAck) {
-            ack = AckPacket(receivedAck.success, receivedAck.data);
-        } catch Error(string memory reason) {
-            ack = AckPacket(false, bytes(reason));
-        } catch Panic(uint256 code) {
-            ack = AckPacket(false, bytes.concat("panic: ", bytes32(code)));
-        } catch (bytes memory reason) {
-            // Catch all for general revert
-            ack = AckPacket(false, reason);
+        (bool success, bytes memory data) =
+            try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
+        if (success) {
+            (ack) = abi.decode(data, (AckPacket));
+        } else {
+            ack = AckPacket(false, data);
         }
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
@@ -494,6 +524,15 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
                 counterparty
             )
         );
+    }
+
+    // Returns the result of the call if no revert, otherwise returns the error if thrown.
+    function try_catch(address portAddress, bytes memory args) internal returns (bool success, bytes memory message) {
+        if (!Address.isContract(portAddress)) {
+            return (false, bytes("call to non-contract"));
+        }
+        // Only call if we are sure portAddress is a contract
+        (success, message) = portAddress.call(args);
     }
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
