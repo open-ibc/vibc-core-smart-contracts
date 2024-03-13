@@ -308,7 +308,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
         } catch {
-            emit TimeOutError(address(receiver));
+            emit TimeoutError(address(receiver));
         }
     }
 
