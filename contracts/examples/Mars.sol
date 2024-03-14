@@ -177,8 +177,8 @@ contract RevertingBytesMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
-        revert OnRecvPacketRevert();
         ack = AckPacket(false, "");
+        revert OnRecvPacketRevert();
     }
 
     function onTimeoutPacket(IbcPacket calldata) external view override onlyIbcDispatcher {
