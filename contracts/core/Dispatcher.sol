@@ -96,7 +96,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             );
         }
 
-        (bool success, bytes memory data) = _try_catch(
+        (bool success, bytes memory data) = _callIfContract(
             address(portAddress),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onOpenIbcChannel.selector,
@@ -118,7 +118,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
                 counterparty.channelId
             );
         } else {
-            emit OpenIbcChannelError(address(portAddress));
+            emit OpenIbcChannelError(address(portAddress), data);
         }
     }
 
@@ -139,25 +139,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     ) external {
         _verifyConnectIbcChannelProof(local, connectionHops, ordering, isChanConfirm, counterparty, proof);
 
-        // Register port and channel mapping
-        // TODO: check duplicated channel registration?
-        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
-        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
-        portChannelMap[address(portAddress)][local.channelId] = Channel(
-            counterparty.version, // TODO: this should be self version instead of counterparty version
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty.portId,
-            counterparty.channelId
-        );
-
-        // initialize channel sequences
-        nextSequenceSend[address(portAddress)][local.channelId] = 1;
-        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
-        nextSequenceAck[address(portAddress)][local.channelId] = 1;
-
-        (bool success, bytes memory data) = _try_catch(
+        (bool success, bytes memory data) = _callIfContract(
             address(portAddress),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onConnectIbcChannel.selector,
@@ -168,8 +150,26 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         );
         if (success) {
             emit ConnectIbcChannel(address(portAddress), local.channelId);
+
+            // Register port and channel mapping
+            // TODO: check duplicated channel registration?
+            // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
+            //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
+            portChannelMap[address(portAddress)][local.channelId] = Channel(
+                counterparty.version, // TODO: this should be self version instead of counterparty version
+                ordering,
+                feeEnabled,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            );
+
+            // initialize channel sequences
+            nextSequenceSend[address(portAddress)][local.channelId] = 1;
+            nextSequenceRecv[address(portAddress)][local.channelId] = 1;
+            nextSequenceAck[address(portAddress)][local.channelId] = 1;
         } else {
-            emit ConnectIbcChannelError(address(portAddress));
+            emit ConnectIbcChannelError(address(portAddress), data);
         }
     }
 
@@ -185,7 +185,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         }
 
         IbcChannelReceiver receiver = IbcChannelReceiver(msg.sender);
-        (bool success, bytes memory data) = _try_catch(
+        (bool success, bytes memory data) = _callIfContract(
             address(receiver),
             abi.encodeWithSelector(
                 IbcChannelReceiver.onCloseIbcChannel.selector,
@@ -197,7 +197,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (success) {
             emit CloseIbcChannel(msg.sender, channelId);
         } else {
-            emit CloseIbcChannelError(address(receiver));
+            emit CloseIbcChannelError(address(receiver), data);
         }
     }
 
@@ -294,7 +294,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
         }
 
-        (bool success, bytes memory data) = _try_catch(
+        (bool success, bytes memory data) = _callIfContract(
             address(receiver),
             abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
         );
@@ -304,7 +304,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
         } else {
-            emit AcknowledgementError(address(receiver));
+            emit AcknowledgementError(address(receiver), data);
         }
     }
 
@@ -334,14 +334,15 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
-        (bool success, bytes memory data) =
-            _try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet)
+        );
         if (success) {
             // delete packet commitment to avoid double timeout
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
         } else {
-            emit TimeoutError(address(receiver));
+            emit TimeoutError(address(receiver), data);
         }
     }
 
@@ -399,7 +400,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         IbcPacket memory pkt = packet;
         AckPacket memory ack;
         (bool success, bytes memory data) =
-            _try_catch(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
+            _callIfContract(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
         if (success) {
             (ack) = abi.decode(data, (AckPacket));
         } else {
@@ -527,11 +528,16 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
-    function _try_catch(address portAddress, bytes memory args) internal returns (bool success, bytes memory message) {
+    function _callIfContract(address portAddress, bytes memory args)
+        internal
+        returns (bool success, bytes memory message)
+    {
         if (!Address.isContract(portAddress)) {
             return (false, bytes("call to non-contract"));
         }
         // Only call if we are sure portAddress is a contract
+        // Note: This tx won't revert if the low-level call fails, see
+        // https://docs.soliditylang.org/en/latest/cheatsheet.html#members-of-address
         (success, message) = portAddress.call(args);
     }
 
