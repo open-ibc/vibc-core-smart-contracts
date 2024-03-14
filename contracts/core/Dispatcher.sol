@@ -184,9 +184,8 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
             revert IBCErrors.channelNotOwnedBySender();
         }
 
-        IbcChannelReceiver receiver = IbcChannelReceiver(msg.sender);
         (bool success, bytes memory data) = _callIfContract(
-            address(receiver),
+            msg.sender,
             abi.encodeWithSelector(
                 IbcChannelReceiver.onCloseIbcChannel.selector,
                 channelId,
@@ -197,7 +196,7 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
         if (success) {
             emit CloseIbcChannel(msg.sender, channelId);
         } else {
-            emit CloseIbcChannelError(address(receiver), data);
+            emit CloseIbcChannelError(address(msg.sender), data);
         }
     }
 
@@ -285,21 +284,20 @@ contract Dispatcher is IbcDispatcher, IbcEventsEmitter, Ownable {
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
-
-        if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
-                revert IBCErrors.unexpectedPacketSequence();
-            }
-
-            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
-        }
-
         (bool success, bytes memory data) = _callIfContract(
             address(receiver),
             abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
         );
 
         if (success) {
+            if (channel.ordering == ChannelOrder.ORDERED) {
+                if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                    revert IBCErrors.unexpectedPacketSequence();
+                }
+
+                nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+            }
+
             // delete packet commitment to avoid double ack
             delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
