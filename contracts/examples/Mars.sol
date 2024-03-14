@@ -132,46 +132,39 @@ contract RevertingStringMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     // solhint-disable-next-line
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder,
-        bool,
-        string[] calldata,
-        CounterParty calldata counterparty
-    ) external view override onlyIbcDispatcher returns (string memory selectedVersion) {
+    function onOpenIbcChannel(string calldata, ChannelOrder, bool, string[] calldata, CounterParty calldata)
+        external
+        view
+        override
+        onlyIbcDispatcher
+        returns (string memory)
+    {
         // solhint-disable-next-line
         require(false, "open ibc channel is reverting");
+        return "";
     }
 
     // solhint-disable-next-line
-    function onRecvPacket(IbcPacket memory packet)
-        external
-        override
-        onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
-    {
+    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         // solhint-disable-next-line
         require(false, "on recv packet is reverting");
+        ack = AckPacket(false, "");
     }
 
     // solhint-disable-next-line
-    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
-        external
-        override
-        onlyIbcDispatcher
-    {
+    function onConnectIbcChannel(bytes32, bytes32, string calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "connect ibc channel is reverting");
     }
 
     // solhint-disable-next-line
-    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external override onlyIbcDispatcher {
+    function onCloseIbcChannel(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "close ibc channel is reverting");
     }
 
     // solhint-disable-next-line
-    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external override onlyIbcDispatcher {
+    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "acknowledgement packet is reverting");
     }
@@ -183,16 +176,12 @@ contract RevertingBytesMars is Mars {
 
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory packet)
-        external
-        override
-        onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
-    {
+    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         revert OnRecvPacketRevert();
+        ack = AckPacket(false, "");
     }
 
-    function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {
+    function onTimeoutPacket(IbcPacket calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         revert OnTimeoutPacket();
     }
@@ -201,26 +190,18 @@ contract RevertingBytesMars is Mars {
 contract RevertingEmptyMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory packet)
-        external
-        override
-        onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
-    {
+    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         // solhint-disable-next-line
         require(false);
+        ack = AckPacket(false, "");
     }
 }
 
 contract PanickingMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory packet)
-        external
-        override
-        onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
-    {
+    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         assert(false);
+        ack = AckPacket(false, "");
     }
 }
