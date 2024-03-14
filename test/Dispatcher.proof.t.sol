@@ -3,7 +3,7 @@ pragma solidity ^0.8.15;
 
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import "../contracts/examples/Mars.sol";
+import {Mars} from "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import "../contracts/core/OpConsensusStateManager.sol";
 import "./Proof.base.t.sol";
@@ -70,8 +70,11 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex");
 
         // plant a fake packet commitment so the ack checks go through
-        stdstore.target(address(dispatcher)).sig(dispatcher.sendPacketCommitment.selector).with_key(address(mars))
-            .with_key(ch0.channelId).with_key(uint256(1)).checked_write(true);
+        // use "forge inspect --storage" to find the slot 1
+        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(7))); // current nested mapping slot: 107
+        bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
+        bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
+        vm.store(address(dispatcher), slot3, bytes32(uint256(1)));
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
@@ -88,7 +91,6 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
 
         vm.expectEmit(true, true, true, true);
         emit Acknowledgement(address(mars), packet.src.channelId, packet.sequence);
-
         dispatcher.acknowledgement(mars, packet, ack, proof);
     }
 

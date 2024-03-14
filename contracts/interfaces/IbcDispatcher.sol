@@ -57,8 +57,14 @@ interface IbcEventsEmitter {
     );
 
     event ConnectIbcChannel(address indexed portAddress, bytes32 channelId);
+    event ConnectIbcChannelError(address indexed portAddress, bytes error);
 
     event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
+
+    event OpenIbcChannelError(address indexed portAddress, bytes error);
+    event CloseIbcChannelError(address indexed receiver, bytes error);
+    event AcknowledgementError(address indexed receiver, bytes error);
+    event TimeoutError(address indexed receiver, bytes error);
 
     //
     // packet events

@@ -6,7 +6,7 @@ import "../contracts/libs/Ibc.sol";
 import "../contracts/core/OpProofVerifier.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 
-contract ProofBase is Test, Ibc {
+contract ProofBase is Test {
     using stdJson for string;
 
     string rootDir = vm.projectRoot();
