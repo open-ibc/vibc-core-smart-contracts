@@ -29,7 +29,7 @@ library TestUtils {
         );
     }
 
-    function getProxyImplementation(address proxy, Vm vm) public returns (address dispatcherImplementation) {
+    function getProxyImplementation(address proxy, Vm vm) public view returns (address dispatcherImplementation) {
         dispatcherImplementation = address(uint160(uint256(vm.load(address(proxy), _IMPLEMENTATION_SLOT))));
     }
 }
