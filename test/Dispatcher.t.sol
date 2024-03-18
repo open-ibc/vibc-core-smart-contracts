@@ -178,7 +178,7 @@ abstract contract ChannelHandshakeTestSuite is Base {
 }
 
 contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
-    function setUp() public override {
+    function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) =
             TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcherProxy);
@@ -210,8 +210,8 @@ contract ChannelOpenTestBaseSetup is Base {
         // anyone can run Relayers
         vm.startPrank(relayer);
         vm.deal(relayer, 100_000 ether);
-        mars = new Mars(dispatcher);
-        revertingBytesMars = new RevertingBytesMars(dispatcher);
+        mars = new Mars(dispatcherProxy);
+        revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
         _localRevertingMars = LocalEnd(revertingBytesMars, portId, channelId, connectionHops, "1.0", "1.0");
@@ -475,11 +475,11 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         sentPacket = IbcPacket(srcRevertingMars, dest, 1, payload, ZERO_HEIGHT, maxTimeout);
         revertingBytesMars.greet(payloadStr, channelId, maxTimeout);
         nextSendSeq += 1;
-        vm.expectEmit(true, true, true, true, address(dispatcher));
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
         emit TimeoutError(
             address(revertingBytesMars), abi.encodeWithSelector(RevertingBytesMars.OnTimeoutPacket.selector)
         );
-        dispatcher.timeout(IbcReceiver(revertingBytesMars), sentPacket, validProof);
+        dispatcherProxy.timeout(IbcReceiver(revertingBytesMars), sentPacket, validProof);
     }
 
     // cannot timeout packets if packet commitment is missing
@@ -545,18 +545,19 @@ contract DappRevertTests is Base {
         CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public override {
-        dispatcher = new Dispatcher(portPrefix, dummyConsStateManager);
-        revertingBytesMars = new RevertingBytesMars(dispatcher);
-        panickingMars = new PanickingMars(dispatcher);
-        revertingEmptyMars = new RevertingEmptyMars(dispatcher);
-        revertingStringMars = new RevertingStringMars(dispatcher);
+        (dispatcherProxy, dispatcherImplementation) =
+            TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
+        panickingMars = new PanickingMars(dispatcherProxy);
+        revertingEmptyMars = new RevertingEmptyMars(dispatcherProxy);
+        revertingStringMars = new RevertingStringMars(dispatcherProxy);
     }
 
     function test_ibc_channel_open_non_dapp_call() public {
         address nonDappAddr = vm.addr(1);
 
         emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
-        dispatcher.channelOpenInit(
+        dispatcherProxy.channelOpenInit(
             IbcChannelReceiver(nonDappAddr), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
         );
     }
@@ -564,7 +565,7 @@ contract DappRevertTests is Base {
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
         emit ChannelOpenInitError(address(earth), "");
-        dispatcher.channelOpenInit(
+        dispatcherProxy.channelOpenInit(
             IbcChannelReceiver(address(earth)), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
         );
     }
@@ -588,7 +589,7 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
         );
-        dispatcher.recvPacket(revertingBytesMars, packet, validProof);
+        dispatcherProxy.recvPacket(revertingBytesMars, packet, validProof);
 
         // Test Revert String
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingStringMars))));
@@ -599,13 +600,13 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSignature("Error(string)", "on recv packet is reverting"))
         );
-        dispatcher.recvPacket(revertingStringMars, packet, validProof);
+        dispatcherProxy.recvPacket(revertingStringMars, packet, validProof);
 
         // Test Revert empty
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingEmptyMars))));
         vm.expectEmit(true, true, true, true);
         emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
-        dispatcher.recvPacket(revertingEmptyMars, packet, validProof);
+        dispatcherProxy.recvPacket(revertingEmptyMars, packet, validProof);
 
         // Test Panic
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(panickingMars))));
@@ -616,16 +617,17 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSignature("Panic(uint256)", uint256(1)))
         );
-        dispatcher.recvPacket(panickingMars, packet, validProof);
+        dispatcherProxy.recvPacket(panickingMars, packet, validProof);
     }
 
     function test_ack_packet_dapp_revert() public {
         // plant a fake packet commitment so the ack checks go through
         // use "forge inspect --storage" to find the slot
-        bytes32 slot1 = keccak256(abi.encode(address(revertingStringMars), uint32(7))); // current nested mapping slot:
+        bytes32 slot1 = keccak256(abi.encode(address(revertingStringMars), uint32(107))); // current nested mapping
+            // slot:
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
-        vm.store(address(dispatcher), slot3, bytes32(uint256(1)));
+        vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
@@ -645,7 +647,7 @@ contract DappRevertTests is Base {
             address(revertingStringMars),
             abi.encodeWithSignature("Error(string)", "acknowledgement packet is reverting")
         );
-        dispatcher.acknowledgement(revertingStringMars, packet, ack, validProof);
+        dispatcherProxy.acknowledgement(revertingStringMars, packet, ack, validProof);
     }
 
     function test_ibc_channel_open_dapp_revert() public {
@@ -653,7 +655,7 @@ contract DappRevertTests is Base {
         emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
-        dispatcher.channelOpenInit(
+        dispatcherProxy.channelOpenInit(
             revertingStringMars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
         );
     }
@@ -663,6 +665,8 @@ contract DappRevertTests is Base {
         emit ChannelOpenAckError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
         );
-        dispatcher.channelOpenAck(revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof);
+        dispatcherProxy.channelOpenAck(
+            revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof
+        );
     }
 }

@@ -21,6 +21,7 @@ import {
     IbcUtils,
     Ibc
 } from "../../../contracts/libs/Ibc.sol";
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * @title Dispatcher
@@ -94,7 +95,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenInit(
-        IbcChannelReceiver portAddress,
+        IbcChannelReceiver receiver,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -105,11 +106,17 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        string memory selectedVersion = portAddress.onChanOpenInit(version);
-
-        emit ChannelOpenInit(
-            address(portAddress), selectedVersion, ordering, feeEnabled, connectionHops, counterpartyPortId
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version)
         );
+
+        if (success) {
+            emit ChannelOpenInit(
+                address(receiver), abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
+            );
+        } else {
+            emit ChannelOpenInitError(address(receiver), data);
+        }
     }
 
     /**
@@ -118,7 +125,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenTry(
-        IbcChannelReceiver portAddress,
+        IbcChannelReceiver receiver,
         CounterParty calldata local,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -136,17 +143,23 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
-        string memory selectedVersion = portAddress.onChanOpenTry(counterparty.version);
-
-        emit ChannelOpenTry(
-            address(portAddress),
-            selectedVersion,
-            ordering,
-            feeEnabled,
-            connectionHops,
-            counterparty.portId,
-            counterparty.channelId
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
         );
+
+        if (success) {
+            emit ChannelOpenTry(
+                address(receiver),
+                abi.decode(data, (string)),
+                ordering,
+                feeEnabled,
+                connectionHops,
+                counterparty.portId,
+                counterparty.channelId
+            );
+        } else {
+            emit ChannelOpenTryError(address(receiver), data);
+        }
     }
 
     /**
@@ -154,7 +167,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
     function channelOpenAck(
-        IbcChannelReceiver portAddress,
+        IbcChannelReceiver receiver,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -168,11 +181,17 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
-        _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver),
+            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.version)
+        );
 
-        portAddress.onChanOpenAck(local.channelId, counterparty.version);
-
-        emit ChannelOpenAck(address(portAddress), local.channelId);
+        if (success) {
+            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenAck(address(receiver), local.channelId);
+        } else {
+            emit ChannelOpenAckError(address(receiver), data);
+        }
     }
 
     /**
@@ -181,7 +200,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * ChannelOpenConfirm
      */
     function channelOpenConfirm(
-        IbcChannelReceiver portAddress,
+        IbcChannelReceiver receiver,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -195,11 +214,17 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
-        _connectChannel(portAddress, local, connectionHops, ordering, feeEnabled, counterparty);
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver),
+            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenConfirm.selector, local.channelId, counterparty.version)
+        );
 
-        portAddress.onChanOpenConfirm(local.channelId, counterparty.version);
-
-        emit ChannelOpenConfirm(address(portAddress), local.channelId);
+        if (success) {
+            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenConfirm(address(receiver), local.channelId);
+        } else {
+            emit ChannelOpenConfirmError(address(receiver), data);
+        }
     }
 
     /**
@@ -213,9 +238,20 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.channelNotOwnedBySender();
         }
 
-        IbcChannelReceiver reciever = IbcChannelReceiver(msg.sender);
-        reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
-        emit CloseIbcChannel(msg.sender, channelId);
+        (bool success, bytes memory data) = _callIfContract(
+            msg.sender,
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onCloseIbcChannel.selector,
+                channelId,
+                channel.counterpartyPortId,
+                channel.counterpartyChannelId
+            )
+        );
+        if (success) {
+            emit CloseIbcChannel(msg.sender, channelId);
+        } else {
+            emit CloseIbcChannelError(address(msg.sender), data);
+        }
     }
 
     /**
@@ -302,21 +338,26 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
         Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver),
+            abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
+        );
 
-        if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
-                revert IBCErrors.unexpectedPacketSequence();
+        if (success) {
+            if (channel.ordering == ChannelOrder.ORDERED) {
+                if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                    revert IBCErrors.unexpectedPacketSequence();
+                }
+
+                nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
             }
 
-            nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+            // delete packet commitment to avoid double ack
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
+        } else {
+            emit AcknowledgementError(address(receiver), data);
         }
-
-        receiver.onAcknowledgementPacket(packet, Ibc.parseAckData(ack));
-
-        // delete packet commitment to avoid double ack
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-
-        emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
     }
 
     /**
@@ -345,12 +386,16 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
-        receiver.onTimeoutPacket(packet);
-
-        // delete packet commitment to avoid double timeout
-        delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-
-        emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
+        (bool success, bytes memory data) = _callIfContract(
+            address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet)
+        );
+        if (success) {
+            // delete packet commitment to avoid double timeout
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
+        } else {
+            emit TimeoutError(address(receiver), data);
+        }
     }
 
     /**
@@ -405,7 +450,14 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         // Not timeout yet, then do normal handling
         IbcPacket memory pkt = packet;
-        AckPacket memory ack = receiver.onRecvPacket(pkt);
+        AckPacket memory ack;
+        (bool success, bytes memory data) =
+            _callIfContract(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
+        if (success) {
+            (ack) = abi.decode(data, (AckPacket));
+        } else {
+            ack = AckPacket(false, data);
+        }
         bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
@@ -487,7 +539,7 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             return false;
         }
         string memory portSuffix = portId[portPrefixLen:];
-        isMatch = _hexStrToAddress(portSuffix) == addr;
+        isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
@@ -533,6 +585,20 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         nextSequenceAck[address(portAddress)][local.channelId] = 1;
     }
 
+    // Returns the result of the call if no revert, otherwise returns the error if thrown.
+    function _callIfContract(address receiver, bytes memory args)
+        internal
+        returns (bool success, bytes memory message)
+    {
+        if (!Address.isContract(receiver)) {
+            return (false, bytes("call to non-contract"));
+        }
+        // Only call if we are sure receiver is a contract
+        // Note: This tx won't revert if the low-level call fails, see
+        // https://docs.soliditylang.org/en/latest/cheatsheet.html#members-of-address
+        (success, message) = receiver.call(args);
+    }
+
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
@@ -543,37 +609,5 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             // TODO: check timeoutHeight.revision_number?
             || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
         );
-    }
-
-    /**
-     * Convert a non-0x-prefixed hex string to an address
-     * @param hexStr hex string to convert to address. Note that the hex string must not include a 0x prefix.
-     * hexStr is case-insensitive.
-     */
-    function _hexStrToAddress(string memory hexStr) internal pure returns (address addr) {
-        if (bytes(hexStr).length != 40) {
-            revert IBCErrors.invalidHexStringLength();
-        }
-
-        bytes memory strBytes = bytes(hexStr);
-        bytes memory addrBytes = new bytes(20);
-
-        for (uint256 i = 0; i < 20; i++) {
-            uint8 high = uint8(strBytes[i * 2]);
-            uint8 low = uint8(strBytes[1 + i * 2]);
-            // Convert to lowercase if the character is in uppercase
-            if (high >= 65 && high <= 90) {
-                high += 32;
-            }
-            if (low >= 65 && low <= 90) {
-                low += 32;
-            }
-            uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
-            addrBytes[i] = bytes1(digit);
-        }
-
-        assembly {
-            addr := mload(add(addrBytes, 20))
-        }
     }
 }
