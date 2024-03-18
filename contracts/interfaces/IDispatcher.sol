@@ -89,10 +89,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external;
 
-    function sendPacketCommitment(address portAddress, bytes32 channelId, uint64 sequence)
-        external
-        returns (bool committed);
-
     function acknowledgement(
         IbcPacketReceiver receiver,
         IbcPacket calldata packet,
