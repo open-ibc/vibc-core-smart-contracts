@@ -10,7 +10,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
-import {TestUtils} from "./TestUtils.t.sol";
+import {TestUtilsTest} from "./TestUtils.t.sol";
 
 abstract contract DispatcherUpdateClientTestSuite is Base {
     function test_updateOptimisticConsensusState_success() public {
@@ -28,6 +28,6 @@ abstract contract DispatcherUpdateClientTestSuite is Base {
 
 contract DispatcherUpdateClientTest is DispatcherUpdateClientTestSuite {
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = TestUtils.deployDispatcherProxyAndImpl(portPrefix, opLightClient);
+        (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, opLightClient);
     }
 }
