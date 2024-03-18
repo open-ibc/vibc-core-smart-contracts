@@ -12,4 +12,10 @@ wrap_comments = true
 number_underscore = "thousands"
 ignore = ["lib/*"]
 
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
 # See more config options https://book.getfoundry.sh/reference/config.html
