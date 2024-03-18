@@ -84,26 +84,27 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 
     function acknowledgePacket() public {}
 
-    function findNextSequenceSendSlot(address portAddress, bytes32 channelId) public returns (bytes32 slot) {
+    function findNextSequenceSendSlot(address portAddress, bytes32 channelId) public view returns (bytes32 slot) {
         bytes32 slot1 = keccak256(abi.encode(portAddress, nextSequenceSendSlot));
         slot = keccak256(abi.encode(channelId, slot1));
     }
 
     function findPacketCommitmentSlot(address portAddress, bytes32 channelId, uint64 sequence)
         public
+        view
         returns (bytes32 slot)
     {
         bytes32 slot1 = keccak256(abi.encode(portAddress, sendPacketCommitmentSlot));
         bytes32 slot2 = keccak256(abi.encode(channelId, slot1));
-        bytes32 slot = keccak256(abi.encode(sequence, slot2));
+        slot = keccak256(abi.encode(sequence, slot2));
     }
 
-    function findNextSequenceAck(address portAddress, bytes32 channelId) public returns (bytes32 slot) {
+    function findNextSequenceAck(address portAddress, bytes32 channelId) public view returns (bytes32 slot) {
         bytes32 slot1 = keccak256(abi.encode(portAddress, nextSequenceAckSlot));
         slot = keccak256(abi.encode(channelId, slot1));
     }
 
-    function findNextSequenceRecv(address portAddress, bytes32 channelId) public returns (bytes32 slot) {
+    function findNextSequenceRecv(address portAddress, bytes32 channelId) public view returns (bytes32 slot) {
         bytes32 slot1 = keccak256(abi.encode(portAddress, nextSequenceRecvSlot));
         slot = keccak256(abi.encode(channelId, slot1));
     }
