@@ -7,11 +7,11 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {TestUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.t.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
-import {TestUtils} from "./TestUtils.sol";
+import {TestUtils} from "./TestUtils.t.sol";
 
 abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     using stdStorage for StdStorage;
