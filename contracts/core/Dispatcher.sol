@@ -39,21 +39,21 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     string public portPrefix;
     uint32 public portPrefixLen;
 
-    mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) public nextSequenceSend;
+    mapping(address => mapping(bytes32 => Channel)) portChannelMap;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) public nextSequenceRecv;
-    mapping(address => mapping(bytes32 => uint64)) public nextSequenceAck;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceRecv;
+    mapping(address => mapping(bytes32 => uint64)) nextSequenceAck;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
     // Keep track of sent packets
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public sendPacketCommitment;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) sendPacketCommitment;
     // keep track of received packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public recvPacketReceipt;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) recvPacketReceipt;
     // keep track of outbound ack packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public ackPacketCommitment;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) ackPacketCommitment;
 
-    LightClient public lightClient;
+    LightClient lightClient;
 
     //
     // methods
@@ -483,7 +483,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // TODO: remove below writeTimeoutPacket() function
     //       1. core SC is responsible to generate timeout packet
     //       2. user contract are not free to generate timeout with different criteria
-    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, below function won't do
+    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, belowunction won't do
     // the job, as it doesn't have proofs.
     //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will
     // do proper timeout generation.

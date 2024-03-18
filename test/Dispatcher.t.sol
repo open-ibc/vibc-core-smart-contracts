@@ -12,12 +12,42 @@ import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
-abstract contract ChannelHandshakeTestSuite is Base {
+abstract contract ChannelHandshakeUtils is Base {
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
     LocalEnd _local;
     Mars mars;
     CounterParty _remote;
 
+    function createSettings(bool localInitiate, bool isProofValid)
+        internal
+        view
+        returns (ChannelHandshakeSetting[4] memory)
+    {
+        Ics23Proof memory proof = isProofValid ? validProof : invalidProof;
+        ChannelHandshakeSetting[4] memory settings = [
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, false, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.ORDERED, true, localInitiate, proof),
+            ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, localInitiate, proof)
+        ];
+        return settings;
+    }
+
+    function createSettings2(bool isProofValid) internal view returns (ChannelHandshakeSetting[8] memory) {
+        // localEnd initiates
+        ChannelHandshakeSetting[4] memory settings1 = createSettings(true, isProofValid);
+        // remoteEnd initiates
+        ChannelHandshakeSetting[4] memory settings2 = createSettings(false, isProofValid);
+        ChannelHandshakeSetting[8] memory settings;
+        for (uint256 i = 0; i < settings1.length; i++) {
+            settings[i] = settings1[i];
+            settings[i + settings1.length] = settings2[i];
+        }
+        return settings;
+    }
+}
+
+abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
     function test_openChannel_initiator_ok() public {
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
         string[2] memory versions = ["1.0", "2.0"];
@@ -146,34 +176,6 @@ abstract contract ChannelHandshakeTestSuite is Base {
                 channelOpenAck(le, re, settings[i], false);
             }
         }
-    }
-
-    function createSettings(bool localInitiate, bool isProofValid)
-        internal
-        view
-        returns (ChannelHandshakeSetting[4] memory)
-    {
-        Ics23Proof memory proof = isProofValid ? validProof : invalidProof;
-        ChannelHandshakeSetting[4] memory settings = [
-            ChannelHandshakeSetting(ChannelOrder.ORDERED, false, localInitiate, proof),
-            ChannelHandshakeSetting(ChannelOrder.UNORDERED, false, localInitiate, proof),
-            ChannelHandshakeSetting(ChannelOrder.ORDERED, true, localInitiate, proof),
-            ChannelHandshakeSetting(ChannelOrder.UNORDERED, true, localInitiate, proof)
-        ];
-        return settings;
-    }
-
-    function createSettings2(bool isProofValid) internal view returns (ChannelHandshakeSetting[8] memory) {
-        // localEnd initiates
-        ChannelHandshakeSetting[4] memory settings1 = createSettings(true, isProofValid);
-        // remoteEnd initiates
-        ChannelHandshakeSetting[4] memory settings2 = createSettings(false, isProofValid);
-        ChannelHandshakeSetting[8] memory settings;
-        for (uint256 i = 0; i < settings1.length; i++) {
-            settings[i] = settings1[i];
-            settings[i + settings1.length] = settings2[i];
-        }
-        return settings;
     }
 }
 
