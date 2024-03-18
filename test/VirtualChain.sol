@@ -14,7 +14,7 @@ import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
-import {TestUtils} from "./TestUtils.t.sol";
+import {TestUtilsTest} from "./TestUtils.t.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;
@@ -60,7 +60,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
         _seed = seed;
 
         (dispatcherProxy, dispatcherImplementation) =
-            TestUtils.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
+            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
         ucHandler = new UniversalChannelHandler(dispatcherProxy);
 
         mars = new Mars(dispatcherProxy);

@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/console2.sol";
 import {DispatcherUpdateClientTestSuite} from "../Dispatcher.client.t.sol";
 import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher.proof.t.sol";
-import {TestUtils} from "../TestUtils.t.sol";
+import {TestUtilsTest} from "../TestUtils.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OpLightClient.sol";
 import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher.t.sol";
@@ -113,7 +113,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil {
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) =
-            TestUtils.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcherProxy);
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
