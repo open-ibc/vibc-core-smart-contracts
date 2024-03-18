@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/console2.sol";
 import {DispatcherUpdateClientTestSuite} from "../Dispatcher.client.t.sol";
 import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher.proof.t.sol";
-import {TestUtils} from "../TestUtils.sol";
+import {TestUtils} from "../TestUtils.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OpLightClient.sol";
 import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher.t.sol";

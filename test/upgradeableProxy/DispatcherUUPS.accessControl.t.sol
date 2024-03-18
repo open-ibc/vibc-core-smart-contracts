@@ -11,7 +11,7 @@ import "../Dispatcher.base.t.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {TestUtils} from "../TestUtils.sol";
+import {TestUtils} from "../TestUtils.t.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 contract DispatcherUUPSAccessControl is Base {
