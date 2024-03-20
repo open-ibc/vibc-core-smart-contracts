@@ -2,25 +2,14 @@
 
 pragma solidity ^0.8.9;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
 import {LightClient} from "../interfaces/LightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {
-    Channel,
-    CounterParty,
-    ChannelOrder,
-    IbcPacket,
-    ChannelState,
-    AckPacket,
-    IBCErrors,
-    IbcUtils,
-    Ibc
+    Channel, CounterParty, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc, IBCErrors
 } from "../libs/Ibc.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 

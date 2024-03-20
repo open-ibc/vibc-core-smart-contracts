@@ -1,0 +1,5 @@
+{
+  "solidity.packageDefaultDependenciesContractsDirectory": "contracts",
+  "editor.formatOnSave": true,
+  "solidity.formatter": "forge"
+}
