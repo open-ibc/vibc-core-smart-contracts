@@ -36,7 +36,7 @@ struct VirtualChainData {
 }
 
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
-contract VirtualChain is Test, IbcEventsEmitter {
+contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
     UniversalChannelHandler public ucHandler;
@@ -59,8 +59,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
 
-        (dispatcherProxy, dispatcherImplementation) =
-            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
         ucHandler = new UniversalChannelHandler(dispatcherProxy);
 
         mars = new Mars(dispatcherProxy);

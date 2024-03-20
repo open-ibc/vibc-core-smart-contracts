@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "forge-std/console2.sol";
 import {DispatcherUpdateClientTestSuite} from "../Dispatcher.client.t.sol";
 import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher.proof.t.sol";
-import {TestUtilsTest} from "../TestUtils.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OpLightClient.sol";
 import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher.t.sol";
@@ -23,7 +22,7 @@ import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 
-library UpgradeTestUtils {
+abstract contract UpgradeTestUtils {
     function upgradeDispatcher(LightClient consensusStateManager, string memory portPrefix, address dispatcherProxy)
         public
         returns (DispatcherV2Initializable newDispatcherImplementation)
@@ -110,10 +109,9 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
     }
 }
 
-contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil {
+contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) =
-            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcherProxy);
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
@@ -124,7 +122,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil {
         sendPacket(_local.channelId);
 
         // Upgrade dispatcherProxy for tests
-        UpgradeTestUtils.upgradeDispatcher(newLightClient, "adfsafsa", address(dispatcherProxy));
+        upgradeDispatcher(newLightClient, "adfsafsa", address(dispatcherProxy));
     }
 
     function test_SentPacketState_Conserved() public {
