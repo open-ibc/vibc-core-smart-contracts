@@ -11,7 +11,6 @@ import "../Dispatcher.base.t.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {TestUtilsTest} from "../TestUtils.t.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 contract DispatcherUUPSAccessControl is Base {
@@ -22,16 +21,15 @@ contract DispatcherUUPSAccessControl is Base {
     DispatcherV2Initializable dispatcherImplementation3;
 
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) =
-            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         dispatcherImplementation2 = new DispatcherV2();
         dispatcherImplementation3 = new DispatcherV2Initializable();
     }
 
     function test_Dispatcher_Allows_Upgrade() public {
-        assertEq(address(dispatcherImplementation), TestUtilsTest.getProxyImplementation(address(dispatcherProxy), vm));
+        assertEq(address(dispatcherImplementation), getProxyImplementation(address(dispatcherProxy), vm));
         UUPSUpgradeable(address(dispatcherProxy)).upgradeTo(address(dispatcherImplementation2));
-        assertEq(address(dispatcherImplementation2), TestUtilsTest.getProxyImplementation(address(dispatcherProxy), vm));
+        assertEq(address(dispatcherImplementation2), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix);
         assertEq(
             address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))),
@@ -40,10 +38,10 @@ contract DispatcherUUPSAccessControl is Base {
     }
 
     function test_Dispatcher_Allows_Upgrade_To_And_Call() public {
-        assertEq(address(dispatcherImplementation), TestUtilsTest.getProxyImplementation(address(dispatcherProxy), vm));
+        assertEq(address(dispatcherImplementation), getProxyImplementation(address(dispatcherProxy), vm));
         bytes memory initData = abi.encodeWithSignature("initialize(string,address)", portPrefix2, lightClient2);
         UUPSUpgradeable(address(dispatcherProxy)).upgradeToAndCall(address(dispatcherImplementation3), initData);
-        assertEq(address(dispatcherImplementation3), TestUtilsTest.getProxyImplementation(address(dispatcherProxy), vm));
+        assertEq(address(dispatcherImplementation3), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix2);
         assertEq(
             address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))), address(lightClient2)

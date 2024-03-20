@@ -12,6 +12,7 @@ import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/OpProofVerifier.sol";
+import {TestUtilsTest} from "./TestUtils.t.sol";
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
@@ -31,7 +32,7 @@ struct ChannelHandshakeSetting {
 }
 
 // Base contract for testing Dispatcher
-contract Base is IbcEventsEmitter, ProofBase {
+contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
