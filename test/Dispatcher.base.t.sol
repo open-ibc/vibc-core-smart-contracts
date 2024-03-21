@@ -2,15 +2,17 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "./Proof.base.t.sol";
+import {ProofBase} from "./Proof.base.t.sol";
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
+import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/examples/Mars.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
-import "../contracts/utils/DummyConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
+import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/OpProofVerifier.sol";
+import {TestUtilsTest} from "./TestUtils.t.sol";
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
@@ -30,18 +32,18 @@ struct ChannelHandshakeSetting {
 }
 
 // Base contract for testing Dispatcher
-contract Base is IbcEventsEmitter, ProofBase {
+contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
-    ConsensusStateManager opConsensusStateManager =
-        new OptimisticConsensusStateManager(1800, opProofVerifier, l1BlockProvider);
+    LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
 
-    ConsensusStateManager dummyConsStateManager = new DummyConsensusStateManager();
+    LightClient dummyConsStateManager = new DummyLightClient();
 
-    Dispatcher dispatcher;
+    IDispatcher public dispatcherProxy;
+    Dispatcher public dispatcherImplementation;
     string portPrefix = "polyibc.eth.";
     string[] connectionHops = ["connection-1", "connection-2"];
 
@@ -81,7 +83,9 @@ contract Base is IbcEventsEmitter, ProofBase {
                 address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
             );
         }
-        dispatcher.channelOpenInit(le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        dispatcherProxy.channelOpenInit(
+            le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId
+        );
     }
 
     /**
@@ -108,7 +112,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             );
         }
         CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
-        dispatcher.channelOpenTry(
+        dispatcherProxy.channelOpenTry(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             s.ordering,
@@ -134,7 +138,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
-        dispatcher.channelOpenAck(
+        dispatcherProxy.channelOpenAck(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
@@ -163,7 +167,7 @@ contract Base is IbcEventsEmitter, ProofBase {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenConfirm(address(le.receiver), le.channelId);
         }
-        dispatcher.channelOpenConfirm(
+        dispatcherProxy.channelOpenConfirm(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,

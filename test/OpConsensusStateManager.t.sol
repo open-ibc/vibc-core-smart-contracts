@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
 import "../contracts/utils/DummyProofVerifier.sol";
 import "./Proof.base.t.sol";
 
-contract OptimisticConsensusStateManagerTest is ProofBase {
-    OptimisticConsensusStateManager manager;
+contract OptimisticLightClientTest is ProofBase {
+    OptimisticLightClient manager;
     ProofVerifier verifier;
 
     constructor() {
@@ -16,7 +16,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
 
     function setUp() public override {
         super.setUp();
-        manager = new OptimisticConsensusStateManager(1, verifier, l1BlockProvider);
+        manager = new OptimisticLightClient(1, verifier, l1BlockProvider);
     }
 
     function test_addOpConsensusState_newOpConsensusStateCreatedWithPendingStatus() public {
@@ -40,7 +40,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     function test_addOpConsensusState_addingPendingOpConsensusStateWithDifferentValuesIsError() public {
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
 
-        vm.expectRevert(OptimisticConsensusStateManager.CannotUpdatePendingOptimisticConsensusState.selector);
+        vm.expectRevert(OptimisticLightClient.CannotUpdatePendingOptimisticConsensusState.selector);
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 2);
     }
 
@@ -59,7 +59,7 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     }
 
     function test_zero_proof_window() public {
-        manager = new OptimisticConsensusStateManager(0, verifier, l1BlockProvider);
+        manager = new OptimisticLightClient(0, verifier, l1BlockProvider);
         manager.addOpConsensusState(emptyl1header, invalidStateProof, 1, 1);
         (,, bool ended) = manager.getState(1);
         assertEq(true, ended);
@@ -72,12 +72,12 @@ contract OptimisticConsensusStateManagerTest is ProofBase {
     }
 }
 
-contract OptimisticConsensusStateManagerWithRealVerifierTest is ProofBase {
-    OptimisticConsensusStateManager manager;
+contract OptimisticLightClientWithRealVerifierTest is ProofBase {
+    OptimisticLightClient manager;
 
     function setUp() public override {
         super.setUp();
-        manager = new OptimisticConsensusStateManager(1, opProofVerifier, l1BlockProvider);
+        manager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
     }
 
     function test_addOpConsensusState_newAppHashWithValidProof() public {

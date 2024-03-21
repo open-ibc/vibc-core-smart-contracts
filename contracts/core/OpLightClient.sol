@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {L1Header, ProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
-import {ConsensusStateManager} from "../interfaces/ConsensusStateManager.sol";
+import {LightClient} from "../interfaces/LightClient.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 
-// OptimisticConsensusStateManager manages the appHash at different
+// OptimisticLightClient manages the appHash at different
 // heights and track the fraud proof end time for them.
-contract OptimisticConsensusStateManager is ConsensusStateManager {
+contract OptimisticLightClient is LightClient {
     // consensusStates maps from the height to the appHash.
     mapping(uint256 => uint256) public consensusStates;
 

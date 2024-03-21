@@ -2,19 +2,20 @@
 pragma solidity ^0.8.15;
 
 import "../contracts/libs/Ibc.sol";
+import {Base} from "./Dispatcher.base.t.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import {Mars} from "../contracts/examples/Mars.sol";
+import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
+import "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import "../contracts/core/OpConsensusStateManager.sol";
+import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
-using stdStorage for StdStorage;
+abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
+    using stdStorage for StdStorage;
 
-contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     Mars mars;
-    Dispatcher dispatcher;
-    OptimisticConsensusStateManager consensusStateManager;
+    OptimisticLightClient consensusStateManager;
 
     CounterParty ch0 =
         CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
@@ -23,19 +24,12 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
 
-    function setUp() public override {
-        super.setUp();
-        consensusStateManager = new OptimisticConsensusStateManager(1, opProofVerifier, l1BlockProvider);
-        dispatcher = new Dispatcher("polyibc.eth1.", consensusStateManager);
-        mars = new Mars(dispatcher);
-    }
-
     function test_ibc_channel_open_init() public {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
 
         // since this is open chann init, the proof is not used. so use an invalid one
-        dispatcher.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+        dispatcherProxy.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
     function test_ibc_channel_open_try() public {
@@ -44,7 +38,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenTry(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch0.portId, ch0.channelId);
 
-        dispatcher.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
+        dispatcherProxy.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
     function test_ibc_channel_ack() public {
@@ -53,7 +47,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenAck(address(mars), ch0.channelId);
 
-        dispatcher.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
+        dispatcherProxy.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
     }
 
     function test_ibc_channel_confirm() public {
@@ -62,18 +56,19 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenConfirm(address(mars), ch1.channelId);
 
-        dispatcher.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
+        dispatcherProxy.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
     }
 
     function test_ack_packet() public {
         Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex");
 
         // plant a fake packet commitment so the ack checks go through
-        // use "forge inspect --storage" to find the slot 1
-        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(7))); // current nested mapping slot: 107
+        // Stdstore doesn't work for proxies so we have to use store
+        // use "forge inspect --storage" to find the nested mapping slot
+        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(107))); // current nested mapping slot: 107
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
-        vm.store(address(dispatcher), slot3, bytes32(uint256(1)));
+        vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
@@ -90,7 +85,8 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
 
         vm.expectEmit(true, true, true, true);
         emit Acknowledgement(address(mars), packet.src.channelId, packet.sequence);
-        dispatcher.acknowledgement(mars, packet, ack, proof);
+
+        dispatcherProxy.acknowledgement(mars, packet, ack, proof);
     }
 
     function test_recv_packet() public {
@@ -113,7 +109,7 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
             packet.sequence,
             AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
         );
-        dispatcher.recvPacket(mars, packet, proof);
+        dispatcherProxy.recvPacket(mars, packet, proof);
     }
 
     function test_timeout_packet() public {
@@ -132,5 +128,15 @@ contract DispatcherIbcWithRealProofs is IbcEventsEmitter, ProofBase {
         vm.warp(block.timestamp + 1);
 
         return proof;
+    }
+}
+
+contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
+    function setUp() public override {
+        super.setUp();
+        consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
+        (dispatcherProxy, dispatcherImplementation) =
+            deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
+        mars = new Mars(dispatcherProxy);
     }
 }

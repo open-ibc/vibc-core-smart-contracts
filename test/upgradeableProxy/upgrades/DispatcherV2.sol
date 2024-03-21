@@ -3,14 +3,13 @@
 pragma solidity ^0.8.9;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
-import {LightClient} from "../interfaces/LightClient.sol";
-import {IDispatcher} from "../interfaces/IDispatcher.sol";
+import {IbcChannelReceiver, IbcPacketReceiver} from "../../../contracts/interfaces/IbcReceiver.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "../../../contracts/interfaces/ProofVerifier.sol";
+import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
+import {IDispatcher} from "../../../contracts/interfaces/IDispatcher.sol";
 import {
     Channel,
     CounterParty,
@@ -21,7 +20,7 @@ import {
     IBCErrors,
     IbcUtils,
     Ibc
-} from "../libs/Ibc.sol";
+} from "../../../contracts/libs/Ibc.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**
@@ -31,7 +30,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
+contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //
     // fields
     //
@@ -39,21 +38,21 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     string public portPrefix;
     uint32 public portPrefixLen;
 
-    mapping(address => mapping(bytes32 => Channel)) private _portChannelMap;
-    mapping(address => mapping(bytes32 => uint64)) private _nextSequenceSend;
+    mapping(address => mapping(bytes32 => Channel)) public portChannelMap;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
-    mapping(address => mapping(bytes32 => uint64)) private _nextSequenceRecv;
-    mapping(address => mapping(bytes32 => uint64)) private _nextSequenceAck;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceRecv;
+    mapping(address => mapping(bytes32 => uint64)) public nextSequenceAck;
     // only stores a bit to mark packet has not been ack'ed or timed out yet; actual IBC packet verification is done on
     // Polymer chain.
     // Keep track of sent packets
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _sendPacketCommitment;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public sendPacketCommitment;
     // keep track of received packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _recvPacketReceipt;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public recvPacketReceipt;
     // keep track of outbound ack packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
+    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) public ackPacketCommitment;
 
-    LightClient _lightClient;
+    LightClient public lightClient;
 
     //
     // methods
@@ -62,11 +61,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _disableInitializers();
     }
 
-    function initialize(string memory initPortPrefix, LightClient lightClient) public initializer {
+    function initialize(string memory initPortPrefix, LightClient _lightClient) public virtual initializer {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        _lightClient = lightClient;
+        lightClient = _lightClient;
     }
 
     //
@@ -87,7 +86,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         uint256 height,
         uint256 appHash
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        return _lightClient.addOpConsensusState(l1header, proof, height, appHash);
+        return lightClient.addOpConsensusState(l1header, proof, height, appHash);
     }
 
     /**
@@ -138,7 +137,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        _lightClient.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -176,7 +175,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        _lightClient.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -209,7 +208,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        _lightClient.verifyMembership(
+        lightClient.verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
@@ -231,10 +230,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     /**
      * @dev Emits a `CloseIbcChannel` event with the given `channelId` and the address of the message sender
      * @notice Close the specified IBC channel by channel ID
-     * Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
+     * Must be called by the channel owner, ie. portChannelMap[msg.sender][channelId] must exist
      */
     function closeIbcChannel(bytes32 channelId) external {
-        Channel memory channel = _portChannelMap[msg.sender][channelId];
+        Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
         }
@@ -263,14 +262,14 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // FIXME this is commented out to make the contract size smaller. We need to optimise for size
     // function onCloseIbcChannel(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
     //     // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-    //     _lightClient.verifyMembership(
+    //     lightClient.verifyMembership(
     //         proof,
     //         bytes('channel/path/to/be/added/here'),
     //         bytes('expected channel bytes constructed from params. Channel.State = {Closed(_Pending?)}')
     //     );
     //
     //     // ensure port owns channel
-    //     Channel memory channel = _portChannelMap[portAddress][channelId];
+    //     Channel memory channel = portChannelMap[portAddress][channelId];
     //     if (channel.counterpartyChannelId == bytes32(0)) {
     //         revert channelNotOwnedByPortAddress();
     //     }
@@ -278,7 +277,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //     // confirm with dApp by calling its callback
     //     IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
     //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
-    //     delete _portChannelMap[portAddress][channelId];
+    //     delete portChannelMap[portAddress][channelId];
     //     emit CloseIbcChannel(portAddress, channelId);
     // }
 
@@ -299,7 +298,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      */
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external {
         // ensure port owns channel
-        Channel memory channel = _portChannelMap[msg.sender][channelId];
+        Channel memory channel = portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
         }
@@ -330,15 +329,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // prove ack packet is on Polymer chain
-        _lightClient.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
+        lightClient.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = _portChannelMap[address(receiver)][packet.src.channelId];
+        Channel memory channel = portChannelMap[address(receiver)][packet.src.channelId];
         (bool success, bytes memory data) = _callIfContract(
             address(receiver),
             abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
@@ -346,15 +345,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         if (success) {
             if (channel.ordering == ChannelOrder.ORDERED) {
-                if (packet.sequence != _nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                if (packet.sequence != nextSequenceAck[address(receiver)][packet.src.channelId]) {
                     revert IBCErrors.unexpectedPacketSequence();
                 }
 
-                _nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+                nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
             }
 
             // delete packet commitment to avoid double ack
-            delete _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
         } else {
             emit AcknowledgementError(address(receiver), data);
@@ -379,10 +378,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        _lightClient.verifyNonMembership(proof, "packet/receipt/path");
+        lightClient.verifyNonMembership(proof, "packet/receipt/path");
 
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
             revert IBCErrors.packetCommitmentNotFound();
         }
@@ -392,7 +391,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         );
         if (success) {
             // delete packet commitment to avoid double timeout
-            delete _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+            delete sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
             emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
         } else {
             emit TimeoutError(address(receiver), data);
@@ -415,26 +414,26 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
         }
-        _lightClient.verifyMembership(
+        lightClient.verifyMembership(
             proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
-        bool hasReceipt = _recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
             revert IBCErrors.packetReceiptAlreadyExists();
         }
 
-        _recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = _portChannelMap[address(receiver)][packet.dest.channelId];
+        Channel memory channel = portChannelMap[address(receiver)][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != _nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+            if (packet.sequence != nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
                 revert IBCErrors.unexpectedPacketSequence();
             }
 
-            _nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
@@ -459,13 +458,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         } else {
             ack = AckPacket(false, data);
         }
-        bool hasAckPacketCommitment = _ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasAckPacketCommitment = ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
             revert IBCErrors.ackPacketCommitmentAlreadyExists();
         }
 
-        _ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
 
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
@@ -483,7 +482,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // TODO: remove below writeTimeoutPacket() function
     //       1. core SC is responsible to generate timeout packet
     //       2. user contract are not free to generate timeout with different criteria
-    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, belowunction won't do
+    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, below function won't do
     // the job, as it doesn't have proofs.
     //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will
     // do proper timeout generation.
@@ -497,7 +496,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // verify packet does not have a receipt
-        bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
             revert IBCErrors.packetReceiptAlreadyExists();
         }
@@ -521,7 +520,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      *    values per EVM.
      */
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel) {
-        channel = _portChannelMap[portAddress][channelId];
+        channel = portChannelMap[portAddress][channelId];
     }
 
     // getOptimisticConsensusState
@@ -530,7 +529,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
-        return _lightClient.getState(height);
+        return lightClient.getState(height);
     }
 
     // verify an EVM address matches an IBC portId.
@@ -546,15 +545,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // Prerequisite: must verify sender is authorized to send packet on the channel
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
-        uint64 sequence = _nextSequenceSend[sender][channelId];
+        uint64 sequence = nextSequenceSend[sender][channelId];
         if (sequence == 0) {
             revert IBCErrors.invalidPacketSequence();
         }
 
         // packet commitment
-        _sendPacketCommitment[sender][channelId][sequence] = true;
+        sendPacketCommitment[sender][channelId][sequence] = true;
         // increment nextSendPacketSequence
-        _nextSequenceSend[sender][channelId] = sequence + 1;
+        nextSequenceSend[sender][channelId] = sequence + 1;
 
         emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
@@ -571,7 +570,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         // TODO: check duplicated channel registration?
         // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
         //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
-        _portChannelMap[address(portAddress)][local.channelId] = Channel(
+        portChannelMap[address(portAddress)][local.channelId] = Channel(
             counterparty.version, // TODO: this should be self version instead of counterparty version
             ordering,
             feeEnabled,
@@ -581,9 +580,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         );
 
         // initialize channel sequences
-        _nextSequenceSend[address(portAddress)][local.channelId] = 1;
-        _nextSequenceRecv[address(portAddress)][local.channelId] = 1;
-        _nextSequenceAck[address(portAddress)][local.channelId] = 1;
+        nextSequenceSend[address(portAddress)][local.channelId] = 1;
+        nextSequenceRecv[address(portAddress)][local.channelId] = 1;
+        nextSequenceAck[address(portAddress)][local.channelId] = 1;
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
