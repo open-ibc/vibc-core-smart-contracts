@@ -33,17 +33,6 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.closeIbcChannel(channelId);
     }
 
-    // IBC callback functions
-    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
-        external
-        onlyIbcDispatcher
-    {
-        if (keccak256(abi.encodePacked(counterpartyVersion)) != keccak256(abi.encodePacked(VERSION))) {
-            revert UnsupportedVersion();
-        }
-        connectedChannels.push(channelId);
-    }
-
     function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
@@ -149,23 +138,43 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         mwStackAddrs[mwBitmap] = mwAddrs;
     }
 
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder,
-        bool,
-        string[] calldata,
-        CounterParty calldata counterparty
-    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (counterparty.channelId == bytes32(0)) {
-            // ChanOpenInit
-            if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
-                revert UnsupportedVersion();
-            }
-        } else {
-            // ChanOpenTry
-            if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(VERSION))) {
-                revert UnsupportedVersion();
-            }
+    // IBC callback functions
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
+    function onChanOpenInit(string calldata version)
+        external
+        view
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(version);
+    }
+
+    function onChanOpenTry(string calldata counterpartyVersion)
+        external
+        view
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(counterpartyVersion);
+    }
+
+    function _connectChannel(bytes32 channelId, string calldata version) private {
+        if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
+            revert UnsupportedVersion();
+        }
+        connectedChannels.push(channelId);
+    }
+
+    function _openChannel(string calldata version) private pure returns (string memory selectedVersion) {
+        if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
+            revert UnsupportedVersion();
         }
         return VERSION;
     }

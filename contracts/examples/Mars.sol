@@ -39,23 +39,6 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
-    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion)
-        external
-        virtual
-        onlyIbcDispatcher
-    {
-        // ensure negotiated version is supported
-        bool foundVersion = false;
-        for (uint256 i = 0; i < supportedVersions.length; i++) {
-            if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
-                foundVersion = true;
-                break;
-            }
-        }
-        if (!foundVersion) revert UnsupportedVersion();
-        connectedChannels.push(channelId);
-    }
-
     function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
         // logic to determin if the channel should be closed
         bool channelFound = false;
@@ -87,40 +70,52 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 
-    function onOpenIbcChannel(
-        string calldata version,
-        ChannelOrder,
-        bool,
-        string[] calldata,
-        CounterParty calldata counterparty
-    ) external view virtual onlyIbcDispatcher returns (string memory selectedVersion) {
-        if (bytes(counterparty.portId).length <= 8) {
-            revert IBCErrors.invalidCounterPartyPortId();
-        }
-        /**
-         * Version selection is determined by if the callback is invoked on behalf of ChanOpenInit or ChanOpenTry.
-         * ChanOpenInit: self version should be provided whereas the counterparty version is empty.
-         * ChanOpenTry: counterparty version should be provided whereas the self version is empty.
-         * In both cases, the selected version should be in the supported versions list.
-         */
-        bool foundVersion = false;
-        selectedVersion =
-            keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked("")) ? counterparty.version : version;
-        for (uint256 i = 0; i < supportedVersions.length; i++) {
-            if (keccak256(abi.encodePacked(selectedVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
-                foundVersion = true;
-                break;
-            }
-        }
-        if (!foundVersion) revert UnsupportedVersion();
-        // if counterpartyVersion is not empty, then it must be the same foundVersion
-        if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(""))) {
-            if (keccak256(abi.encodePacked(counterparty.version)) != keccak256(abi.encodePacked(selectedVersion))) {
-                revert VersionMismatch();
-            }
-        }
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external virtual onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
 
-        return selectedVersion;
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+        _connectChannel(channelId, counterpartyVersion);
+    }
+
+    function onChanOpenInit(string calldata version)
+        external
+        view
+        virtual
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(version);
+    }
+
+    function onChanOpenTry(string calldata counterpartyVersion)
+        external
+        view
+        virtual
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
+        return _openChannel(counterpartyVersion);
+    }
+
+    function _connectChannel(bytes32 channelId, string calldata counterpartyVersion) private {
+        // ensure negotiated version is supported
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
+            if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
+                connectedChannels.push(channelId);
+                return;
+            }
+        }
+        revert UnsupportedVersion();
+    }
+
+    function _openChannel(string calldata version) private view returns (string memory selectedVersion) {
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
+            if (keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
+                return version;
+            }
+        }
+        revert UnsupportedVersion();
     }
 }
 
@@ -132,13 +127,7 @@ contract RevertingStringMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     // solhint-disable-next-line
-    function onOpenIbcChannel(string calldata, ChannelOrder, bool, string[] calldata, CounterParty calldata)
-        external
-        view
-        override
-        onlyIbcDispatcher
-        returns (string memory)
-    {
+    function onChanOpenInit(string calldata) external view override onlyIbcDispatcher returns (string memory) {
         // solhint-disable-next-line
         require(false, "open ibc channel is reverting");
         return "";
@@ -152,7 +141,7 @@ contract RevertingStringMars is Mars {
     }
 
     // solhint-disable-next-line
-    function onConnectIbcChannel(bytes32, bytes32, string calldata) external view override onlyIbcDispatcher {
+    function onChanOpenAck(bytes32, string calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "connect ibc channel is reverting");
     }

@@ -33,7 +33,7 @@ contract ChannelHandshakeTest is Base {
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 // remoteEnd has no channelId or version if localEnd is the initiator
-                openChannel(le, re, settings[i], true);
+                channelOpenInit(le, re, settings[i], true);
             }
         }
     }
@@ -50,11 +50,11 @@ contract ChannelHandshakeTest is Base {
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 // remoteEnd version is used
-                openChannel(le, re, settings[i], true);
+                channelOpenInit(le, re, settings[i], true);
 
                 // auto version selection
                 le.versionCall = "";
-                openChannel(le, re, settings[i], true);
+                channelOpenTry(le, re, settings[i], true);
             }
         }
     }
@@ -70,28 +70,10 @@ contract ChannelHandshakeTest is Base {
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 re.version = versions[j];
-                openChannel(le, re, settings[i], true);
-                connectChannel(le, re, settings[i], false, true);
-            }
-        }
-    }
-
-    function test_openChannel_receiver_fail_versionMismatch() public {
-        ChannelHandshakeSetting[4] memory settings = createSettings(false, true);
-        string[2] memory versions = ["1.0", "2.0"];
-        for (uint256 i = 0; i < settings.length; i++) {
-            for (uint256 j = 0; j < versions.length; j++) {
-                LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
-                re.version = versions[j];
-                // always select the wrong version
-                bool isVersionOne = keccak256(abi.encodePacked(versions[j])) == keccak256(abi.encodePacked("1.0"));
-                le.versionCall = isVersionOne ? "2.0" : "1.0";
-                vm.expectEmit(true, true, true, true);
-                emit IbcEventsEmitter.OpenIbcChannelError(
-                    address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.VersionMismatch.selector)
-                );
-                openChannel(le, re, settings[i], false);
+                channelOpenInit(le, re, settings[i], true);
+                channelOpenTry(le, re, settings[i], true);
+                channelOpenAck(le, re, settings[i], true);
+                channelOpenConfirm(le, re, settings[i], true);
             }
         }
     }
@@ -106,16 +88,16 @@ contract ChannelHandshakeTest is Base {
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 vm.expectEmit(true, true, true, true);
-                emit IbcEventsEmitter.OpenIbcChannelError(
+                emit IbcEventsEmitter.ChannelOpenInitError(
                     address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
                 );
-                openChannel(le, re, settings[i], false);
+                channelOpenInit(le, re, settings[i], false);
             }
         }
     }
 
     function test_openChannel_receiver_fail_invalidProof() public {
-        // When localEnd initiates, no proof verification is done in openIbcChannel
+        // When localEnd initiates, no proof verification is done in channelOpenTry
         ChannelHandshakeSetting[4] memory settings = createSettings(false, false);
         string[1] memory versions = ["1.0"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -124,14 +106,15 @@ contract ChannelHandshakeTest is Base {
                 CounterParty memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
+
                 vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
-                openChannel(le, re, settings[i], false);
+                channelOpenTry(le, re, settings[i], false);
             }
         }
     }
 
-    function test_connectChannel_revert_unsupportedVersion() public {
-        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+    function test_connectChannel_fail_unsupportedVersion() public {
+        // When localEnd initiates, counterparty version is only available in channelOpenAck
         ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
         string[2] memory versions = ["", "xxxxxxx"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -139,19 +122,21 @@ contract ChannelHandshakeTest is Base {
                 LocalEnd memory le = _local;
                 CounterParty memory re = _remote;
                 // no remote version applied in openChannel
-                openChannel(le, re, settings[i], true);
+                channelOpenInit(le, re, settings[i], true);
+                channelOpenTry(le, re, settings[i], true);
                 re.version = versions[j];
                 vm.expectEmit(true, true, true, true);
-                emit IbcEventsEmitter.ConnectIbcChannelError(
+                emit IbcEventsEmitter.ChannelOpenAckError(
                     address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
                 );
-                connectChannel(le, re, settings[i], false, false);
+
+                channelOpenAck(le, re, settings[i], false);
             }
         }
     }
 
-    function test_connectChannel_revert_invalidProof() public {
-        // When localEnd initiates, counterparty version is only available in connectIbcChannel
+    function test_connectChannel_fail_invalidProof() public {
+        // When localEnd initiates, counterparty version is only available in channelOpenAck
         ChannelHandshakeSetting[8] memory settings = createSettings2(true);
         string[1] memory versions = ["1.0"];
         for (uint256 i = 0; i < settings.length; i++) {
@@ -159,11 +144,13 @@ contract ChannelHandshakeTest is Base {
                 LocalEnd memory le = _local;
                 CounterParty memory re = _remote;
                 // no remote version applied in openChannel
-                openChannel(le, re, settings[i], true);
+                channelOpenInit(le, re, settings[i], true);
+                channelOpenTry(le, re, settings[i], true);
                 re.version = versions[j];
                 settings[i].proof = invalidProof;
+
                 vm.expectRevert(DummyConsensusStateManager.InvalidDummyMembershipProof.selector);
-                connectChannel(le, re, settings[i], false, false);
+                channelOpenAck(le, re, settings[i], false);
             }
         }
     }
@@ -226,10 +213,11 @@ contract ChannelOpenTestBase is Base {
         _localRevertingMars = LocalEnd(revertingBytesMars, portId, channelId, connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
-        openChannel(_local, _remote, setting, true);
-        openChannel(_localRevertingMars, _remote, setting, true);
-        connectChannel(_local, _remote, setting, false, true);
-        connectChannel(_localRevertingMars, _remote, setting, false, true);
+        channelOpenInit(_local, _remote, setting, true);
+        channelOpenTry(_localRevertingMars, _remote, setting, true);
+
+        channelOpenAck(_local, _remote, setting, true);
+        channelOpenConfirm(_localRevertingMars, _remote, setting, true);
     }
 }
 
@@ -559,17 +547,17 @@ contract DappRevertTests is Base {
     function test_ibc_channel_open_non_dapp_call() public {
         address nonDappAddr = vm.addr(1);
 
-        emit OpenIbcChannelError(nonDappAddr, bytes("call to non-contract"));
-        dispatcher.openIbcChannel(
-            IbcChannelReceiver(nonDappAddr), ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof
+        emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
+        dispatcher.channelOpenInit(
+            IbcChannelReceiver(nonDappAddr), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
         );
     }
 
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
-        emit OpenIbcChannelError(address(earth), "");
-        dispatcher.openIbcChannel(
-            IbcChannelReceiver(address(earth)), ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof
+        emit ChannelOpenInitError(address(earth), "");
+        dispatcher.channelOpenInit(
+            IbcChannelReceiver(address(earth)), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
         );
     }
 
@@ -654,19 +642,19 @@ contract DappRevertTests is Base {
 
     function test_ibc_channel_open_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
-        emit OpenIbcChannelError(
+        emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
-        dispatcher.openIbcChannel(revertingStringMars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, validProof);
+        dispatcher.channelOpenInit(
+            revertingStringMars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
+        );
     }
 
     function test_ibc_channel_ack_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
-        emit ConnectIbcChannelError(
+        emit ChannelOpenAckError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
         );
-        dispatcher.connectIbcChannel(
-            revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, false, ch1, validProof
-        );
+        dispatcher.channelOpenAck(revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof);
     }
 }

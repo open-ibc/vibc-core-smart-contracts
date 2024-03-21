@@ -132,10 +132,10 @@ contract VirtualChain is Test, IbcEventsEmitter {
         remoteChain.channelOpenTry(remoteEnd, this, localEnd, setting, true); // step-2
 
         vm.prank(address(this));
-        this.channelOpenAckOrConfirm(localEnd, remoteChain, remoteEnd, setting, false, true); // step-3
+        this.channelOpenConfirm(localEnd, remoteChain, remoteEnd, setting, true); // step-3
 
         vm.prank(address(remoteChain));
-        remoteChain.channelOpenAckOrConfirm(remoteEnd, this, localEnd, setting, true, true); // step-4
+        remoteChain.channelOpenAck(remoteEnd, this, localEnd, setting, true); // step-4
     }
 
     function channelOpenInit(
@@ -153,25 +153,17 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit OpenIbcChannel(
+            emit ChannelOpenInit(
                 address(localEnd),
                 setting.version,
                 setting.ordering,
                 setting.feeEnabled,
                 connectionHops,
-                remoteChain.portIds(address(remoteEnd)),
-                bytes32(0)
+                remoteChain.portIds(address(remoteEnd))
             );
         }
-        dispatcher.openIbcChannel(
-            localEnd,
-            CounterParty(setting.portId, setting.channelId, setting.version),
-            setting.ordering,
-            setting.feeEnabled,
-            connectionHops,
-            // counterparty channelId and version are not known at this point
-            CounterParty(cpPortId, bytes32(0), ""),
-            setting.proof
+        dispatcher.channelOpenInit(
+            localEnd, setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId
         );
     }
 
@@ -193,7 +185,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit OpenIbcChannel(
+            emit ChannelOpenTry(
                 address(localEnd),
                 setting.version,
                 setting.ordering,
@@ -203,7 +195,7 @@ contract VirtualChain is Test, IbcEventsEmitter {
                 cpChanId
             );
         }
-        dispatcher.openIbcChannel(
+        dispatcher.channelOpenTry(
             localEnd,
             CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,
@@ -214,38 +206,71 @@ contract VirtualChain is Test, IbcEventsEmitter {
         );
     }
 
-    function channelOpenAckOrConfirm(
+    function channelOpenAck(
         IbcChannelReceiver localEnd,
         VirtualChain remoteChain,
         IbcChannelReceiver remoteEnd,
         ChannelSetting memory setting,
-        bool isChanConfirm,
         bool expPass
     ) external {
         // local channel Id must be known
         bytes32 chanId = channelIds[address(localEnd)][address(remoteEnd)];
-        require(chanId != bytes32(0), "channelOpenAckOrConfirm: channel does not exist");
+        require(chanId != bytes32(0), "channelOpenAck: channel does not exist");
 
         bytes32 cpChanId = remoteChain.channelIds(address(remoteEnd), address(localEnd));
-        require(cpChanId != bytes32(0), "channelOpenAckOrConfirm: channel does not exist");
+        require(cpChanId != bytes32(0), "channelOpenAck: channel does not exist");
 
         string memory cpPortId = remoteChain.portIds(address(remoteEnd));
-        require(bytes(cpPortId).length > 0, "channelOpenAckOrConfirm: counterparty portId does not exist");
+        require(bytes(cpPortId).length > 0, "channelOpenAck: counterparty portId does not exist");
 
         // set dispatcher's msg.sender to this function's msg.sender
         vm.prank(msg.sender);
 
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit ConnectIbcChannel(address(localEnd), chanId);
+            emit ChannelOpenAck(address(localEnd), chanId);
         }
-        dispatcher.connectIbcChannel(
+        dispatcher.channelOpenAck(
             localEnd,
             CounterParty(setting.portId, chanId, setting.version),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
-            isChanConfirm,
+            CounterParty(cpPortId, cpChanId, setting.version),
+            setting.proof
+        );
+    }
+
+    function channelOpenConfirm(
+        IbcChannelReceiver localEnd,
+        VirtualChain remoteChain,
+        IbcChannelReceiver remoteEnd,
+        ChannelSetting memory setting,
+        bool expPass
+    ) external {
+        // local channel Id must be known
+        bytes32 chanId = channelIds[address(localEnd)][address(remoteEnd)];
+        require(chanId != bytes32(0), "channelOpenConfirm: channel does not exist");
+
+        bytes32 cpChanId = remoteChain.channelIds(address(remoteEnd), address(localEnd));
+        require(cpChanId != bytes32(0), "channelOpenConfirm: channel does not exist");
+
+        string memory cpPortId = remoteChain.portIds(address(remoteEnd));
+        require(bytes(cpPortId).length > 0, "channelOpenConfirm: counterparty portId does not exist");
+
+        // set dispatcher's msg.sender to this function's msg.sender
+        vm.prank(msg.sender);
+
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ChannelOpenConfirm(address(localEnd), chanId);
+        }
+        dispatcher.channelOpenConfirm(
+            localEnd,
+            CounterParty(setting.portId, chanId, setting.version),
+            connectionHops,
+            setting.ordering,
+            setting.feeEnabled,
             CounterParty(cpPortId, cpChanId, setting.version),
             setting.proof
         );

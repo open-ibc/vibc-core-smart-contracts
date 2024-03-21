@@ -65,35 +65,50 @@ contract Base is IbcEventsEmitter, ProofBase {
     // ⬇️ IBC functions for testing
 
     /**
-     * @dev Step-1/2 of the 4-step handshake to open an IBC channel.
+     * @dev Step-1 of the 4-step handshake to open an IBC channel.
      * @param le Local end settings for the channel.
      * @param re Remote end settings for the channel.
      * @param s Channel handshake settings.
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function openChannel(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenInit(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
-        CounterParty memory cp;
-        cp.portId = re.portId;
-        if (!s.localInitiate) {
-            cp.channelId = re.channelId;
-            cp.version = re.version;
-        }
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit OpenIbcChannel(
+            emit ChannelOpenInit(
+                address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
+            );
+        }
+        dispatcher.channelOpenInit(le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+    }
+
+    /**
+     * @dev Step-2 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function channelOpenTry(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ChannelOpenTry(
                 address(le.receiver),
                 le.versionExpected,
                 s.ordering,
                 s.feeEnabled,
                 le.connectionHops,
-                cp.portId,
-                cp.channelId
+                re.portId,
+                re.channelId
             );
         }
-        dispatcher.openIbcChannel(
+        CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
+        dispatcher.channelOpenTry(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             s.ordering,
@@ -105,31 +120,55 @@ contract Base is IbcEventsEmitter, ProofBase {
     }
 
     /**
-     * @dev Step-3/4 of the 4-step handshake to open an IBC channel.
+     * @dev Step-3 of the 4-step handshake to open an IBC channel.
      * @param le Local end settings for the channel.
      * @param re Remote end settings for the channel.
      * @param s Channel handshake settings.
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function connectChannel(
-        LocalEnd memory le,
-        CounterParty memory re,
-        ChannelHandshakeSetting memory s,
-        bool isChannConfirm,
-        bool expPass
-    ) public {
+    function channelOpenAck(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+        public
+    {
         if (expPass) {
             vm.expectEmit(true, true, true, true);
-            emit ConnectIbcChannel(address(le.receiver), le.channelId);
+            emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
-        dispatcher.connectIbcChannel(
+        dispatcher.channelOpenAck(
             le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,
-            isChannConfirm,
+            re,
+            s.proof
+        );
+    }
+
+    /**
+     * @dev Step-4 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function channelOpenConfirm(
+        LocalEnd memory le,
+        CounterParty memory re,
+        ChannelHandshakeSetting memory s,
+        bool expPass
+    ) public {
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ChannelOpenConfirm(address(le.receiver), le.channelId);
+        }
+        dispatcher.channelOpenConfirm(
+            le.receiver,
+            CounterParty(le.portId, le.channelId, le.versionCall),
+            le.connectionHops,
+            s.ordering,
+            s.feeEnabled,
             re,
             s.proof
         );
