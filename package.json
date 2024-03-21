@@ -5,10 +5,13 @@
   "repository": "https://github.com/open-ibc/vibc-core-smart-contracts",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.4.5",
     "solhint": "^4.1.1"
   },
   "scripts": {
-    "lint": "solhint contracts/**/*.sol"
+    "lint": "solhint contracts/**/*.sol",
+    "deployAll": "yarn hardhat deploy",
+    "deployDispatcher": "yarn hardhat deploy"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
@@ -28,6 +31,7 @@
     "ethers": "^6.4.0",
     "hardhat": "^2.22.1",
     "hardhat-contract-sizer": "^2.10.0",
+    "hardhat-deploy": "^0.12.2",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
