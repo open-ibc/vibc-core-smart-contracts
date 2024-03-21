@@ -22,6 +22,8 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     // Key: middleware bitmap, Value: middleware address from receiver(chain B)'s perspective
     mapping(uint256 => address[]) public mwStackAddrs;
 
+    event UCHPacketSent(address source, bytes32 destination);
+
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
     /**
      * @dev Close a universal channel.
@@ -55,6 +57,7 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         bytes memory packetData = IbcUtils.toUniversalPacketBytes(
             UniversalPacket(IbcUtils.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
         );
+        emit UCHPacketSent(msg.sender, destPortAddr);
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 

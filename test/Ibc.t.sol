@@ -57,4 +57,33 @@ contract IbcTest is Test {
         assertFalse(parsederr.success);
         assertEq(bytes("this is an error message"), parsederr.data);
     }
+
+    function assert_Equal_Before_and_After_Encoding(address a1, uint256 mwBitmap, address a2, bytes memory appData)
+        internal
+    {
+        bytes memory afterEncoding = IbcUtils.toUniversalPacketBytes(
+            UniversalPacket(IbcUtils.toBytes32(a1), mwBitmap, IbcUtils.toBytes32(a2), appData)
+        );
+
+        UniversalPacket memory afterDecoding = IbcUtils.fromUniversalPacketBytes(afterEncoding);
+        assertEq(a1, IbcUtils.toAddress(afterDecoding.srcPortAddr));
+        assertEq(mwBitmap, afterDecoding.mwBitmap);
+        assertEq(a2, IbcUtils.toAddress(afterDecoding.destPortAddr));
+        assertEq(appData, afterDecoding.appData);
+    }
+
+    function test_To_From_UniversalPacketBytes() public {
+        // Standard
+        assert_Equal_Before_and_After_Encoding(vm.addr(1), uint256(123), vm.addr(2), "helloooo decode this for me ");
+        // empty string
+        assert_Equal_Before_and_After_Encoding(vm.addr(1), uint256(123), vm.addr(2), ""); // empty string
+
+        // Really long string:
+        assert_Equal_Before_and_After_Encoding(
+            vm.addr(1),
+            uint256(123),
+            vm.addr(2),
+            "daf;lkdsajflkasjdv;lkjzdljga;lkgfjda;iocjvz;lkjval;dsjkf;alkdj;zlkjv;lkjaeg;ijafd;lkjzvc,mnb.kahgd;ajkfaj;dgoij;zlckjv;lzkjv;kaldfjg;alkjgf;lkzvjcx;lkvja;lkjg;aslgjdz;adf;kasjg;lkjwaea;lkjg;io1j;4kjrda;lkfjaleot8ywp89yz;dvhlsdkj"
+        );
+    }
 }

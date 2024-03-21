@@ -7,6 +7,7 @@ import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/core/UniversalChannelHandler.sol";
 import "../contracts/examples/Mars.sol";
+import "../contracts/interfaces/IbcMiddleware.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
@@ -91,6 +92,8 @@ struct UcPacket {
 }
 
 contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
+    event UCHPacketSent(address source, bytes32 destination);
+
     VirtualChain eth1;
     VirtualChain eth2;
     VirtualChainData v1;
@@ -239,6 +242,9 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                 IbcUtils.toBytes32(address(v1.earth)), mwBitmap, IbcUtils.toBytes32(address(v2.earth)), appData
             );
             packetData = IbcUtils.toUniversalPacketBytes(ucPacket);
+            // Verify event emitted by UCH
+            vm.expectEmit(true, true, true, true);
+            emit UCHPacketSent(address(v1.earth), IbcUtils.toBytes32(address(v2.earth)));
 
             // iterate over sending middleware contracts to verify each MW has witnessed the packet
             for (uint256 i = 0; i < senderMws.length; i++) {
@@ -258,6 +264,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             // Verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
+
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
             // simulate relayer calling dispatcherProxy.recvPacket on chain B
@@ -325,6 +332,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                 IbcUtils.toBytes32(address(v1.earth)), mwBitmap, IbcUtils.toBytes32(address(v2.earth)), appData
             );
             packetData = IbcUtils.toUniversalPacketBytes(ucPacket);
+            vm.expectEmit(true, true, true, true);
+            emit UCHPacketSent(address(v1.earth), IbcUtils.toBytes32(address(v2.earth)));
 
             // iterate over sending middleware contracts to verify each MW has witnessed the packet
             for (uint256 i = 0; i < senderMws.length; i++) {
@@ -341,6 +350,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
                     );
                 }
             }
+
             // Verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);

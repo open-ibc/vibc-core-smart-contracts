@@ -24,9 +24,11 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
      */
     uint256 public MW_ID;
 
+    event UCHPacketSent(address source, bytes32 destination);
     /**
      * @param _middleware The middleware contract address this contract sends packets to and receives packets from.
      */
+
     constructor(uint256 mwId, address _middleware) IbcMwUser(_middleware) {
         MW_ID = mwId;
     }
@@ -37,6 +39,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
         bytes calldata appData,
         uint64 timeoutTimestamp
     ) external override {
+        emit UCHPacketSent(msg.sender, destPortAddr);
         _sendPacket(channelId, IbcUtils.toBytes32(msg.sender), destPortAddr, 0, appData, timeoutTimestamp);
     }
 
