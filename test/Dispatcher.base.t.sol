@@ -38,8 +38,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     uint64 maxTimeout = UINT64_MAX;
 
     LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
-
-    LightClient dummyConsStateManager = new DummyLightClient();
+    LightClient dummyLightClient = new DummyLightClient();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
@@ -184,5 +183,11 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         return ack.success
             ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
             : abi.encodePacked('{"error":"', ack.data, '"}');
+    }
+
+    // Store connection in channelid to connection mapping using store
+    function _storeChannelidToConnectionMapping(bytes32 channelId, bytes32 connection) internal {
+        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(160)));
+        vm.store(address(dispatcherProxy), chanIdToConnectionMapping, connection);
     }
 }
