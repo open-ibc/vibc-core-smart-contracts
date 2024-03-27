@@ -39,8 +39,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     uint64 maxTimeout = UINT64_MAX;
 
     LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
-
-    LightClient dummyConsStateManager = new DummyLightClient();
+    LightClient dummyLightClient = new DummyLightClient();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
