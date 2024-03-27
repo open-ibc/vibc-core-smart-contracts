@@ -237,7 +237,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     function test_uch_new_dispatcher_set_ok() public {
         IUniversalChannelHandler uch = eth1.ucHandlerProxy();
         vm.startPrank(address(eth1)); // Prank eth1 since that address is the owner
-        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", dummyConsStateManager);
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.");
         assertFalse(
             address(uch.dispatcher()) == address(newDispatcher), "new dispatcher in uch test not setup correctly"
         );
@@ -250,7 +250,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         IUniversalChannelHandler uch = eth1.ucHandlerProxy();
         address notOwner = vm.addr(1);
         vm.startPrank(notOwner);
-        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", dummyConsStateManager);
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.");
 
         vm.expectRevert("Ownable: caller is not the owner");
         uch.setDispatcher(newDispatcher);
