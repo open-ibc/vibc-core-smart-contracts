@@ -16,6 +16,7 @@ import {
     IbcUtils,
     Ibc
 } from "../libs/Ibc.sol";
+import {LightClient} from "./LightClient.sol";
 
 interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
@@ -24,7 +25,8 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
         uint256 height,
-        uint256 appHash
+        uint256 appHash,
+        string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended);
 
     /**
@@ -39,6 +41,10 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external;
+
+    function setClientForConnection(string calldata connection, LightClient lightClient) external;
+
+    function removeConnection(string calldata connection) external;
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
@@ -94,7 +100,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
-    function getOptimisticConsensusState(uint256 height)
+    function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);

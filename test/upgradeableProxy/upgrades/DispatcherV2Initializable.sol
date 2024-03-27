@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 
 import {DispatcherV2} from "./DispatcherV2.sol";
 import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
+import {IBCErrors} from "../../../contracts/libs/Ibc.sol";
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -13,10 +14,9 @@ import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
  */
 
 contract DispatcherV2Initializable is DispatcherV2 {
-    function initialize(string memory initPortPrefix, LightClient lightClient) public override reinitializer(2) {
+    function initialize(string memory initPortPrefix) public override reinitializer(2) {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        _lightClient = lightClient;
     }
 }

@@ -167,6 +167,11 @@ library IBCErrors {
     error receiverNotOriginPacketSender();
 
     error invalidChannelType(string channelType);
+
+    // related to clients
+    error lightClientNotFound(string connection);
+    error channelIdNotFound(bytes32 channelId);
+    error invalidConnection(string connection);
 }
 
 // define a library of Ibc utility functions
