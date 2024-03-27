@@ -604,6 +604,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         if (bytes(connection).length == 0) {
             revert IBCErrors.invalidConnection("");
         }
+        if (_connectionToClientId[connection] != 0) {
+            revert IBCErrors.invalidConnection(connection);
+        }
 
         uint256 newClientId = ++_numClients; // Cache clientId to save SLOAD call
         _connectionToClientId[connection] = newClientId;
