@@ -169,10 +169,8 @@ library IBCErrors {
 
     // related to clients
     error lightClientNotFound(uint256 lightClientId);
-    error connectionToClientId(string connection);
     error channelIdNotFound(bytes32 channelId);
     error invalidConnection(string connection);
-    error constructorArrayMismatch(uint256 connectionLength, uint256 lightClientLength);
 }
 
 // define a library of Ibc utility functions
