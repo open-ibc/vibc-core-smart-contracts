@@ -87,10 +87,6 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
         _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
 
-        // store connection in channelid to connection
-        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
-        _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
-
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
         packet.timeoutTimestamp = 15_566_401_733_896_437_760;
