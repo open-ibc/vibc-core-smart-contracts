@@ -21,31 +21,25 @@ contract DispatcherUUPSAccessControl is Base {
     DispatcherV2Initializable dispatcherImplementation3;
 
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.addNewConnection(connectionHops[0], dummyConsStateManager);
         dispatcherImplementation2 = new DispatcherV2();
         dispatcherImplementation3 = new DispatcherV2Initializable();
     }
 
-    function test_Dispatcher_Allows_Upgrade() public {
+    function test_Dispatcher_Allows_Upgrade_123() public {
         assertEq(address(dispatcherImplementation), getProxyImplementation(address(dispatcherProxy), vm));
         UUPSUpgradeable(address(dispatcherProxy)).upgradeTo(address(dispatcherImplementation2));
         assertEq(address(dispatcherImplementation2), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix);
-        assertEq(
-            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))),
-            address(dummyConsStateManager)
-        );
     }
 
     function test_Dispatcher_Allows_Upgrade_To_And_Call() public {
         assertEq(address(dispatcherImplementation), getProxyImplementation(address(dispatcherProxy), vm));
-        bytes memory initData = abi.encodeWithSignature("initialize(string,address)", portPrefix2, lightClient2);
+        bytes memory initData = abi.encodeWithSignature("initialize(string)", portPrefix2);
         UUPSUpgradeable(address(dispatcherProxy)).upgradeToAndCall(address(dispatcherImplementation3), initData);
         assertEq(address(dispatcherImplementation3), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix2);
-        assertEq(
-            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))), address(lightClient2)
-        );
     }
 
     function test_Dispatcher_Prevents_Non_Owner_Updgrade() public {
@@ -61,6 +55,6 @@ contract DispatcherUUPSAccessControl is Base {
 
     function test_Dispatcher_Prevents_Reinit_Attacks() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        dispatcherImplementation.initialize("IIpolyibc.eth.", dummyConsStateManager);
+        dispatcherImplementation.initialize("IIpolyibc.eth.");
     }
 }
