@@ -60,7 +60,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
 
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
         ucHandler = new UniversalChannelHandler(dispatcherProxy);
 
         mars = new Mars(dispatcherProxy);
@@ -73,6 +73,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         connectionHops = new string[](2);
         connectionHops[0] = newConnectionId();
         connectionHops[1] = newConnectionId();
+        dispatcherProxy.addNewConnection(connectionHops[0], new DummyLightClient());
 
         mw1 = new GeneralMiddleware(1 << 1, address(ucHandler));
         mw2 = new GeneralMiddleware(1 << 2, address(ucHandler));

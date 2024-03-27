@@ -56,12 +56,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
 
-    LightClient lightClient; // Can't be set to immutable since it needs to be called in the initializer; not the
-
-    //////// NEW storage
+    LightClient UNUSED; // From previous dispatcher version
     mapping(bytes32 => string) private _channelIdToConnection;
-
-    // constructor
+    mapping(string => uint256) private _connectionToClientId;
+    mapping(uint256 => LightClient) private _clientIdToLightClient;
+    uint256 private _numClients;
 
     //
     // methods
@@ -70,11 +69,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _disableInitializers();
     }
 
-    function initialize(string memory initPortPrefix, LightClient _lightClient) public virtual initializer {
+    function initialize(string memory initPortPrefix) public virtual initializer {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        lightClient = _lightClient;
     }
 
     //
@@ -93,9 +91,18 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
         uint256 height,
-        uint256 appHash
+        uint256 appHash,
+        uint256 clientId
     ) external returns (uint256 fraudProofEndTime, bool ended) {
+        LightClient lightClient = _clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.lightClientNotFound(clientId);
+        }
         return lightClient.addOpConsensusState(l1header, proof, height, appHash);
+    }
+
+    function addNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
+        _addNewConnection(connection, lightClient);
     }
 
     /**
@@ -146,7 +153,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        lightClient.verifyMembership(
+        _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(
@@ -191,7 +198,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        lightClient.verifyMembership(
+        _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(
@@ -231,7 +238,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external {
-        lightClient.verifyMembership(
+        _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
             Ibc.channelProofValue(
@@ -298,7 +305,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // verify VIBC/IBC hub chain has processed ChanCloseConfirm event
-        lightClient.verifyMembership(
+        _getLightClientFromChannelId(channelId).verifyMembership(
             proof,
             Ibc.channelProofKeyMemory(channel.portId, channelId),
             Ibc.channelProofValueMemory(
@@ -377,7 +384,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // prove ack packet is on Polymer chain
-        lightClient.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
+        _getLightClientFromChannelId(packet.src.channelId).verifyMembership(
+            proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack))
+        );
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
@@ -425,7 +434,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        lightClient.verifyNonMembership(proof, Ibc.packetCommitmentProofKey(packet));
+        _getLightClientFromChannelId(packet.src.channelId).verifyNonMembership(
+            proof, Ibc.packetCommitmentProofKey(packet)
+        );
 
         // verify packet has been committed and not yet ack'ed or timed out
         bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
@@ -461,7 +472,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
         }
-        lightClient.verifyMembership(
+        _getLightClientFromChannelId(packet.dest.channelId).verifyMembership(
             proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
@@ -569,11 +580,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height)
+    function getOptimisticConsensusState(uint256 height, uint256 clientId)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
+        LightClient lightClient = _clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.lightClientNotFound(clientId);
+        }
         return lightClient.getState(height);
     }
 
@@ -584,6 +599,19 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             return false;
         }
         isMatch = Ibc._hexStrToAddress(portId[portPrefixLen:]) == addr;
+    }
+
+    function _addNewConnection(string calldata connection, LightClient lightClient) internal {
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
+        if (bytes(connection).length == 0) {
+            revert IBCErrors.invalidConnection("");
+        }
+
+        uint256 newClientId = ++_numClients; // Cache clientId to save SLOAD call
+        _connectionToClientId[connection] = newClientId;
+        _clientIdToLightClient[newClientId] = lightClient;
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
@@ -629,6 +657,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         _nextSequenceAck[address(portAddress)][local.channelId] = 1;
         _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for finding
+            // light client
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
@@ -655,5 +684,24 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             // TODO: check timeoutHeight.revision_number?
             || (revisionHeight != 0 && block.number >= revisionHeight)
         );
+    }
+
+    function _getLightClientFromChannelId(bytes32 channelId) internal view returns (LightClient lightClient) {
+        string memory connection = _channelIdToConnection[channelId];
+        if (bytes(connection).length == 0) {
+            revert IBCErrors.channelIdNotFound(channelId);
+        }
+        return _getLightClientFromConnection(connection);
+    }
+
+    function _getLightClientFromConnection(string memory connection) internal view returns (LightClient lightClient) {
+        uint256 clientId = _connectionToClientId[connection];
+        if (clientId == 0) {
+            revert IBCErrors.invalidConnection(connection);
+        }
+        lightClient = _clientIdToLightClient[clientId];
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.lightClientNotFound(clientId);
+        }
     }
 }

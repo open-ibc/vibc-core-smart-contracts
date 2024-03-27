@@ -70,6 +70,10 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
         vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
 
+        // store connection in channelid to connection
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
+        _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
+
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
         packet.timeoutTimestamp = 15_566_401_733_896_437_760;
@@ -91,6 +95,9 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
 
     function test_recv_packet() public {
         Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
+        // store connection in channelid to connection
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
+        _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
 
         // this data is taken from polymerase/tests/e2e/tests/evm.events.test.ts MarsDappPair.createSentPacket()
         IbcPacket memory packet;
@@ -113,6 +120,8 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     }
 
     function test_timeout_packet_revert() public {
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-1
+        _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
         // Timeout reverts since it is not yet implemented
         Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
         IbcPacket memory packet;
@@ -147,8 +156,11 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
     function setUp() public override {
         super.setUp();
         consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        (dispatcherProxy, dispatcherImplementation) =
-            deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
+        dispatcherProxy.addNewConnection(connectionHops0[0], consensusStateManager);
+        dispatcherProxy.addNewConnection(connectionHops0[1], consensusStateManager);
+        dispatcherProxy.addNewConnection(connectionHops1[0], consensusStateManager);
+        dispatcherProxy.addNewConnection(connectionHops1[1], consensusStateManager);
         mars = new Mars(dispatcherProxy);
     }
 }
