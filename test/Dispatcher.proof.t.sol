@@ -10,12 +10,31 @@ import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispat
 import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
+import {ChannelHandshakeSetting} from "./Dispatcher.base.t.sol";
+import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
+import {DispatcherSendPacketTestSuite, ChannelOpenTestBaseSetup} from "./Dispatcher.t.sol";
 
-abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
+contract DispatcherProofTestUtils is Base {
     using stdStorage for StdStorage;
 
+    function load_proof(string memory filepath) internal returns (Ics23Proof memory) {
+        (bytes32 apphash, Ics23Proof memory proof) =
+            abi.decode(vm.parseBytes(vm.readFile(string.concat(rootDir, filepath))), (bytes32, Ics23Proof));
+
+        // this loads the app hash we got from the testing data into the consensus state manager internals
+        // at the height it's supposed to go. That is, a block less than where the proof was generated from.
+        stdstore.target(address(opLightClient)).sig("consensusStates(uint256)").with_key(proof.height - 1).checked_write(
+            apphash
+        );
+        // trick the fraud time window check
+        vm.warp(block.timestamp + 1);
+
+        return proof;
+    }
+}
+
+abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, DispatcherProofTestUtils {
     Mars mars;
-    OptimisticLightClient consensusStateManager;
 
     CounterParty ch0 =
         CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
@@ -136,31 +155,17 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectRevert(abi.encodeWithSelector(ProofVerifier.MethodNotImplemented.selector));
         dispatcherProxy.timeout(mars, packet, proof);
     }
-
-    function load_proof(string memory filepath) internal returns (Ics23Proof memory) {
-        (bytes32 apphash, Ics23Proof memory proof) =
-            abi.decode(vm.parseBytes(vm.readFile(string.concat(rootDir, filepath))), (bytes32, Ics23Proof));
-
-        // this loads the app hash we got from the testing data into the consensus state manager internals
-        // at the height it's supposed to go. That is, a block less than where the proof was generated from.
-        stdstore.target(address(consensusStateManager)).sig("consensusStates(uint256)").with_key(proof.height - 1)
-            .checked_write(apphash);
-        // trick the fraud time window check
-        vm.warp(block.timestamp + 1);
-
-        return proof;
-    }
 }
 
 contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
     function setUp() public override {
         super.setUp();
-        consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
+        opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
-        dispatcherProxy.addNewConnection(connectionHops0[0], consensusStateManager);
-        dispatcherProxy.addNewConnection(connectionHops0[1], consensusStateManager);
-        dispatcherProxy.addNewConnection(connectionHops1[0], consensusStateManager);
-        dispatcherProxy.addNewConnection(connectionHops1[1], consensusStateManager);
+        dispatcherProxy.addNewConnection(connectionHops0[0], opLightClient);
+        dispatcherProxy.addNewConnection(connectionHops0[1], opLightClient);
+        dispatcherProxy.addNewConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.addNewConnection(connectionHops1[1], opLightClient);
         mars = new Mars(dispatcherProxy);
     }
 }
