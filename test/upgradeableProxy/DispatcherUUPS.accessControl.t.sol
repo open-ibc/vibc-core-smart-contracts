@@ -22,7 +22,7 @@ contract DispatcherUUPSAccessControl is Base {
 
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.addNewConnection(connectionHops[0], dummyConsStateManager);
+        dispatcherProxy.addNewConnection(connectionHops[0], dummyLightClient);
         dispatcherImplementation2 = new DispatcherV2();
         dispatcherImplementation3 = new DispatcherV2Initializable();
     }
