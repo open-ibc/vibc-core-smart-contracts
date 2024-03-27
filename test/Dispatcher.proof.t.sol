@@ -84,11 +84,6 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
         _storeSendPacketCommitment(address(mars), ch0.channelId, 1, 1);
 
         // store connection in channelid to connection
-        // bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); //
-        // Connection-0
-        // _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
-
-        // store connection in channelid to connection
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
         _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
 

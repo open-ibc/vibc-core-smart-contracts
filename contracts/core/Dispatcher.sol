@@ -118,10 +118,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         delete _connectionToLightClient[connection];
     }
 
-    function addNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
-        _setClientForConnection(connection, lightClient);
-    }
-
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
      * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
