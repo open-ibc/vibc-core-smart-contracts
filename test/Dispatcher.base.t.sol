@@ -32,14 +32,14 @@ struct ChannelHandshakeSetting {
 
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
+    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 111;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
     LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
-
-    LightClient dummyConsStateManager = new DummyLightClient();
+    LightClient dummyLightClient = new DummyLightClient();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
@@ -184,5 +184,17 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         return ack.success
             ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
             : abi.encodePacked('{"error":"', ack.data, '"}');
+    }
+
+    // Store connection in channelid to connection mapping using store
+    function _storeChannelidToConnectionMapping(bytes32 channelId, bytes32 connection) internal {
+        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(160)));
+        vm.store(address(dispatcherProxy), chanIdToConnectionMapping, connection);
+    }
+
+    // Store connection in channelid to connection mapping using store
+    function _getConnectiontoClientIdMapping(string memory connection) internal returns (uint256 clientId) {
+        bytes32 clientIdSlot = keccak256(abi.encode(connection, CONNECTION_TO_CLIENT_ID_STARTING_SLOT));
+        clientId = uint256(vm.load(address(dispatcherProxy), clientIdSlot));
     }
 }

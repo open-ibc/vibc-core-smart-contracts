@@ -186,7 +186,8 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
 
 contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
@@ -210,7 +211,8 @@ contract ChannelOpenTestBaseSetup is Base {
     RevertingBytesMars revertingBytesMars;
 
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         ChannelHandshakeSetting memory setting =
             ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
@@ -361,7 +363,7 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
         IbcPacket memory spoofedPacket = IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, 1);
         spoofedPacket.timeoutTimestamp = 1; // Set really low timeout timestamp
         vm.mockCallRevert(
-            address(dummyConsStateManager),
+            address(dummyLightClient),
             abi.encodeWithSelector(
                 DummyLightClient.verifyMembership.selector,
                 validProof,
@@ -460,7 +462,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelIdNotFound.selector, packet.src.channelId));
         dispatcherProxy.acknowledgement(packet, ackPacket, validProof);
     }
 }
@@ -522,17 +524,20 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
 
     // cannot timeout packetsfails if channel doesn't match
     function test_invalidChannel() public {
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); //
+        // Connection-1
+        IbcPacket memory packet = sentPacket;
+        _storeChannelidToConnectionMapping(packet.src.channelId, connectionStr);
         sendPacket();
 
         IbcEndpoint memory invalidSrc = IbcEndpoint(src.portId, "channel-invalid");
-        IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
-
-        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelIdNotFound.selector, packet.src.channelId));
         dispatcherProxy.timeout(packet, validProof);
     }
 
     // cannot timeout packets if proof from Polymer is invalid
+
     function test_invalidProof() public {
         sendPacket();
         vm.expectRevert(DummyLightClient.InvalidDummyNonMembershipProof.selector);
@@ -553,8 +558,10 @@ contract DappRevertTests is Base {
         ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) =
-            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.setNewConnection(connectionHops0[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops1[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
         panickingMars = new PanickingMars(dispatcherProxy);
         revertingEmptyMars = new RevertingEmptyMars(dispatcherProxy);
@@ -584,6 +591,10 @@ contract DappRevertTests is Base {
         packet.src.portId = ch0.portId;
         packet.src.channelId = ch0.channelId;
         packet.sequence = 1;
+
+        // Ack packet will check for an existing channel
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
+        _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
 
         // Test Revert Memory
         vm.expectEmit(true, true, true, true);
@@ -632,6 +643,9 @@ contract DappRevertTests is Base {
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
         vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
+
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
+        _storeChannelidToConnectionMapping(ch0.channelId, connectionStr);
 
         IbcPacket memory packet;
         packet.data = bytes("packet-1");

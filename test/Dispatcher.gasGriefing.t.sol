@@ -19,9 +19,12 @@ contract DispatcherGasGriefing is Base {
         ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) =
-            TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix);
         gasUsingMars = new GasUsingMars(3_000_000, dispatcherProxy); // Set arbitrarily high gas useage in mars contract
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); // connection-1
+            // in hex
+        _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
+        dispatcherProxy.setNewConnection("connection-1", dummyLightClient);
     }
 
     function test_GasGriefing() public {

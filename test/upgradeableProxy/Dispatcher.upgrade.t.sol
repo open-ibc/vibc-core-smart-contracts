@@ -30,13 +30,13 @@ import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.so
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 
 abstract contract UpgradeTestUtils {
-    function upgradeDispatcher(LightClient consensusStateManager, string memory portPrefix, address dispatcherProxy)
+    function upgradeDispatcher(string memory portPrefix, address dispatcherProxy)
         public
         returns (DispatcherV2Initializable newDispatcherImplementation)
     {
         // Upgrade dispatcherProxy for tests
         newDispatcherImplementation = new DispatcherV2Initializable();
-        bytes memory initData = abi.encodeWithSignature("initialize(string,address)", portPrefix, consensusStateManager);
+        bytes memory initData = abi.encodeWithSignature("initialize(string)", portPrefix);
         UUPSUpgradeable(dispatcherProxy).upgradeToAndCall(address(newDispatcherImplementation), initData);
     }
 }
@@ -118,19 +118,19 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
-        LightClient newLightClient = opLightClient;
         // Add state to test if impacted by upgrade
         doChannelHandshake();
         sendPacket(_local.channelId);
 
         // Upgrade dispatcherProxy for tests
-        upgradeDispatcher(newLightClient, "adfsafsa", address(dispatcherProxy));
+        upgradeDispatcher("adfsafsa", address(dispatcherProxy));
     }
 
     function test_SentPacketState_Conserved() public {
