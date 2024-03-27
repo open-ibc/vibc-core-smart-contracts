@@ -15,18 +15,19 @@ abstract contract DispatcherUpdateClientTestSuite is Base {
     function test_updateOptimisticConsensusState_success() public {
         // trick the L1Block contract into thinking it is updated with the right l1 header
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
-        dispatcherProxy.updateClientWithOptimisticConsensusState(l1header, validStateProof, 1, uint256(apphash));
+        dispatcherProxy.updateClientWithOptimisticConsensusState(l1header, validStateProof, 1, uint256(apphash), 1);
     }
 
     function test_updateOptimisticConsensusState_failure() public {
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
         vm.expectRevert("MerkleTrie: ran out of proof elements");
-        dispatcherProxy.updateClientWithOptimisticConsensusState(l1header, invalidStateProof, 1, uint256(apphash));
+        dispatcherProxy.updateClientWithOptimisticConsensusState(l1header, invalidStateProof, 1, uint256(apphash), 1);
     }
 }
 
 contract DispatcherUpdateClientTest is DispatcherUpdateClientTestSuite {
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, opLightClient);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        dispatcherProxy.addNewConnection("connection-0", opLightClient);
     }
 }
