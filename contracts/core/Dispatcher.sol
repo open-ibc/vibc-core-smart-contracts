@@ -31,15 +31,12 @@ import {
  * @notice
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
+ *  @notice
+ *  in addition to directly calling this contract, this can also be called by middlewares (such as UCH )
  */
 contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
     // Gap to allow for additional contract inheritance, similar to OpenZeppelin's Initializable contract
     uint256[49] private __gap;
-
-    //
-    // fields
-    //
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case insensitive)
 
     string public portPrefix;
     uint32 public portPrefixLen;
@@ -69,6 +66,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     function initialize(string memory initPortPrefix) public virtual initializer {
+        if (bytes(initPortPrefix).length == 0) {
+            revert IBCErrors.invalidPortPrefix();
+        }
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
@@ -78,6 +78,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     // CoreSC maaintainer methods, only invoked by the owner
     //
     function setPortPrefix(string calldata _portPrefix) external onlyOwner {
+        if (bytes(_portPrefix).length == 0) {
+            revert IBCErrors.invalidPortPrefix();
+        }
         portPrefix = _portPrefix;
         portPrefixLen = uint32(bytes(_portPrefix).length);
     }
@@ -131,8 +134,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external nonReentrant {
-        if (bytes(counterpartyPortId).length == 0) {
-            revert IBCErrors.invalidCounterPartyPortId();
+        if (address(receiver) == address(0)) {
+            revert IBCErrors.invalidAddress();
         }
 
         (bool success, bytes memory data) = _callIfContract(
@@ -162,10 +165,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        if (bytes(counterparty.portId).length == 0) {
-            revert IBCErrors.invalidCounterPartyPortId();
-        }
-
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -211,6 +210,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
+        if (
+            bytes(local.portId).length == 0 || bytes(counterparty.portId).length == 0 || local.channelId == bytes32(0)
+                || counterparty.channelId == bytes32(0)
+        ) {
+            revert IBCErrors.invalidCounterParty();
+        }
+        if (address(receiver) == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -251,6 +259,17 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
+        if (
+            bytes(local.portId).length == 0 || bytes(counterparty.portId).length == 0 || local.channelId == bytes32(0)
+                || counterparty.channelId == bytes32(0)
+        ) {
+            revert IBCErrors.invalidCounterParty();
+        }
+
+        if (address(receiver) == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
+
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -314,6 +333,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         external
         nonReentrant
     {
+        if (portAddress == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
         // ensure port owns channel
         Channel memory channel = _portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
@@ -490,6 +512,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         external
         nonReentrant
     {
+        if (address(receiver) == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
@@ -547,27 +572,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
 
-    // TODO: add async writeAckPacket
-    // // this can be invoked sync or async by the IBC-dApp
-    // function writeAckPacket(IbcPacket calldata packet, AckPacket calldata ackPacket) external {
-    //     // verify `receiver` is the original packet sender
-    //     require(
-    //         portIdAddressMatch(address(msg.sender), packet.src.portId),
-    //         'Receiver is not the original packet sender'
-    //     );
-    // }
-
-    // TODO: remove below writeTimeoutPacket() function
-    //       1. core SC is responsible to generate timeout packet
-    //       2. user contract are not free to generate timeout with different criteria
-    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, belowunction won't do
-    // the job, as it doesn't have proofs.
-    //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will
-    // do proper timeout generation.
-    /**
-     * Generate a timeout packet for the given packet
-     */
     function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
+        if (address(receiver) == address(0)) {
+            revert IBCErrors.invalidAddress();
+        }
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(receiver, packet.src.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
