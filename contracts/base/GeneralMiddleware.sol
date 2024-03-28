@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.9;
 
-import {Ibc, IbcUtils, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {Ibc, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 import {
     IbcUniversalPacketReceiver,
     IbcMwUser,
@@ -12,6 +13,12 @@ import {
     IbcMwPacketSender
 } from "../interfaces/IbcMiddleware.sol";
 
+/**
+ * @title GeneralMiddleware
+ *  @author Polymer Labs
+ *  @notice GeneralMiddleware is a starting point for developers to implement their own middleware logic. It is not
+ * intended to be directly deployed, but rather only used for testing and development
+ */
 contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
     /**
      * @dev MW_ID is the ID of MW contract on all supported virtual chains.

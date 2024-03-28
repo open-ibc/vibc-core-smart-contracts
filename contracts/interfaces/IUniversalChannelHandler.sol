@@ -3,19 +3,10 @@ pragma solidity ^0.8.0;
 
 import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
-import {L1Header, OpL2StateProof, Ics23Proof} from "./ProofVerifier.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
 import {IbcUniversalChannelMW} from "./IbcMiddleware.sol";
-import {
-    Channel,
-    ChannelEnd,
-    ChannelOrder,
-    IbcPacket,
-    ChannelState,
-    AckPacket,
-    IBCErrors,
-    IbcUtils,
-    Ibc
-} from "../libs/Ibc.sol";
+import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 
 interface IUniversalChannelHandler is IbcUniversalChannelMW {
     function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external;
