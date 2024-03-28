@@ -12,6 +12,7 @@ import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.
 import {LightClient} from "../interfaces/LightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {
     Channel,
     ChannelEnd,
@@ -31,8 +32,9 @@ import {
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
-    uint256[49] private __gap;
+contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
+    // Gap to allow for additional contract inheritance, similar to OpenZeppelin's Initializable contract
+    uint256[48] private __gap;
 
     //
     // fields
@@ -128,7 +130,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         string[] calldata connectionHops,
         string calldata counterpartyPortId
-    ) external {
+    ) external nonReentrant {
         if (bytes(counterpartyPortId).length == 0) {
             revert IBCErrors.invalidCounterPartyPortId();
         }
@@ -159,7 +161,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         string[] calldata connectionHops,
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         if (bytes(counterparty.portId).length == 0) {
             revert IBCErrors.invalidCounterPartyPortId();
         }
@@ -217,7 +219,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -259,7 +261,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -291,7 +293,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @notice Initializes a close channel handshake process. It is directly called by the dapp which wants to close
      * the channel
      */
-    function channelCloseInit(bytes32 channelId) external {
+    function channelCloseInit(bytes32 channelId) external nonReentrant {
         Channel memory channel = _portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
@@ -323,7 +325,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @notice Confirms a close channel handshake process. It is called by a relayer on behalf of the dapp whhich
      * initializes the channel closefter after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
      */
-    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof)
+        external
+        nonReentrant
+    {
         // ensure port owns channel
         Channel memory channel = _portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
