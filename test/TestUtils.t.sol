@@ -1,6 +1,6 @@
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
-import {LightClient} from "../contracts/interfaces/LightClient.sol";
+import {ILightClient} from "../contracts/interfaces/ILightClient.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";

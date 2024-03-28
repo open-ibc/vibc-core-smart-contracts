@@ -13,7 +13,7 @@ import {
     RevertingEmptyMars,
     RevertingStringMars
 } from "../contracts/examples/Mars.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
@@ -370,9 +370,9 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
                 Ibc.packetCommitmentProofKey(spoofedPacket),
                 abi.encode(Ibc.packetCommitmentProofValue(spoofedPacket))
             ),
-            abi.encodeWithSelector(ProofVerifier.InvalidProofValue.selector)
+            abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector)
         );
-        vm.expectRevert(abi.encodeWithSelector(ProofVerifier.InvalidProofValue.selector));
+        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector));
         dispatcherProxy.writeTimeoutPacket(spoofedPacket, validProof);
     }
 
