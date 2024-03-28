@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
-import {L1Header, OpL2StateProof, Ics23Proof} from "./ProofVerifier.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "./IbcReceiver.sol";
 import {
     Channel,
@@ -16,7 +16,7 @@ import {
     IbcUtils,
     Ibc
 } from "../libs/Ibc.sol";
-import {LightClient} from "./LightClient.sol";
+import {ILightClient} from "./ILightClient.sol";
 
 interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
@@ -42,7 +42,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         string calldata counterpartyPortId
     ) external;
 
-    function setClientForConnection(string calldata connection, LightClient lightClient) external;
+    function setClientForConnection(string calldata connection, ILightClient lightClient) external;
 
     function removeConnection(string calldata connection) external;
 

@@ -5,9 +5,9 @@ import "../contracts/libs/Ibc.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {DispatcherProofTestUtils} from "./Dispatcher.proof.t.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import {OptimisticLightClient} from "../contracts/core/OpLightClient.sol";
-import {LightClient} from "../contracts/interfaces/LightClient.sol";
-import "../contracts/interfaces/ProofVerifier.sol";
+import {OptimisticLightClient} from "../contracts/core/OptimisticLightClient.sol";
+import {ILightClient} from "../contracts/interfaces/ILightClient.sol";
+import "../contracts/interfaces/IProofVerifier.sol";
 
 contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
     string[] connectionHops0 = ["dummy-connection-1", "dummy-connection-2"];
@@ -41,7 +41,7 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         dispatcherProxy.channelOpenTry(ch0, ChannelOrder.NONE, false, connectionHops0, ch1, dummyProof);
 
         // Having a dummy light client shouldn't impact opLightClient's ability to reject invalid proofs
-        vm.expectRevert(abi.encodeWithSelector(ProofVerifier.InvalidProofValue.selector));
+        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector));
         dispatcherProxy.channelOpenTry(ch1, ChannelOrder.NONE, false, connectionHops1, ch0, dummyProof);
     }
 
@@ -62,7 +62,7 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         bytes memory ackData = bytes.concat(keccak256(hex"22726573756c7422"));
 
         // OpProofverifier will cause acknowledgement to fail
-        vm.expectRevert(abi.encodeWithSelector(ProofVerifier.InvalidProofKey.selector));
+        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofKey.selector));
         dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
 
         // Now we change the client to the dummy client and the packet should go through since it circumvents the proof
@@ -84,7 +84,7 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
 
     function test_addr0_channels_cannot_be_added() public {
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidAddress.selector));
-        dispatcherProxy.setClientForConnection(connectionHops0[0], LightClient(address(0)));
+        dispatcherProxy.setClientForConnection(connectionHops0[0], ILightClient(address(0)));
     }
 
     function test_Dispatcher_removeConnection() public {

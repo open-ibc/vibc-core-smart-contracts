@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../contracts/libs/Ibc.sol";
-import "../contracts/core/OpProofVerifier.sol";
+import "../contracts/core/OptimisticProofVerifier.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 
 contract ProofBase is Test {
@@ -25,7 +25,7 @@ contract ProofBase is Test {
     bytes32 apphash;
 
     L1Block l1BlockProvider = new L1Block();
-    OpProofVerifier opProofVerifier = new OpProofVerifier(address(0x5cA3f8919DF7d82Bf51a672B7D73Ec13a2705dDb));
+    OptimisticProofVerifier opProofVerifier = new OptimisticProofVerifier(address(0x5cA3f8919DF7d82Bf51a672B7D73Ec13a2705dDb));
 
     constructor() {
         // generate the channel_proof.hex file with the following command:

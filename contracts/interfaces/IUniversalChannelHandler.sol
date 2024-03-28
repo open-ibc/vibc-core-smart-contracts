@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
-import {L1Header, OpL2StateProof, Ics23Proof} from "./ProofVerifier.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
 import {IbcUniversalChannelMW} from "./IbcMiddleware.sol";
 import {
     Channel,
