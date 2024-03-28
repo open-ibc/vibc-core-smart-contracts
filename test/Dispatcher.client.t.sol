@@ -8,7 +8,7 @@ import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../contracts/examples/Mars.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "./Dispatcher.base.t.sol";
 
 abstract contract DispatcherUpdateClientTestSuite is Base {

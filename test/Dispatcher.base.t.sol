@@ -9,9 +9,9 @@ import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/examples/Mars.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "../contracts/utils/DummyLightClient.sol";
-import "../contracts/core/OpProofVerifier.sol";
+import "../contracts/core/OptimisticProofVerifier.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
 
 struct LocalEnd {
@@ -40,8 +40,8 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
-    LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
-    LightClient dummyLightClient = new DummyLightClient();
+    ILightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
+    ILightClient dummyLightClient = new DummyLightClient();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;

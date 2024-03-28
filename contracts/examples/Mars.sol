@@ -6,6 +6,12 @@ import {IBCErrors, AckPacket, ChannelOrder, CounterParty} from "../libs/Ibc.sol"
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 
+/**
+ * @title Mars
+ * @notice Mars is a simple IBC receiver contract that receives packets and sends acks.
+ * @dev This contract is used for only testing IBC functionality and as an example for dapp developers on how to
+ * integrate with the vibc protocol.
+ */
 contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
     IbcPacket[] public recvedPackets;

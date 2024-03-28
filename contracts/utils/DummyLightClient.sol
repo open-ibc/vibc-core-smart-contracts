@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {LightClient, L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/LightClient.sol";
+import {ILightClient, L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ILightClient.sol";
 
 /**
  * @title DummyLightClient
@@ -9,7 +9,7 @@ import {LightClient, L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/L
  *      It should only be used for testing purposes.
  *      The logic for checking if the proof length is greater than zero is naive.
  */
-contract DummyLightClient is LightClient {
+contract DummyLightClient is ILightClient {
     error InvalidDummyMembershipProof();
     error InvalidDummyNonMembershipProof();
 

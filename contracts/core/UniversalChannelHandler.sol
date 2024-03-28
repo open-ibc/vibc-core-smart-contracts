@@ -14,6 +14,13 @@ import {
 import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
 import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
+/**
+ * @title Universal Channel Handler
+ * @author Polymer Labs
+ * @notice Implements universal channels for virtual IBC. Universal channels prevent dapps from needing to do a 4-step
+ * channel handshake to establish a channel.
+ * @dev This contract can integrate directly with dapps, or a middleware stack for packet routing.
+ */
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
@@ -38,6 +45,13 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
+    /**
+     * @notice Sends a universal packet over an IBC channel
+     * @param channelId The channel ID through which the packet is sent on the dispatcher
+     * @param destPortAddr The destination port address
+     * @param appData The packet data to be sent
+     * @param timeoutTimestamp of when the packet can timeout
+     */
     function sendUniversalPacket(
         bytes32 channelId,
         bytes32 destPortAddr,
@@ -51,7 +65,15 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
-    // called by another IBC middleware; pack packet and send over to Dispatcher
+    /**
+     * @notice Sends a middleware packet over an IBC channel. This is intended to be called by another middleware
+     * contract, rather than an end Dapp itself.
+     * @param channelId The channel ID through which the packet is sent on the dispatcher
+     * @param destPortAddr The destination port address
+     * @param srcMwIds The mwId bitmap of the middleware stack
+     * @param appData The packet data to be sent
+     * @param timeoutTimestamp of when the packet can timeout
+     */
     function sendMWPacket(
         bytes32 channelId,
         // original source address of the packet
@@ -67,6 +89,11 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
     }
 
+    /**
+     * @notice Handles the reception of an IBC packet from the counterparty
+     * @param packet The received IBC packet
+     * @return ackPacket The packet acknowledgement
+     */
     function onRecvPacket(IbcPacket calldata packet)
         external
         override
@@ -86,6 +113,11 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         }
     }
 
+    /**
+     * @notice Handles acknowledging the reception of an acknowledgement packet by the counterparty
+     * @param packet The IBC packet to be acknowledged
+     * @param ack The packet acknowledgement
+     */
     function onAcknowledgementPacket(IbcPacket calldata packet, AckPacket calldata ack)
         external
         override
@@ -104,6 +136,10 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         }
     }
 
+    /**
+     * @notice Handles the timeout event for an IBC packet
+     * @param packet The IBC packet that has timed out
+     */
     function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {
         UniversalPacket memory ucPacketData = IbcUtils.fromUniversalPacketBytes(packet.data);
         address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
@@ -132,6 +168,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     }
 
     // IBC callback functions
+    /**
+     * @notice Handles the acknowledgment of channel opening.
+     * This function is accessible only by the IBC dispatcher.
+     * @param channelId The channel ID of the opened channel
+     * @param counterpartyVersion The version string provided by the counterparty
+     */
     function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
         _connectChannel(channelId, counterpartyVersion);
     }
@@ -158,12 +200,22 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         return _openChannel(counterpartyVersion);
     }
 
+    /**
+     * @dev Internal function to connect a channel only if the version matches what is expected.
+     * @param channelId The channel ID of the channel to connect
+     * @param version The version string provided by the counterparty
+     */
     function _connectChannel(bytes32 channelId, string calldata version) internal {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }
     }
 
+    /**
+     * @dev Internal function to open a channel only if the version matches what is expected.
+     * @param version The version string provided by the counterparty
+     * @return selectedVersion The selected version string
+     */
     function _openChannel(string calldata version) internal pure returns (string memory selectedVersion) {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();

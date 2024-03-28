@@ -7,7 +7,7 @@ import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
 import "../contracts/examples/Mars.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
