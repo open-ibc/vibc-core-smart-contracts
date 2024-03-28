@@ -255,7 +255,7 @@ contract DispatcherSendPacketTestSuite is ChannelOpenTestBaseSetup {
     // sendPacket fails if calling dApp doesn't own the channel
     function test_mustOwner() public {
         Mars earth = new Mars(dispatcherProxy);
-        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedBySender.selector));
         earth.greet(payload, channelId, timeoutTimestamp);
     }
 }
@@ -352,7 +352,7 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
-        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.unexpectedPacketSequence.selector));
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
@@ -396,14 +396,14 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
 
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         sendPacket();
         dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
     }
 
@@ -416,7 +416,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         // only 2nd ack is allowed; so the 3rd ack fails
-        vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.unexpectedPacketSequence.selector));
 
         dispatcherProxy.acknowledgement(genPacket(3), genAckPacket("3"), validProof);
     }
@@ -432,6 +432,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
+        // vm.expectRevert(abi.encodeWithSelector(IBCErrors.receiverNotOriginPacketSender.selector));
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
     }
@@ -460,7 +461,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(packet, ackPacket, validProof);
     }
 }
@@ -493,14 +494,14 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
 
     // cannot timeout packets if packet commitment is missing
     function test_missingPacket() public {
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(genPacket(1), validProof);
 
         sendPacket();
         dispatcherProxy.timeout(sentPacket, validProof);
 
         // packet commitment is removed after timeout
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(sentPacket, validProof);
     }
 
@@ -528,8 +529,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packet = sentPacket;
         packet.src = invalidSrc;
 
-        vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        /* vm.expectRevert('Packet commitment not found'); */
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.timeout(packet, validProof);
     }
 
