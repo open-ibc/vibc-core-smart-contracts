@@ -24,7 +24,7 @@ struct IbcPacket {
     bytes data;
     /// block height after which the packet times out
     Height timeoutHeight;
-    /// block timestamp (in nanoseconds) after which the packet times out
+    /// block timestamp (in seconds after the unix epoch) after which the packet times out
     uint64 timeoutTimestamp;
 }
 
