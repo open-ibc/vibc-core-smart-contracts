@@ -8,8 +8,8 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import "../contracts/examples/Mars.sol";
 import {IDispatcher} from "../contracts/core/Dispatcher.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "../contracts/core/OpProofVerifier.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticProofVerifier.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "../contracts/core/UniversalChannelHandler.sol";
 import "../contracts/examples/Earth.sol";
 
@@ -88,8 +88,8 @@ contract Deploy is Script {
     }
 
     function deployOpProofVerifier(address l2OutputOracleAddress) public broadcast returns (address addr_) {
-        OpProofVerifier verifier = new OpProofVerifier{salt: _implSalt()}(l2OutputOracleAddress);
-        console.log("OpProofVerifier deployed at %s", address(verifier));
+        OptimisticProofVerifier verifier = new OptimisticProofVerifier{salt: _implSalt()}(l2OutputOracleAddress);
+        console.log("OptimisticProofVerifier deployed at %s", address(verifier));
         return address(verifier);
     }
 
@@ -99,7 +99,7 @@ contract Deploy is Script {
         returns (address addr_)
     {
         OptimisticLightClient manager = new OptimisticLightClient{salt: _implSalt()}(
-            fraudProofWindowSecs, ProofVerifier(proofVerifierAddr), L1Block(l1BlockProvider)
+            fraudProofWindowSecs, IProofVerifier(proofVerifierAddr), L1Block(l1BlockProvider)
         );
         console.log("OptimisticLightClient deployed at %s", address(manager));
         return address(manager);

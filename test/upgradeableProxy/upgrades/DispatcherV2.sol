@@ -7,8 +7,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../../../contracts/interfaces/IbcReceiver.sol";
-import {L1Header, OpL2StateProof, Ics23Proof} from "../../../contracts/interfaces/ProofVerifier.sol";
-import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "../../../contracts/interfaces/IProofVerifier.sol";
+import {ILightClient} from "../../../contracts/interfaces/ILightClient.sol";
 import {IDispatcher} from "../../../contracts/interfaces/IDispatcher.sol";
 import {Dispatcher} from "../../../contracts/core/Dispatcher.sol";
 import {

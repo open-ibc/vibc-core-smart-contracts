@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../contracts/core/OpProofVerifier.sol";
+import "../contracts/core/OptimisticProofVerifier.sol";
 import "../contracts/libs/Ibc.sol";
 import "forge-std/Test.sol";
 import "./Proof.base.t.sol";
@@ -20,25 +20,25 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
         bytes32 trustedL1BlockHash = keccak256(RLPWriter.writeList(l1header.header));
         uint64 trustedL1BlockNumber = l1header.number;
 
-        OpProofVerifier verifier = new OpProofVerifier(address(0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990));
+        OptimisticProofVerifier verifier = new OptimisticProofVerifier(address(0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990));
         vm.expectRevert("MerkleTrie: invalid large internal hash");
         verifier.verifyStateUpdate(l1header, validStateProof, apphash, trustedL1BlockHash, trustedL1BlockNumber);
     }
 
     function test_verify_state_update_invalid_l1_number() public {
-        vm.expectRevert(ProofVerifier.InvalidL1BlockNumber.selector);
+        vm.expectRevert(IProofVerifier.InvalidL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 42);
     }
 
     function test_verify_state_update_invalid_l1_hash() public {
-        vm.expectRevert(ProofVerifier.InvalidL1BlockHash.selector);
+        vm.expectRevert(IProofVerifier.InvalidL1BlockHash.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 0);
     }
 
     function test_verify_state_update_invalid_rlp_computed_hash() public {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
-        vm.expectRevert(ProofVerifier.InvalidRLPEncodedL1BlockNumber.selector);
+        vm.expectRevert(IProofVerifier.InvalidRLPEncodedL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -48,7 +48,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
         emptyl1header.header[8] = RLPWriter.writeUint(0);
-        vm.expectRevert(ProofVerifier.InvalidRLPEncodedL1StateRoot.selector);
+        vm.expectRevert(IProofVerifier.InvalidRLPEncodedL1StateRoot.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -65,7 +65,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
     }
 
     function test_verify_state_update_invalid_apphash() public {
-        vm.expectRevert(ProofVerifier.InvalidAppHash.selector);
+        vm.expectRevert(IProofVerifier.InvalidAppHash.selector);
         opProofVerifier.verifyStateUpdate(
             l1header, validStateProof, bytes32(0), keccak256(RLPWriter.writeList(l1header.header)), l1header.number
         );

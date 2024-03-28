@@ -1,35 +1,37 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {L1Header, ProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
-import {LightClient} from "../interfaces/LightClient.sol";
+import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {ILightClient} from "../interfaces/ILightClient.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 
-// OptimisticLightClient manages the appHash at different
-// heights and track the fraud proof end time for them.
-contract OptimisticLightClient is LightClient {
+/**
+ * @title OptimisticLightClient
+ * @author Polymer Labs
+ * @dev This specific light client implementation uses the same client that is used in the op-stack
+ */
+contract OptimisticLightClient is ILightClient {
     // consensusStates maps from the height to the appHash.
     mapping(uint256 => uint256) public consensusStates;
 
     // fraudProofEndtime maps from the appHash to the fraud proof end time.
     mapping(uint256 => uint256) public fraudProofEndtime;
     uint256 public fraudProofWindowSeconds;
-    ProofVerifier public verifier;
+    IProofVerifier public verifier;
     L1Block public l1BlockProvider;
 
     error CannotUpdatePendingOptimisticConsensusState();
     error AppHashHasNotPassedFraudProofWindow();
 
-    constructor(uint32 fraudProofWindowSeconds_, ProofVerifier verifier_, L1Block _l1BlockProvider) {
+    constructor(uint32 fraudProofWindowSeconds_, IProofVerifier verifier_, L1Block _l1BlockProvider) {
         fraudProofWindowSeconds = fraudProofWindowSeconds_;
         verifier = verifier_;
         l1BlockProvider = _l1BlockProvider;
     }
 
-    // addOpConsensusState adds an appHash to internal store and
-    // returns the fraud proof end time, and a bool flag indicating if
-    // the fraud proof window has passed according to the block's
-    // timestamp.
+    /**
+     * @inheritdoc ILightClient
+     */
     function addOpConsensusState(
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
@@ -60,17 +62,13 @@ contract OptimisticLightClient is LightClient {
     }
 
     /**
-     * getState returns the appHash at the given height, and the fraud
-     * proof end time.
-     * 0 is returned if there isn't an appHash with the given height.
+     * @inheritdoc ILightClient
      */
     function getState(uint256 height) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended) {
         return getInternalState(height);
     }
     /**
-     * verifyMembership checks if the current trustedOptimisticConsensusState state
-     * can be used to perform the membership test and if so, it uses
-     * the verifier to perform membership check.
+     * @inheritdoc ILightClient
      */
 
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
@@ -85,17 +83,26 @@ contract OptimisticLightClient is LightClient {
         verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
+    /**
+     * @inheritdoc ILightClient
+     */
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
         (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
         if (!ended) revert AppHashHasNotPassedFraudProofWindow();
         verifier.verifyNonMembership(bytes32(appHash), key, proof);
     }
 
+    /**
+     * @inheritdoc ILightClient
+     */
     function getFraudProofEndtime(uint256 height) external view returns (uint256 fraudProofEndTime) {
         uint256 hash = consensusStates[height];
         return fraudProofEndtime[hash];
     }
 
+    /**
+     * @dev Returns the internal state of the light client at a given height.
+     */
     function getInternalState(uint256 height)
         public
         view

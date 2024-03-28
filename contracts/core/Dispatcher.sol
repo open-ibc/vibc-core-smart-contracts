@@ -8,8 +8,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.sol";
-import {LightClient} from "../interfaces/LightClient.sol";
+import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -28,11 +28,13 @@ import {
 /**
  * @title Dispatcher
  * @author Polymer Labs
- * @notice
- *     Contract callers call this contract to send IBC-like msg,
- *     which can be relayed to a rollup module on the Polymerase chain
- *  @notice
- *  in addition to directly calling this contract, this can also be called by middlewares (such as UCH )
+ * @notice This contract facilitates the 4-step channel opening process and IBC packet sending/receiving.
+ * @notice Contract callers call this contract to send IBC-like messages, which can be relayed to a rollup module on the
+ * Polymerase chain
+ * @notice In addition to directly calling this contract, this contract can also be called by arbitrary middleware
+ * contracts, such as the UniversalChannelHandler
+ * @notice This contract is upgradeable and uses the UUPS pattern
+ *
  */
 contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
     // Gap to allow for additional contract inheritance, similar to OpenZeppelin's Initializable contract
@@ -55,16 +57,19 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
     mapping(bytes32 => string) private _channelIdToConnection;
-    mapping(string => LightClient) private _connectionToLightClient;
+    mapping(string => ILightClient) private _connectionToLightClient;
     uint256 private _numClients;
 
-    //
-    // methods
-    //
     constructor() {
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes the Dispatcher contract with the provided port prefix.
+     * @param initPortPrefix The initial port prefix to be set for the contract.
+     * @dev This method should be called only once during contract deployment.
+     * @dev For contract upgarades, which need to reinitialize the contract, use the reinitializer modifier.
+     */
     function initialize(string memory initPortPrefix) public virtual initializer {
         if (bytes(initPortPrefix).length == 0) {
             revert IBCErrors.invalidPortPrefix();
@@ -74,9 +79,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         portPrefixLen = uint32(bytes(initPortPrefix).length);
     }
 
-    //
-    // CoreSC maaintainer methods, only invoked by the owner
-    //
+    /**
+     * @notice Sets the port prefix for the Dispatcher contract.
+     * @param _portPrefix The new port prefix to be set.
+     * @dev It can only be called by the contract owner.
+     */
     function setPortPrefix(string calldata _portPrefix) external onlyOwner {
         if (bytes(_portPrefix).length == 0) {
             revert IBCErrors.invalidPortPrefix();
@@ -89,6 +96,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
+    /**
+     * @notice Updates the client with optimistic consensus state. The optimistic consensus is accepted and will be open
+     * for verification in the fraud proof window
+     * @dev Calls lightClient.addOpConsensusState; See Lightclient natspec for params information
+     * @dev This function updates the client with optimistic consensus state.
+     *      It should be called after verifying the optimistic consensus state on the main chain.
+     */
     function updateClientWithOptimisticConsensusState(
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
@@ -100,14 +114,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * @notice Sets the specified `LightClient` for the given connection
-     * @notice Can either be used to either set a new client for a new connection, or to update an existing connection's
-     * client.
-     * @dev Only callable by the contract owner.
-     * @param connection The connection string identifying the connection.
-     * @param lightClient The address of the `LightClient` contract to be set.
+     * @notice Adds a new mapping between a light client and a connection string.
+     * @param connection The string representing the new connection, as per ICS03 (should always be first connection in
+     * connectionHop array)
+     * @param lightClient The ILightClient contract address used by the connection
+     * @dev This method can only be called by the contract owner.
      */
-    function setClientForConnection(string calldata connection, LightClient lightClient) external onlyOwner {
+    function setClientForConnection(string calldata connection, ILightClient lightClient) external onlyOwner {
         _setClientForConnection(connection, lightClient);
     }
 
@@ -125,6 +138,19 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
      * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
      * will be relayed to the  IBC/VIBC hub chain.
+     */
+    /**
+     * @notice Initializes the channel opening process with the specified parameters. This is the first step in the  channel
+     * handshake, initiated directly by the dapp which wishes to establish a channel with the receiver.
+     * @param receiver The address of receiver contract that will handle the channel opening process.
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
+     * array always starting from the chain this contract is deployed on
+     * @param counterpartyPortId The port ID of the counterparty.
+     * @dev This function initializes the channel opening process by calling the onChanOpenInit function of the
+     *      specified receiver contract.
+     *      It can only be called by authorized parties.
      */
     function channelOpenInit(
         IbcChannelReceiver receiver,
@@ -152,9 +178,22 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
-     * onChanOpenTry. If the callback succeeds, the dApp should return the selected version and the emitted event
-     * will be relayed to the  IBC/VIBC hub chain.
+     * @notice Initializes step 2 of the channel handshake process. This is called by a relayer on behalf of the
+     * receiving dapp.
+     * To minimize trust assumptions in proving that the counterparty has indeed initiated step 1, there must be a valid
+     * proof of the counterparty being in the TRY_PENDING state from the Polymer Client
+     * @notice   The receiving dApp should implement IbcChannelHandler's onChanOpenTry callback. If the callback
+     * succeeds, the dApp should return the selected version and the emitted even will be relayed to the  IBC/VIBC hub
+     * chain.
+     * @param receiver The dapp address that the sender is attempting to initiate a channel with
+     * @param local The counterparty information for the receiver.
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param feeEnabled Whether fees are enabled for the channel.
+     * @param connectionHops The list of connection hops associated with the channel; with the first channel in this
+     * array always starting from the chain this contract is deployed on
+     * @param counterparty The counterparty information of the sender
+     * @param proof The proof that the counterparty is in the TRY_PENDING state (i.e. that it is indeed intending to
+     * initialize a channel with the given receiver)
      */
     function channelOpenTry(
         IbcChannelReceiver receiver,
@@ -198,8 +237,23 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
-     * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
+     * @notice Initializes step 3 of the channel handshake process. This method is called by a relayer on behalf of the
+     * sending, dapp (i.e. the dapp which initiated the channelOpenInit call). This step happens after the IBC/VIBC hub
+     * chain has processed the ChannelOpenTry event.
+     * To minimize trust assumptions in proving that the counterparty had indeed responded successfully in step 2 of the
+     * handshake, there must be a valid proof of the counterparty being in the ACK_PENDING state from the Polymer Client
+     * @notice Completes the channel opening acknowledge process with the specified parameters.
+     * @notice The dApp should implement the onChannelOpenAck method to handle the third channel handshake method:
+     * ChanOpenAck process.
+     * @param receiver The address of the IbcChannelReceiver contract that will handle the channel opening acknowledge
+     * @param local The counterparty information for the local channel.
+     * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
+     * array always starting from the chain this contract is deployed on.
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param counterparty The counterparty information for the channel.
+     * @param proof The proof that the counterparty is in the ACK_PENDING state (i.e. that it responded with a
+     * successful channelOpenTry )
      */
     function channelOpenAck(
         IbcChannelReceiver receiver,
@@ -246,9 +300,26 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed the ChannelOpenTry event.
-     * The dApp should implement the onChannelConnect method to handle the last channel handshake method:
+     * @notice Initializes step 4 of the channel handshake process. This method is called by a relayer on behalf of the
+     * receiving dapp. This step happens after the IBC/VIBC hub chain has processed the ChannelOpenAck event.
+     * To minimize trust assumptions in proving that the counterparty had indeed responded successfully in step 2 of the
+     * handshake, there must be a valid proof of the counterparty being in the CONFIRM_PENDING state from the Polymer
+     * Client
+     *
+     * @notice Initiates the channel opening confirm process with the specified parameters.
+     * @param receiver The address of the IbcChannelReceiver contract that will handle the channel opening confirm
+     * process. The receiver should implement the onChannelConnect method to handle the last channel handshake method:
      * ChannelOpenConfirm
+     * @param local The counterparty information for the local channel.
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
+     * array always starting from the chain this contract is deployed on.
+     * @param counterparty The counterparty information for the channel.
+     * @param proof The proof of channel opening confirm.
+     * @dev This function initiates the channel opening confirm process by calling the onChanOpenConfirm function of the
+     * specified
+     *      receiver contract.
+     *      It can only be called by authorized parties.
      */
     function channelOpenConfirm(
         IbcChannelReceiver receiver,
@@ -297,9 +368,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
+     * @notice Initializes a close channel handshake process. It is directly called by the dapp which wants to close
+     * the channel
      * @dev Emits a `CloseIbcChannel` event with the given `channelId` and the address of the message sender
      * @notice Close the specified IBC channel by channel ID
-     * Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
+     * @notice Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
      */
     function channelCloseInit(bytes32 channelId) external nonReentrant {
         Channel memory channel = _portChannelMap[msg.sender][channelId];
@@ -325,9 +398,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
-     * The dApp's onChanCloseConfirm callback is invoked.
-     * dApp should throw an error if the channel should not be closed.
+     * @notice Confirms a close channel handshake process. It is called by a relayer on behalf of the dapp whhich
+     * initializes the channel closefter after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
+     * @dev Emits a `CloseIbcChannel` event with the given `channelId` and the address of the message sender
+     * The dApp's onChanCloseConfirm callback is invoked. dApp should throw an error if the channel should not be
+     * closed.
+     * @notice Close the specified IBC channel by channel ID
+     * @notice Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
+     * @param portAddress The address of the receiver port of the channel to close
+     * @param channelId The ID of the channel to close
      */
     function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof)
         external
@@ -374,21 +453,14 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         }
     }
 
-    //
-    // IBC Packet methods
-    //
-
     /**
      * @notice Sends an IBC packet on a existing channel with the specified packet data and timeout block timestamp.
-     * @notice Data should be encoded in a format defined by the channel version, and the module on the other side
-     * should know how to parse this.
      * @dev Emits an `IbcPacketEvent` event containing the sender address, channel ID, packet data, and timeout block
      * timestamp (formatted as seconds after the unix epoch).
      * @param channelId The ID of the channel on which to send the packet.
      * @param packet The packet data to send.
      * @param timeoutTimestamp The timestamp, in seconds after the unix epoch, after which the packet times out if it
-     * has not been
-     * received.
+     * has not been received.
      */
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external {
         // ensure port owns channel
@@ -398,18 +470,20 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
 
         _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
     }
+
     /**
-     * @notice Handle the acknowledgement of an IBC packet by the counterparty
-     * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
-     *    ie. the IBC dApp.
-     *    Prerequisite: the original packet is committed and not ack'ed or timed out yet.
+     * @notice Handle the acknowledgement of an IBC packet by the counterparty, called by a relayer.
+     * @dev To minimize trust assumptions, an inclusion proof must be given that proves the packet commitment is
+     * in the IBC/VIBC hub chain.
+     * @dev This method also calls the `onAcknowledgementPacket` function on
+     * the given `receiver` contract,
+     * @dev Prerequisite: The original packet must be committed and not ack'ed or timed out yet.
      * @param receiver The IbcPacketHandler contract that should handle the packet acknowledgement event
-     * If the address doesn't satisfy the interface, the transaction will be reverted.
+     * If the address doesn't satisfy the interface, the nextSequenceAck will not be updated
      * @param packet The IbcPacket data for the acknowledged packet
      * @param ack The acknowledgement receipt for the packet
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
-
     function acknowledgement(
         IbcPacketReceiver receiver,
         IbcPacket calldata packet,
@@ -499,9 +573,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
 
     /**
      * @notice Receive an IBC packet and then pass it to the IBC-dApp for processing if verification succeeds.
-     * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
-     * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
-     * If the address doesn't satisfy the interface, the transaction will be reverted.
+     * @dev To minimize trust assumptions, verifies the given proof
+     * @dev calls the `onRecvPacket` function on the given receiver contract
+     * If the address doesn't satisfy the interface, the nextSequenceRecv will not be updated
      * The receiver must be the intended packet destination, which is the same as packet.dest.portId.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
@@ -572,6 +646,16 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
     }
 
+    /**
+     * @notice Writes a timeout packet to the specified receiver.
+     * @param receiver The address of the receiver contract.
+     * @param packet The timeout packet data.
+     * @dev Requirements:
+     * - The `receiver` address must not be the zero address.
+     * - The `receiver` must be the original packet sender.
+     * - The packet must not have a receipt.
+     * - The packet must have timed out.
+     */
     function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
         if (address(receiver) == address(0)) {
             revert IBCErrors.invalidAddress();
@@ -602,14 +686,20 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param portAddress EVM address of the IBC port
      * @param channelId IBC channel ID from the port perspective
      * @return channel A channel struct is always returned. If it doesn't exists, the channel struct is populated with
-     * default
-     *    values per EVM.
+     * default values per EVM.
      */
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel) {
         channel = _portChannelMap[portAddress][channelId];
     }
 
-    // getOptimisticConsensusState
+    /**
+     * @notice Retrieves the optimistic consensus state for the specified height and client ID.
+     * @param height The height of the consensus state.
+     * @param connection The connection the client corresponds to; used to find the light client.
+     * @return appHash The application hash of the consensus state.
+     * @return fraudProofEndTime The end time of the fraud proof.
+     * @return ended A boolean indicating whether the consensus state has ended.
+     */
     function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
@@ -619,7 +709,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     // verify an EVM address matches an IBC portId.
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
+    // IBC_PortID = portPrefix + address (hex string without 0x prefx, case-insensitive)
     function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
         if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
             return false;
@@ -627,7 +717,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         isMatch = Ibc._hexStrToAddress(portId[portPrefixLen:]) == addr;
     }
 
-    function _setClientForConnection(string calldata connection, LightClient lightClient) internal {
+    function _setClientForConnection(string calldata connection, ILightClient lightClient) internal {
         if (bytes(connection).length == 0) {
             revert IBCErrors.invalidConnection("");
         }
@@ -638,7 +728,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         _connectionToLightClient[connection] = lightClient;
     }
 
-    // Prerequisite: must verify sender is authorized to send packet on the channel
+    /**
+     * @notice Sends a packet on the specified channel with the provided details.
+     * @param sender The address of the sender.
+     * @param channelId The ID of the channel.
+     * @param packet The packet data to be sent.
+     * @param timeoutTimestamp The timeout timestamp for the packet.
+     */
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
         uint64 sequence = _nextSequenceSend[sender][channelId];
@@ -654,6 +750,16 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
+    /**
+     * @notice Connects a channel with the provided parameters.
+     * @param portAddress The address of the IbcChannelReceiver contract.
+     * @param local The details of the local counterparty.
+     * @param connectionHops The connection hops associated with the channel, with the first channel in this
+     * array always starting from the chain this contract is deployed on.
+     * @param ordering The ordering of the channel.
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param counterparty The details of the counterparty.
+     */
     function _connectChannel(
         IbcChannelReceiver portAddress,
         CounterParty calldata local,
@@ -684,7 +790,20 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             // light client
     }
 
-    // Returns the result of the call if no revert, otherwise returns the error if thrown.
+    /**
+     * @notice Calls the specified contract with the provided arguments and returns the success status and
+     *         message.
+     * @notice This functions similar to a try/catch statement - if the low-level call reverts, this transaction will
+     * not revert, but instead the error message will be returned
+     * @param receiver The address of the contract to call.
+     * @param args The abi-encoded low-level call
+     * @return success A boolean indicating whether the call was successful and made to a contract address.
+     * @return message The return message from the contract call; or error for a failed call
+     *  @dev Requirements for the success return value to be true:
+     * - The `receiver` address must correspond to a contract.
+     * - The receiver contract must have the called implemented
+     * - The receiver contract must not revert in the low-level call
+     */
     function _callIfContract(address receiver, bytes memory args)
         internal
         returns (bool success, bytes memory message)
@@ -698,10 +817,18 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         (success, message) = receiver.call(args);
     }
 
+    /**
+     * @inheritdoc UUPSUpgradeable
+     */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
-    // timestamp, in seconds after the unix epoch.
+    /**
+     * @notice Checks if the given packet has timed out according to the host chain's block height and timestamp.
+     * @param timeoutTimestamp The timeout timestamp of the packet.
+     * @param revisionHeight The block height of the packet's timeout revision.
+     * @return isTimeOut Returns true if the given packet has timed out acoording to host chain's block height and
+     * timestamp, in seconds after the unix epoch.
+     */
     function _isPacketTimeout(uint64 timeoutTimestamp, uint64 revisionHeight) internal view returns (bool isTimeOut) {
         return (
             isTimeOut = (timeoutTimestamp != 0 && block.timestamp >= timeoutTimestamp)
@@ -710,7 +837,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         );
     }
 
-    function _getLightClientFromChannelId(bytes32 channelId) internal view returns (LightClient lightClient) {
+    /**
+     * @notice Retrieves the light client associated with the specified channel ID.
+     * @param channelId The ID of the channel.
+     * @return lightClient The light client associated with the channel.
+     */
+    function _getLightClientFromChannelId(bytes32 channelId) internal view returns (ILightClient lightClient) {
         string memory connection = _channelIdToConnection[channelId];
         if (bytes(connection).length == 0) {
             revert IBCErrors.channelIdNotFound(channelId);
@@ -718,7 +850,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         return _getLightClientFromConnection(connection);
     }
 
-    function _getLightClientFromConnection(string memory connection) internal view returns (LightClient lightClient) {
+    /**
+     * @notice Retrieves the light client associated with the specified connection.
+     * @param connection The connection string(i.e. the first connection in the connectionHops array)
+     * @return lightClient The light client associated with the connection.
+     */
+    function _getLightClientFromConnection(string memory connection) internal view returns (ILightClient lightClient) {
         lightClient = _connectionToLightClient[connection];
         if (address(lightClient) == address(0)) {
             revert IBCErrors.lightClientNotFound(connection);
