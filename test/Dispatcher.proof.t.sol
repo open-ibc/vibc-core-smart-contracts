@@ -84,7 +84,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
         // Plant a fake packet commitment so the ack checks go through
         // Stdstore doesn't work for proxies so we have to use store
         // use "forge inspect Dispatcher storage" to find the nested mapping slot
-        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(107)));
+        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(157)));
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
         vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
