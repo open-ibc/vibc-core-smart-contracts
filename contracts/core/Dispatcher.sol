@@ -353,10 +353,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @notice Data should be encoded in a format defined by the channel version, and the module on the other side
      * should know how to parse this.
      * @dev Emits an `IbcPacketEvent` event containing the sender address, channel ID, packet data, and timeout block
-     * timestamp.
+     * timestamp (formatted as seconds after the unix epoch).
      * @param channelId The ID of the channel on which to send the packet.
      * @param packet The packet data to send.
-     * @param timeoutTimestamp The timestamp in nanoseconds after which the packet times out if it has not been
+     * @param timeoutTimestamp The timestamp, in seconds after the unix epoch, after which the packet times out if it
+     * has not been
      * received.
      */
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external {
@@ -423,7 +424,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        _lightClient.verifyNonMembership(proof, "packet/receipt/path");
+        _lightClient.verifyNonMembership(proof, Ibc.packetCommitmentProofKey(packet));
 
         address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet has been committed and not yet ack'ed or timed out
@@ -616,7 +617,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
-    // timestamp
+    // timestamp, in seconds after the unix epoch.
     function _isPacketTimeout(uint64 timeoutTimestamp, uint64 revisionHeight) internal view returns (bool isTimeOut) {
         return (
             isTimeOut = (timeoutTimestamp != 0 && block.timestamp >= timeoutTimestamp)
