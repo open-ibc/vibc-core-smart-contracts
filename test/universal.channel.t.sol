@@ -8,7 +8,7 @@ import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/core/UniversalChannelHandler.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import "../contracts/interfaces/IbcMiddleware.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
 

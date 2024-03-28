@@ -12,6 +12,12 @@ import {
     IbcMwPacketSender
 } from "../interfaces/IbcMiddleware.sol";
 
+/**
+ * @title GeneralMiddleware
+ *  @author Polymer Labs
+ *  @notice GeneralMiddleware is a starting point for developers to implement their own middleware logic. It is not
+ * intended to be directly deployed, but rather only used for testing and development
+ */
 contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
     /**
      * @dev MW_ID is the ID of MW contract on all supported virtual chains.

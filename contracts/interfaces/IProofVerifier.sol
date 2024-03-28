@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+// OpIcs23ProofPath represents a commitment path in an ICS23 proof, which consists of a commitment prefix and a suffix.
 struct OpIcs23ProofPath {
     bytes prefix;
     bytes suffix;
 }
 
+// OpIcs23Proof represents an ICS23 proof
 struct OpIcs23Proof {
     OpIcs23ProofPath[] path;
     bytes key;
@@ -36,7 +38,12 @@ struct L1Header {
     uint64 number;
 }
 
-interface ProofVerifier {
+/**
+ * @title IProofVerifier
+ * @author Polymer Labs
+ * @notice An interface that abstracts away proof verification logic for light clients
+ */
+interface IProofVerifier {
     error InvalidL1BlockNumber();
     error InvalidL1BlockHash();
     error InvalidRLPEncodedL1BlockNumber();
