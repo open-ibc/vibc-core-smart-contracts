@@ -168,13 +168,13 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         return _openChannel(counterpartyVersion);
     }
 
-    function _connectChannel(bytes32 channelId, string calldata version) private {
+    function _connectChannel(bytes32 channelId, string calldata version) internal {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }
     }
 
-    function _openChannel(string calldata version) private pure returns (string memory selectedVersion) {
+    function _openChannel(string calldata version) internal pure returns (string memory selectedVersion) {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }
