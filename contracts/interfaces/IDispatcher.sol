@@ -42,7 +42,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         string calldata counterpartyPortId
     ) external;
 
-    function addNewConnection(string calldata connection, LightClient lightClient) external;
+    function setNewConnection(string calldata connection, LightClient lightClient) external;
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's

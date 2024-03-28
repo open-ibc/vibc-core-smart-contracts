@@ -6,6 +6,7 @@ import {Mars} from "../contracts/examples/Mars.sol";
 import {DispatcherProofTestUtils} from "./Dispatcher.proof.t.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
 import {OptimisticLightClient} from "../contracts/core/OpLightClient.sol";
+import {LightClient} from "../contracts/interfaces/LightClient.sol";
 import "../contracts/interfaces/ProofVerifier.sol";
 
 contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
@@ -23,8 +24,8 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         dummyLightClient = new DummyLightClient();
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
-        dispatcherProxy.addNewConnection(connectionHops0[0], dummyLightClient);
-        dispatcherProxy.addNewConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.setNewConnection(connectionHops0[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops1[0], opLightClient);
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
         deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
         mars = Mars(payable(targetMarsAddress));
@@ -66,11 +67,11 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
     function test_Dispatcher_Prevenrts_nonOwner_AddConnection() public {
         vm.startPrank(notOwner);
         vm.expectRevert("Ownable: caller is not the owner");
-        dispatcherProxy.addNewConnection("malicious-connection-1", opLightClient);
+        dispatcherProxy.setNewConnection("malicious-connection-1", opLightClient);
     }
 
-    function test_duplicate_channels_cannot_be_added() public {
-        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidConnection.selector, connectionHops0[0]));
-        dispatcherProxy.addNewConnection(connectionHops0[0], dummyLightClient);
+    function test_addr0_channels_cannot_be_added() public {
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidAddress.selector));
+        dispatcherProxy.setNewConnection(connectionHops0[0], LightClient(address(0)));
     }
 }
