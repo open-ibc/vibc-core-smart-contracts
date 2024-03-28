@@ -12,6 +12,7 @@ import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ProofVerifier.
 import {LightClient} from "../interfaces/LightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {
     Channel,
     CounterParty,
@@ -31,7 +32,7 @@ import {
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
+contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
     //
     // fields
     //
@@ -113,7 +114,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         string[] calldata connectionHops,
         string calldata counterpartyPortId
-    ) external {
+    ) external nonReentrant {
         if (bytes(counterpartyPortId).length == 0) {
             revert IBCErrors.invalidCounterPartyPortId();
         }
@@ -144,7 +145,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         string[] calldata connectionHops,
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         if (bytes(counterparty.portId).length == 0) {
             revert IBCErrors.invalidCounterPartyPortId();
         }
@@ -193,7 +194,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -233,7 +234,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         bool feeEnabled,
         CounterParty calldata counterparty,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -265,7 +266,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @notice Close the specified IBC channel by channel ID
      * Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
      */
-    function channelCloseInit(bytes32 channelId) external {
+    function channelCloseInit(bytes32 channelId) external nonReentrant {
         Channel memory channel = _portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
@@ -293,7 +294,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * The dApp's onChanCloseConfirm callback is invoked.
      * dApp should throw an error if the channel should not be closed.
      */
-    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof)
+        external
+        nonReentrant
+    {
         // ensure port owns channel
         Channel memory channel = _portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
@@ -372,7 +376,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         IbcPacket calldata packet,
         bytes calldata ack,
         Ics23Proof calldata proof
-    ) external {
+    ) external nonReentrant {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert IBCErrors.receiverNotOriginPacketSender();
@@ -421,7 +425,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @param packet The IbcPacket data for the timed-out packet
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
-    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
+    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof)
+        external
+        nonReentrant
+    {
         // verify `receiver` is the original packet sender
         if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
@@ -460,7 +467,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
-    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
+    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof)
+        external
+        nonReentrant
+    {
         // verify `receiver` is the intended packet destination
         if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
             revert IBCErrors.receiverNotIntendedPacketDestination();
