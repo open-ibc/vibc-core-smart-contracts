@@ -15,7 +15,6 @@ import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
 import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
-    bytes32[] public connectedChannels;
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
@@ -35,13 +34,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.channelCloseInit(channelId);
     }
 
-    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
-        _closeChannel(channelId);
-    }
+    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
-    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
-        _closeChannel(channelId);
-    }
+    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
     function openChannel(
         string calldata version,
@@ -177,7 +172,6 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }
-        connectedChannels.push(channelId);
     }
 
     function _openChannel(string calldata version) private pure returns (string memory selectedVersion) {
@@ -185,18 +179,5 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
             revert UnsupportedVersion();
         }
         return VERSION;
-    }
-
-    function _closeChannel(bytes32 channelId) internal {
-        // logic to determin if the channel should be closed
-        bool channelFound = false;
-        for (uint256 i = 0; i < connectedChannels.length; i++) {
-            if (connectedChannels[i] == channelId) {
-                delete connectedChannels[i];
-                channelFound = true;
-                break;
-            }
-        }
-        if (!channelFound) revert ChannelNotFound();
     }
 }
