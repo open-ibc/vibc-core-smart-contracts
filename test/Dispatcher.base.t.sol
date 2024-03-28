@@ -33,7 +33,7 @@ struct ChannelHandshakeSetting {
 
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
-    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 111;
+    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 161;
     uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 156;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
