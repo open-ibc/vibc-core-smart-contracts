@@ -143,6 +143,7 @@ library IBCErrors {
     error consensusStateVerificationFailed();
     error packetNotTimedOut();
     error invalidAddress();
+    error invalidPortPrefix();
 
     // packet sequence related errors.
     error invalidPacketSequence();
