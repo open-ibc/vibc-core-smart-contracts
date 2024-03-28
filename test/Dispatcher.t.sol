@@ -181,7 +181,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
 contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
     function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.addNewConnection(connectionHops[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
@@ -204,7 +204,7 @@ contract ChannelOpenTestBaseSetup is Base {
 
     function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.addNewConnection(connectionHops[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         ChannelHandshakeSetting memory setting =
             ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
 
@@ -521,9 +521,9 @@ contract DappRevertTests is Base {
 
     function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.addNewConnection(connectionHops0[0], dummyLightClient);
-        dispatcherProxy.addNewConnection(connectionHops1[0], dummyLightClient);
-        dispatcherProxy.addNewConnection(connectionHops[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops0[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops1[0], dummyLightClient);
+        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
         panickingMars = new PanickingMars(dispatcherProxy);
         revertingEmptyMars = new RevertingEmptyMars(dispatcherProxy);
