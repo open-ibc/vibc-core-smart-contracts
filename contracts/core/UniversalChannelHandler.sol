@@ -35,17 +35,12 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         dispatcher.channelCloseInit(channelId);
     }
 
+    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
+        _closeChannel(channelId);
+    }
+
     function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
-        // logic to determin if the channel should be closed
-        bool channelFound = false;
-        for (uint256 i = 0; i < connectedChannels.length; i++) {
-            if (connectedChannels[i] == channelId) {
-                delete connectedChannels[i];
-                channelFound = true;
-                break;
-            }
-        }
-        if (!channelFound) revert ChannelNotFound();
+        _closeChannel(channelId);
     }
 
     function openChannel(
@@ -190,5 +185,18 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
             revert UnsupportedVersion();
         }
         return VERSION;
+    }
+
+    function _closeChannel(bytes32 channelId) internal {
+        // logic to determin if the channel should be closed
+        bool channelFound = false;
+        for (uint256 i = 0; i < connectedChannels.length; i++) {
+            if (connectedChannels[i] == channelId) {
+                delete connectedChannels[i];
+                channelFound = true;
+                break;
+            }
+        }
+        if (!channelFound) revert ChannelNotFound();
     }
 }

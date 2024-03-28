@@ -49,6 +49,12 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
+    function onChanCloseInit(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external
+        virtual
+        onlyIbcDispatcher
+    {}
+
     function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
         // logic to determine if the channel should be closed
         bool channelFound = false;
@@ -168,6 +174,11 @@ contract RevertingStringMars is Mars {
 contract RevertingStringCloseChannelMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
     // solhint-disable-next-line
+
+    function onChanCloseInit(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
+        // solhint-disable-next-line
+        require(false, "close ibc channel is reverting");
+    }
 
     function onChanCloseConfirm(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
