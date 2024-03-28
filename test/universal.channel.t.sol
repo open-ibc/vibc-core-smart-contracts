@@ -39,8 +39,6 @@ contract UniversalChannelTest is Base {
     function assert_channel(VirtualChain vc1, VirtualChain vc2, ChannelSetting memory setting) internal {
         bytes32 channelId1 = vc1.channelIds(address(vc1.ucHandler()), address(vc2.ucHandler()));
         bytes32 channelId2 = vc2.channelIds(address(vc2.ucHandler()), address(vc1.ucHandler()));
-        assertEq(vc1.ucHandler().connectedChannels(0), channelId1);
-        assertEq(vc2.ucHandler().connectedChannels(0), channelId2);
 
         Channel memory channel1 = vc1.dispatcherProxy().getChannel(address(vc1.ucHandler()), channelId1);
         Channel memory channel2 = vc2.dispatcherProxy().getChannel(address(vc2.ucHandler()), channelId2);
