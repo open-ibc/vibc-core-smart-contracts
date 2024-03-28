@@ -13,7 +13,7 @@ import {
     RevertingEmptyMars,
     RevertingStringMars
 } from "../contracts/examples/Mars.sol";
-import "../contracts/core/OpLightClient.sol";
+import "../contracts/core/OptimisticLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
