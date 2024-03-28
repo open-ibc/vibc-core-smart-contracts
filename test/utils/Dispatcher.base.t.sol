@@ -3,14 +3,15 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 import {ProofBase} from "./Proof.base.t.sol";
-import "../contracts/libs/Ibc.sol";
-import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
-import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
-import "../contracts/core/OpLightClient.sol";
-import "../contracts/utils/DummyLightClient.sol";
-import "../contracts/core/OpProofVerifier.sol";
+import "../../contracts/libs/Ibc.sol";
+import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
+import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
+import {IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
+import {IbcChannelReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
+import "../../contracts/examples/Mars.sol";
+import "../../contracts/core/OptimisticLightClient.sol";
+import "../../contracts/utils/DummyLightClient.sol";
+import "../../contracts/core/OptimisticProofVerifier.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
 
 struct LocalEnd {
@@ -39,8 +40,8 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
-    LightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
-    LightClient dummyLightClient = new DummyLightClient();
+    ILightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
+    ILightClient dummyLightClient = new DummyLightClient();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
@@ -206,7 +207,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     }
 
     // Store connection in channelid to connection mapping using store
-    function _getConnectiontoClientIdMapping(string memory connection) internal returns (uint256 clientId) {
+    function _getConnectiontoClientIdMapping(string memory connection) internal view returns (uint256 clientId) {
         bytes32 clientIdSlot = keccak256(abi.encode(connection, CONNECTION_TO_CLIENT_ID_STARTING_SLOT));
         clientId = uint256(vm.load(address(dispatcherProxy), clientIdSlot));
     }

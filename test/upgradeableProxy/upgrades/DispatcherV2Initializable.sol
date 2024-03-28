@@ -3,7 +3,7 @@
 pragma solidity ^0.8.9;
 
 import {DispatcherV2} from "./DispatcherV2.sol";
-import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
+import {ILightClient} from "../../../contracts/interfaces/ILightClient.sol";
 import {IBCErrors} from "../../../contracts/libs/Ibc.sol";
 /**
  * @title Dispatcher

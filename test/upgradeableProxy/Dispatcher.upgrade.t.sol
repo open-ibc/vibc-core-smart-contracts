@@ -2,27 +2,19 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/console2.sol";
-import {DispatcherUpdateClientTestSuite} from "../Dispatcher.client.t.sol";
-import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher.proof.t.sol";
+import {DispatcherUpdateClientTestSuite} from "../Dispatcher/Dispatcher.client.t.sol";
+import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher/Dispatcher.proof.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
-import "../../contracts/core/OpLightClient.sol";
-import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher.t.sol";
-import {LocalEnd} from "../Dispatcher.base.t.sol";
-import {Base, ChannelHandshakeSetting} from "../Dispatcher.base.t.sol";
-import {
-    ChannelEnd,
-    ChannelOrder,
-    IbcEndpoint,
-    IbcPacket,
-    AckPacket,
-    Ibc,
-    IbcUtils,
-    Height
-} from "../../contracts/libs/Ibc.sol";
+import "../../contracts/core/OptimisticLightClient.sol";
+import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher/Dispatcher.t.sol";
+import {LocalEnd} from "../utils/Dispatcher.base.t.sol";
+import {Base, ChannelHandshakeSetting} from "../utils/Dispatcher.base.t.sol";
+import {ChannelEnd, ChannelOrder, IbcEndpoint, IbcPacket, AckPacket, Ibc, Height} from "../../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {OptimisticLightClient} from "../../contracts/core/OpLightClient.sol";
-import {ProofVerifier} from "../../contracts/core/OpProofVerifier.sol";
+import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
+import {IProofVerifier} from "../../contracts/core/OptimisticProofVerifier.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";

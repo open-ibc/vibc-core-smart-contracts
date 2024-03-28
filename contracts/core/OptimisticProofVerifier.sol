@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.15;
 
 import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
-import {ProofVerifier, L1Header, OpL2StateProof, Ics23Proof, OpIcs23Proof} from "../interfaces/ProofVerifier.sol";
+import {IProofVerifier, L1Header, OpL2StateProof, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
 
-contract OpProofVerifier is ProofVerifier {
+/**
+ * @title OptimisticProofVerifier
+ * @notice Verifies proofs related to Optimistic Rollup state updates
+ * @author Polymer Labs
+ */
+contract OptimisticProofVerifier is IProofVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
@@ -62,12 +67,12 @@ contract OpProofVerifier is ProofVerifier {
             revert InvalidL1BlockNumber();
         }
 
-        // this computes the L1 header hash
+        // This computes the L1 header hash
         if (trustedL1BlockHash != keccak256(RLPWriter.writeList(l1header.header))) {
             revert InvalidL1BlockHash();
         }
 
-        // these two checks are here to verify that the "plain" (i.e. not RLP encoded) values in the l1header are
+        // These two checks are here to verify that the "plain" (i.e. not RLP encoded) values in the l1header are
         // the same ones found in l1header.header (i.e. RLP encoded). This is because it is cheaper to RLP
         // encode that decode
         if (keccak256(RLPWriter.writeUint(l1header.number)) != keccak256(l1header.header[_L1_NUMBER_INDEX])) {
@@ -95,7 +100,7 @@ contract OpProofVerifier is ProofVerifier {
             abi.encode(proof.l2OutputProposalKey), proof.outputRootProof, bytes32(bytes(stateAccount[2].readBytes()))
         );
 
-        // now that the output root is verified, we need to verify the app hash. To do so we try to derive the
+        // Now that the output root is verified, we need to verify the app hash. To do so we try to derive the
         // the output root the same way the proposer did.
         // See https://github.com/polymerdao/optimism/blob/polymer/v1.2.0/op-service/eth/output.go#L44
         if (
@@ -112,11 +117,16 @@ contract OpProofVerifier is ProofVerifier {
         }
     }
 
+    /**
+     * @dev Prove that a given state is not part of a proof
+     * @dev this method is mainly used for packet timeouts, which is currently not implemented
+     */
     function verifyNonMembership(bytes32, bytes calldata, Ics23Proof calldata) external pure {
         revert MethodNotImplemented();
     }
 
     /**
+     * @inheritdoc IProofVerifier
      * @dev verifies a chain of ICS23 proofs
      * Each computed subroot starting from index 0 must match the value of the next proof (hence chained proofs).
      * The cosmos SDK and ics23 support chained proofs to switch between different proof specs.
@@ -138,8 +148,13 @@ contract OpProofVerifier is ProofVerifier {
         if (appHash != _verify(proofs.proof[1])) revert InvalidIbcStateProof();
     }
 
-    // this code was adapted from the ICS23 membership verification found here:
-    // https://github.com/cosmos/ics23/blob/go/v0.10.0/go/ics23.go#L36
+    /**
+     * @dev Verifies an ICS23 proof through the root hash based on the provided proof.
+     * @dev This code was adapted from the ICS23 membership verification found here:
+     * https://github.com/cosmos/ics23/blob/go/v0.10.0/go/ics23.go#L36
+     * @param proof The ICS23 proof to be verified.
+     * @return computed The computed root hash.
+     */
     function _verify(OpIcs23Proof calldata proof) internal pure returns (bytes32 computed) {
         bytes32 hashedData = sha256(proof.value);
         computed = sha256(
@@ -153,6 +168,11 @@ contract OpProofVerifier is ProofVerifier {
         }
     }
 
+    /**
+     * @dev Encodes an integer value into a variable-length integer format.
+     * @param value The integer value to be encoded.
+     * @return encoded The encoded bytes array.
+     */
     function _encodeVarint(uint256 value) internal pure returns (bytes memory encoded) {
         bytes memory result;
         while (value >= 0x80) {

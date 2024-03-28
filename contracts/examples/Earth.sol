@@ -2,9 +2,16 @@
 
 pragma solidity ^0.8.9;
 
-import {IbcUtils, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 import {IbcMwUser, IbcUniversalPacketReceiver, IbcUniversalPacketSender} from "../interfaces/IbcMiddleware.sol";
 
+/**
+ * @title Earth
+ * @notice Earth is a simple IBC receiver contract that receives packets and sends acks.
+ * @dev This contract is used for only testing IBC functionality and as an example for dapp developers on how to
+ * integrate with the vibc protocol.
+ */
 contract Earth is IbcMwUser, IbcUniversalPacketReceiver {
     struct UcPacketWithChannel {
         bytes32 channelId;

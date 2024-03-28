@@ -7,16 +7,17 @@ import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispat
 import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../contracts/interfaces/IbcReceiver.sol";
-import "../contracts/interfaces/ProofVerifier.sol";
+import "../contracts/interfaces/IProofVerifier.sol";
 import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
-import {TestUtilsTest} from "./TestUtils.t.sol";
+import {TestUtilsTest} from "./utils/TestUtils.t.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;

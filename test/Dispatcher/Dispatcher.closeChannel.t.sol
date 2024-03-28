@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {ChannelOpenTestBaseSetup, DappRevertTests, PacketSenderTestBase} from "./Dispatcher.t.sol";
-import {RevertingStringCloseChannelMars, Mars} from "../contracts/examples/Mars.sol";
-import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import "./Dispatcher.base.t.sol";
+import {ChannelOpenTestBaseSetup, PacketSenderTestBase} from "./Dispatcher.t.sol";
+import {DappHandlerRevertTests} from "./Dispatcher.dappHandlerRevert.t.sol";
+import {RevertingStringCloseChannelMars, Mars} from "../../contracts/examples/Mars.sol";
+import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
+import "../utils/Dispatcher.base.t.sol";
 import {
     Channel,
     ChannelEnd,
@@ -13,9 +14,9 @@ import {
     ChannelState,
     AckPacket,
     IBCErrors,
-    IbcUtils,
     Ibc
-} from "../contracts/libs/Ibc.sol";
+} from "../../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 
 contract DispatcherCloseChannelTest is PacketSenderTestBase {
     Channel defaultChannel; // Uninitialized struct to compare that structs are deleted
@@ -77,7 +78,7 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
     }
 }
 
-contract DappRevertTestsCloseChannel is DappRevertTests {
+contract DappRevertTestsCloseChannel is DappHandlerRevertTests {
     Channel defaultChannel; // Uninitialized struct to compare that structs are deleted
 
     RevertingStringCloseChannelMars revertingStringCloseMars;
