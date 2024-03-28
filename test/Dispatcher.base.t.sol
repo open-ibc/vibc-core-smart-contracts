@@ -191,7 +191,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
 
     // Store connection in channelid to connection mapping using store
     function _storeChannelidToConnectionMapping(bytes32 channelId, bytes32 connection) internal {
-        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(110)));
+        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(160)));
         vm.store(address(dispatcherProxy), chanIdToConnectionMapping, connection);
     }
 }

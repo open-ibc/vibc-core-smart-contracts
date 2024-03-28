@@ -33,6 +33,9 @@ import {
  *     which can be relayed to a rollup module on the Polymerase chain
  */
 contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
+    // Gap to allow for additional contract inheritance, similar to OpenZeppelin's Initializable contract
+    uint256[49] private __gap;
+
     //
     // fields
     //
