@@ -78,6 +78,8 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
 }
 
 contract DappRevertTestsCloseChannel is DappRevertTests {
+    Channel defaultChannel; // Uninitialized struct to compare that structs are deleted
+
     RevertingStringCloseChannelMars revertingStringCloseMars;
     string portId;
     LocalEnd _local;
@@ -105,6 +107,12 @@ contract DappRevertTestsCloseChannel is DappRevertTests {
             abi.encodeWithSignature("Error(string)", "close ibc channel is reverting")
         );
         revertingStringCloseMars.triggerChannelClose(ch0.channelId);
+
+        // Channels should still be deleted on dapp revert
+        assertEq(
+            abi.encode(defaultChannel),
+            abi.encode(dispatcherProxy.getChannel(address(revertingStringCloseMars), ch0.channelId))
+        );
     }
 
     function test_ibc_channel_close_confirm_dapp_revert() public {
@@ -115,5 +123,10 @@ contract DappRevertTestsCloseChannel is DappRevertTests {
         );
 
         dispatcherProxy.channelCloseConfirm(address(revertingStringCloseMars), ch0.channelId, validProof);
+        // Channels should still be deleted on dapp revert
+        assertEq(
+            abi.encode(defaultChannel),
+            abi.encode(dispatcherProxy.getChannel(address(revertingStringCloseMars), ch0.channelId))
+        );
     }
 }

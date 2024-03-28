@@ -414,7 +414,6 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        // vm.expectRevert(abi.encodeWithSelector(IBCErrors.receiverNotOriginPacketSender.selector));
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
         dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
     }
