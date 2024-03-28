@@ -9,9 +9,8 @@ import "forge-std/console.sol";
 
 
 contract BatchedEvents {
-    Dispatcher dispatcher;
+    Dispatcher public dispatcher;
     Ics23Proof validProof;
-    Mars mars;
     string[] connectionHops;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
     Height ZERO_HEIGHT = Height(0, 0);
@@ -28,9 +27,8 @@ contract BatchedEvents {
         destChannelId = _destChannelId;
         validProof.height = 10;
 
-        mars = new Mars(dispatcher);
-        srcPortId = IbcUtils.addressToPortId("polyibc.optimism-sim.", address(mars));
-        destPortId = IbcUtils.addressToPortId("polyibc.base-sim.", address(mars));
+        srcPortId = IbcUtils.addressToPortId("polyibc.optimism-sim.", address(this));
+        destPortId = IbcUtils.addressToPortId("polyibc.base-sim.", address(this));
 
         connectionHops = new string[](2);
         connectionHops[0] = "connection-12";
@@ -45,7 +43,7 @@ contract BatchedEvents {
 
     function openIbcChannel() public {
         dispatcher.openIbcChannel(
-            mars,
+            IbcChannelReceiver(address(this)),
             CounterParty(
                 srcPortId,
                 0x0000000000000000000000000000000000000000000000000000000000000000,
@@ -63,8 +61,27 @@ contract BatchedEvents {
         );
     }
 
+    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external virtual {}
+
+    function triggerChannelClose(bytes32 channelId) external {
+        dispatcher.closeIbcChannel(channelId);
+    }
+
+    function onOpenIbcChannel(
+        string calldata version,
+        ChannelOrder,
+        bool,
+        string[] calldata,
+        CounterParty calldata counterparty
+    ) external view virtual returns (string memory selectedVersion) {
+        selectedVersion =
+            keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked("")) ? counterparty.version : version;
+
+        return selectedVersion;
+    }
+
     function connectIbcChannel() public {
-        dispatcher.connectIbcChannel(mars,
+        dispatcher.connectIbcChannel(IbcChannelReceiver(address(this)),
             CounterParty(
                 srcPortId,
                 IbcUtils.toBytes32(srcChannelId),
@@ -83,8 +100,10 @@ contract BatchedEvents {
         );
     }
 
+    function onConnectIbcChannel(bytes32 channelId, bytes32, string calldata counterpartyVersion) external virtual {}
+
     function sendPacket() public {
-        mars.greet("payload", IbcUtils.toBytes32(srcChannelId), maxTimeout);
+        dispatcher.sendPacket(IbcUtils.toBytes32(srcChannelId), bytes("payload"), maxTimeout);
     }
 
     function timeoutPacket() public {
@@ -92,7 +111,7 @@ contract BatchedEvents {
         IbcEndpoint memory dest = IbcEndpoint(destPortId, IbcUtils.toBytes32(destChannelId));
 
         IbcPacket memory sentPacket = IbcPacket(src, dest, 1, bytes("payload"), ZERO_HEIGHT, maxTimeout);
-        dispatcher.timeout(mars, sentPacket, validProof);
+        dispatcher.timeout(IbcPacketReceiver(address(this)), sentPacket, validProof);
     }
 
     function packetEventsAndCloseChannel() public {
@@ -102,7 +121,19 @@ contract BatchedEvents {
     }
 
     function closeChannel() public {
-        mars.triggerChannelClose(IbcUtils.toBytes32(srcChannelId));
+        this.triggerChannelClose(IbcUtils.toBytes32(srcChannelId));
+    }
+
+    function onRecvPacket(IbcPacket memory packet) external virtual returns (AckPacket memory ackPacket)
+    {
+        // solhint-disable-next-line quotes
+        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
+    }
+
+    function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external virtual {
+    }
+
+    function onTimeoutPacket(IbcPacket calldata packet) external virtual {
     }
 }
 
