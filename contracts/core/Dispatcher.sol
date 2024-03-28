@@ -263,7 +263,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         (bool success, bytes memory data) = _callIfContract(
             msg.sender,
             abi.encodeWithSelector(
-                IbcChannelReceiver.onChanCloseConfirm.selector,
+                IbcChannelReceiver.onChanCloseInit.selector,
                 channelId,
                 channel.counterpartyPortId,
                 channel.counterpartyChannelId

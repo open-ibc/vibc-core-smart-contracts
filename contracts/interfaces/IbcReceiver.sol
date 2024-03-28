@@ -20,6 +20,9 @@ interface IbcChannelReceiver {
 
     function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external;
 
+    function onChanCloseInit(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
+        external;
+
     function onChanCloseConfirm(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
         external;
 }
