@@ -35,7 +35,7 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
 
     function test_closeChannelInit_mustOwner() public {
         Mars earth = new Mars(dispatcherProxy);
-        vm.expectRevert(abi.encodeWithSignature(IBCErrors.channelNotOwnedBySender()));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedBySender.selector));
         earth.triggerChannelClose(channelId);
         assertNotEq0(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
     }
@@ -49,7 +49,7 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
     }
 
     function test_closeChannelConfirm_mustOwner() public {
-        vm.expectRevert(abi.encodeWithSignature(IBCErrors.channelNotOwnedByPortAddress()));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedByPortAddress.selector));
         dispatcherProxy.channelCloseConfirm(address(mars), "channel-999", validProof);
         assertNotEq0(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
     }
@@ -78,6 +78,8 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
 }
 
 contract DappRevertTestsCloseChannel is DappRevertTests {
+    Channel defaultChannel; // Uninitialized struct to compare that structs are deleted
+
     RevertingStringCloseChannelMars revertingStringCloseMars;
     string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
     LocalEnd _local;
@@ -104,6 +106,12 @@ contract DappRevertTestsCloseChannel is DappRevertTests {
             abi.encodeWithSignature("Error(string)", "close ibc channel is reverting")
         );
         revertingStringCloseMars.triggerChannelClose(ch0.channelId);
+
+        // Channels should still be deleted on dapp revert
+        assertEq(
+            abi.encode(defaultChannel),
+            abi.encode(dispatcherProxy.getChannel(address(revertingStringCloseMars), ch0.channelId))
+        );
     }
 
     function test_ibc_channel_close_confirm_dapp_revert() public {
@@ -114,5 +122,10 @@ contract DappRevertTestsCloseChannel is DappRevertTests {
         );
 
         dispatcherProxy.channelCloseConfirm(address(revertingStringCloseMars), ch0.channelId, validProof);
+        // Channels should still be deleted on dapp revert
+        assertEq(
+            abi.encode(defaultChannel),
+            abi.encode(dispatcherProxy.getChannel(address(revertingStringCloseMars), ch0.channelId))
+        );
     }
 }
