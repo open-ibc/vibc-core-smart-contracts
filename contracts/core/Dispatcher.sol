@@ -100,8 +100,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         return lightClient.addOpConsensusState(l1header, proof, height, appHash);
     }
 
-    function addNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
-        _addNewConnection(connection, lightClient);
+    function setNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
+        _setNewConnection(connection, lightClient);
+    }
+
+    function removeConnection(string calldata connection) external onlyOwner {
+        uint256 clientId = _connectionToClientId[connection];
+        delete _clientIdToLightClient[clientId];
     }
 
     /**
@@ -574,15 +579,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //     isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
     // }
 
-    function _addNewConnection(string calldata connection, LightClient lightClient) internal {
-        if (address(lightClient) == address(0)) {
-            revert IBCErrors.invalidAddress();
-        }
+    function _setNewConnection(string calldata connection, LightClient lightClient) internal {
         if (bytes(connection).length == 0) {
             revert IBCErrors.invalidConnection("");
         }
-        if (_connectionToClientId[connection] != 0) {
-            revert IBCErrors.invalidConnection(connection);
+        if (address(lightClient) == address(0)) {
+            revert IBCErrors.invalidAddress();
         }
 
         uint256 newClientId = ++_numClients; // Cache clientId to save SLOAD call

@@ -165,10 +165,10 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
         string memory portPrefix2 = "polyibc.eth2.";
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1);
-        dispatcherProxy.addNewConnection(connectionHops0[0], opLightClient);
-        dispatcherProxy.addNewConnection(connectionHops0[1], opLightClient);
-        dispatcherProxy.addNewConnection(connectionHops1[0], opLightClient);
-        dispatcherProxy.addNewConnection(connectionHops1[1], opLightClient);
+        dispatcherProxy.setNewConnection(connectionHops0[0], opLightClient);
+        dispatcherProxy.setNewConnection(connectionHops0[1], opLightClient);
+        dispatcherProxy.setNewConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.setNewConnection(connectionHops1[1], opLightClient);
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
         deployCodeTo("Mars.sol", abi.encode(address(dispatcherProxy)), targetMarsAddress);
         mars = Mars(payable(targetMarsAddress));
