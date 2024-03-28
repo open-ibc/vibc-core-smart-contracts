@@ -35,7 +35,7 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
 
     function test_closeChannelInit_mustOwner() public {
         Mars earth = new Mars(dispatcherProxy);
-        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedBySender()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedBySender.selector));
         earth.triggerChannelClose(channelId);
         assertNotEq0(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
     }
@@ -49,7 +49,7 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
     }
 
     function test_closeChannelConfirm_mustOwner() public {
-        vm.expectRevert(abi.encodeWithSignature("channelNotOwnedByPortAddress()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelNotOwnedByPortAddress.selector));
         dispatcherProxy.channelCloseConfirm(address(mars), "channel-999", validProof);
         assertNotEq0(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
     }
