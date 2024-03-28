@@ -144,6 +144,7 @@ library IBCErrors {
     error packetNotTimedOut();
     error invalidAddress();
     error notEnoughGas();
+    error invalidPortPrefix();
 
     // packet sequence related errors.
     error invalidPacketSequence();
