@@ -169,7 +169,7 @@ library IBCErrors {
     error invalidChannelType(string channelType);
 
     // related to clients
-    error lightClientNotFound(uint256 lightClientId);
+    error lightClientNotFound(string connection);
     error channelIdNotFound(bytes32 channelId);
     error invalidConnection(string connection);
 }

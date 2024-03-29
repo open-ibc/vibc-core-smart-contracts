@@ -26,7 +26,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         OpL2StateProof calldata proof,
         uint256 height,
         uint256 appHash,
-        uint256 clientId
+        string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended);
 
     /**
@@ -100,7 +100,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
-    function getOptimisticConsensusState(uint256 height, uint256 clientId)
+    function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);

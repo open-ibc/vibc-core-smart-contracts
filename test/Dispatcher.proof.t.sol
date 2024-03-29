@@ -80,13 +80,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
     function test_ack_packet() public {
         Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex");
 
-        // Plant a fake packet commitment so the ack checks go through
-        // Stdstore doesn't work for proxies so we have to use store
-        // use "forge inspect Dispatcher storage" to find the nested mapping slot
-        bytes32 slot1 = keccak256(abi.encode(address(mars), uint32(156)));
-        bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
-        bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
-        vm.store(address(dispatcherProxy), slot3, bytes32(uint256(1)));
+        _storeSendPacketCommitment(address(mars), ch0.channelId, 1, 1);
 
         // store connection in channelid to connection
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d300000000000000000000000000000000000000018); // Connection-0
@@ -140,7 +134,6 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
     function test_timeout_packet_revert() public {
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); // Connection-1
         _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
-
         // Timeout reverts since it is not yet implemented
         Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
         IbcPacket memory packet;
