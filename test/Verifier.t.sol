@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "../contracts/core/OptimisticProofVerifier.sol";
 import "../contracts/libs/Ibc.sol";
+import "../contracts/libs/IbcUtils.sol";
 import "forge-std/Test.sol";
-import "./Proof.base.t.sol";
+import "./utils/Proof.base.t.sol";
 
 contract OpProofVerifierStateUpdateTest is ProofBase {
     function test_verify_state_update_sucess() public view {
@@ -20,7 +21,8 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
         bytes32 trustedL1BlockHash = keccak256(RLPWriter.writeList(l1header.header));
         uint64 trustedL1BlockNumber = l1header.number;
 
-        OptimisticProofVerifier verifier = new OptimisticProofVerifier(address(0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990));
+        OptimisticProofVerifier verifier =
+            new OptimisticProofVerifier(address(0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990));
         vm.expectRevert("MerkleTrie: invalid large internal hash");
         verifier.verifyStateUpdate(l1header, validStateProof, apphash, trustedL1BlockHash, trustedL1BlockNumber);
     }

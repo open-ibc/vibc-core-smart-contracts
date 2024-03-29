@@ -2,7 +2,8 @@
 
 pragma solidity ^0.8.9;
 
-import {Ibc, IbcUtils, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {Ibc, UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 import {
     IbcUniversalPacketReceiver,
     IbcMwUser,

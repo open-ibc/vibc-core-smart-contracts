@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity 0.8.15;
 
 import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
@@ -121,7 +121,7 @@ contract OptimisticProofVerifier is IProofVerifier {
      * @dev Prove that a given state is not part of a proof
      * @dev this method is mainly used for packet timeouts, which is currently not implemented
      */
-    function verifyNonMembership(bytes32 appHash, bytes calldata, Ics23Proof calldata) external pure {
+    function verifyNonMembership(bytes32, bytes calldata, Ics23Proof calldata) external pure {
         revert MethodNotImplemented();
     }
 
