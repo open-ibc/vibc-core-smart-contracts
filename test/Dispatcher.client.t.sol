@@ -31,6 +31,6 @@ abstract contract DispatcherUpdateClientTestSuite is Base {
 contract DispatcherUpdateClientTest is DispatcherUpdateClientTestSuite {
     function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.setNewConnection("connection-0", opLightClient);
+        dispatcherProxy.setClientForConnection("connection-0", opLightClient);
     }
 }

@@ -24,7 +24,7 @@ contract DispatcherGasGriefing is Base {
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); // connection-1
             // in hex
         _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
-        dispatcherProxy.setNewConnection("connection-1", dummyLightClient);
+        dispatcherProxy.setClientForConnection("connection-1", dummyLightClient);
     }
 
     function test_GasGriefing() public {
