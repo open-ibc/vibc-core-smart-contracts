@@ -44,6 +44,8 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function setNewConnection(string calldata connection, LightClient lightClient) external;
 
+    function removeConnection(string calldata connection) external;
+
     /**
      * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
      * onChanOpenTry. If the callback succeeds, the dApp should return the selected version and the emitted event
