@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.15;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
@@ -13,7 +13,8 @@ import {
 } from "../interfaces/IbcMiddleware.sol";
 import {IbcReceiver} from "../interfaces/IbcReceiver.sol";
 import {IbcReceiverBaseUpgradeable} from "../interfaces/IbcReceiverUpgradeable.sol";
-import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
+import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 /**
@@ -229,11 +230,11 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
 
     /**
      * @dev Internal function to connect a channel only if the version matches what is expected.
-     * @param channelId The channel ID of the channel to connect
      * @param version The version string provided by the counterparty
      */
     function _connectChannel(bytes32 channelId, string calldata version)
         internal
+        pure
         returns (string memory checkedVersion)
     {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {

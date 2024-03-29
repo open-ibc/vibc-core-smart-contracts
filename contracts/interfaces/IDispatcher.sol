@@ -5,17 +5,8 @@ import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
 import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "./IbcReceiver.sol";
-import {
-    Channel,
-    ChannelEnd,
-    ChannelOrder,
-    IbcPacket,
-    ChannelState,
-    AckPacket,
-    IBCErrors,
-    IbcUtils,
-    Ibc
-} from "../libs/Ibc.sol";
+import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 import {ILightClient} from "./ILightClient.sol";
 
 interface IDispatcher is IbcDispatcher, IbcEventsEmitter {

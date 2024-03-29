@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Base} from "./Dispatcher.base.t.sol";
+import {Base} from "./utils/Dispatcher.base.t.sol";
 import {GasUsingMars} from "./mocks/GasUsingMars.sol";
-import {IbcEndpoint, ChannelEnd, IbcUtils, IbcPacket, IBCErrors} from "../contracts/libs/Ibc.sol";
-import {TestUtilsTest} from "./TestUtils.t.sol";
+import {IbcEndpoint, ChannelEnd, IbcPacket, IBCErrors} from "../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
+
+import {TestUtilsTest} from "./utils/TestUtils.t.sol";
 
 contract DispatcherGasGriefing is Base {
     IbcEndpoint src = IbcEndpoint("polyibc.bsc.58b604DB8886656695442374D8E940D814F2eDd4", "channel-99");
