@@ -62,14 +62,25 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         dispatcherProxy.acknowledgement(mars, packet, bytes("ack"), invalidProof);
     }
 
-    function test_Dispatcher_Prevenrts_nonOwner_AddConnection() public {
+    function test_Dispatcher_Prevents_nonOwner_SetConnection() public {
         vm.startPrank(notOwner);
         vm.expectRevert("Ownable: caller is not the owner");
         dispatcherProxy.setNewConnection("malicious-connection-1", opLightClient);
     }
 
+    function test_Dispatcher_Prevents_nonOwner_RemoveConnection() public {
+        vm.startPrank(notOwner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        dispatcherProxy.removeConnection(connectionHops0[0]);
+    }
+
     function test_addr0_channels_cannot_be_added() public {
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidAddress.selector));
         dispatcherProxy.setNewConnection(connectionHops0[0], LightClient(address(0)));
+    }
+
+    function test_Dispatcher_removeConnection() public {
+        dispatcherProxy.removeConnection(connectionHops0[0]);
+        assertEq(_getConnectiontoClientIdMapping(connectionHops0[0]), 0);
     }
 }
