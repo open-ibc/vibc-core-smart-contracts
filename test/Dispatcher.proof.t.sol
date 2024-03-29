@@ -133,6 +133,8 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
     }
 
     function test_timeout_packet_revert() public {
+        bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); // Connection-1
+        _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
         // Timeout reverts since it is not yet implemented
         Ics23Proof memory proof = load_proof("/test/payload/packet_commitment_proof.hex");
         IbcPacket memory packet;
@@ -141,7 +143,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
         packet.dest.channelId = ch1.channelId;
         packet.dest.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
         packet.src.portId = string(abi.encodePacked("polyibc.eth1.", IbcUtils.toHexStr(address(mars))));
-        packet.src.channelId = ch0.channelId;
+        packet.src.channelId = ch1.channelId;
         packet.sequence = 1;
 
         vm.expectRevert(abi.encodeWithSelector(ProofVerifier.MethodNotImplemented.selector));
