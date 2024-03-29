@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "../contracts/core/OptimisticLightClient.sol";
 import "../contracts/utils/DummyProofVerifier.sol";
-import "./Proof.base.t.sol";
+import "./utils/Proof.base.t.sol";
 
 contract OptimisticLightClientTest is ProofBase {
     OptimisticLightClient manager;
