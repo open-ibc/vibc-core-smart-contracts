@@ -95,10 +95,24 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         return _getLightClientFromConnection(connection).addOpConsensusState(l1header, proof, height, appHash);
     }
 
-    function setNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
-        _setNewConnection(connection, lightClient);
+    /**
+     * @notice Sets the specified `LightClient` for the given connection
+     * @notice Can either be used to either set a new client for a new connection, or to update an existing connection's
+     * client.
+     * @dev Only callable by the contract owner.
+     * @param connection The connection string identifying the connection.
+     * @param lightClient The address of the `LightClient` contract to be set.
+     */
+    function setClientForConnection(string calldata connection, LightClient lightClient) external onlyOwner {
+        _setClientForConnection(connection, lightClient);
     }
 
+    /**
+     * @notice Remove's the given connection's light client.
+     * @notice The conneciton will be unuseable after this operation until the client is set again.
+     * @dev Only callable by the contract owner.
+     * @param connection The connection string to remove the light client from.
+     */
     function removeConnection(string calldata connection) external onlyOwner {
         delete _connectionToLightClient[connection];
     }
@@ -562,7 +576,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         return _getLightClientFromConnection(connection).getState(height);
     }
 
-    function _setNewConnection(string calldata connection, LightClient lightClient) internal {
+    function _setClientForConnection(string calldata connection, LightClient lightClient) internal {
         if (bytes(connection).length == 0) {
             revert IBCErrors.invalidConnection("");
         }

@@ -24,8 +24,8 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         dummyLightClient = new DummyLightClient();
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
-        dispatcherProxy.setNewConnection(connectionHops0[0], dummyLightClient);
-        dispatcherProxy.setNewConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[0], opLightClient);
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
         deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
         mars = Mars(payable(targetMarsAddress));
@@ -66,14 +66,14 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
 
         // Now we change the client to the dummy client and the packet should go through since it circumvents the proof
-        dispatcherProxy.setNewConnection(connectionHops1[0], dummyLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient);
         dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
     }
 
     function test_Dispatcher_Prevents_nonOwner_SetConnection() public {
         vm.startPrank(notOwner);
         vm.expectRevert("Ownable: caller is not the owner");
-        dispatcherProxy.setNewConnection("malicious-connection-1", opLightClient);
+        dispatcherProxy.setClientForConnection("malicious-connection-1", opLightClient);
     }
 
     function test_Dispatcher_Prevents_nonOwner_RemoveConnection() public {
@@ -84,7 +84,7 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
 
     function test_addr0_channels_cannot_be_added() public {
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidAddress.selector));
-        dispatcherProxy.setNewConnection(connectionHops0[0], LightClient(address(0)));
+        dispatcherProxy.setClientForConnection(connectionHops0[0], LightClient(address(0)));
     }
 
     function test_Dispatcher_removeConnection() public {
