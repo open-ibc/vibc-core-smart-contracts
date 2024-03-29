@@ -156,10 +156,10 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
         super.setUp();
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
-        dispatcherProxy.setNewConnection(connectionHops0[0], opLightClient);
-        dispatcherProxy.setNewConnection(connectionHops0[1], opLightClient);
-        dispatcherProxy.setNewConnection(connectionHops1[0], opLightClient);
-        dispatcherProxy.setNewConnection(connectionHops1[1], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops0[0], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops0[1], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[1], opLightClient);
         mars = new Mars(dispatcherProxy);
     }
 }
