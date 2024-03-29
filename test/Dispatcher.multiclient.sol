@@ -58,10 +58,16 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         IbcEndpoint memory dest = IbcEndpoint(ch0.portId, ch0.channelId);
 
         IbcPacket memory packet = IbcPacket(src, dest, uint64(1), bytes("sendPacket"), Height(0, 0), 0);
+        _storeSendPacketCommitment(address(mars), packet.src.channelId, 1, 1);
+        bytes memory ackData = bytes.concat(keccak256(hex"22726573756c7422"));
 
         // OpProofverifier will cause acknowledgement to fail
         vm.expectRevert(abi.encodeWithSelector(ProofVerifier.InvalidProofKey.selector));
-        dispatcherProxy.acknowledgement(packet, bytes("ack"), invalidProof);
+        dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
+
+        // Now we change the client to the dummy client and the packet should go through since it circumvents the proof
+        dispatcherProxy.setNewConnection(connectionHops1[0], dummyLightClient);
+        dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
     }
 
     function test_Dispatcher_Prevents_nonOwner_SetConnection() public {
@@ -82,7 +88,19 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
     }
 
     function test_Dispatcher_removeConnection() public {
-        dispatcherProxy.removeConnection(connectionHops0[0]);
-        assertEq(_getConnectiontoClientIdMapping(connectionHops0[0]), 0);
+        Ics23Proof memory openChannelProof = load_proof("/test/payload/channel_confirm_pending_proof.hex");
+
+        // Set up valid connection from channel 1
+        dispatcherProxy.channelOpenConfirm(ch1, connectionHops1, ChannelOrder.NONE, false, ch0, openChannelProof);
+        IbcEndpoint memory src = IbcEndpoint(IbcUtils.addressToPortId("polyibc.eth1.", address(mars)), ch1.channelId);
+        IbcEndpoint memory dest = IbcEndpoint(ch0.portId, ch0.channelId);
+        IbcPacket memory packet = IbcPacket(src, dest, uint64(1), bytes("sendPacket"), Height(0, 0), 0);
+
+        // Remove connection to ensure packet can't be acked after removing light client
+        dispatcherProxy.removeConnection(connectionHops1[0]);
+        assertEq(_getConnectiontoClientIdMapping(connectionHops1[0]), 0);
+
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.lightClientNotFound.selector, connectionHops1[0]));
+        dispatcherProxy.acknowledgement(packet, bytes("ack"), openChannelProof);
     }
 }
