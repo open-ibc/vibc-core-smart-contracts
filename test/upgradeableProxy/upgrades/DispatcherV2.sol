@@ -19,9 +19,9 @@ import {
     ChannelState,
     AckPacket,
     IBCErrors,
-    IbcUtils,
     Ibc
 } from "../../../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../../../contracts/libs/IbcUtils.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 /**

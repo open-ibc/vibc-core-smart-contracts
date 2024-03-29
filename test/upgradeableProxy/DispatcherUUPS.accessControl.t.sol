@@ -7,7 +7,7 @@ import {IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
-import "../Dispatcher.base.t.sol";
+import "../utils/Dispatcher.base.t.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";

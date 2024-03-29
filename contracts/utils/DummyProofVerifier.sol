@@ -5,7 +5,8 @@ import {IProofVerifier, L1Header, OpL2StateProof, Ics23Proof} from "../interface
 
 /**
  * @title DummyProofVerifier
- * @dev A dummy implementation of the IProofVerifier interface for testing purposes. Does not actually verify any proofs.
+ * @dev A dummy implementation of the IProofVerifier interface for testing purposes. Does not actually verify any
+ * proofs.
  */
 contract DummyProofVerifier is IProofVerifier {
     function verifyStateUpdate(L1Header calldata, OpL2StateProof calldata, bytes32, bytes32, uint64) external pure {}

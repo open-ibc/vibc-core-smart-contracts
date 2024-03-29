@@ -15,7 +15,7 @@ import {Earth} from "../contracts/examples/Earth.sol";
 import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
-import {TestUtilsTest} from "./TestUtils.t.sol";
+import {TestUtilsTest} from "./utils/TestUtils.t.sol";
 
 struct ChannelSetting {
     ChannelOrder ordering;

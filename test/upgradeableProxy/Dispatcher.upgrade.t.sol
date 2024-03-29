@@ -2,13 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/console2.sol";
-import {DispatcherUpdateClientTestSuite} from "../Dispatcher.client.t.sol";
-import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher.proof.t.sol";
+import {DispatcherUpdateClientTestSuite} from "../Dispatcher/Dispatcher.client.t.sol";
+import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher/Dispatcher.proof.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
-import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher.t.sol";
-import {LocalEnd} from "../Dispatcher.base.t.sol";
-import {Base, ChannelHandshakeSetting} from "../Dispatcher.base.t.sol";
+import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher/Dispatcher.t.sol";
+import {LocalEnd} from "../utils/Dispatcher.base.t.sol";
+import {Base, ChannelHandshakeSetting} from "../utils/Dispatcher.base.t.sol";
 import {
     CounterParty, ChannelOrder, IbcEndpoint, IbcPacket, AckPacket, Ibc, Height
 } from "../../contracts/libs/Ibc.sol";

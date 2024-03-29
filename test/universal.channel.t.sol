@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "../contracts/libs/Ibc.sol";
+import "../contracts/libs/IbcUtils.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
@@ -9,7 +10,7 @@ import "../contracts/core/UniversalChannelHandler.sol";
 import "../contracts/examples/Mars.sol";
 import "../contracts/interfaces/IbcMiddleware.sol";
 import "../contracts/core/OptimisticLightClient.sol";
-import "./Dispatcher.base.t.sol";
+import "./utils/Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
 
 contract UniversalChannelTest is Base {
