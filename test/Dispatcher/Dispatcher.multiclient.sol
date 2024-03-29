@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import "../contracts/libs/Ibc.sol";
-import {Mars} from "../contracts/examples/Mars.sol";
+import "../../contracts/libs/Ibc.sol";
+import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
+import {Mars} from "../../contracts/examples/Mars.sol";
 import {DispatcherProofTestUtils} from "./Dispatcher.proof.t.sol";
-import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import {OptimisticLightClient} from "../contracts/core/OptimisticLightClient.sol";
-import {ILightClient} from "../contracts/interfaces/ILightClient.sol";
-import "../contracts/interfaces/IProofVerifier.sol";
+import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
+import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
+import {ILightClient} from "../../contracts/interfaces/ILightClient.sol";
+import "../../contracts/interfaces/IProofVerifier.sol";
 
 contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
     string[] connectionHops0 = ["dummy-connection-1", "dummy-connection-2"];

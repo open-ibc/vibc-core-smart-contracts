@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.15;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -13,17 +13,8 @@ import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import {
-    Channel,
-    ChannelEnd,
-    ChannelOrder,
-    IbcPacket,
-    ChannelState,
-    AckPacket,
-    IBCErrors,
-    IbcUtils,
-    Ibc
-} from "../libs/Ibc.sol";
+import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, IBCErrors, Ibc} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 
 /**
  * @title Dispatcher
