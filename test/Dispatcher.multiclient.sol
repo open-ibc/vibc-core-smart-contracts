@@ -24,8 +24,8 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         dummyLightClient = new DummyLightClient();
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
-        dispatcherProxy.setNewConnection(connectionHops0[0], dummyLightClient);
-        dispatcherProxy.setNewConnection(connectionHops1[0], opLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[0], opLightClient);
         mars = new Mars(dispatcherProxy);
     }
 
@@ -64,14 +64,14 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
         dispatcherProxy.acknowledgement(mars, packet, ackData, invalidProof);
 
         // Now we change the client to the dummy client and the packet should go through since it circumvents the proof
-        dispatcherProxy.setNewConnection(connectionHops1[0], dummyLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient);
         dispatcherProxy.acknowledgement(mars, packet, ackData, invalidProof);
     }
 
     function test_Dispatcher_Prevents_nonOwner_SetConnection() public {
         vm.startPrank(notOwner);
         vm.expectRevert("Ownable: caller is not the owner");
-        dispatcherProxy.setNewConnection("malicious-connection-1", opLightClient);
+        dispatcherProxy.setClientForConnection("malicious-connection-1", opLightClient);
     }
 
     function test_Dispatcher_Prevents_nonOwner_RemoveConnection() public {
@@ -82,7 +82,7 @@ contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
 
     function test_addr0_channels_cannot_be_added() public {
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidAddress.selector));
-        dispatcherProxy.setNewConnection(connectionHops0[0], LightClient(address(0)));
+        dispatcherProxy.setClientForConnection(connectionHops0[0], LightClient(address(0)));
     }
 
     function test_Dispatcher_removeConnection() public {
