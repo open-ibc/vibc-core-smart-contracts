@@ -43,7 +43,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         string calldata counterpartyPortId
     ) external;
 
-    function setNewConnection(string calldata connection, LightClient lightClient) external;
+    function setClientForConnection(string calldata connection, LightClient lightClient) external;
 
     function removeConnection(string calldata connection) external;
 
