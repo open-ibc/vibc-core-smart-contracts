@@ -54,8 +54,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
     mapping(bytes32 => string) private _channelIdToConnection;
-    mapping(string => uint256) private _connectionToClientId;
-    mapping(uint256 => LightClient) private _clientIdToLightClient;
+    mapping(string => LightClient) private _connectionToLightClient;
     uint256 private _numClients;
 
     //
@@ -88,13 +87,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         OpL2StateProof calldata proof,
         uint256 height,
         uint256 appHash,
-        uint256 clientId
+        string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        LightClient lightClient = _clientIdToLightClient[clientId];
-        if (address(lightClient) == address(0)) {
-            revert IBCErrors.lightClientNotFound(clientId);
-        }
-        return lightClient.addOpConsensusState(l1header, proof, height, appHash);
+        return _getLightClientFromConnection(connection).addOpConsensusState(l1header, proof, height, appHash);
     }
 
     function setNewConnection(string calldata connection, LightClient lightClient) external onlyOwner {
@@ -102,8 +97,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     function removeConnection(string calldata connection) external onlyOwner {
-        uint256 clientId = _connectionToClientId[connection];
-        delete _clientIdToLightClient[clientId];
+        delete _connectionToLightClient[connection];
     }
 
     /**
@@ -581,16 +575,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     // getOptimisticConsensusState
-    function getOptimisticConsensusState(uint256 height, uint256 clientId)
+    function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
-        LightClient lightClient = _clientIdToLightClient[clientId];
-        if (address(lightClient) == address(0)) {
-            revert IBCErrors.lightClientNotFound(clientId);
-        }
-        return lightClient.getState(height);
+        return _getLightClientFromConnection(connection).getState(height);
     }
 
     // verify an EVM address matches an IBC portId.
@@ -610,9 +600,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidAddress();
         }
 
-        uint256 newClientId = ++_numClients; // Cache clientId to save SLOAD call
-        _connectionToClientId[connection] = newClientId;
-        _clientIdToLightClient[newClientId] = lightClient;
+        _connectionToLightClient[connection] = lightClient;
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
@@ -696,13 +684,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     function _getLightClientFromConnection(string memory connection) internal view returns (LightClient lightClient) {
-        uint256 clientId = _connectionToClientId[connection];
-        if (clientId == 0) {
-            revert IBCErrors.invalidConnection(connection);
-        }
-        lightClient = _clientIdToLightClient[clientId];
+        lightClient = _connectionToLightClient[connection];
         if (address(lightClient) == address(0)) {
-            revert IBCErrors.lightClientNotFound(clientId);
+            revert IBCErrors.lightClientNotFound(connection);
         }
     }
 }
