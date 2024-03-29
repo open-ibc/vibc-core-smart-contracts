@@ -73,7 +73,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         connectionHops = new string[](2);
         connectionHops[0] = newConnectionId();
         connectionHops[1] = newConnectionId();
-        dispatcherProxy.setNewConnection(connectionHops[0], new DummyLightClient());
+        dispatcherProxy.setClientForConnection(connectionHops[0], new DummyLightClient());
 
         mw1 = new GeneralMiddleware(1 << 1, address(ucHandler));
         mw2 = new GeneralMiddleware(1 << 2, address(ucHandler));

@@ -119,7 +119,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
-        dispatcherProxy.setNewConnection(connectionHops[0], dummyLightClient);
+        dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
