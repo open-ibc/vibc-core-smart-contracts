@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.15;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
@@ -12,7 +12,8 @@ import {
     IbcMwEventsEmitter
 } from "../interfaces/IbcMiddleware.sol";
 import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
-import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
+import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket} from "../libs/Ibc.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 
 /**
  * @title Universal Channel Handler
@@ -174,11 +175,15 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
      * @param channelId The channel ID of the opened channel
      * @param counterpartyVersion The version string provided by the counterparty
      */
-    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external view onlyIbcDispatcher {
         _connectChannel(channelId, counterpartyVersion);
     }
 
-    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
+    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion)
+        external
+        view
+        onlyIbcDispatcher
+    {
         _connectChannel(channelId, counterpartyVersion);
     }
 
@@ -202,10 +207,9 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     /**
      * @dev Internal function to connect a channel only if the version matches what is expected.
-     * @param channelId The channel ID of the channel to connect
      * @param version The version string provided by the counterparty
      */
-    function _connectChannel(bytes32 channelId, string calldata version) internal {
+    function _connectChannel(bytes32, string calldata version) internal pure {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }

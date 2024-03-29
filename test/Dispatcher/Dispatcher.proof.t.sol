@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.15;
 
-import "../contracts/libs/Ibc.sol";
-import {Base} from "./Dispatcher.base.t.sol";
-import {Dispatcher} from "../contracts/core/Dispatcher.sol";
-import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
-import "../contracts/examples/Mars.sol";
-import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import "../contracts/core/OptimisticLightClient.sol";
-import "./Proof.base.t.sol";
+import "../../contracts/libs/Ibc.sol";
+import "../../contracts/libs/IbcUtils.sol";
+import {Base} from "../utils/Dispatcher.base.t.sol";
+import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
+import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
+import "../../contracts/examples/Mars.sol";
+import {IbcDispatcher, IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
+import "../../contracts/core/OptimisticLightClient.sol";
+import "../utils/Proof.base.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
-import {ChannelHandshakeSetting} from "./Dispatcher.base.t.sol";
-import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
+import {ChannelHandshakeSetting} from "../utils/Dispatcher.base.t.sol";
+import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {DispatcherSendPacketTestSuite, ChannelOpenTestBaseSetup} from "./Dispatcher.t.sol";
 
 contract DispatcherProofTestUtils is Base {
