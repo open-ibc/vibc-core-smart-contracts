@@ -35,10 +35,10 @@ abstract contract UpgradeTestUtils {
 }
 
 contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
-    uint32 nextSequenceSendSlot = 104;
-    uint32 sendPacketCommitmentSlot = 107;
-    uint32 nextSequenceAckSlot = 106;
-    uint32 nextSequenceRecvSlot = 105;
+    uint32 nextSequenceSendSlot = 153;
+    uint32 sendPacketCommitmentSlot = 156;
+    uint32 nextSequenceAckSlot = 155;
+    uint32 nextSequenceRecvSlot = 154;
     IbcPacket[3] packets;
     string payload = "msgPayload";
     bytes packet = abi.encodePacked(payload);
