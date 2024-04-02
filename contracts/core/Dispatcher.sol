@@ -32,6 +32,8 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  *     which can be relayed to a rollup module on the Polymerase chain
  */
 contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
+    uint256[49] private __gap;
+
     //
     // fields
     //
@@ -53,7 +55,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
 
-    LightClient _lightClient;
+    LightClient _lightClient; // Can't be set to immutable since it needs to be called in the initializer; not the
+
+    //////// NEW storage
+    mapping(bytes32 => string) private _channelIdToConnection;
+
+    // constructor
 
     //
     // methods
@@ -584,6 +591,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _nextSequenceSend[address(portAddress)][local.channelId] = 1;
         _nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         _nextSequenceAck[address(portAddress)][local.channelId] = 1;
+        _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for finding
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
