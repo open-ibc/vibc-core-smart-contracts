@@ -32,7 +32,7 @@ contract DispatcherUUPSAccessControl is Base {
         assertEq(address(dispatcherImplementation2), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix);
         assertEq(
-            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))),
+            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(159)))))),
             address(dummyConsStateManager)
         );
     }
@@ -44,7 +44,7 @@ contract DispatcherUUPSAccessControl is Base {
         assertEq(address(dispatcherImplementation3), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix2);
         assertEq(
-            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(110)))))), address(lightClient2)
+            address(uint160(uint256(vm.load(address(dispatcherProxy), bytes32(uint256(159)))))), address(lightClient2)
         );
     }
 

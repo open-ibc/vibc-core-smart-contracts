@@ -31,6 +31,8 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
  *     which can be relayed to a rollup module on the Polymerase chain
  */
 contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
+    uint256[49] private __gap;
+
     //
     // fields
     //
