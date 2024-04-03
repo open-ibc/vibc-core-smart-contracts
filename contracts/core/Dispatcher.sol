@@ -55,7 +55,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     // keep track of outbound ack packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
 
-    LightClient _lightClient;
+    LightClient _lightClient; // Can't be set to immutable since it needs to be called in the initializer; not the
+    // constructor
 
     //
     // methods
