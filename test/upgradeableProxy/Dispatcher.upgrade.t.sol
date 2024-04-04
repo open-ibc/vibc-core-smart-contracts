@@ -10,7 +10,7 @@ import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} 
 import {LocalEnd} from "../Dispatcher.base.t.sol";
 import {Base, ChannelHandshakeSetting} from "../Dispatcher.base.t.sol";
 import {
-    CounterParty,
+    ChannelEnd,
     ChannelOrder,
     IbcEndpoint,
     IbcPacket,
@@ -59,7 +59,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 re.version = versions[j];
@@ -122,7 +122,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+        _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
         LightClient newLightClient = opLightClient;
         // Add state to test if impacted by upgrade

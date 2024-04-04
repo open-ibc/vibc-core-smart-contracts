@@ -21,7 +21,7 @@ abstract contract ChannelHandshakeUtils is Base {
     string portId;
     LocalEnd _local;
     Mars mars;
-    CounterParty _remote;
+    ChannelEnd _remote;
 
     function createSettings(bool localInitiate, bool isProofValid)
         internal
@@ -59,7 +59,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 // remoteEnd has no channelId or version if localEnd is the initiator
@@ -74,7 +74,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 re.version = versions[j];
                 // explicit version
                 le.versionCall = versions[j];
@@ -96,7 +96,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 re.version = versions[j];
@@ -114,7 +114,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 vm.expectEmit(true, true, true, true);
@@ -133,7 +133,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 vm.expectRevert(DummyLightClient.InvalidDummyMembershipProof.selector);
@@ -149,7 +149,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 // no remote version applied in openChannel
                 channelOpenInit(le, re, settings[i], true);
                 channelOpenTry(le, re, settings[i], true);
@@ -171,7 +171,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 // no remote version applied in openChannel
                 channelOpenInit(le, re, settings[i], true);
                 channelOpenTry(le, re, settings[i], true);
@@ -190,7 +190,7 @@ contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+        _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
     }
 }
 
@@ -205,7 +205,7 @@ contract ChannelOpenTestBaseSetup is Base {
 
     LocalEnd _local;
     LocalEnd _localRevertingMars;
-    CounterParty _remote;
+    ChannelEnd _remote;
     Mars mars;
     RevertingBytesMars revertingBytesMars;
 
@@ -225,7 +225,7 @@ contract ChannelOpenTestBaseSetup is Base {
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
         _localRevertingMars =
             LocalEnd(revertingBytesMars, revertingBytesMarsPortId, channelId, connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+        _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
         vm.stopPrank();
         channelOpenInit(_local, _remote, setting, true);
@@ -561,10 +561,10 @@ contract DappRevertTests is Base {
     RevertingStringMars revertingStringMars;
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
-    CounterParty ch0 =
-        CounterParty("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
-    CounterParty ch1 =
-        CounterParty("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
+    ChannelEnd ch0 =
+        ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
+    ChannelEnd ch1 =
+        ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) =

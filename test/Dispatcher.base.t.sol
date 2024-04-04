@@ -73,7 +73,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenInit(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenInit(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         vm.startPrank(address(le.receiver));
@@ -95,7 +95,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenTry(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenTry(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         if (expPass) {
@@ -110,9 +110,9 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
                 re.channelId
             );
         }
-        CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
+        ChannelEnd memory cp = ChannelEnd(re.portId, re.channelId, re.version);
         dispatcherProxy.channelOpenTry(
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             s.ordering,
             s.feeEnabled,
             le.connectionHops,
@@ -129,7 +129,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenAck(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenAck(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         if (expPass) {
@@ -137,7 +137,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenAck(
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,
@@ -156,7 +156,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      */
     function channelOpenConfirm(
         LocalEnd memory le,
-        CounterParty memory re,
+        ChannelEnd memory re,
         ChannelHandshakeSetting memory s,
         bool expPass
     ) public {
@@ -165,7 +165,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenConfirm(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenConfirm(
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,

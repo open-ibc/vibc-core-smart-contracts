@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import {IBCErrors, AckPacket, ChannelOrder, CounterParty} from "../libs/Ibc.sol";
+import {IBCErrors, AckPacket, ChannelOrder, ChannelEnd} from "../libs/Ibc.sol";
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 

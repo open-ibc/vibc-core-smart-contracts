@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import {Height, CounterParty, ChannelOrder, AckPacket} from "../libs/Ibc.sol";
+import {Height, ChannelEnd, ChannelOrder, AckPacket} from "../libs/Ibc.sol";
 import {IbcChannelReceiver} from "./IbcReceiver.sol";
 import {Ics23Proof} from "./ProofVerifier.sol";
 

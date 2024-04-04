@@ -12,7 +12,7 @@ import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
 import {IDispatcher} from "../../../contracts/interfaces/IDispatcher.sol";
 import {
     Channel,
-    CounterParty,
+    ChannelEnd,
     ChannelOrder,
     IbcPacket,
     ChannelState,
@@ -130,11 +130,11 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenTry(
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         if (bytes(counterparty.portId).length == 0) {
@@ -172,11 +172,11 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
     function channelOpenAck(
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         _lightClient.verifyMembership(
@@ -205,11 +205,11 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * ChannelOpenConfirm
      */
     function channelOpenConfirm(
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         _lightClient.verifyMembership(
@@ -549,11 +549,11 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
     function _connectChannel(
         IbcChannelReceiver portAddress,
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty
+        ChannelEnd calldata counterparty
     ) internal {
         // Register port and channel mapping
         // TODO: check duplicated channel registration?

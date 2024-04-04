@@ -22,8 +22,8 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     Mars mars;
     OptimisticLightClient consensusStateManager;
 
-    CounterParty ch0;
-    CounterParty ch1;
+    ChannelEnd ch0;
+    ChannelEnd ch1;
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
 
@@ -150,7 +150,7 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
 
         portId1 = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";
         portId2 = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
-        ch0 = CounterParty(portId1, IbcUtils.toBytes32("channel-0"), "1.0");
-        ch1 = CounterParty(portId2, IbcUtils.toBytes32("channel-1"), "1.0");
+        ch0 = ChannelEnd(portId1, IbcUtils.toBytes32("channel-0"), "1.0");
+        ch1 = ChannelEnd(portId2, IbcUtils.toBytes32("channel-1"), "1.0");
     }
 }

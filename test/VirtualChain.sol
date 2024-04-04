@@ -200,7 +200,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             );
         }
         dispatcherProxy.channelOpenTry(
-            CounterParty(
+            ChannelEnd(
                 IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)),
                 setting.channelId,
                 setting.version
@@ -208,7 +208,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             setting.ordering,
             setting.feeEnabled,
             connectionHops,
-            CounterParty(cpPortId, cpChanId, setting.version),
+            ChannelEnd(cpPortId, cpChanId, setting.version),
             setting.proof
         );
     }
@@ -238,13 +238,13 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenAck(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenAck(
-            CounterParty(
+            ChannelEnd(
                 IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)), chanId, setting.version
             ),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
-            CounterParty(cpPortId, cpChanId, setting.version),
+            ChannelEnd(cpPortId, cpChanId, setting.version),
             setting.proof
         );
     }
@@ -274,20 +274,20 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenConfirm(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenConfirm(
-            CounterParty(
+            ChannelEnd(
                 IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)), chanId, setting.version
             ),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
-            CounterParty(cpPortId, cpChanId, setting.version),
+            ChannelEnd(cpPortId, cpChanId, setting.version),
             setting.proof
         );
     }
 
     // Converts a local dApp address on this virtual chain to a Counterparty struct for a remote chain
-    function localEndToCounterparty(address localEnd) external view returns (CounterParty memory) {
-        return CounterParty(portIds[localEnd], channelIds[localEnd][address(this)], "");
+    function localEndToCounterparty(address localEnd) external view returns (ChannelEnd memory) {
+        return ChannelEnd(portIds[localEnd], channelIds[localEnd][address(this)], "");
     }
 
     function setChannelId(IbcChannelReceiver localEnd, IbcChannelReceiver remoteEnd, bytes32 channelId) external {

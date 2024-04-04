@@ -12,7 +12,7 @@ import {
     IbcMwEventsEmitter
 } from "../interfaces/IbcMiddleware.sol";
 import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
-import {ChannelOrder, CounterParty, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
+import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
 contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
     bytes32[] public connectedChannels;
