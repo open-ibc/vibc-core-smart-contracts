@@ -528,10 +528,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //     isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
     // }
 
-    function _getAddressFromPort(string calldata port) internal view returns (address) {
-        return Ibc._hexStrToAddress(port[portPrefixLen:]);
-    }
-
     // Prerequisite: must verify sender is authorized to send packet on the channel
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
         // current packet sequence
@@ -600,5 +596,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             // TODO: check timeoutHeight.revision_number?
             || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
         );
+    }
+
+    function _getAddressFromPort(string calldata port) internal view returns (address addr) {
+        addr = Ibc._hexStrToAddress(port[portPrefixLen:]);
     }
 }

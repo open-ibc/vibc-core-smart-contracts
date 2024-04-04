@@ -76,6 +76,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     function channelOpenInit(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
+        vm.startPrank(address(le.receiver));
         if (expPass) {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenInit(
@@ -83,6 +84,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             );
         }
         dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        vm.stopPrank();
     }
 
     /**

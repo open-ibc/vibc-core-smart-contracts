@@ -32,6 +32,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
 
         // since this is open chann init, the proof is not used. so use an invalid one
+        vm.prank(address(mars));
         dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
@@ -144,34 +145,11 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1, consensusStateManager);
 
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
-        Mars marsTemplate = new Mars(dispatcherProxy);
         deployCodeTo("Mars.sol", abi.encode(address(dispatcherProxy)), targetMarsAddress);
-        // vm.etch(targetMarsAddress, address(marsTemplate).code);
-        // vm.store(targetMarsAddress, bytes32(uint256(1)), bytes32(uint256(uint160(address(dispatcherProxy)))));
-        // vm.store(targetMarsAddress, bytes32(uint256(0)), bytes32(uint256(uint160(address(dispatcherProxy)))));
+        mars = Mars(payable(targetMarsAddress));
 
-        Mars mars = Mars(payable(targetMarsAddress));
-        // mars = new Mars(dispatcherProxy);
-        // mars = Mars()
-
-        // CounterParty ch0 = CounterParty(
-        //     "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0"
-        // );
-        // CounterParty ch1 = CounterParty(
-        //     "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0"
-        // );
-
-        // portId1 = IbcUtils.addressToPortId(portPrefix1, address(mars));
-        // portId2 = IbcUtils.addressToPortId(portPrefix2, address(mars));
         portId1 = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";
         portId2 = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
-        console2.log("portId1 ", portId1);
-        console2.log("portId2 ", portId2);
-        console2.log("owner", address(mars.dispatcher()), "dispatcher", address(dispatcherProxy));
-        console2.logBytes32(vm.load(address(mars), bytes32(uint256(0))));
-        console2.logBytes32(vm.load(address(marsTemplate), bytes32(uint256(0))));
-        console2.logBytes32(vm.load(address(mars), bytes32(uint256(1))));
-        console2.logBytes32(vm.load(address(marsTemplate), bytes32(uint256(1))));
         ch0 = CounterParty(portId1, IbcUtils.toBytes32("channel-0"), "1.0");
         ch1 = CounterParty(portId2, IbcUtils.toBytes32("channel-1"), "1.0");
     }

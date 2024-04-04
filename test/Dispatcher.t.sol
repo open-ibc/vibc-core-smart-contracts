@@ -197,6 +197,7 @@ contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
 // This Base contract provides an open channel for sub-contract tests
 contract ChannelOpenTestBaseSetup is Base {
     string portId;
+    string revertingBytesMarsPortId;
     string invalidPortId = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
@@ -219,12 +220,16 @@ contract ChannelOpenTestBaseSetup is Base {
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
+        revertingBytesMarsPortId = IbcUtils.addressToPortId(portPrefix, address(revertingBytesMars));
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
-        _localRevertingMars = LocalEnd(revertingBytesMars, portId, channelId, connectionHops, "1.0", "1.0");
+        _localRevertingMars =
+            LocalEnd(revertingBytesMars, revertingBytesMarsPortId, channelId, connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
+        vm.stopPrank();
         channelOpenInit(_local, _remote, setting, true);
+        vm.startPrank(relayer);
         channelOpenTry(_localRevertingMars, _remote, setting, true);
 
         channelOpenAck(_local, _remote, setting, true);
@@ -440,7 +445,23 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature("receiverNotOriginPacketSender()"));
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
+        dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
+    }
+
+    function test_misformattedPort() public {
+        Mars earth = new Mars(dispatcherProxy);
+        string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
+        IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
+
+        sendPacket();
+
+        // another valid packet but not the same port
+        IbcPacket memory packetEarth = sentPacket;
+        packetEarth.src = earthEnd;
+        packetEarth.src.portId = string(bytes.concat(bytes(portPrefix), bytes32(uint256(uint160(vm.addr(1))))));
+
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidHexStringLength.selector));
         dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
     }
 
@@ -497,7 +518,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
     }
 
     // cannot timeout packets if original packet port doesn't match current port
-    function test_invalidPort() public {
+    function test_invalidPort_123a() public {
         Mars earth = new Mars(dispatcherProxy);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
@@ -508,7 +529,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(IBCErrors.receiverNotIntendedPacketDestination.selector);
+        vm.expectRevert(IBCErrors.packetCommitmentNotFound.selector);
         dispatcherProxy.timeout(packetEarth, validProof);
     }
 
@@ -649,6 +670,7 @@ contract DappRevertTests is Base {
 
     function test_ibc_channel_open_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
+        vm.prank(address(revertingStringMars));
         emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
@@ -657,6 +679,7 @@ contract DappRevertTests is Base {
 
     function test_ibc_channel_ack_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
+        ch0.portId = IbcUtils.addressToPortId(portPrefix, address(revertingStringMars));
         emit ChannelOpenAckError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
         );

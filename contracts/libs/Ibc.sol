@@ -5,7 +5,6 @@ pragma solidity ^0.8.9;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
 import {Base64} from "base64/base64.sol";
-import {console2} from "forge-std/console2.sol";
 
 /**
  * Ibc.sol
@@ -286,7 +285,6 @@ library Ibc {
      * hexStr is case-insensitive.
      */
     function _hexStrToAddress(string memory hexStr) external pure returns (address addr) {
-        console2.log("length", bytes(hexStr).length);
         if (bytes(hexStr).length != 40) {
             revert IBCErrors.invalidHexStringLength();
         }

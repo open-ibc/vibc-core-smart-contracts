@@ -10,7 +10,14 @@ import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} 
 import {LocalEnd} from "../Dispatcher.base.t.sol";
 import {Base, ChannelHandshakeSetting} from "../Dispatcher.base.t.sol";
 import {
-    CounterParty, ChannelOrder, IbcEndpoint, IbcPacket, AckPacket, Ibc, Height
+    CounterParty,
+    ChannelOrder,
+    IbcEndpoint,
+    IbcPacket,
+    AckPacket,
+    Ibc,
+    IbcUtils,
+    Height
 } from "../../contracts/libs/Ibc.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -113,6 +120,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcherProxy);
+        portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 

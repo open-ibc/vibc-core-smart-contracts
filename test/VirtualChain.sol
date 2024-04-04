@@ -167,9 +167,8 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
                 remoteChain.portIds(address(remoteEnd))
             );
         }
-        dispatcherProxy.channelOpenInit(
-            setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId
-        );
+        vm.prank(address(ucHandler));
+        dispatcherProxy.channelOpenInit(setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId);
     }
 
     function channelOpenTry(
@@ -201,7 +200,11 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             );
         }
         dispatcherProxy.channelOpenTry(
-            CounterParty(setting.portId, setting.channelId, setting.version),
+            CounterParty(
+                IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)),
+                setting.channelId,
+                setting.version
+            ),
             setting.ordering,
             setting.feeEnabled,
             connectionHops,
@@ -235,7 +238,9 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenAck(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenAck(
-            CounterParty(setting.portId, chanId, setting.version),
+            CounterParty(
+                IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)), chanId, setting.version
+            ),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
@@ -269,7 +274,9 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenConfirm(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenConfirm(
-            CounterParty(setting.portId, chanId, setting.version),
+            CounterParty(
+                IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)), chanId, setting.version
+            ),
             connectionHops,
             setting.ordering,
             setting.feeEnabled,
