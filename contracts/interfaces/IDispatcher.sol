@@ -33,7 +33,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenInit(
-        IbcChannelReceiver portAddress,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,

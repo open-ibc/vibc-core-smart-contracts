@@ -8,7 +8,6 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
-import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/OpProofVerifier.sol";
@@ -83,9 +82,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
                 address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
             );
         }
-        dispatcherProxy.channelOpenInit(
-            le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId
-        );
+        dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
     }
 
     /**

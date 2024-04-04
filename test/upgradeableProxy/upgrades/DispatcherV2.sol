@@ -102,7 +102,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenInit(
-        IbcChannelReceiver receiver,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -113,16 +112,15 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        (bool success, bytes memory data) = _callIfContract(
-            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version)
-        );
+        (bool success, bytes memory data) =
+            _callIfContract(msg.sender, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version));
 
         if (success) {
             emit ChannelOpenInit(
-                address(receiver), abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
+                msg.sender, abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
             );
         } else {
-            emit ChannelOpenInitError(address(receiver), data);
+            emit ChannelOpenInitError(msg.sender, data);
         }
     }
 

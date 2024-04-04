@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "../contracts/utils/DummyProofVerifier.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/Dispatcher.sol";
-import "../contracts/examples/Mars.sol";
+import {Mars} from "../contracts/examples/Mars.sol";
 import {IDispatcher} from "../contracts/core/Dispatcher.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../contracts/core/OpProofVerifier.sol";

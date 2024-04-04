@@ -5,6 +5,7 @@ pragma solidity ^0.8.9;
 import {IBCErrors, AckPacket, ChannelOrder, CounterParty} from "../libs/Ibc.sol";
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
+import {console2} from "forge-std/Console2.sol";
 
 contract Mars is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
@@ -71,6 +72,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     }
 
     function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external virtual onlyIbcDispatcher {
+        console2.log("dispatcher", address(dispatcher));
         _connectChannel(channelId, counterpartyVersion);
     }
 

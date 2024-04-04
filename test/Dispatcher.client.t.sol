@@ -7,7 +7,6 @@ import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 

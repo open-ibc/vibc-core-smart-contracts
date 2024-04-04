@@ -24,7 +24,6 @@ interface IbcPacketSender {
  */
 interface IbcDispatcher is IbcPacketSender {
     function channelOpenInit(
-        IbcChannelReceiver receiver,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,

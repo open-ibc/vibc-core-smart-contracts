@@ -4,9 +4,15 @@ pragma solidity ^0.8.13;
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
+import {IbcReceiver, IbcReceiverBase} from "../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import "../contracts/examples/Mars.sol";
+import {
+    Mars,
+    RevertingBytesMars,
+    PanickingMars,
+    RevertingEmptyMars,
+    RevertingStringMars
+} from "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
@@ -535,9 +541,9 @@ contract DappRevertTests is Base {
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
     CounterParty ch0 =
-        CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
+        CounterParty("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
     CounterParty ch1 =
-        CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
+        CounterParty("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) =
@@ -552,17 +558,13 @@ contract DappRevertTests is Base {
         address nonDappAddr = vm.addr(1);
 
         emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
-        dispatcherProxy.channelOpenInit(
-            IbcChannelReceiver(nonDappAddr), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
         emit ChannelOpenInitError(address(earth), "");
-        dispatcherProxy.channelOpenInit(
-            IbcChannelReceiver(address(earth)), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_recv_packet_callback_revert_and_panic() public {
@@ -650,9 +652,7 @@ contract DappRevertTests is Base {
         emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
-        dispatcherProxy.channelOpenInit(
-            revertingStringMars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_ibc_channel_ack_dapp_revert() public {

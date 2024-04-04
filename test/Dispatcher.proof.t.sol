@@ -5,7 +5,7 @@ import "../contracts/libs/Ibc.sol";
 import {Base} from "./Dispatcher.base.t.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
-import "../contracts/examples/Mars.sol";
+import {Mars} from "../contracts/examples/Mars.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Proof.base.t.sol";
@@ -14,13 +14,16 @@ import {stdStorage, StdStorage} from "forge-std/Test.sol";
 abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     using stdStorage for StdStorage;
 
+    string portPrefix1;
+    string portPrefix2;
+    string portId1;
+    string portId2;
+
     Mars mars;
     OptimisticLightClient consensusStateManager;
 
-    CounterParty ch0 =
-        CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
-    CounterParty ch1 =
-        CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
+    CounterParty ch0;
+    CounterParty ch1;
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
 
@@ -29,7 +32,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
 
         // since this is open chann init, the proof is not used. so use an invalid one
-        dispatcherProxy.channelOpenInit(mars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
     function test_ibc_channel_open_try() public {
@@ -41,7 +44,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         dispatcherProxy.channelOpenTry(ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
-    function test_ibc_channel_ack() public {
+    function test_ibc_channel_ack_123_a() public {
         Ics23Proof memory proof = load_proof("/test/payload/channel_ack_pending_proof.hex");
 
         vm.expectEmit(true, true, true, true);
@@ -134,9 +137,42 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
 contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
     function setUp() public override {
         super.setUp();
+
+        portPrefix1 = "polyibc.eth1.";
+        portPrefix2 = "polyibc.eth2.";
         consensusStateManager = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        (dispatcherProxy, dispatcherImplementation) =
-            deployDispatcherProxyAndImpl("polyibc.eth1.", consensusStateManager);
-        mars = new Mars(dispatcherProxy);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1, consensusStateManager);
+
+        address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
+        Mars marsTemplate = new Mars(dispatcherProxy);
+        deployCodeTo("Mars.sol", abi.encode(address(dispatcherProxy)), targetMarsAddress);
+        // vm.etch(targetMarsAddress, address(marsTemplate).code);
+        // vm.store(targetMarsAddress, bytes32(uint256(1)), bytes32(uint256(uint160(address(dispatcherProxy)))));
+        // vm.store(targetMarsAddress, bytes32(uint256(0)), bytes32(uint256(uint160(address(dispatcherProxy)))));
+
+        Mars mars = Mars(payable(targetMarsAddress));
+        // mars = new Mars(dispatcherProxy);
+        // mars = Mars()
+
+        // CounterParty ch0 = CounterParty(
+        //     "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0"
+        // );
+        // CounterParty ch1 = CounterParty(
+        //     "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0"
+        // );
+
+        // portId1 = IbcUtils.addressToPortId(portPrefix1, address(mars));
+        // portId2 = IbcUtils.addressToPortId(portPrefix2, address(mars));
+        portId1 = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";
+        portId2 = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
+        console2.log("portId1 ", portId1);
+        console2.log("portId2 ", portId2);
+        console2.log("owner", address(mars.dispatcher()), "dispatcher", address(dispatcherProxy));
+        console2.logBytes32(vm.load(address(mars), bytes32(uint256(0))));
+        console2.logBytes32(vm.load(address(marsTemplate), bytes32(uint256(0))));
+        console2.logBytes32(vm.load(address(mars), bytes32(uint256(1))));
+        console2.logBytes32(vm.load(address(marsTemplate), bytes32(uint256(1))));
+        ch0 = CounterParty(portId1, IbcUtils.toBytes32("channel-0"), "1.0");
+        ch1 = CounterParty(portId2, IbcUtils.toBytes32("channel-1"), "1.0");
     }
 }
