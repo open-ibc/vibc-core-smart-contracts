@@ -20,12 +20,13 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
     function triggerChannelInit(
+        string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external onlyOwner {
-        dispatcher.channelOpenInit(supportedVersions[0], ordering, feeEnabled, connectionHops, counterpartyPortId);
+        dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
     }
 
     function onRecvPacket(IbcPacket memory packet)

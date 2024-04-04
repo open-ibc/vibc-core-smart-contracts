@@ -48,6 +48,16 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
         if (!channelFound) revert ChannelNotFound();
     }
 
+    function openChannel(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external onlyOwner {
+        dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+    }
+
     function sendUniversalPacket(
         bytes32 channelId,
         bytes32 destPortAddr,
