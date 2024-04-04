@@ -113,7 +113,6 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         }
         CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
         dispatcherProxy.channelOpenTry(
-            le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             s.ordering,
             s.feeEnabled,
@@ -139,7 +138,6 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenAck(
-            le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
@@ -168,7 +166,6 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenConfirm(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenConfirm(
-            le.receiver,
             CounterParty(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,

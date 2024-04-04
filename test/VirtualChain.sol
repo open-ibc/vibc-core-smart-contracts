@@ -201,7 +201,6 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             );
         }
         dispatcherProxy.channelOpenTry(
-            localEnd,
             CounterParty(setting.portId, setting.channelId, setting.version),
             setting.ordering,
             setting.feeEnabled,
@@ -236,7 +235,6 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenAck(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenAck(
-            localEnd,
             CounterParty(setting.portId, chanId, setting.version),
             connectionHops,
             setting.ordering,
@@ -271,7 +269,6 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             emit ChannelOpenConfirm(address(localEnd), chanId);
         }
         dispatcherProxy.channelOpenConfirm(
-            localEnd,
             CounterParty(setting.portId, chanId, setting.version),
             connectionHops,
             setting.ordering,

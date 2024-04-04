@@ -13,10 +13,10 @@ import {LightClient} from "../../../contracts/interfaces/LightClient.sol";
  */
 
 contract DispatcherV2Initializable is DispatcherV2 {
-    function initialize(string memory initPortPrefix, LightClient _lightClient) public override reinitializer(2) {
+    function initialize(string memory initPortPrefix, LightClient lightClient) public override reinitializer(2) {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
-        lightClient = _lightClient;
+        _lightClient = lightClient;
     }
 }

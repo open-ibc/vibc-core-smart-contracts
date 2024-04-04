@@ -47,7 +47,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenTry(
-        IbcChannelReceiver portAddress,
         CounterParty calldata local,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -61,7 +60,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
      * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
     function channelOpenAck(
-        IbcChannelReceiver portAddress,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -76,7 +74,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
      * ChannelOpenConfirm
      */
     function channelOpenConfirm(
-        IbcChannelReceiver portAddress,
         CounterParty calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
@@ -89,23 +86,16 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external;
 
-    function acknowledgement(
-        IbcPacketReceiver receiver,
-        IbcPacket calldata packet,
-        bytes calldata ack,
-        Ics23Proof calldata proof
-    ) external;
+    function acknowledgement(IbcPacket calldata packet, bytes calldata ack, Ics23Proof calldata proof) external;
 
-    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external;
+    function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
-    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external;
+    function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
     function getOptimisticConsensusState(uint256 height)
         external
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);
-
-    function portIdAddressMatch(address addr, string calldata portId) external view returns (bool isMatch);
 
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel);
 }

@@ -302,7 +302,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Timeout(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcherProxy.timeout(v1.ucHandler, recvPacket, validProof);
+            v1.dispatcherProxy.timeout(recvPacket, validProof);
 
             // verify timeout packet received by Earth on chain A
             (gotChannelId, gotUcPacket) = v1.earth.timeoutPackets(packetSeq - 1);
@@ -388,7 +388,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
             emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
-            v2.dispatcherProxy.recvPacket(v2.ucHandler, recvPacket, validProof);
+            v2.dispatcherProxy.recvPacket(recvPacket, validProof);
 
             // verify packet received by Earth on chain B
             (gotChannelId, gotUcPacket) = v2.earth.recvedPackets(packetSeq - 1);
@@ -420,7 +420,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             vm.expectEmit(true, true, true, true);
             emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
-            v1.dispatcherProxy.acknowledgement(v1.ucHandler, recvPacket, ackToBytes(ackPacket), validProof);
+            v1.dispatcherProxy.acknowledgement(recvPacket, ackToBytes(ackPacket), validProof);
 
             // verify ack packet received by Earth on chain A
             (gotChannelId, gotUcPacket, gotAckPacket) = v1.earth.ackPackets(packetSeq - 1);

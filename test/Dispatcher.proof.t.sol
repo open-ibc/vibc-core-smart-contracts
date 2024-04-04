@@ -38,7 +38,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenTry(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch0.portId, ch0.channelId);
 
-        dispatcherProxy.channelOpenTry(mars, ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
+        dispatcherProxy.channelOpenTry(ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
     function test_ibc_channel_ack() public {
@@ -47,7 +47,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenAck(address(mars), ch0.channelId);
 
-        dispatcherProxy.channelOpenAck(mars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
+        dispatcherProxy.channelOpenAck(ch0, connectionHops0, ChannelOrder.NONE, false, ch1, proof);
     }
 
     function test_ibc_channel_confirm() public {
@@ -56,7 +56,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit ChannelOpenConfirm(address(mars), ch1.channelId);
 
-        dispatcherProxy.channelOpenConfirm(mars, ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
+        dispatcherProxy.channelOpenConfirm(ch1, connectionHops1, ChannelOrder.NONE, false, ch0, proof);
     }
 
     function test_ack_packet() public {
@@ -86,7 +86,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         vm.expectEmit(true, true, true, true);
         emit Acknowledgement(address(mars), packet.src.channelId, packet.sequence);
 
-        dispatcherProxy.acknowledgement(mars, packet, ack, proof);
+        dispatcherProxy.acknowledgement(packet, ack, proof);
     }
 
     function test_recv_packet() public {
@@ -109,7 +109,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
             packet.sequence,
             AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
         );
-        dispatcherProxy.recvPacket(mars, packet, proof);
+        dispatcherProxy.recvPacket(packet, proof);
     }
 
     function test_timeout_packet() public {
