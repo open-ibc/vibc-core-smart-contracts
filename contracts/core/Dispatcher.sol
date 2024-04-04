@@ -475,12 +475,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * Generate a timeout packet for the given packet
      */
     function writeTimeoutPacket(IbcPacket calldata packet) external {
-        // verify `receiver` is the original packet sender
-        // if (!portIdAddressMatch(receiver, packet.src.portId)) {
-        //     revert IBCErrors.receiverNotIntendedPacketDestination();
-        // }
-
-        address receiver = _getAddressFromPort(packet.dest.portId);
+        address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet does not have a receipt
         bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
