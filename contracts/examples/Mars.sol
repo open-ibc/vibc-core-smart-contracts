@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.9;
 
-import {IBCErrors, AckPacket, ChannelOrder, CounterParty} from "../libs/Ibc.sol";
+import {IBCErrors, AckPacket, ChannelOrder, ChannelEnd} from "../libs/Ibc.sol";
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 
@@ -18,6 +18,16 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     string[] public supportedVersions = ["1.0", "2.0"];
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
+
+    function triggerChannelInit(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external onlyOwner {
+        dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+    }
 
     function onRecvPacket(IbcPacket memory packet)
         external

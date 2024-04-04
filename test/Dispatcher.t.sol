@@ -4,18 +4,24 @@ pragma solidity ^0.8.13;
 import "../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
-import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";
+import {IbcReceiver, IbcReceiverBase} from "../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../contracts/utils/DummyLightClient.sol";
-import "../contracts/examples/Mars.sol";
+import {
+    Mars,
+    RevertingBytesMars,
+    PanickingMars,
+    RevertingEmptyMars,
+    RevertingStringMars
+} from "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "./Dispatcher.base.t.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 
 abstract contract ChannelHandshakeUtils is Base {
-    string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
+    string portId;
     LocalEnd _local;
     Mars mars;
-    CounterParty _remote;
+    ChannelEnd _remote;
 
     function createSettings(bool localInitiate, bool isProofValid)
         internal
@@ -53,7 +59,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 // remoteEnd has no channelId or version if localEnd is the initiator
@@ -68,7 +74,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 re.version = versions[j];
                 // explicit version
                 le.versionCall = versions[j];
@@ -90,7 +96,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 re.version = versions[j];
@@ -108,7 +114,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 vm.expectEmit(true, true, true, true);
@@ -127,7 +133,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 le.versionCall = versions[j];
                 le.versionExpected = versions[j];
                 vm.expectRevert(DummyLightClient.InvalidDummyMembershipProof.selector);
@@ -143,7 +149,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 // no remote version applied in openChannel
                 channelOpenInit(le, re, settings[i], true);
                 channelOpenTry(le, re, settings[i], true);
@@ -165,7 +171,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         for (uint256 i = 0; i < settings.length; i++) {
             for (uint256 j = 0; j < versions.length; j++) {
                 LocalEnd memory le = _local;
-                CounterParty memory re = _remote;
+                ChannelEnd memory re = _remote;
                 // no remote version applied in openChannel
                 channelOpenInit(le, re, settings[i], true);
                 channelOpenTry(le, re, settings[i], true);
@@ -182,14 +188,16 @@ contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
     function setUp() public virtual override {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
         mars = new Mars(dispatcherProxy);
+        portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         _local = LocalEnd(mars, portId, "channel-1", connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+        _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
     }
 }
 
 // This Base contract provides an open channel for sub-contract tests
 contract ChannelOpenTestBaseSetup is Base {
-    string portId = "eth1.7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
+    string portId;
+    string revertingBytesMarsPortId;
     string invalidPortId = "eth1.0xd6292A04e605AFf917Bf05b2df5dDdbdc3E35e07";
     bytes32 channelId = "channel-1";
     address relayer = deriveAddress("relayer");
@@ -197,7 +205,7 @@ contract ChannelOpenTestBaseSetup is Base {
 
     LocalEnd _local;
     LocalEnd _localRevertingMars;
-    CounterParty _remote;
+    ChannelEnd _remote;
     Mars mars;
     RevertingBytesMars revertingBytesMars;
 
@@ -210,13 +218,18 @@ contract ChannelOpenTestBaseSetup is Base {
         vm.startPrank(relayer);
         vm.deal(relayer, 100_000 ether);
         mars = new Mars(dispatcherProxy);
+        portId = IbcUtils.addressToPortId(portPrefix, address(mars));
         revertingBytesMars = new RevertingBytesMars(dispatcherProxy);
+        revertingBytesMarsPortId = IbcUtils.addressToPortId(portPrefix, address(revertingBytesMars));
 
         _local = LocalEnd(mars, portId, channelId, connectionHops, "1.0", "1.0");
-        _localRevertingMars = LocalEnd(revertingBytesMars, portId, channelId, connectionHops, "1.0", "1.0");
-        _remote = CounterParty("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
+        _localRevertingMars =
+            LocalEnd(revertingBytesMars, revertingBytesMarsPortId, channelId, connectionHops, "1.0", "1.0");
+        _remote = ChannelEnd("eth2.7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "channel-2", "1.0");
 
+        vm.stopPrank();
         channelOpenInit(_local, _remote, setting, true);
+        vm.startPrank(relayer);
         channelOpenTry(_localRevertingMars, _remote, setting, true);
 
         channelOpenAck(_local, _remote, setting, true);
@@ -341,9 +354,7 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
             emit RecvPacket(address(mars), channelId, packetSeq);
             vm.expectEmit(true, true, false, true, address(dispatcherProxy));
             emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
-            dispatcherProxy.recvPacket(
-                IbcReceiver(mars), IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof
-            );
+            dispatcherProxy.recvPacket(IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof);
         }
     }
 
@@ -355,7 +366,7 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcherProxy));
         emit WriteTimeoutPacket(address(mars), channelId, packetSeq, pkt.timeoutHeight, pkt.timeoutTimestamp);
-        dispatcherProxy.recvPacket(IbcReceiver(mars), pkt, validProof);
+        dispatcherProxy.recvPacket(pkt, validProof);
     }
 
     // recvPacket emits a WriteTimeoutPacket if block height passes chain B's block height
@@ -366,18 +377,14 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
         emit RecvPacket(address(mars), channelId, packetSeq);
         vm.expectEmit(true, true, false, true, address(dispatcherProxy));
         emit WriteTimeoutPacket(address(mars), channelId, packetSeq, pkt.timeoutHeight, pkt.timeoutTimestamp);
-        dispatcherProxy.recvPacket(IbcReceiver(mars), pkt, validProof);
+        dispatcherProxy.recvPacket(pkt, validProof);
     }
 
     // cannot receive packets out of order for ordered channel
     function test_outOfOrder() public {
-        dispatcherProxy.recvPacket(
-            IbcReceiver(mars), IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof
-        );
+        dispatcherProxy.recvPacket(IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
         vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
-        dispatcherProxy.recvPacket(
-            IbcReceiver(mars), IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof
-        );
+        dispatcherProxy.recvPacket(IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
     // TODO: add tests for unordered channel, wrong port, and invalid proof
@@ -391,7 +398,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
 
             vm.expectEmit(true, true, false, true, address(dispatcherProxy));
             emit Acknowledgement(address(mars), channelId, sentPacket.sequence);
-            dispatcherProxy.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
+            dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
             // confirm dapp recieved the ack
             (bool success, bytes memory data) = mars.ackPackets(sentPacket.sequence - 1);
             AckPacket memory parsed = Ibc.parseAckData(ackPacket);
@@ -403,14 +410,14 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
     // cannot ack packets if packet commitment is missing
     function test_missingPacket() public {
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket("1"), validProof);
+        dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         sendPacket();
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
+        dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
 
         // packet commitment is removed after ack
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), sentPacket, ackPacket, validProof);
+        dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
     }
 
     // cannot recieve ack packets out of order for ordered channel
@@ -419,12 +426,12 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
             sendPacket();
         }
         // 1st ack is ok
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), genPacket(1), genAckPacket("1"), validProof);
+        dispatcherProxy.acknowledgement(genPacket(1), genAckPacket("1"), validProof);
 
         // only 2nd ack is allowed; so the 3rd ack fails
         vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
 
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), genPacket(3), genAckPacket("3"), validProof);
+        dispatcherProxy.acknowledgement(genPacket(3), genAckPacket("3"), validProof);
     }
 
     function test_invalidPort() public {
@@ -438,8 +445,24 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(abi.encodeWithSignature("receiverNotOriginPacketSender()"));
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), packetEarth, ackPacket, validProof);
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetCommitmentNotFound.selector));
+        dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
+    }
+
+    function test_misformattedPort() public {
+        Mars earth = new Mars(dispatcherProxy);
+        string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
+        IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
+
+        sendPacket();
+
+        // another valid packet but not the same port
+        IbcPacket memory packetEarth = sentPacket;
+        packetEarth.src = earthEnd;
+        packetEarth.src.portId = string(bytes.concat(bytes(portPrefix), bytes32(uint256(uint160(vm.addr(1))))));
+
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidHexStringLength.selector));
+        dispatcherProxy.acknowledgement(packetEarth, ackPacket, validProof);
     }
 
     // ackPacket fails if channel doesn't match
@@ -451,7 +474,7 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
         packet.src = invalidSrc;
 
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        dispatcherProxy.acknowledgement(IbcReceiver(mars), packet, ackPacket, validProof);
+        dispatcherProxy.acknowledgement(packet, ackPacket, validProof);
     }
 }
 
@@ -466,7 +489,7 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
 
             vm.expectEmit(true, true, true, true, address(dispatcherProxy));
             emit Timeout(address(mars), channelId, sentPacket.sequence);
-            dispatcherProxy.timeout(IbcReceiver(mars), sentPacket, validProof);
+            dispatcherProxy.timeout(sentPacket, validProof);
         }
     }
 
@@ -478,24 +501,24 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         emit TimeoutError(
             address(revertingBytesMars), abi.encodeWithSelector(RevertingBytesMars.OnTimeoutPacket.selector)
         );
-        dispatcherProxy.timeout(IbcReceiver(revertingBytesMars), sentPacket, validProof);
+        dispatcherProxy.timeout(sentPacket, validProof);
     }
 
     // cannot timeout packets if packet commitment is missing
     function test_missingPacket() public {
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        dispatcherProxy.timeout(IbcReceiver(mars), genPacket(1), validProof);
+        dispatcherProxy.timeout(genPacket(1), validProof);
 
         sendPacket();
-        dispatcherProxy.timeout(IbcReceiver(mars), sentPacket, validProof);
+        dispatcherProxy.timeout(sentPacket, validProof);
 
         // packet commitment is removed after timeout
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
-        dispatcherProxy.timeout(IbcReceiver(mars), sentPacket, validProof);
+        dispatcherProxy.timeout(sentPacket, validProof);
     }
 
     // cannot timeout packets if original packet port doesn't match current port
-    function test_invalidPort() public {
+    function test_invalidPort_123a() public {
         Mars earth = new Mars(dispatcherProxy);
         string memory earthPort = string(abi.encodePacked(portPrefix, getHexBytes(address(earth))));
         IbcEndpoint memory earthEnd = IbcEndpoint(earthPort, channelId);
@@ -506,8 +529,8 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         IbcPacket memory packetEarth = sentPacket;
         packetEarth.src = earthEnd;
 
-        vm.expectRevert(IBCErrors.receiverNotIntendedPacketDestination.selector);
-        dispatcherProxy.timeout(IbcReceiver(mars), packetEarth, validProof);
+        vm.expectRevert(IBCErrors.packetCommitmentNotFound.selector);
+        dispatcherProxy.timeout(packetEarth, validProof);
     }
 
     // cannot timeout packetsfails if channel doesn't match
@@ -520,14 +543,14 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
 
         vm.expectRevert(abi.encodeWithSignature("packetCommitmentNotFound()"));
         /* vm.expectRevert('Packet commitment not found'); */
-        dispatcherProxy.timeout(IbcReceiver(mars), packet, validProof);
+        dispatcherProxy.timeout(packet, validProof);
     }
 
     // cannot timeout packets if proof from Polymer is invalid
     function test_invalidProof() public {
         sendPacket();
         vm.expectRevert(DummyLightClient.InvalidDummyNonMembershipProof.selector);
-        dispatcherProxy.timeout(IbcReceiver(mars), sentPacket, invalidProof);
+        dispatcherProxy.timeout(sentPacket, invalidProof);
     }
 }
 
@@ -538,10 +561,10 @@ contract DappRevertTests is Base {
     RevertingStringMars revertingStringMars;
     string[] connectionHops0 = ["connection-0", "connection-3"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
-    CounterParty ch0 =
-        CounterParty("polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
-    CounterParty ch1 =
-        CounterParty("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
+    ChannelEnd ch0 =
+        ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-0"), "1.0");
+    ChannelEnd ch1 =
+        ChannelEnd("polyibc.eth.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) =
@@ -556,17 +579,13 @@ contract DappRevertTests is Base {
         address nonDappAddr = vm.addr(1);
 
         emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
-        dispatcherProxy.channelOpenInit(
-            IbcChannelReceiver(nonDappAddr), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
         emit ChannelOpenInitError(address(earth), "");
-        dispatcherProxy.channelOpenInit(
-            IbcChannelReceiver(address(earth)), ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_recv_packet_callback_revert_and_panic() public {
@@ -588,7 +607,7 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
         );
-        dispatcherProxy.recvPacket(revertingBytesMars, packet, validProof);
+        dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Revert String
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingStringMars))));
@@ -599,13 +618,13 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSignature("Error(string)", "on recv packet is reverting"))
         );
-        dispatcherProxy.recvPacket(revertingStringMars, packet, validProof);
+        dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Revert empty
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingEmptyMars))));
         vm.expectEmit(true, true, true, true);
         emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
-        dispatcherProxy.recvPacket(revertingEmptyMars, packet, validProof);
+        dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Panic
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(panickingMars))));
@@ -616,7 +635,7 @@ contract DappRevertTests is Base {
             packet.sequence,
             AckPacket(false, abi.encodeWithSignature("Panic(uint256)", uint256(1)))
         );
-        dispatcherProxy.recvPacket(panickingMars, packet, validProof);
+        dispatcherProxy.recvPacket(packet, validProof);
     }
 
     function test_ack_packet_dapp_revert() public {
@@ -646,26 +665,24 @@ contract DappRevertTests is Base {
             address(revertingStringMars),
             abi.encodeWithSignature("Error(string)", "acknowledgement packet is reverting")
         );
-        dispatcherProxy.acknowledgement(revertingStringMars, packet, ack, validProof);
+        dispatcherProxy.acknowledgement(packet, ack, validProof);
     }
 
     function test_ibc_channel_open_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
+        vm.prank(address(revertingStringMars));
         emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
-        dispatcherProxy.channelOpenInit(
-            revertingStringMars, ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId
-        );
+        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_ibc_channel_ack_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
+        ch0.portId = IbcUtils.addressToPortId(portPrefix, address(revertingStringMars));
         emit ChannelOpenAckError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
         );
-        dispatcherProxy.channelOpenAck(
-            revertingStringMars, ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof
-        );
+        dispatcherProxy.channelOpenAck(ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof);
     }
 }

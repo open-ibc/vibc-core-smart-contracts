@@ -114,7 +114,7 @@ struct Channel {
     bytes32 counterpartyChannelId;
 }
 
-struct CounterParty {
+struct ChannelEnd {
     string portId;
     bytes32 channelId;
     string version;
@@ -227,7 +227,7 @@ library IbcUtils {
 
     // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
     // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function isChannelOpenTry(CounterParty calldata counterparty) public pure returns (bool open) {
+    function isChannelOpenTry(ChannelEnd calldata counterparty) public pure returns (bool open) {
         if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
             return false;
             // ChanOpenInit with unknow conterparty
@@ -313,7 +313,7 @@ library Ibc {
 
     // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
     // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function _isChannelOpenTry(CounterParty calldata counterparty) external pure returns (bool open) {
+    function _isChannelOpenTry(ChannelEnd calldata counterparty) external pure returns (bool open) {
         if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
             open = false;
             // ChanOpenInit with unknow conterparty
@@ -374,7 +374,7 @@ library Ibc {
         ChannelOrder ordering,
         string calldata version,
         string[] calldata connectionHops,
-        CounterParty calldata counterparty
+        ChannelEnd calldata counterparty
     ) public pure returns (bytes memory proofValue) {
         proofValue = ProtoChannel.encode(
             ProtoChannel.Data(

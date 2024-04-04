@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IbcDispatcher} from "./IbcDispatcher.sol";
-import {ChannelOrder, CounterParty, IbcPacket, AckPacket} from "../libs/Ibc.sol";
+import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket} from "../libs/Ibc.sol";
 
 /**
  * @title IbcChannelReceiver

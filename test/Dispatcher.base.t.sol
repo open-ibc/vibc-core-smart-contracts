@@ -8,7 +8,6 @@ import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
-import "../contracts/examples/Mars.sol";
 import "../contracts/core/OpLightClient.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/OpProofVerifier.sol";
@@ -74,18 +73,18 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenInit(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenInit(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
+        vm.startPrank(address(le.receiver));
         if (expPass) {
             vm.expectEmit(true, true, true, true);
             emit ChannelOpenInit(
                 address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
             );
         }
-        dispatcherProxy.channelOpenInit(
-            le.receiver, le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId
-        );
+        dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        vm.stopPrank();
     }
 
     /**
@@ -96,7 +95,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenTry(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenTry(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         if (expPass) {
@@ -111,10 +110,9 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
                 re.channelId
             );
         }
-        CounterParty memory cp = CounterParty(re.portId, re.channelId, re.version);
+        ChannelEnd memory cp = ChannelEnd(re.portId, re.channelId, re.version);
         dispatcherProxy.channelOpenTry(
-            le.receiver,
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             s.ordering,
             s.feeEnabled,
             le.connectionHops,
@@ -131,7 +129,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      * @param expPass Expected pass status of the operation.
      * If expPass is false, `vm.expectRevert` should be called before this function.
      */
-    function channelOpenAck(LocalEnd memory le, CounterParty memory re, ChannelHandshakeSetting memory s, bool expPass)
+    function channelOpenAck(LocalEnd memory le, ChannelEnd memory re, ChannelHandshakeSetting memory s, bool expPass)
         public
     {
         if (expPass) {
@@ -139,8 +137,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenAck(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenAck(
-            le.receiver,
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,
@@ -159,7 +156,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
      */
     function channelOpenConfirm(
         LocalEnd memory le,
-        CounterParty memory re,
+        ChannelEnd memory re,
         ChannelHandshakeSetting memory s,
         bool expPass
     ) public {
@@ -168,8 +165,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             emit ChannelOpenConfirm(address(le.receiver), le.channelId);
         }
         dispatcherProxy.channelOpenConfirm(
-            le.receiver,
-            CounterParty(le.portId, le.channelId, le.versionCall),
+            ChannelEnd(le.portId, le.channelId, le.versionCall),
             le.connectionHops,
             s.ordering,
             s.feeEnabled,

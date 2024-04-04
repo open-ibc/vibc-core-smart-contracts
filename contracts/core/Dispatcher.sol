@@ -13,7 +13,7 @@ import {LightClient} from "../interfaces/LightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {
     Channel,
-    CounterParty,
+    ChannelEnd,
     ChannelOrder,
     IbcPacket,
     ChannelState,
@@ -103,7 +103,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenInit(
-        IbcChannelReceiver receiver,
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
@@ -114,16 +113,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
-        (bool success, bytes memory data) = _callIfContract(
-            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version)
-        );
+        (bool success, bytes memory data) =
+            _callIfContract(msg.sender, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version));
 
         if (success) {
             emit ChannelOpenInit(
-                address(receiver), abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
+                msg.sender, abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
             );
         } else {
-            emit ChannelOpenInitError(address(receiver), data);
+            emit ChannelOpenInitError(msg.sender, data);
         }
     }
 
@@ -133,12 +131,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * will be relayed to the  IBC/VIBC hub chain.
      */
     function channelOpenTry(
-        IbcChannelReceiver receiver,
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         ChannelOrder ordering,
         bool feeEnabled,
         string[] calldata connectionHops,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         if (bytes(counterparty.portId).length == 0) {
@@ -151,13 +148,14 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.TRY_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
+        address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            address(receiver), abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
+            receiver, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
         );
 
         if (success) {
             emit ChannelOpenTry(
-                address(receiver),
+                receiver,
                 abi.decode(data, (string)),
                 ordering,
                 feeEnabled,
@@ -166,7 +164,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
                 counterparty.channelId
             );
         } else {
-            emit ChannelOpenTryError(address(receiver), data);
+            emit ChannelOpenTryError(receiver, data);
         }
     }
 
@@ -175,12 +173,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * The dApp should implement the onChannelConnect method to handle the third channel handshake method: ChanOpenAck
      */
     function channelOpenAck(
-        IbcChannelReceiver receiver,
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         _lightClient.verifyMembership(
@@ -189,16 +186,17 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.ACK_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
+        address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            address(receiver),
+            receiver,
             abi.encodeWithSelector(IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.version)
         );
 
         if (success) {
-            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
-            emit ChannelOpenAck(address(receiver), local.channelId);
+            _connectChannel(IbcChannelReceiver(receiver), local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenAck(receiver, local.channelId);
         } else {
-            emit ChannelOpenAckError(address(receiver), data);
+            emit ChannelOpenAckError(receiver, data);
         }
     }
 
@@ -208,12 +206,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * ChannelOpenConfirm
      */
     function channelOpenConfirm(
-        IbcChannelReceiver receiver,
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty,
+        ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external {
         _lightClient.verifyMembership(
@@ -222,16 +219,17 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             Ibc.channelProofValue(ChannelState.CONFIRM_PENDING, ordering, local.version, connectionHops, counterparty)
         );
 
+        address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            address(receiver),
+            receiver,
             abi.encodeWithSelector(IbcChannelReceiver.onChanOpenConfirm.selector, local.channelId, counterparty.version)
         );
 
         if (success) {
-            _connectChannel(receiver, local, connectionHops, ordering, feeEnabled, counterparty);
-            emit ChannelOpenConfirm(address(receiver), local.channelId);
+            _connectChannel(IbcChannelReceiver(receiver), local, connectionHops, ordering, feeEnabled, counterparty);
+            emit ChannelOpenConfirm(receiver, local.channelId);
         } else {
-            emit ChannelOpenConfirmError(address(receiver), data);
+            emit ChannelOpenConfirmError(receiver, data);
         }
     }
 
@@ -318,53 +316,43 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @dev Verifies the given proof and calls the `onAcknowledgementPacket` function on the given `receiver` contract,
      *    ie. the IBC dApp.
      *    Prerequisite: the original packet is committed and not ack'ed or timed out yet.
-     * @param receiver The IbcPacketHandler contract that should handle the packet acknowledgement event
-     * If the address doesn't satisfy the interface, the transaction will be reverted.
+     *    Note: If the receiving dapp doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the acknowledged packet
      * @param ack The acknowledgement receipt for the packet
      * @param proof The membership proof to verify the packet acknowledgement committed on Polymer chain
      */
 
-    function acknowledgement(
-        IbcPacketReceiver receiver,
-        IbcPacket calldata packet,
-        bytes calldata ack,
-        Ics23Proof calldata proof
-    ) external {
-        // verify `receiver` is the original packet sender
-        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert IBCErrors.receiverNotOriginPacketSender();
-        }
-
+    function acknowledgement(IbcPacket calldata packet, bytes calldata ack, Ics23Proof calldata proof) external {
+        address receiver = _getAddressFromPort(packet.src.portId);
         // prove ack packet is on Polymer chain
         _lightClient.verifyMembership(proof, Ibc.ackProofKey(packet), abi.encode(Ibc.ackProofValue(ack)));
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
         // enforce ack'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = _portChannelMap[address(receiver)][packet.src.channelId];
+        Channel memory channel = _portChannelMap[receiver][packet.src.channelId];
         (bool success, bytes memory data) = _callIfContract(
-            address(receiver),
+            receiver,
             abi.encodeWithSelector(IbcPacketReceiver.onAcknowledgementPacket.selector, packet, Ibc.parseAckData(ack))
         );
 
         if (success) {
             if (channel.ordering == ChannelOrder.ORDERED) {
-                if (packet.sequence != _nextSequenceAck[address(receiver)][packet.src.channelId]) {
+                if (packet.sequence != _nextSequenceAck[receiver][packet.src.channelId]) {
                     revert IBCErrors.unexpectedPacketSequence();
                 }
 
-                _nextSequenceAck[address(receiver)][packet.src.channelId] = packet.sequence + 1;
+                _nextSequenceAck[receiver][packet.src.channelId] = packet.sequence + 1;
             }
 
             // delete packet commitment to avoid double ack
-            delete _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-            emit Acknowledgement(address(receiver), packet.src.channelId, packet.sequence);
+            delete _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
+            emit Acknowledgement(receiver, packet.src.channelId, packet.sequence);
         } else {
-            emit AcknowledgementError(address(receiver), data);
+            emit AcknowledgementError(receiver, data);
         }
     }
 
@@ -373,85 +361,74 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
      * @dev Verifies the given proof and calls the `onTimeoutPacket` function on the given `receiver` contract, ie. the
      * IBC-dApp.
      * Prerequisite: the original packet is committed and not ack'ed or timed out yet.
-     * @param receiver The IbcPacketHandler contract that should handle the packet timeout event
-     * If the address doesn't satisfy the interface, the transaction will be reverted.
+     * If the receiving dapp doesn't satisfy the interface, the transaction will be reverted.
      * @param packet The IbcPacket data for the timed-out packet
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
-    function timeout(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
-        // verify `receiver` is the original packet sender
-        if (!portIdAddressMatch(address(receiver), packet.src.portId)) {
-            revert IBCErrors.receiverNotIntendedPacketDestination();
-        }
-
+    function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
         _lightClient.verifyNonMembership(proof, "packet/receipt/path");
 
+        address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
+        bool hasCommitment = _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
         if (!hasCommitment) {
             revert IBCErrors.packetCommitmentNotFound();
         }
 
-        (bool success, bytes memory data) = _callIfContract(
-            address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet)
-        );
+        (bool success, bytes memory data) =
+            _callIfContract(receiver, abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
         if (success) {
             // delete packet commitment to avoid double timeout
-            delete _sendPacketCommitment[address(receiver)][packet.src.channelId][packet.sequence];
-            emit Timeout(address(receiver), packet.src.channelId, packet.sequence);
+            delete _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
+            emit Timeout(receiver, packet.src.channelId, packet.sequence);
         } else {
-            emit TimeoutError(address(receiver), data);
+            emit TimeoutError(receiver, data);
         }
     }
 
     /**
      * @notice Receive an IBC packet and then pass it to the IBC-dApp for processing if verification succeeds.
      * @dev Verifies the given proof and calls the `onRecvPacket` function on the given `receiver` contract
-     * @param receiver The IbcPacketHandler contract that should handle the packet receipt event
-     * If the address doesn't satisfy the interface, the transaction will be reverted.
+     *  If the address doesn't satisfy the interface, the transaction will be reverted.
      * The receiver must be the intended packet destination, which is the same as packet.dest.portId.
      * @param packet The IbcPacket data for the received packet
      * @param proof The proof data needed to verify the packet receipt
      * @dev Emit an `RecvPacket` event with the details of the received packet;
      * Also emit a WriteAckPacket event, which can be relayed to Polymer chain by relayers
      */
-    function recvPacket(IbcPacketReceiver receiver, IbcPacket calldata packet, Ics23Proof calldata proof) external {
-        // verify `receiver` is the intended packet destination
-        if (!portIdAddressMatch(address(receiver), packet.dest.portId)) {
-            revert IBCErrors.receiverNotIntendedPacketDestination();
-        }
+    function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external {
+        address receiver = _getAddressFromPort(packet.dest.portId);
         _lightClient.verifyMembership(
             proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
         // verify packet has not been received yet
-        bool hasReceipt = _recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
             revert IBCErrors.packetReceiptAlreadyExists();
         }
 
-        _recvPacketReceipt[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence] = true;
 
         // enforce recv'ed packet sequences always increment by 1 for ordered channels
-        Channel memory channel = _portChannelMap[address(receiver)][packet.dest.channelId];
+        Channel memory channel = _portChannelMap[receiver][packet.dest.channelId];
         if (channel.ordering == ChannelOrder.ORDERED) {
-            if (packet.sequence != _nextSequenceRecv[address(receiver)][packet.dest.channelId]) {
+            if (packet.sequence != _nextSequenceRecv[receiver][packet.dest.channelId]) {
                 revert IBCErrors.unexpectedPacketSequence();
             }
 
-            _nextSequenceRecv[address(receiver)][packet.dest.channelId] = packet.sequence + 1;
+            _nextSequenceRecv[receiver][packet.dest.channelId] = packet.sequence + 1;
         }
 
         // Emit recv packet event to prove the relayer did the correct job, and pkt is received.
-        emit RecvPacket(address(receiver), packet.dest.channelId, packet.sequence);
+        emit RecvPacket(receiver, packet.dest.channelId, packet.sequence);
 
         // If pkt is already timed out, then return early so dApps won't receive it.
         if (_isPacketTimeout(packet)) {
-            address writerPortAddress = address(receiver);
             emit WriteTimeoutPacket(
-                writerPortAddress, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
+                receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
             );
             return;
         }
@@ -460,21 +437,21 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         IbcPacket memory pkt = packet;
         AckPacket memory ack;
         (bool success, bytes memory data) =
-            _callIfContract(address(receiver), abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
+            _callIfContract(receiver, abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, pkt));
         if (success) {
             (ack) = abi.decode(data, (AckPacket));
         } else {
             ack = AckPacket(false, data);
         }
-        bool hasAckPacketCommitment = _ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence];
+        bool hasAckPacketCommitment = _ackPacketCommitment[receiver][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks
         if (hasAckPacketCommitment) {
             revert IBCErrors.ackPacketCommitmentAlreadyExists();
         }
 
-        _ackPacketCommitment[address(receiver)][packet.dest.channelId][packet.sequence] = true;
+        _ackPacketCommitment[receiver][packet.dest.channelId][packet.sequence] = true;
 
-        emit WriteAckPacket(address(receiver), packet.dest.channelId, packet.sequence, ack);
+        emit WriteAckPacket(receiver, packet.dest.channelId, packet.sequence, ack);
     }
 
     // TODO: add async writeAckPacket
@@ -497,12 +474,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     /**
      * Generate a timeout packet for the given packet
      */
-    function writeTimeoutPacket(address receiver, IbcPacket calldata packet) external {
-        // verify `receiver` is the original packet sender
-        if (!portIdAddressMatch(receiver, packet.src.portId)) {
-            revert IBCErrors.receiverNotIntendedPacketDestination();
-        }
-
+    function writeTimeoutPacket(IbcPacket calldata packet) external {
+        address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet does not have a receipt
         bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
@@ -542,13 +515,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
     // verify an EVM address matches an IBC portId.
     // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
-    function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
-        if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
-            return false;
-        }
-        string memory portSuffix = portId[portPrefixLen:];
-        isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
-    }
+    // function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
+    //     if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
+    //         return false;
+    //     }
+    //     string memory portSuffix = portId[portPrefixLen:];
+    //     isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
+    // }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
@@ -568,11 +541,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
     function _connectChannel(
         IbcChannelReceiver portAddress,
-        CounterParty calldata local,
+        ChannelEnd calldata local,
         string[] calldata connectionHops,
         ChannelOrder ordering,
         bool feeEnabled,
-        CounterParty calldata counterparty
+        ChannelEnd calldata counterparty
     ) internal {
         // Register port and channel mapping
         // TODO: check duplicated channel registration?
@@ -618,5 +591,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             // TODO: check timeoutHeight.revision_number?
             || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
         );
+    }
+
+    function _getAddressFromPort(string calldata port) internal view returns (address addr) {
+        addr = Ibc._hexStrToAddress(port[portPrefixLen:]);
     }
 }
