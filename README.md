@@ -18,7 +18,7 @@ All contracts internal to this project are in the `contracts`. This directory co
 ## Dispatcher
 The Dispatcher contract routes packets to dapps by mapping channels to dapp addresses. The dispatcher also calls packet and channel callbacks on sending/receiving dapps. This contract uses a UUPS proxy compliant with ERC1967 for upgrades. The proxy is intended to be managed by a single owner address, which will be replaced by a multisig in production. 
 
-Since the optimistic light client contract is used to prove that events happened on the peptide chain, all methods in the dispatcher are permissionless, aside from the methods to set the connection to client mapping, upgrading the implementation, and setting the dispatcher's port prefix. 
+Since the optimistic light client contract is used to prove that events happened on the Polymer chain, all methods in the dispatcher are permissionless, aside from the methods to set the connection to client mapping, upgrading the implementation, and setting the dispatcher's port prefix. 
 
 Due to the nature of ibc callbacks, the dispatcher should safely be able to integrate its handler methods with any arbitrary (i.e. potentially malicious) contracts. 
 
@@ -27,7 +27,7 @@ The dispatcher can integrate with multiple light clients of the peptide chain to
 Any dapps which send/receive Ibc packets can do so directly through the dispatcher, or through a middleware contract like the `UniversalChannelHandler`. Dapps that directly integrate with the dispatcher are expected to implement the `IbcReceiver` interface, and those which use the `UniversalChannelHandler` are assumed to implement the `IbcUniversalPacketReceiver` interface.
 
 ## OptimisticLightClient
-The OptimisticLightClient contract abstracts away proof verification from the dispatcher contract. This light client represents a view of Polymer's peptide chain, and is used to prove that channel handshake and packet sending events happened. 
+The OptimisticLightClient contract abstracts away proof verification from the dispatcher contract. This light client represents a view of the Polymer chain, and is used to prove that channel handshake and packet sending events happened. 
 
 ## OptimisticProofVerifier
 The optimisticProofVerifier verifies proofs for the optimistic light client. 
