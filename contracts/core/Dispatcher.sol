@@ -51,7 +51,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     ILightClient _UNUSED; // From previous dispatcher version
     mapping(bytes32 => string) private _channelIdToConnection;
     mapping(string => ILightClient) private _connectionToLightClient;
-    uint256 private _numClients;
 
     constructor() {
         _disableInitializers();
@@ -262,12 +261,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        if (
-            bytes(local.portId).length == 0 || bytes(counterparty.portId).length == 0 || local.channelId == bytes32(0)
-                || counterparty.channelId == bytes32(0)
-        ) {
-            revert IBCErrors.invalidCounterParty();
-        }
+        _checkInValidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -326,12 +320,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        if (
-            bytes(local.portId).length == 0 || bytes(counterparty.portId).length == 0 || local.channelId == bytes32(0)
-                || counterparty.channelId == bytes32(0)
-        ) {
-            revert IBCErrors.invalidCounterParty();
-        }
+        _checkInValidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
 
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
@@ -779,6 +768,20 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @inheritdoc UUPSUpgradeable
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function _checkInValidCounterParty(
+        string calldata localPortId,
+        bytes32 localChannelId,
+        string calldata counterPartyPortId,
+        bytes32 counterPartyChannelId
+    ) internal {
+        if (
+            bytes(localPortId).length == 0 || bytes(counterPartyPortId).length == 0 || localChannelId == bytes32(0)
+                || counterPartyChannelId == bytes32(0)
+        ) {
+            revert IBCErrors.invalidCounterParty();
+        }
+    }
 
     /**
      * @notice Checks if the given packet has timed out according to the host chain's block height and timestamp.
