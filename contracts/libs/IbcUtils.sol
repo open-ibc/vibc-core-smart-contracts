@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.15;
 
 import {UniversalPacket, ChannelEnd, Strings, IBCErrors} from "./Ibc.sol";
 
@@ -61,20 +61,6 @@ library IbcUtils {
         }
 
         return addr;
-    }
-
-    // For XXXX => vIBC direction, SC needs to verify the proof of membership of TRY_PENDING
-    // For vIBC initiated channel, SC doesn't need to verify any proof, and these should be all empty
-    function isChannelOpenTry(ChannelEnd calldata counterparty) public pure returns (bool open) {
-        if (counterparty.channelId == bytes32(0) && bytes(counterparty.version).length == 0) {
-            return false;
-            // ChanOpenInit with unknow conterparty
-        } else if (counterparty.channelId != bytes32(0) && bytes(counterparty.version).length != 0) {
-            // this is the ChanOpenTry; counterparty must not be zero-value
-            return true;
-        } else {
-            revert IBCErrors.invalidCounterParty();
-        }
     }
 
     function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
