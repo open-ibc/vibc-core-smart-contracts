@@ -156,7 +156,6 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
         super.setUp();
 
         string memory portPrefix1 = "polyibc.eth1.";
-        string memory portPrefix2 = "polyibc.eth2.";
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1);
         dispatcherProxy.setClientForConnection(connectionHops0[0], opLightClient);

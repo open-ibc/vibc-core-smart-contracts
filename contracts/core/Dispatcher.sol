@@ -712,13 +712,13 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
         //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
         _portChannelMap[address(portAddress)][local.channelId] = Channel(
-            local.portId,
             counterparty.version, // TODO: this should be self version instead of counterparty version
             ordering,
             feeEnabled,
             connectionHops,
             counterparty.portId,
-            counterparty.channelId
+            counterparty.channelId,
+            local.portId
         );
 
         // initialize channel sequences
@@ -821,7 +821,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         bytes32 localChannelId,
         string calldata counterPartyPortId,
         bytes32 counterPartyChannelId
-    ) internal view {
+    ) internal pure {
         if (
             bytes(localPortId).length == 0 || bytes(counterPartyPortId).length == 0 || localChannelId == bytes32(0)
                 || counterPartyChannelId == bytes32(0)

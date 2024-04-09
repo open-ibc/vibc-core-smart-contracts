@@ -181,10 +181,16 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         mwStackAddrs[mwBitmap] = mwAddrs;
     }
 
+    function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
+
+    function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
+        dispatcher = _dispatcher;
+    }
     /**
      * @notice Handles the initialization of channel opening.
      * @param version The new channel's version
      */
+
     function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
         external
         view
@@ -202,7 +208,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         string memory,
         bytes32,
         string calldata counterpartyVersion
-    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
+    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
         return _connectChannel(channelId, counterpartyVersion);
     }
 
@@ -215,15 +221,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
      */
     function onChanOpenAck(bytes32 channelId, bytes32, string calldata counterpartyVersion)
         external
+        view
         onlyIbcDispatcher
     {
         _connectChannel(channelId, counterpartyVersion);
-    }
-
-    function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
-
-    function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
-        dispatcher = _dispatcher;
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
@@ -232,11 +233,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
      * @dev Internal function to connect a channel only if the version matches what is expected.
      * @param version The version string provided by the counterparty
      */
-    function _connectChannel(bytes32 channelId, string calldata version)
-        internal
-        pure
-        returns (string memory checkedVersion)
-    {
+    function _connectChannel(bytes32, string calldata version) internal pure returns (string memory checkedVersion) {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }

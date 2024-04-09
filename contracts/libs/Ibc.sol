@@ -6,7 +6,7 @@ import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
 import {Base64} from "base64/base64.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IBCErrors} from "./IBCErrors.sol";
+import {IBCErrors} from "./IbcErrors.sol";
 
 /**
  * Ibc.sol
@@ -108,13 +108,13 @@ enum ChannelState {
 }
 
 struct Channel {
-    string portId;
     string version;
     ChannelOrder ordering;
     bool feeEnabled;
     string[] connectionHops;
     string counterpartyPortId;
     bytes32 counterpartyChannelId;
+    string portId;
 }
 
 struct ChannelEnd {
