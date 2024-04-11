@@ -336,7 +336,7 @@ contract PacketSenderTestBase is ChannelOpenTestBaseSetup {
 
 // Test Chains B receives a packet from Chain A
 contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
-    IbcEndpoint src = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
+    IbcEndpoint src = IbcEndpoint("polyibc.bsc.58b604DB8886656695442374D8E940D814F2eDd4", "channel-99");
     IbcEndpoint dest;
     bytes payload = bytes("msgPayload");
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
@@ -385,6 +385,24 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
         vm.expectRevert(abi.encodeWithSignature("unexpectedPacketSequence()"));
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
+    }
+
+    // Can't spoof a timeed out packet
+    function test_writeTimeoutPacket_cannot_Spoof_Packet() public {
+        IbcPacket memory spoofedPacket = IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, 1);
+        spoofedPacket.timeoutTimestamp = 1; // Set really low timeout timestamp
+        vm.mockCallRevert(
+            address(dummyConsStateManager),
+            abi.encodeWithSelector(
+                DummyLightClient.verifyMembership.selector,
+                validProof,
+                Ibc.packetCommitmentProofKey(spoofedPacket),
+                abi.encode(Ibc.packetCommitmentProofValue(spoofedPacket))
+            ),
+            abi.encodeWithSelector(ProofVerifier.InvalidProofValue.selector)
+        );
+        vm.expectRevert(abi.encodeWithSelector(ProofVerifier.InvalidProofValue.selector));
+        dispatcherProxy.writeTimeoutPacket(spoofedPacket, validProof);
     }
 
     // TODO: add tests for unordered channel, wrong port, and invalid proof

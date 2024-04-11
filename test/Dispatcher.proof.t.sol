@@ -145,7 +145,7 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1, consensusStateManager);
 
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
-        deployCodeTo("Mars.sol", abi.encode(address(dispatcherProxy)), targetMarsAddress);
+        deployCodeTo("Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
         mars = Mars(payable(targetMarsAddress));
 
         portId1 = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";

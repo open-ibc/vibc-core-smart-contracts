@@ -89,6 +89,8 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
+    function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
+
     function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
     function getOptimisticConsensusState(uint256 height)
