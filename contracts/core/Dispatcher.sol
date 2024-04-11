@@ -454,23 +454,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         emit WriteAckPacket(receiver, packet.dest.channelId, packet.sequence, ack);
     }
 
-    // TODO: add async writeAckPacket
-    // // this can be invoked sync or async by the IBC-dApp
-    // function writeAckPacket(IbcPacket calldata packet, AckPacket calldata ackPacket) external {
-    //     // verify `receiver` is the original packet sender
-    //     require(
-    //         portIdAddressMatch(address(msg.sender), packet.src.portId),
-    //         'Receiver is not the original packet sender'
-    //     );
-    // }
-
-    // TODO: remove below writeTimeoutPacket() function
-    //       1. core SC is responsible to generate timeout packet
-    //       2. user contract are not free to generate timeout with different criteria
-    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, belowunction won't do
-    // the job, as it doesn't have proofs.
-    //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will
-    // do proper timeout generation.
     /**
      * Generate a timeout packet for the given packet
      */
@@ -516,16 +499,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     {
         return _lightClient.getState(height);
     }
-
-    // verify an EVM address matches an IBC portId.
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
-    // function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
-    //     if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
-    //         return false;
-    //     }
-    //     string memory portSuffix = portId[portPrefixLen:];
-    //     isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
-    // }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
     function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
