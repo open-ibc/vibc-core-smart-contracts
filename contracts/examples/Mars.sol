@@ -80,15 +80,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
     }
 
-    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external virtual onlyIbcDispatcher {
-        _connectChannel(channelId, counterpartyVersion);
-    }
-
-    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external onlyIbcDispatcher {
-        _connectChannel(channelId, counterpartyVersion);
-    }
-
-    function onChanOpenInit(string calldata version)
+    function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
         external
         view
         virtual
@@ -98,22 +90,37 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         return _openChannel(version);
     }
 
-    function onChanOpenTry(string calldata counterpartyVersion)
-        external
-        view
-        virtual
-        onlyIbcDispatcher
-        returns (string memory selectedVersion)
-    {
-        return _openChannel(counterpartyVersion);
+    // solhint-disable-next-line ordering
+    function onChanOpenTry(
+        ChannelOrder,
+        string[] memory,
+        bytes32 channelIdentifier,
+        string memory,
+        bytes32,
+        string calldata counterpartyVersion
+    ) external virtual onlyIbcDispatcher returns (string memory selectedVersion) {
+        return _connectChannel(channelIdentifier, counterpartyVersion);
     }
 
-    function _connectChannel(bytes32 channelId, string calldata counterpartyVersion) private {
+    function onChanOpenAck(bytes32 channelIdentifier, bytes32, string calldata counterpartyVersion)
+        external
+        virtual
+        onlyIbcDispatcher
+    {
+        _connectChannel(channelIdentifier, counterpartyVersion);
+    }
+
+    function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
+
+    function _connectChannel(bytes32 channelId, string calldata counterpartyVersion)
+        private
+        returns (string memory version)
+    {
         // ensure negotiated version is supported
         for (uint256 i = 0; i < supportedVersions.length; i++) {
             if (keccak256(abi.encodePacked(counterpartyVersion)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
                 connectedChannels.push(channelId);
-                return;
+                return counterpartyVersion;
             }
         }
         revert UnsupportedVersion();
@@ -137,7 +144,14 @@ contract RevertingStringMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     // solhint-disable-next-line
-    function onChanOpenInit(string calldata) external view override onlyIbcDispatcher returns (string memory) {
+    function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata)
+        external
+        view
+        virtual
+        override
+        onlyIbcDispatcher
+        returns (string memory selectedVersion)
+    {
         // solhint-disable-next-line
         require(false, "open ibc channel is reverting");
         return "";
@@ -151,7 +165,7 @@ contract RevertingStringMars is Mars {
     }
 
     // solhint-disable-next-line
-    function onChanOpenAck(bytes32, string calldata) external view override onlyIbcDispatcher {
+    function onChanOpenAck(bytes32, bytes32, string calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "connect ibc channel is reverting");
     }

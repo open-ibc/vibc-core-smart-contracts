@@ -12,16 +12,34 @@ import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket} from "../libs/Ibc.sol";
  * handshake callbacks.
  */
 interface IbcChannelReceiver {
-    function onChanOpenInit(string calldata version) external returns (string memory selectedVersion);
+    function onChanOpenInit(
+        ChannelOrder order,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortIdentifier,
+        string calldata version
+    ) external returns (string memory selectedVersion);
 
-    function onChanOpenTry(string calldata counterpartyVersion) external returns (string memory selectedVersion);
+    function onChanOpenTry(
+        ChannelOrder order,
+        string[] memory connectionHops,
+        bytes32 channelIdentifier,
+        string memory counterpartyPortIdentifier,
+        bytes32 counterpartyChannelIdentifier,
+        string memory counterpartyVersion
+    ) external returns (string memory selectedVersion);
 
-    function onChanOpenAck(bytes32 channelId, string calldata counterpartyVersion) external;
+    function onChanOpenAck(
+        bytes32 channelIdentifier,
+        bytes32 counterpartyChannelIdentifier,
+        string calldata counterpartyVersion
+    ) external;
 
-    function onChanOpenConfirm(bytes32 channelId, string calldata counterpartyVersion) external;
-
-    function onCloseIbcChannel(bytes32 channelId, string calldata counterpartyPortId, bytes32 counterpartyChannelId)
-        external;
+    function onChanOpenConfirm(bytes32 channelIdentifier) external;
+    function onCloseIbcChannel(
+        bytes32 channelIdentifier,
+        string calldata counterpartyPortIdentifier,
+        bytes32 counterpartyChannelId
+    ) external;
 }
 
 /**
