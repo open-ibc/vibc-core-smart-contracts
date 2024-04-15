@@ -22,21 +22,18 @@ interface IbcChannelReceiver {
     function onChanOpenTry(
         ChannelOrder order,
         string[] memory connectionHops,
-        bytes32 channelIdentifier,
+        bytes32 channelId,
         string memory counterpartyPortIdentifier,
-        bytes32 counterpartyChannelIdentifier,
+        bytes32 counterpartychannelId,
         string memory counterpartyVersion
     ) external returns (string memory selectedVersion);
 
-    function onChanOpenAck(
-        bytes32 channelIdentifier,
-        bytes32 counterpartyChannelIdentifier,
-        string calldata counterpartyVersion
-    ) external;
+    function onChanOpenAck(bytes32 channelId, bytes32 counterpartychannelId, string calldata counterpartyVersion)
+        external;
 
-    function onChanOpenConfirm(bytes32 channelIdentifier) external;
+    function onChanOpenConfirm(bytes32 channelId) external;
     function onCloseIbcChannel(
-        bytes32 channelIdentifier,
+        bytes32 channelId,
         string calldata counterpartyPortIdentifier,
         bytes32 counterpartyChannelId
     ) external;

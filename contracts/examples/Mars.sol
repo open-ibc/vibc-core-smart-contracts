@@ -94,20 +94,20 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     function onChanOpenTry(
         ChannelOrder,
         string[] memory,
-        bytes32 channelIdentifier,
+        bytes32 channelId,
         string memory,
         bytes32,
         string calldata counterpartyVersion
     ) external virtual onlyIbcDispatcher returns (string memory selectedVersion) {
-        return _connectChannel(channelIdentifier, counterpartyVersion);
+        return _connectChannel(channelId, counterpartyVersion);
     }
 
-    function onChanOpenAck(bytes32 channelIdentifier, bytes32, string calldata counterpartyVersion)
+    function onChanOpenAck(bytes32 channelId, bytes32, string calldata counterpartyVersion)
         external
         virtual
         onlyIbcDispatcher
     {
-        _connectChannel(channelIdentifier, counterpartyVersion);
+        _connectChannel(channelId, counterpartyVersion);
     }
 
     function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
