@@ -136,11 +136,11 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         vm.prank(address(remoteChain));
         remoteChain.channelOpenTry(remoteEnd, this, localEnd, setting, true); // step-2
 
-        vm.prank(address(this));
-        this.channelOpenConfirm(localEnd, remoteChain, remoteEnd, setting, true); // step-3
-
         vm.prank(address(remoteChain));
-        remoteChain.channelOpenAck(remoteEnd, this, localEnd, setting, true); // step-4
+        this.channelOpenAck(localEnd, remoteChain, remoteEnd, setting, true); // step-4
+
+        vm.prank(address(this));
+        remoteChain.channelOpenConfirm(remoteEnd, this, localEnd, setting, true); // step-3
     }
 
     function channelOpenInit(
@@ -178,6 +178,9 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         ChannelSetting memory setting,
         bool expPass
     ) external {
+        bytes32 chanId = channelIds[address(localEnd)][address(remoteEnd)];
+        require(chanId != bytes32(0), "channelOpenTry: channel does not exist");
+
         bytes32 cpChanId = remoteChain.channelIds(address(remoteEnd), address(localEnd));
         require(cpChanId != bytes32(0), "channelOpenTry: channel does not exist");
 
@@ -201,9 +204,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         }
         dispatcherProxy.channelOpenTry(
             ChannelEnd(
-                IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)),
-                setting.channelId,
-                setting.version
+                IbcUtils.addressToPortId(dispatcherProxy.portPrefix(), address(localEnd)), chanId, setting.version
             ),
             setting.ordering,
             setting.feeEnabled,

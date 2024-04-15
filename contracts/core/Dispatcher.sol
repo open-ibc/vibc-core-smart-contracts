@@ -113,8 +113,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
+        // Have to encode here to avoid stack-too-deep error
+        bytes memory chanOpenInitArgs = abi.encode(ordering, connectionHops, counterpartyPortId, version);
         (bool success, bytes memory data) =
-            _callIfContract(msg.sender, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version));
+            _callIfContract(msg.sender, bytes.concat(IbcChannelReceiver.onChanOpenInit.selector, chanOpenInitArgs));
 
         if (success) {
             emit ChannelOpenInit(
@@ -150,7 +152,16 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            receiver, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
+            receiver,
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onChanOpenTry.selector,
+                ordering,
+                connectionHops,
+                local.channelId,
+                counterparty.portId,
+                counterparty.channelId,
+                counterparty.version
+            )
         );
 
         if (success) {
@@ -189,7 +200,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
             receiver,
-            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.version)
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.channelId, counterparty.version
+            )
         );
 
         if (success) {
@@ -282,7 +295,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //
     //     // confirm with dApp by calling its callback
     //     IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
-    //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
+    //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId,
+    // channel.counterpartyChannelId);
     //     delete _portChannelMap[portAddress][channelId];
     //     emit CloseIbcChannel(portAddress, channelId);
     // }
@@ -541,7 +555,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _nextSequenceSend[address(portAddress)][local.channelId] = 1;
         _nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         _nextSequenceAck[address(portAddress)][local.channelId] = 1;
-        _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for finding
+        _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for
+            // finding
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../contracts/libs/Ibc.sol";
 import "forge-std/Test.sol";
+import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 
 contract IbcTest is Test {
     function test_packet_commitment_proof_key() public {
