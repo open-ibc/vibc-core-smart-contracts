@@ -245,6 +245,31 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         vm.stopPrank();
     }
 
+    function test_uch_uch_upgrade__ok() public {
+        IUniversalChannelHandler uch = eth1.ucHandlerProxy();
+        UniversalChannelHandler newUCHImplementation = new UniversalChannelHandler();
+        vm.startPrank(address(eth1)); // Prank eth1 since that address is the owner
+        assertFalse(address(getProxyImplementation(address(uch), vm)) == address(newUCHImplementation));
+        UUPSUpgradeable(address(uch)).upgradeTo(address(address(newUCHImplementation)));
+
+        assertEq(
+            address(getProxyImplementation(address(uch), vm)),
+            address(newUCHImplementation),
+            "new uch implementation not set correctly in uch proxy"
+        );
+        vm.stopPrank();
+    }
+
+    function test_nonOwner_cannot_upgrade_uch() public {
+        IUniversalChannelHandler uch = eth1.ucHandlerProxy();
+        UniversalChannelHandler newUCHImplementation = new UniversalChannelHandler();
+        address notOwner = vm.addr(1);
+        vm.startPrank(notOwner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        UUPSUpgradeable(address(uch)).upgradeTo(address(address(newUCHImplementation)));
+        vm.stopPrank();
+    }
+
     /**
      * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of
      * UniversalChannel MW.
