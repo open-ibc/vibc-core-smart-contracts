@@ -81,7 +81,8 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         Ics23Proof calldata proof
     ) external;
 
-    function closeIbcChannel(bytes32 channelId) external;
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external;
+    function channelCloseInit(bytes32 channelId) external;
 
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external;
 

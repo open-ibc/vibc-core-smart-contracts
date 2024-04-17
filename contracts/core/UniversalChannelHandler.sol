@@ -34,28 +34,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, IbcUniversalChan
     function initialize(IbcDispatcher _dispatcher) public initializer {
         __IbcReceiverBase_init(_dispatcher);
     }
-    /**
-     * @dev Close a universal channel.
-     * Cannot send or receive packets after the channel is closed.
-     * @param channelId The channel id of the channel to be closed.
-     */
 
-    function closeChannel(bytes32 channelId) external onlyOwner {
-        dispatcher.closeIbcChannel(channelId);
-    }
+    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
-    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {
-        // logic to determin if the channel should be closed
-        bool channelFound = false;
-        for (uint256 i = 0; i < connectedChannels.length; i++) {
-            if (connectedChannels[i] == channelId) {
-                delete connectedChannels[i];
-                channelFound = true;
-                break;
-            }
-        }
-        if (!channelFound) revert ChannelNotFound();
-    }
+    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
     function openChannel(
         string calldata version,

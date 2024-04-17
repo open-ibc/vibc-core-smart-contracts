@@ -31,7 +31,8 @@ interface IbcDispatcher is IbcPacketSender {
         string calldata counterpartyPortId
     ) external;
 
-    function closeIbcChannel(bytes32 channelId) external;
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external;
+    function channelCloseInit(bytes32 channelId) external;
 
     function portPrefix() external view returns (string memory portPrefix);
 }
