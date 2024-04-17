@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
+import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/libs/Ibc.sol";
 import "../contracts/core/Dispatcher.sol";
@@ -27,7 +28,7 @@ struct ChannelSetting {
 
 struct VirtualChainData {
     IDispatcher dispatcherProxy;
-    UniversalChannelHandler ucHandler;
+    IUniversalChannelHandler ucHandlerProxy;
     Mars mars;
     Earth earth;
     GeneralMiddleware mw1;
@@ -39,7 +40,7 @@ struct VirtualChainData {
 contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
-    UniversalChannelHandler public ucHandler;
+    IUniversalChannelHandler public ucHandlerProxy;
     GeneralMiddleware public mw1;
     GeneralMiddleware public mw2;
 
@@ -60,12 +61,12 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         _seed = seed;
 
         (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, new DummyLightClient());
-        ucHandler = new UniversalChannelHandler(dispatcherProxy);
+        (ucHandlerProxy,) = deployUCHProxyAndImpl(address(dispatcherProxy));
 
         mars = new Mars(dispatcherProxy);
-        earth = new Earth(address(ucHandler));
+        earth = new Earth(address(ucHandlerProxy));
         // initialize portIds for counterparty chains
-        address[3] memory portContracts = [address(ucHandler), address(mars), address(earth)];
+        address[3] memory portContracts = [address(ucHandlerProxy), address(mars), address(earth)];
         for (uint256 i = 0; i < portContracts.length; i++) {
             portIds[portContracts[i]] = string(abi.encodePacked(portPrefix, toHexStr(portContracts[i])));
         }
@@ -73,13 +74,13 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         connectionHops[0] = newConnectionId();
         connectionHops[1] = newConnectionId();
 
-        mw1 = new GeneralMiddleware(1 << 1, address(ucHandler));
-        mw2 = new GeneralMiddleware(1 << 2, address(ucHandler));
+        mw1 = new GeneralMiddleware(1 << 1, address(ucHandlerProxy));
+        mw2 = new GeneralMiddleware(1 << 2, address(ucHandlerProxy));
     }
 
     // return virtualChainData
     function getVirtualChainData() external view returns (VirtualChainData memory) {
-        return VirtualChainData(dispatcherProxy, ucHandler, mars, earth, mw1, mw2, connectionHops);
+        return VirtualChainData(dispatcherProxy, ucHandlerProxy, mars, earth, mw1, mw2, connectionHops);
     }
 
     // expectedChannel returns a Channel struct with expected values
@@ -167,7 +168,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
                 remoteChain.portIds(address(remoteEnd))
             );
         }
-        vm.prank(address(ucHandler));
+        vm.prank(address(ucHandlerProxy));
         dispatcherProxy.channelOpenInit(setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId);
     }
 

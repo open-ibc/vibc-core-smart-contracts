@@ -29,7 +29,7 @@ contract UniversalChannelTest is Base {
                     feesEnabled[j],
                     validProof
                 );
-                eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+                eth1.finishHandshake(eth1.ucHandlerProxy(), eth2, eth2.ucHandlerProxy(), setting);
 
                 assert_channel(eth1, eth2, setting);
             }
@@ -37,17 +37,17 @@ contract UniversalChannelTest is Base {
     }
 
     function assert_channel(VirtualChain vc1, VirtualChain vc2, ChannelSetting memory setting) internal {
-        bytes32 channelId1 = vc1.channelIds(address(vc1.ucHandler()), address(vc2.ucHandler()));
-        bytes32 channelId2 = vc2.channelIds(address(vc2.ucHandler()), address(vc1.ucHandler()));
-        assertEq(vc1.ucHandler().connectedChannels(0), channelId1, "channels not equal 1");
-        assertEq(vc2.ucHandler().connectedChannels(0), channelId2, "channels not equal 2");
+        bytes32 channelId1 = vc1.channelIds(address(vc1.ucHandlerProxy()), address(vc2.ucHandlerProxy()));
+        bytes32 channelId2 = vc2.channelIds(address(vc2.ucHandlerProxy()), address(vc1.ucHandlerProxy()));
+        assertEq(vc1.ucHandlerProxy().connectedChannels(0), channelId1, "channels not equal 1");
+        assertEq(vc2.ucHandlerProxy().connectedChannels(0), channelId2, "channels not equal 2");
 
-        Channel memory channel1 = vc1.dispatcherProxy().getChannel(address(vc1.ucHandler()), channelId1);
-        Channel memory channel2 = vc2.dispatcherProxy().getChannel(address(vc2.ucHandler()), channelId2);
+        Channel memory channel1 = vc1.dispatcherProxy().getChannel(address(vc1.ucHandlerProxy()), channelId1);
+        Channel memory channel2 = vc2.dispatcherProxy().getChannel(address(vc2.ucHandlerProxy()), channelId2);
         Channel memory channel2Expected =
-            vc1.expectedChannel(address(vc1.ucHandler()), channelId1, vc2.getConnectionHops(), setting);
+            vc1.expectedChannel(address(vc1.ucHandlerProxy()), channelId1, vc2.getConnectionHops(), setting);
         Channel memory channel1Expected =
-            vc2.expectedChannel(address(vc2.ucHandler()), channelId2, vc1.getConnectionHops(), setting);
+            vc2.expectedChannel(address(vc2.ucHandlerProxy()), channelId2, vc1.getConnectionHops(), setting);
         assertEq(abi.encode(channel1), abi.encode(channel1Expected));
         assertEq(abi.encode(channel2), abi.encode(channel2Expected));
     }
@@ -65,8 +65,8 @@ contract UniversalChannelTest is Base {
             validProof
         );
 
-        IbcChannelReceiver ucHandler1 = eth1.ucHandler();
-        IbcChannelReceiver ucHandler2 = eth2.ucHandler();
+        IbcChannelReceiver ucHandler1 = eth1.ucHandlerProxy();
+        IbcChannelReceiver ucHandler2 = eth2.ucHandlerProxy();
         eth1.assignChannelIds(ucHandler1, ucHandler2, eth2);
 
         address unauthorized = deriveAddress("unauthorized");
@@ -127,14 +127,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         );
         eth1 = new VirtualChain(100, "polyibc.eth1.");
         eth2 = new VirtualChain(200, "polyibc.eth2.");
-        eth1.finishHandshake(eth1.ucHandler(), eth2, eth2.ucHandler(), setting);
+        eth1.finishHandshake(eth1.ucHandlerProxy(), eth2, eth2.ucHandlerProxy(), setting);
         v1 = eth1.getVirtualChainData();
         v2 = eth2.getVirtualChainData();
     }
 
     // register middleware stack: dApp -> mw1 -> UniversalChannel MW
     function register_mw1() internal returns (uint256) {
-        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID();
+        uint256 mwBitmap = v1.ucHandlerProxy.MW_ID() | v1.mw1.MW_ID();
         address[] memory mwAddrs = new address[](1);
 
         // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
@@ -142,14 +142,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         v1.earth.setDefaultMw(address(v1.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v1.mw1);
-        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        v1.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
         v2.earth.setDefaultMw(address(v2.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v2.mw1);
-        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        v2.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         return mwBitmap;
@@ -158,7 +158,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     // register middleware stack: dApp -> mw1 -> mw2 -> UniversalChannel MW
     function register_mw1_mw2() internal returns (uint256) {
         address[] memory mwAddrs = new address[](2);
-        uint256 mwBitmap = v1.ucHandler.MW_ID() | v1.mw1.MW_ID() | v2.mw2.MW_ID();
+        uint256 mwBitmap = v1.ucHandlerProxy.MW_ID() | v1.mw1.MW_ID() | v2.mw2.MW_ID();
 
         // change Earth's default middleware to mw1, which calls mw2, then UniversalChannel MW
         vm.startPrank(address(eth1));
@@ -168,7 +168,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         mwAddrs[0] = address(v1.mw2);
         mwAddrs[1] = address(v1.mw1);
 
-        v1.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        v1.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
@@ -177,7 +177,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         // register middleware stack
         mwAddrs[0] = address(v2.mw2);
         mwAddrs[1] = address(v2.mw1);
-        v2.ucHandler.registerMwStack(mwBitmap, mwAddrs);
+        v2.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         return mwBitmap;
@@ -191,7 +191,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
     // packet flow: Earth -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> Earth
     function test_packetFlow_via_universal_channel_ok() public {
-        uint256 mwBitmap = v1.ucHandler.MW_ID();
+        uint256 mwBitmap = v1.ucHandlerProxy.MW_ID();
         verifyPacketFlow(5, mwBitmap);
     }
 
@@ -208,7 +208,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     }
 
     function test_timeout_via_universal_channel_ok() public {
-        uint256 mwBitmap = v1.ucHandler.MW_ID();
+        uint256 mwBitmap = v1.ucHandlerProxy.MW_ID();
         verifyTimeoutFlow(5, mwBitmap);
     }
 
@@ -230,8 +230,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
      */
     function verifyTimeoutFlow(uint64 numOfPackets, uint256 mwBitmap) internal {
         // universal channelIDs
-        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
-        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
+        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandlerProxy()), address(eth2.ucHandlerProxy()));
+        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandlerProxy()), address(eth1.ucHandlerProxy()));
         GeneralMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
 
         for (uint64 packetSeq = 1; packetSeq <= numOfPackets; packetSeq++) {
@@ -263,15 +263,15 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             }
             // Verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
+            emit SendPacket(address(v1.ucHandlerProxy), channelId1, packetData, packetSeq, timeout);
 
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
             // simulate relayer calling dispatcherProxy.recvPacket on chain B
             // recvPacket is an IBC packet
             recvPacket = IbcPacket(
-                IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
-                IbcEndpoint(eth2.portIds(address(v2.ucHandler)), channelId2),
+                IbcEndpoint(eth1.portIds(address(v1.ucHandlerProxy)), channelId1),
+                IbcEndpoint(eth2.portIds(address(v2.ucHandlerProxy)), channelId2),
                 packetSeq,
                 packetData,
                 Height(0, 0),
@@ -300,7 +300,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             }
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit Timeout(address(v1.ucHandler), channelId1, packetSeq);
+            emit Timeout(address(v1.ucHandlerProxy), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
             v1.dispatcherProxy.timeout(recvPacket, validProof);
 
@@ -319,8 +319,8 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
      */
     function verifyPacketFlow(uint64 numOfPackets, uint256 mwBitmap) internal {
         // universal channelIDs
-        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandler()), address(eth2.ucHandler()));
-        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandler()), address(eth1.ucHandler()));
+        bytes32 channelId1 = eth1.channelIds(address(eth1.ucHandlerProxy()), address(eth2.ucHandlerProxy()));
+        bytes32 channelId2 = eth2.channelIds(address(eth2.ucHandlerProxy()), address(eth1.ucHandlerProxy()));
         GeneralMiddleware[2] memory senderMws = [v1.mw1, v1.mw2];
         GeneralMiddleware[2] memory recvMws = [v2.mw2, v1.mw1];
 
@@ -353,14 +353,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
             // Verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit SendPacket(address(v1.ucHandler), channelId1, packetData, packetSeq, timeout);
+            emit SendPacket(address(v1.ucHandlerProxy), channelId1, packetData, packetSeq, timeout);
             v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
 
             // simulate relayer calling dispatcherProxy.recvPacket on chain B
             // recvPacket is an IBC packet
             recvPacket = IbcPacket(
-                IbcEndpoint(eth1.portIds(address(v1.ucHandler)), channelId1),
-                IbcEndpoint(eth2.portIds(address(v2.ucHandler)), channelId2),
+                IbcEndpoint(eth1.portIds(address(v1.ucHandlerProxy)), channelId1),
+                IbcEndpoint(eth2.portIds(address(v2.ucHandlerProxy)), channelId2),
                 packetSeq,
                 packetData,
                 Height(0, 0),
@@ -370,7 +370,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             ackPacket = v2.earth.generateAckPacket(channelId2, address(v1.earth), appData);
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit RecvPacket(address(v2.ucHandler), channelId2, packetSeq);
+            emit RecvPacket(address(v2.ucHandlerProxy), channelId2, packetSeq);
             // iterate over receiving middleware contracts to verify each MW has witnessed the packet
             for (uint256 i = 0; i < recvMws.length; i++) {
                 if (recvMws[i].MW_ID() == (recvMws[i].MW_ID() & mwBitmap)) {
@@ -387,7 +387,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             }
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit WriteAckPacket(address(v2.ucHandler), channelId2, packetSeq, ackPacket);
+            emit WriteAckPacket(address(v2.ucHandlerProxy), channelId2, packetSeq, ackPacket);
             v2.dispatcherProxy.recvPacket(recvPacket, validProof);
 
             // verify packet received by Earth on chain B
@@ -418,7 +418,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             }
             // verify event emitted by Dispatcher
             vm.expectEmit(true, true, true, true);
-            emit Acknowledgement(address(v1.ucHandler), channelId1, packetSeq);
+            emit Acknowledgement(address(v1.ucHandlerProxy), channelId1, packetSeq);
             // receive ack on chain A, triggering expected events
             v1.dispatcherProxy.acknowledgement(recvPacket, ackToBytes(ackPacket), validProof);
 

@@ -7,6 +7,7 @@ import "../contracts/utils/DummyLightClient.sol";
 import "../contracts/core/Dispatcher.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {IDispatcher} from "../contracts/core/Dispatcher.sol";
+import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../contracts/core/OpProofVerifier.sol";
 import "../contracts/core/OpLightClient.sol";
@@ -106,9 +107,18 @@ contract Deploy is Script {
     }
 
     function deployUniversalChannelHandler(address dispatcher) public broadcast returns (address addr_) {
-        UniversalChannelHandler handler = new UniversalChannelHandler{salt: _implSalt()}(IbcDispatcher(dispatcher));
-        console.log("UniversalChannelHandler deployed at %s", address(handler));
-        return address(handler);
+        UniversalChannelHandler uchImplementation = new UniversalChannelHandler();
+        IUniversalChannelHandler proxy = IUniversalChannelHandler(
+            address(
+                new ERC1967Proxy(
+                    address(uchImplementation),
+                    abi.encodeWithSelector(UniversalChannelHandler.initialize.selector, dispatcher)
+                )
+            )
+        );
+        console.log("UniversalChannelHandler implementation deployed at %s", address(uchImplementation));
+        console.log("UniversalChannelHandler proxy deployed at %s", address(proxy));
+        return address(proxy);
     }
 
     function deployEarth(address middleware) public broadcast returns (address addr_) {

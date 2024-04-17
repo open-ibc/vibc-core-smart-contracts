@@ -11,10 +11,13 @@ import {
     IbcMwPacketReceiver,
     IbcMwEventsEmitter
 } from "../interfaces/IbcMiddleware.sol";
-import {IbcReceiver, IbcReceiverBase} from "../interfaces/IbcReceiver.sol";
+import {IbcReceiver} from "../interfaces/IbcReceiver.sol";
+import {IbcReceiverBaseUpgradeable} from "../interfaces/IbcReceiverUpgradeable.sol";
 import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
 
-contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
+contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, IbcUniversalChannelMW {
+    uint256[49] private __gap;
+
     bytes32[] public connectedChannels;
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
@@ -24,7 +27,13 @@ contract UniversalChannelHandler is IbcReceiverBase, IbcUniversalChannelMW {
 
     event UCHPacketSent(address source, bytes32 destination);
 
-    constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(IbcDispatcher _dispatcher) public initializer {
+        __IbcReceiverBase_init(_dispatcher);
+    }
     /**
      * @dev Close a universal channel.
      * Cannot send or receive packets after the channel is closed.
