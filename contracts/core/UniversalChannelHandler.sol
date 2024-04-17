@@ -191,6 +191,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, IbcUniversalChan
 
     function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
 
+    function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
+        dispatcher = _dispatcher;
+    }
+
     function _connectChannel(bytes32 channelId, string calldata version)
         internal
         returns (string memory checkedVersion)
