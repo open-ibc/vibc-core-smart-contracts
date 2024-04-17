@@ -247,31 +247,16 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     /**
-     * @dev Emits a `CloseIbcChannel` event with the given `channelId` and the address of the message sender
-     * @notice Close the specified IBC channel by channel ID
-     * Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
+     * @notice Initializes a close channel handshake process. It is directly called by the dapp which wants to close
+     * the channel
      */
-    function closeIbcChannel(bytes32 channelId) external {
-        Channel memory channel = _portChannelMap[msg.sender][channelId];
-        if (channel.counterpartyChannelId == bytes32(0)) {
-            revert IBCErrors.channelNotOwnedBySender();
-        }
+    function channelCloseInit(bytes32 channelId) external {}
 
-        (bool success, bytes memory data) = _callIfContract(
-            msg.sender,
-            abi.encodeWithSelector(
-                IbcChannelReceiver.onCloseIbcChannel.selector,
-                channelId,
-                channel.counterpartyPortId,
-                channel.counterpartyChannelId
-            )
-        );
-        if (success) {
-            emit CloseIbcChannel(msg.sender, channelId);
-        } else {
-            emit CloseIbcChannelError(address(msg.sender), data);
-        }
-    }
+    /**
+     * @notice Confirms a close channel handshake process. It is called by a relayer on behalf of the dapp whhich
+     * initializes the channel closefter after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
+     */
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {}
 
     /**
      * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed ChanCloseConfirm event.

@@ -49,27 +49,6 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         timeoutPackets.push(packet);
     }
 
-    function onCloseIbcChannel(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
-        // logic to determin if the channel should be closed
-        bool channelFound = false;
-        for (uint256 i = 0; i < connectedChannels.length; i++) {
-            if (connectedChannels[i] == channelId) {
-                delete connectedChannels[i];
-                channelFound = true;
-                break;
-            }
-        }
-        if (!channelFound) revert ChannelNotFound();
-    }
-
-    /**
-     * This func triggers channel closure from the dApp.
-     * Func args can be arbitary, as long as dispatcher.closeIbcChannel is invoked propperly.
-     */
-    function triggerChannelClose(bytes32 channelId) external onlyOwner {
-        dispatcher.closeIbcChannel(channelId);
-    }
-
     /**
      * @dev Sends a packet with a greeting message over a specified channel.
      * @param message The greeting message to be sent.
@@ -134,6 +113,10 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         }
         revert UnsupportedVersion();
     }
+
+    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
+
+    function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 }
 
 /*
@@ -168,12 +151,6 @@ contract RevertingStringMars is Mars {
     function onChanOpenAck(bytes32, bytes32, string calldata) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "connect ibc channel is reverting");
-    }
-
-    // solhint-disable-next-line
-    function onCloseIbcChannel(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
-        // solhint-disable-next-line
-        require(false, "close ibc channel is reverting");
     }
 
     // solhint-disable-next-line

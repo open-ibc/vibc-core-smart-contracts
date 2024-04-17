@@ -112,8 +112,10 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             revert IBCErrors.invalidCounterPartyPortId();
         }
 
+        // Have to encode here to avoid stack-too-deep error
+        bytes memory chanOpenInitArgs = abi.encode(ordering, connectionHops, counterpartyPortId, version);
         (bool success, bytes memory data) =
-            _callIfContract(msg.sender, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenInit.selector, version));
+            _callIfContract(msg.sender, bytes.concat(IbcChannelReceiver.onChanOpenInit.selector, chanOpenInitArgs));
 
         if (success) {
             emit ChannelOpenInit(
@@ -149,7 +151,16 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
 
         address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            receiver, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenTry.selector, counterparty.version)
+            receiver,
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onChanOpenTry.selector,
+                ordering,
+                connectionHops,
+                local.channelId,
+                counterparty.portId,
+                counterparty.channelId,
+                counterparty.version
+            )
         );
 
         if (success) {
@@ -188,7 +199,9 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
             receiver,
-            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.version)
+            abi.encodeWithSelector(
+                IbcChannelReceiver.onChanOpenAck.selector, local.channelId, counterparty.channelId, counterparty.version
+            )
         );
 
         if (success) {
@@ -233,31 +246,16 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     }
 
     /**
-     * @dev Emits a `CloseIbcChannel` event with the given `channelId` and the address of the message sender
-     * @notice Close the specified IBC channel by channel ID
-     * Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
+     * @notice Initializes a close channel handshake process. It is directly called by the dapp which wants to close
+     * the channel
      */
-    function closeIbcChannel(bytes32 channelId) external {
-        Channel memory channel = _portChannelMap[msg.sender][channelId];
-        if (channel.counterpartyChannelId == bytes32(0)) {
-            revert IBCErrors.channelNotOwnedBySender();
-        }
+    function channelCloseInit(bytes32 channelId) external {}
 
-        (bool success, bytes memory data) = _callIfContract(
-            msg.sender,
-            abi.encodeWithSelector(
-                IbcChannelReceiver.onCloseIbcChannel.selector,
-                channelId,
-                channel.counterpartyPortId,
-                channel.counterpartyChannelId
-            )
-        );
-        if (success) {
-            emit CloseIbcChannel(msg.sender, channelId);
-        } else {
-            emit CloseIbcChannelError(address(msg.sender), data);
-        }
-    }
+    /**
+     * @notice Confirms a close channel handshake process. It is called by a relayer on behalf of the dapp whhich
+     * initializes the channel closefter after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
+     */
+    function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external {}
 
     /**
      * This func is called by a 'relayer' after the IBC/VIBC hub chain has processed ChanCloseConfirm event.
@@ -281,7 +279,8 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     //
     //     // confirm with dApp by calling its callback
     //     IbcChannelReceiver reciever = IbcChannelReceiver(portAddress);
-    //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId, channel.counterpartyChannelId);
+    //     reciever.onCloseIbcChannel(channelId, channel.counterpartyPortId,
+    // channel.counterpartyChannelId);
     //     delete _portChannelMap[portAddress][channelId];
     //     emit CloseIbcChannel(portAddress, channelId);
     // }
@@ -453,23 +452,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         emit WriteAckPacket(receiver, packet.dest.channelId, packet.sequence, ack);
     }
 
-    // TODO: add async writeAckPacket
-    // // this can be invoked sync or async by the IBC-dApp
-    // function writeAckPacket(IbcPacket calldata packet, AckPacket calldata ackPacket) external {
-    //     // verify `receiver` is the original packet sender
-    //     require(
-    //         portIdAddressMatch(address(msg.sender), packet.src.portId),
-    //         'Receiver is not the original packet sender'
-    //     );
-    // }
-
-    // TODO: remove below writeTimeoutPacket() function
-    //       1. core SC is responsible to generate timeout packet
-    //       2. user contract are not free to generate timeout with different criteria
-    //       3. [optional]: we may wish relayer to trigger timeout process, but in this case, belowunction won't do
-    // the job, as it doesn't have proofs.
-    //          There is no strong reason to do this, as relayer can always do the regular `recvPacket` flow, which will
-    // do proper timeout generation.
     /**
      * Generate a timeout packet for the given packet
      */
@@ -481,7 +463,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet does not have a receipt
         bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
-
         if (hasReceipt) {
             revert IBCErrors.packetReceiptAlreadyExists();
         }
@@ -515,20 +496,6 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
         return _lightClient.getState(height);
-    }
-
-    // verify an EVM address matches an IBC portId.
-    // IBC_PortID = portPrefix + address (hex string without 0x prefix, case-insensitive)
-    // function portIdAddressMatch(address addr, string calldata portId) public view returns (bool isMatch) {
-    //     if (keccak256(abi.encodePacked(portPrefix)) != keccak256(abi.encodePacked(portId[0:portPrefixLen]))) {
-    //         return false;
-    //     }
-    //     string memory portSuffix = portId[portPrefixLen:];
-    //     isMatch = Ibc._hexStrToAddress(portSuffix) == addr;
-    // }
-
-    function _getAddressFromPort(string calldata port) internal view returns (address) {
-        return Ibc._hexStrToAddress(port[portPrefixLen:]);
     }
 
     // Prerequisite: must verify sender is authorized to send packet on the channel
@@ -572,7 +539,8 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         _nextSequenceSend[address(portAddress)][local.channelId] = 1;
         _nextSequenceRecv[address(portAddress)][local.channelId] = 1;
         _nextSequenceAck[address(portAddress)][local.channelId] = 1;
-        _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for finding
+        _channelIdToConnection[local.channelId] = connectionHops[0]; // Set channel to connection mapping for
+            // finding
     }
 
     // Returns the result of the call if no revert, otherwise returns the error if thrown.
@@ -599,5 +567,9 @@ contract DispatcherV2 is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
             // TODO: check timeoutHeight.revision_number?
             || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
         );
+    }
+
+    function _getAddressFromPort(string calldata port) internal view returns (address addr) {
+        addr = Ibc._hexStrToAddress(port[portPrefixLen:]);
     }
 }
