@@ -14,8 +14,9 @@ import {
 import {IbcReceiver} from "../interfaces/IbcReceiver.sol";
 import {IbcReceiverBaseUpgradeable} from "../interfaces/IbcReceiverUpgradeable.sol";
 import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket, IbcUtils} from "../libs/Ibc.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, IbcUniversalChannelMW {
+contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable, IbcUniversalChannelMW {
     uint256[49] private __gap;
 
     bytes32[] public connectedChannels;
@@ -176,6 +177,8 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, IbcUniversalChan
     function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
         dispatcher = _dispatcher;
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     function _connectChannel(bytes32 channelId, string calldata version)
         internal
