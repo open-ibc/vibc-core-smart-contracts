@@ -27,5 +27,7 @@ interface IUniversalChannelHandler is IbcUniversalChannelMW {
         string calldata counterpartyPortIdentifier
     ) external;
     function closeChannel(bytes32 channelId) external;
-    function connectedChannels(uint256) external view returns (bytes32);
+    function setDispatcher(IbcDispatcher dispatcher) external;
+    function dispatcher() external returns (IbcDispatcher dispatcher);
+    function connectedChannels(uint256) external view returns (bytes32 channel);
 }

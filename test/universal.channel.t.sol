@@ -222,6 +222,29 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         verifyTimeoutFlow(5, mwBitmap);
     }
 
+    function test_uch_new_dispatcher_set_ok() public {
+        IUniversalChannelHandler uch = eth1.ucHandlerProxy();
+        vm.startPrank(address(eth1)); // Prank eth1 since that address is the owner
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", dummyConsStateManager);
+        assertFalse(
+            address(uch.dispatcher()) == address(newDispatcher), "new dispatcher in uch test not setup correctly"
+        );
+        uch.setDispatcher(newDispatcher);
+        assertEq(address(uch.dispatcher()), address(newDispatcher), "new dispatcher not set correctly in uch");
+        vm.stopPrank();
+    }
+
+    function test_nonOwner_cannot_set_uch_dispatcher() public {
+        IUniversalChannelHandler uch = eth1.ucHandlerProxy();
+        address notOwner = vm.addr(1);
+        vm.startPrank(notOwner);
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", dummyConsStateManager);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        uch.setDispatcher(newDispatcher);
+        vm.stopPrank();
+    }
+
     /**
      * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of
      * UniversalChannel MW.

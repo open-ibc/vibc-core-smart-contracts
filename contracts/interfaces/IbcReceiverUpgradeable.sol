@@ -29,6 +29,10 @@ contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
         _disableInitializers();
     }
 
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    // An empty function body is sufficient to receive packet fee refunds.
+    receive() external payable {}
+
     /**
      * @dev initializer function that takes an IbcDispatcher address and grants the IBC_ROLE to the Polymer IBC
      * Dispatcher.
@@ -38,8 +42,4 @@ contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
         __Ownable_init();
         dispatcher = _dispatcher;
     }
-
-    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
-    // An empty function body is sufficient to receive packet fee refunds.
-    receive() external payable {}
 }
