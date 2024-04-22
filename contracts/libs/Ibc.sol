@@ -141,6 +141,7 @@ library IBCErrors {
     error consensusStateVerificationFailed();
     error packetNotTimedOut();
     error invalidAddress();
+    error notEnoughGas();
 
     // packet sequence related errors.
     error invalidPacketSequence();

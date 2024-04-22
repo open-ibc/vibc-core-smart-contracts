@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Base} from "./Dispatcher.Base.t.sol";
 import {GasUsingMars} from "./mocks/GasUsingMars.sol";
-import {IbcEndpoint, ChannelEnd, IbcUtils, IbcPacket} from "../contracts/libs/Ibc.sol";
+import {IbcEndpoint, ChannelEnd, IbcUtils, IbcPacket, IBCErrors} from "../contracts/libs/Ibc.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
 
 contract DispatcherGasGriefing is Base {
@@ -21,7 +21,7 @@ contract DispatcherGasGriefing is Base {
     function setUp() public override {
         (dispatcherProxy, dispatcherImplementation) =
             TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, dummyConsStateManager);
-        gasUsingMars = new GasUsingMars(2_000_000, dispatcherProxy);
+        gasUsingMars = new GasUsingMars(3_000_000, dispatcherProxy); // Set arbitrarily high gas useage in mars contract
     }
 
     function test_GasGriefing() public {
@@ -33,6 +33,8 @@ contract DispatcherGasGriefing is Base {
         packet.src.portId = ch0.portId;
         packet.src.channelId = ch0.channelId;
         packet.sequence = 1;
-        dispatcherProxy.recvPacket{gas: 2_000_000}(packet, validProof);
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.notEnoughGas.selector));
+        dispatcherProxy.recvPacket{gas: 2_000_000}(packet, validProof); // Should be enough gas to run out in the
+            // callback but still finish execution
     }
 }

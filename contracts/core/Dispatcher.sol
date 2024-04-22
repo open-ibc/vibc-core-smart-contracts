@@ -555,7 +555,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         // Only call if we are sure receiver is a contract
         // Note: This tx won't revert if the low-level call fails, see
         // https://docs.soliditylang.org/en/latest/cheatsheet.html#members-of-address
+        uint256 gasBeforeCall = gasleft();
         (success, message) = receiver.call(args);
+        if (!success && gasleft() < gasBeforeCall / 64) {
+            revert IBCErrors.notEnoughGas();
+        }
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
