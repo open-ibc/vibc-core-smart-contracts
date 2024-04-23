@@ -562,7 +562,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         // call
         // and x/64 for the remaining execution after the low-level call. If this low-level call runs out of gas, then
         // gasLeft will be equal to x/64 at the start of the remaining execution. so we should check gasBefore < 1/64
-        if (!success && gasleft() < gasBeforeCall / 64) {
+        if (!success && gasleft() <= gasBeforeCall / 64) {
             // Only check for out of gas if the call failed; if it was a successful call then it was gauranteed to not
             // run out of gas
             revert IBCErrors.notEnoughGas();

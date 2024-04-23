@@ -39,7 +39,7 @@ contract GasUsingMars is Mars {
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
-    function _useGas() internal {
+    function _useGas() internal view {
         // This function is used to test the gas usage of the contract
         uint256 startingGas = gasleft();
         uint256 dummyInt = 0;
