@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Base} from "./Dispatcher.Base.t.sol";
+import {Base} from "./Dispatcher.base.t.sol";
 import {GasUsingMars} from "./mocks/GasUsingMars.sol";
 import {IbcEndpoint, ChannelEnd, IbcUtils, IbcPacket, IBCErrors} from "../contracts/libs/Ibc.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
