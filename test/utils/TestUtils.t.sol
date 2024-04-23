@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
