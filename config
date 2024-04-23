@@ -1,0 +1,140 @@
+[profile.default]
+src = "contracts"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@lazyledger/protobuf3-solidity-lib/=lib/protobuf3-solidity-lib/",
+    "ds-test/=lib/forge-std/lib/ds-test/src/",
+    "forge-std/=lib/forge-std/src/",
+    "optimism/=lib/optimism/packages/contracts-bedrock/src/",
+    "base64/=lib/base64/",
+    "proto/=lib/proto/",
+    "clones-with-immutable-args/=lib/optimism/packages/contracts-bedrock/lib/clones-with-immutable-args/src/",
+    "erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/",
+    "openzeppelin-contracts-upgradeable/=lib/optimism/packages/contracts-bedrock/lib/openzeppelin-contracts-upgradeable/",
+    "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+    "openzeppelin/=lib/openzeppelin-contracts/contracts/",
+    "protobuf3-solidity-lib/=lib/protobuf3-solidity-lib/contracts/",
+    "safe-contracts/=lib/optimism/packages/contracts-bedrock/lib/safe-contracts/contracts/",
+    "solmate/=lib/optimism/packages/contracts-bedrock/lib/solmate/src/",
+]
+auto_detect_remappings = true
+libraries = []
+cache = true
+cache_path = "forge-cache"
+broadcast = "broadcast"
+allow_paths = []
+include_paths = []
+force = false
+evm_version = "paris"
+gas_reports = ["*"]
+gas_reports_ignore = []
+auto_detect_solc = true
+offline = false
+optimizer = true
+optimizer_runs = 200
+verbosity = 0
+ignored_error_codes = [
+    "license",
+    "code-size",
+    "init-code-size",
+    "transient-storage",
+]
+ignored_warnings_from = []
+deny_warnings = false
+isolate = false
+cancun = false
+ffi = false
+always_use_create_2_factory = false
+sender = "0x1804c8ab1f12e6bbf3894d4083f33e07309d1f38"
+tx_origin = "0x1804c8ab1f12e6bbf3894d4083f33e07309d1f38"
+initial_balance = "0xffffffffffffffffffffffff"
+block_number = 1
+gas_limit = 9223372036854775807
+block_base_fee_per_gas = 0
+block_coinbase = "0x0000000000000000000000000000000000000000"
+block_timestamp = 1
+block_difficulty = 0
+block_prevrandao = "0x0000000000000000000000000000000000000000000000000000000000000000"
+memory_limit = 134217728
+extra_output = []
+extra_output_files = []
+names = false
+sizes = false
+via_ir = false
+ast = false
+no_storage_caching = false
+no_rpc_rate_limit = false
+use_literal_content = false
+bytecode_hash = "ipfs"
+cbor_metadata = true
+sparse_mode = false
+build_info = false
+disable_block_gas_limit = false
+
+[[profile.default.fs_permissions]]
+access = "read"
+path = "./test/payload"
+
+[profile.default.rpc_storage_caching]
+chains = "all"
+endpoints = "all"
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "thousands"
+hex_underscore = "remove"
+single_line_statement_blocks = "preserve"
+override_spacing = false
+wrap_comments = true
+ignore = []
+contract_new_lines = false
+sort_imports = false
+
+[doc]
+out = "docs"
+title = ""
+book = "book.toml"
+homepage = "README.md"
+ignore = []
+
+[fuzz]
+runs = 256
+max_test_rejects = 65536
+dictionary_weight = 40
+include_storage = true
+include_push_bytes = true
+max_fuzz_dictionary_addresses = 15728640
+max_fuzz_dictionary_values = 6553600
+max_calldata_fuzz_dictionary_addresses = 0
+gas_report_samples = 256
+failure_persist_dir = "cache/fuzz"
+failure_persist_file = "failures"
+
+[invariant]
+runs = 256
+depth = 15
+fail_on_revert = false
+call_override = false
+dictionary_weight = 80
+include_storage = true
+include_push_bytes = true
+max_fuzz_dictionary_addresses = 15728640
+max_fuzz_dictionary_values = 6553600
+max_calldata_fuzz_dictionary_addresses = 0
+shrink_sequence = true
+shrink_run_limit = 262144
+preserve_state = false
+max_assume_rejects = 65536
+gas_report_samples = 256
+
+[labels]
+
