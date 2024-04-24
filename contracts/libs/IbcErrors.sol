@@ -12,6 +12,7 @@ library IBCErrors {
     error invalidAddress();
     error invalidPortPrefix();
     error notEnoughGas();
+    error invalidCharacter();
 
     // packet sequence related errors.
     error invalidPacketSequence();

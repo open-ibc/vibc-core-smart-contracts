@@ -35,32 +35,46 @@ library IbcUtils {
      * hexStr is case-insensitive.
      */
     function hexStrToAddress(string memory hexStr) public pure returns (address addr) {
+        bytes memory hexBytes = bytes(hexStr);
         if (bytes(hexStr).length != 40) {
-            revert IBCErrors.invalidHexStringLength();
+            revert IBCErrors.invalidHexStringLength(); // Addresses must always be 20 bytes long; equal to 40 nibbles
         }
 
-        bytes memory strBytes = bytes(hexStr);
-        bytes memory addrBytes = new bytes(20);
-
-        for (uint256 i = 0; i < 20; i++) {
-            uint8 high = uint8(strBytes[i * 2]);
-            uint8 low = uint8(strBytes[1 + i * 2]);
-            // Convert to lowercase if the character is in uppercase
-            if (high >= 65 && high <= 90) {
-                high += 32;
+        uint256 total = 0;
+        uint256 base = 1;
+        uint256 i = 40;
+        while (i > 0) {
+            i--;
+            uint256 digit;
+            // Convert ASCII to integer value
+            if (uint8(hexBytes[i]) >= 48 && uint8(hexBytes[i]) <= 57) {
+                /**
+                 * This triggers if hexBytes[i] is equal to '0' to '9'
+                 * '0' - '9' are 48-57 in ascii, and we want to map this into 0-9, so we subtract 48
+                 */
+                digit = uint160(uint8(hexBytes[i]) - 48);
+            } else if (uint8(hexBytes[i]) >= 65 && uint8(hexBytes[i]) <= 70) {
+                /**
+                 * This triggers if hexBytes[i] is equal to 'A' to 'F'
+                 * 'A' - 'F' are 65-70 in ascii, and we want to map this into 0xa-0xf (equal to 10-15), so we
+                 * sutract 55
+                 */
+                digit = uint160(uint8(hexBytes[i]) - 55);
+            } else if (uint8(hexBytes[i]) >= 97 && uint8(hexBytes[i]) <= 102) {
+                /**
+                 * This triggers if hexBytes[i] is equal to 'a' to 'f'
+                 * 'a' to 'f' are 97-102 in ascii, and we want to amp this into 0xa-0xf (equal to 10-15), so we
+                 * sutract 87
+                 */
+                digit = uint160(uint8(hexBytes[i]) - 87);
+            } else {
+                revert IBCErrors.invalidCharacter();
             }
-            if (low >= 65 && low <= 90) {
-                low += 32;
-            }
-            uint8 digit = (high - (high >= 97 ? 87 : 48)) * 16 + (low - (low >= 97 ? 87 : 48));
-            addrBytes[i] = bytes1(digit);
+            total += digit * base;
+            base *= 16;
         }
 
-        assembly {
-            addr := mload(add(addrBytes, 20))
-        }
-
-        return addr;
+        addr = address(uint160(total));
     }
 
     function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
