@@ -88,4 +88,26 @@ contract IbcTest is Test {
             "daf;lkdsajflkasjdv;lkjzdljga;lkgfjda;iocjvz;lkjval;dsjkf;alkdj;zlkjv;lkjaeg;ijafd;lkjzvc,mnb.kahgd;ajkfaj;dgoij;zlckjv;lzkjv;kaldfjg;alkjgf;lkzvjcx;lkvja;lkjg;aslgjdz;adf;kasjg;lkjwaea;lkjg;io1j;4kjrda;lkfjaleot8ywp89yz;dvhlsdkj"
         );
     }
+
+    function test_InvalidHexStr_To_Address() public {
+        string memory validString = "2B5AD5c4795c026514f8317c7a215E218DcCD6cF"; // Can't start with g
+        assertEq(IbcUtils.hexStrToAddress(validString), vm.addr(2));
+
+        string memory invalidHexStr1 = "123"; // Too Short
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidHexStringLength.selector));
+        IbcUtils.hexStrToAddress(invalidHexStr1);
+
+        string memory invalidHexStr2 = "2B5AD5c4795c026514f8317c7a215E218DcCD6cFa"; // Too long
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidHexStringLength.selector));
+        IbcUtils.hexStrToAddress(invalidHexStr2);
+
+        string memory invalidHexStr3 = "2G5AD5c4795c026514f8317c7a215E218DcCD6cF"; // Can't have G
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidCharacter.selector));
+        IbcUtils.hexStrToAddress(invalidHexStr3);
+    }
+
+    function test_To_From_addr_hexStr(address addr) public {
+        bytes memory hexStr = IbcUtils.toHexStr(addr);
+        assertEq(addr, IbcUtils.hexStrToAddress(string(hexStr)));
+    }
 }
