@@ -27,7 +27,10 @@ import {IProofVerifier} from "../../contracts/core/OptimisticProofVerifier.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
+import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
+import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
+import {UniversalChannelHandlerV2} from "./upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -48,6 +51,11 @@ abstract contract UpgradeTestUtils {
         UUPSUpgradeable(dispatcherProxy).upgradeToAndCall(address(newDispatcherImplementation), initData);
     }
 
+    function upgradeUch(address uchProxy) public returns (UniversalChannelHandler newUCHImplementation) {
+        newUCHImplementation = new UniversalChannelHandler(); // Upgrade from v2 to v3
+        UUPSUpgradeable(address(uchProxy)).upgradeTo(address(newUCHImplementation));
+    }
+
     function deployDispatcherRC4ProxyAndImpl(string memory initPortPrefix, ILightClient initLightClient)
         public
         returns (IDispatcher proxy)
@@ -56,6 +64,12 @@ abstract contract UpgradeTestUtils {
         bytes memory initData =
             abi.encodeWithSelector(DispatcherRc4.initialize.selector, initPortPrefix, initLightClient);
         proxy = IDispatcher(address(new ERC1967Proxy(address(dispatcherImplementation), initData)));
+    }
+
+    function deployUCHV2ProxyAndImpl(address dispatcherProxy) public returns (IUniversalChannelHandler proxy) {
+        UniversalChannelHandlerV2 uchImplementation = new UniversalChannelHandlerV2();
+        bytes memory initData = abi.encodeWithSelector(UniversalChannelHandlerV2.initialize.selector, dispatcherProxy);
+        proxy = IUniversalChannelHandler(address(new ERC1967Proxy(address(uchImplementation), initData)));
     }
 }
 
