@@ -19,6 +19,8 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable, IbcUniversalChannelMW {
     uint256[49] private __gap;
 
+    bytes32 private _UNUSED; // Storage placeholder to ensure upgrade from this version is backwards compatible
+
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
