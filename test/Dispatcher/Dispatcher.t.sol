@@ -7,6 +7,7 @@ import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
+import {Base} from "../utils/Dispatcher.base.t.sol";
 import "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import {LocalEnd, ChannelHandshakeSetting, Base} from "../utils/Dispatcher.base.t.sol";

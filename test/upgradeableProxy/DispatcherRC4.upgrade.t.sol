@@ -5,6 +5,7 @@ import "forge-std/console2.sol";
 import {DispatcherUpdateClientTestSuite} from "../Dispatcher/Dispatcher.client.t.sol";
 import {DispatcherIbcWithRealProofsSuite} from "../Dispatcher/Dispatcher.proof.t.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
+import {Earth} from "../../contracts/examples/Earth.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import {ChannelHandshakeTestSuite, ChannelHandshakeTest, ChannelHandshakeUtils} from "../Dispatcher/Dispatcher.t.sol";
 import {LocalEnd} from "../utils/Dispatcher.base.t.sol";
@@ -17,7 +18,8 @@ import {
     IbcPacket,
     AckPacket,
     Ibc,
-    Height
+    Height,
+    UniversalPacket
 } from "../../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
@@ -30,12 +32,18 @@ import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 
 import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "./Dispatcher.upgrade.t.sol";
 import {IDispatcherRc4, DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
+import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
+import {VirtualChain} from "../VirtualChain.sol";
+import {GeneralMiddleware} from "../../contracts/base/GeneralMiddleware.sol";
 
 // Tests to ensure that the upgrade between rc4 -> preaudit fixes doesn't break the state of the contract
 contract DispatcherRC4UpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     Mars receivingMars;
     Mars dummyMars;
     IDispatcher oldDummyDispatcherProxy;
+    IUniversalChannelHandler uch;
+    LocalEnd _localUch;
+    Earth earth;
 
     function setUp() public override {
         // In Rc4 version, there can only be one dispatcher per light client so we deploy multiple clients
@@ -47,13 +55,17 @@ contract DispatcherRC4UpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUti
             // prod - it will be the light client that is chosen for the upgrade (and the oldDummyDispatcherProxy will
             // be deprecated)
         dispatcherProxy = deployDispatcherRC4ProxyAndImpl(portPrefix, dummyLightClient2);
+        uch = deployUCHV2ProxyAndImpl(address(dispatcherProxy));
+        earth = new Earth(address(uch));
 
         // Set up dispatcher with non-trivial state
         mars = new Mars(dispatcherProxy);
         receivingMars = new Mars(dispatcherProxy);
         string memory sendingPortId = IbcUtils.addressToPortId(portPrefix, address(mars));
+        string memory uchSendingPortId = IbcUtils.addressToPortId(portPrefix, address(uch));
         string memory receivingPortId = IbcUtils.addressToPortId(portPrefix, address(receivingMars));
         _local = LocalEnd(mars, sendingPortId, "channel-1", connectionHops1, "1.0", "1.0");
+        _localUch = LocalEnd(uch, uchSendingPortId, "uch-channel", connectionHops1, "1.0", "1.0");
         _remote = ChannelEnd(receivingPortId, "channel-2", "1.0");
 
         // Should now be able to able to open a connection without proofs on the upgraded dispatcherproxy now
@@ -64,8 +76,13 @@ contract DispatcherRC4UpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUti
         doProofChannelHandshake(_local, _remote);
         sendPacket(_local.channelId);
 
-        // Upgrade dispatcherProxy for tests
+        // Do channel handshake via uch
+        doProofChannelHandshake(_localUch, _remote);
+        earth.greet(address(mars), _localUch.channelId, bytes("hello mars"), UINT64_MAX);
+
+        // Upgrade dispatcherProxy and uch for tests
         upgradeDispatcher(portPrefix, address(dispatcherProxy));
+        upgradeUch(address(uch));
         dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient2);
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
     }
@@ -78,10 +95,13 @@ contract DispatcherRC4UpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUti
 
         assertEq(4, nextSequenceSendValue);
 
-        // Packets
+        // Validate packets from previous send
         assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 1)) > 0);
         assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 2)) > 0);
         assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 3)) > 0);
+        assert(
+            vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(uch), _localUch.channelId, 1)) > 0
+        );
 
         // Test sending packet with the updated contract
         sendOnePacket(_local.channelId, 4, mars);
@@ -90,6 +110,14 @@ contract DispatcherRC4UpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUti
             uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))
         );
         assertEq(5, nextSequenceSendAfterSending);
+        earth.greet(address(receivingMars), _localUch.channelId, bytes("hello from upgrade mars!"), UINT64_MAX);
+        assert(
+            vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(uch), _localUch.channelId, 2)) > 0
+        );
+        uint64 nextUCHSequenceSendAfterSending = uint64(
+            uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(uch), _localUch.channelId)))
+        );
+        assertEq(3, nextUCHSequenceSendAfterSending);
     }
 
     function test_OpenChannelState_Conserved_RC4Upgrade() public {
@@ -141,6 +169,22 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
     string sendingPortId;
     string receivingPortId;
     DummyLightClient dummyLightClient2;
+    IUniversalChannelHandler uch;
+    LocalEnd _localUch;
+    Earth earth;
+    uint256 mwBitmap;
+
+    GeneralMiddleware mw1;
+
+    event RecvMWPacket(
+        bytes32 indexed channelId,
+        bytes32 indexed srcPortAddr,
+        bytes32 indexed destPortAddr,
+        // middleware UID
+        uint256 mwId,
+        bytes appData,
+        bytes mwData
+    );
 
     function setUp() public override {
         ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, false, true, validProof);
@@ -152,21 +196,35 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
         dummyLightClient2 = new DummyLightClient();
 
         mars = new Mars(dispatcherProxy);
+        uch = deployUCHV2ProxyAndImpl(address(dispatcherProxy));
+        earth = new Earth(address(uch));
+        // Register mw stack and test it isn't corrupted after the upgrade
+        mw1 = new GeneralMiddleware(1 << 1, address(uch));
+        mwBitmap = uch.MW_ID() | mw1.MW_ID();
+        address[] memory mwAddrs = new address[](1);
+        mwAddrs[0] = address(mw1);
+        uch.registerMwStack(mwBitmap, mwAddrs);
         receivingMars = new Mars(dispatcherProxy);
 
         sendingPortId = IbcUtils.addressToPortId(portPrefix, address(mars));
+        string memory uchSendingPortId = IbcUtils.addressToPortId(portPrefix, address(uch));
         receivingPortId = IbcUtils.addressToPortId(portPrefix, address(receivingMars));
         // LocalEnd version of _remote
         _re = LocalEnd(receivingMars, receivingPortId, "channel-2", connectionHops1, "1.0", "1.0");
         // ChannelEnd version of _local
         _le = ChannelEnd(sendingPortId, "channel-1", "1.0");
         _local = LocalEnd(mars, sendingPortId, "channel-1", connectionHops1, "1.0", "1.0");
+        _localUch = LocalEnd(uch, uchSendingPortId, "uch-channel", connectionHops1, "1.0", "1.0");
         _remote = ChannelEnd(receivingPortId, "channel-2", "1.0");
 
         // Do only half a handshake to test upgrading between handshakes
         channelOpenInit(_local, _remote, setting, true);
 
         channelOpenTry(_re, _le, setting, true);
+
+        // Do channel handshake via uch using mw set before the upgrade, to ensure that mw addrs state is still useful
+        doProofChannelHandshake(_localUch, _remote);
+        earth.greet(address(mars), _localUch.channelId, bytes("hello mars"), UINT64_MAX);
     }
 
     // Test that channel handshake can be finished even if done during an upgrade
@@ -193,6 +251,7 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
 
         // Do upgrade before finishing packet handshake
         upgradeDispatcher(portPrefix, address(dispatcherProxy));
+        upgradeUch(address(uch));
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
 
         // Now recv and ack packet
@@ -218,5 +277,30 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
 
         assertEq(2, nextSequenceAckValue);
         assertEq(2, nextSequenceSendValue);
+
+        // Now recv uch packet
+
+        bytes memory appData = abi.encodePacked("hello using mw stack");
+        UniversalPacket memory ucPacket =
+            UniversalPacket(IbcUtils.toBytes32(address(mars)), mwBitmap, IbcUtils.toBytes32(address(earth)), appData);
+        bytes memory packetData = IbcUtils.toUniversalPacketBytes(ucPacket);
+        IbcPacket memory uchPacket = IbcPacket(
+            IbcEndpoint(sendingPortId, _local.channelId),
+            IbcEndpoint(_localUch.portId, _localUch.channelId),
+            1,
+            packetData,
+            Height(0, 0),
+            maxTimeout
+        );
+        vm.expectEmit(true, true, true, true);
+        emit RecvMWPacket(
+            _localUch.channelId,
+            ucPacket.srcPortAddr,
+            ucPacket.destPortAddr,
+            mw1.MW_ID(),
+            ucPacket.appData,
+            abi.encodePacked(mw1.MW_ID())
+        );
+        dispatcherProxy.recvPacket(uchPacket, validProof);
     }
 }
