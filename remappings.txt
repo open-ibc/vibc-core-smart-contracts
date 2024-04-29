@@ -1,6 +1,7 @@
 @openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin-upgradeable/=lib/openzeppelin-contracts-upgradeable/
 @lazyledger/protobuf3-solidity-lib/=lib/protobuf3-solidity-lib/
+@multicall/=lib/multicall/src/
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std/=lib/forge-std/src/
 optimism/=lib/optimism/packages/contracts-bedrock/src/
