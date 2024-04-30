@@ -1,0 +1,29 @@
+# This file contains a tx spec for setting the right connections in the dispatcher contract. This spec needs to be run before the e2e test suite after deploying contracts. 
+
+## The following arguments can be specified in tx spec: 
+# name: name of entry that will be stored in tx registry
+# description: description in tx registry
+# factoryName: factory to use to read abi to send tx
+# deployer: can be set in the accounts.yaml 
+# address: address of contract to call method on 
+# signature: signature of method to call for this tx
+# args: args to make the function call with, need to be compatible with the signature
+- name: DispatcherClientSetup-Connection-0
+  description: 'Setup client for dispatcher contracts'
+  deployer: 'KEY_POLYMER' 
+  signature: "setClientForConnection(string,address)"
+  address: '{{DispatcherProxy}}' 
+  factoryName: "Dispatcher"
+  args: 
+    - 'connection-0'
+    - '{{LightClient}}'
+
+- name: DispatcherClientSetup-Connection-1
+  description: 'Setup client for dispatcher contracts'
+  deployer: 'KEY_POLYMER' 
+  signature: "setClientForConnection(string,address)"
+  address: '{{DispatcherProxy}}' 
+  factoryName: "Dispatcher"
+  args: 
+    - 'connection-2'
+    - '{{LightClient}}'

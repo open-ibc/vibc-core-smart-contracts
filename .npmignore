@@ -1,3 +1,6 @@
+# specific to npm package
+deployments
+
 node_modules
 .env
 coverage
@@ -33,5 +36,5 @@ cache
 artifacts
 
 # Coverage Report
-report/
+report
 lcov.info
