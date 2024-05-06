@@ -398,8 +398,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             )
         );
 
+        // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
+        // a faulty callback cannot close a channel (as is done on channelCloseConfirm)
         delete _portChannelMap[msg.sender][channelId];
-
         if (success) {
             emit ChannelCloseInit(msg.sender, channelId);
         } else {
@@ -455,6 +456,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             )
         );
 
+        // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
+        // a faulty callback cannot close a channel (as is done on channelCloseInit)
         delete _portChannelMap[portAddress][channelId];
         if (success) {
             emit ChannelCloseConfirm(portAddress, channelId);
