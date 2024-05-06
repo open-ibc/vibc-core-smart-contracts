@@ -15,26 +15,7 @@ import {ChannelHandshakeSetting} from "../utils/Dispatcher.base.t.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {DispatcherSendPacketTestSuite, ChannelOpenTestBaseSetup} from "./Dispatcher.t.sol";
 
-contract DispatcherProofTestUtils is Base {
-    using stdStorage for StdStorage;
-
-    function load_proof(string memory filepath) internal returns (Ics23Proof memory) {
-        (bytes32 apphash, Ics23Proof memory proof) =
-            abi.decode(vm.parseBytes(vm.readFile(string.concat(rootDir, filepath))), (bytes32, Ics23Proof));
-
-        // this loads the app hash we got from the testing data into the consensus state manager internals
-        // at the height it's supposed to go. That is, a block less than where the proof was generated from.
-        stdstore.target(address(opLightClient)).sig("consensusStates(uint256)").with_key(proof.height - 1).checked_write(
-            apphash
-        );
-        // trick the fraud time window check
-        vm.warp(block.timestamp + 1);
-
-        return proof;
-    }
-}
-
-abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, DispatcherProofTestUtils {
+abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     Mars mars;
 
     ChannelEnd ch0;
@@ -60,7 +41,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Dispatch
         dispatcherProxy.channelOpenTry(ch1, ChannelOrder.NONE, false, connectionHops1, ch0, proof);
     }
 
-    function test_ibc_channel_ack_123_a() public {
+    function test_ibc_channel_ack() public {
         Ics23Proof memory proof = load_proof("/test/payload/channel_ack_pending_proof.hex");
 
         vm.expectEmit(true, true, true, true);

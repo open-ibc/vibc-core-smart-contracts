@@ -9,7 +9,7 @@ import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
-import "../utils/Dispatcher.base.t.sol";
+import {LocalEnd, ChannelHandshakeSetting, Base} from "../utils/Dispatcher.base.t.sol";
 import {Earth} from "../../contracts/examples/Earth.sol";
 
 abstract contract ChannelHandshakeUtils is Base {
@@ -292,11 +292,6 @@ contract PacketSenderTestBase is ChannelOpenTestBaseSetup {
     // genPacket generates a packet for the given packet sequence
     function genPacket(uint64 packetSeq) internal view returns (IbcPacket memory) {
         return IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout);
-    }
-
-    // genAckPacket generates an ack packet for the given packet sequence
-    function genAckPacket(string memory packetSeq) internal pure returns (bytes memory) {
-        return ackToBytes(AckPacket(true, bytes(packetSeq)));
     }
 }
 

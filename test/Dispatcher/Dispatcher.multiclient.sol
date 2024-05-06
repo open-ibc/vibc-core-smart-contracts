@@ -4,16 +4,15 @@ pragma solidity ^0.8.15;
 import "../../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
-import {DispatcherProofTestUtils} from "./Dispatcher.proof.t.sol";
+import {Base} from "../utils/Dispatcher.base.t.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
 import {ILightClient} from "../../contracts/interfaces/ILightClient.sol";
 import "../../contracts/interfaces/IProofVerifier.sol";
 
-contract DispatcherRealProofMultiClient is DispatcherProofTestUtils {
+contract DispatcherRealProofMultiClient is Base {
     string[] connectionHops0 = ["dummy-connection-1", "dummy-connection-2"];
     string[] connectionHops1 = ["connection-2", "connection-1"];
-    // string[] connectionHops1 = ["op-connection-1", "op-connection-2"];
     Mars mars;
     address notOwner = vm.addr(1);
     ChannelEnd ch0 =
