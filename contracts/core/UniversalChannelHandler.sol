@@ -19,7 +19,6 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable, IbcUniversalChannelMW {
     uint256[49] private __gap;
 
-    bytes32[] public connectedChannels;
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
@@ -34,6 +33,15 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
 
     function initialize(IbcDispatcher _dispatcher) public initializer {
         __IbcReceiverBase_init(_dispatcher);
+    }
+
+    /**
+     * @dev Close a universal channel.
+     * Cannot send or receive packets after the channel is closed.
+     * @param channelId The channel id of the channel to be closed.
+     */
+    function closeChannel(bytes32 channelId) external onlyOwner {
+        dispatcher.channelCloseInit(channelId);
     }
 
     function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
@@ -143,6 +151,16 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         mwStackAddrs[mwBitmap] = mwAddrs;
     }
 
+    function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
+
+    function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
+        dispatcher = _dispatcher;
+    }
+    /**
+     * @notice Handles the initialization of channel opening.
+     * @param version The new channel's version
+     */
+
     function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
         external
         view
@@ -160,35 +178,30 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         string memory,
         bytes32,
         string calldata counterpartyVersion
-    ) external onlyIbcDispatcher returns (string memory selectedVersion) {
+    ) external view onlyIbcDispatcher returns (string memory selectedVersion) {
         return _connectChannel(channelId, counterpartyVersion);
     }
 
     // IBC callback functions
     function onChanOpenAck(bytes32 channelId, bytes32, string calldata counterpartyVersion)
         external
+        view
         onlyIbcDispatcher
     {
         _connectChannel(channelId, counterpartyVersion);
     }
 
-    function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
-
-    function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
-        dispatcher = _dispatcher;
-    }
-
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function _connectChannel(bytes32 channelId, string calldata version)
-        internal
-        returns (string memory checkedVersion)
-    {
+    /**
+     * @dev Internal function to connect a channel only if the version matches what is expected.
+     * @param version The version string provided by the counterparty
+     */
+    function _connectChannel(bytes32, string calldata version) internal pure returns (string memory checkedVersion) {
         if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
             revert UnsupportedVersion();
         }
-        connectedChannels.push(channelId);
-        checkedVersion = version;
+        return version;
     }
 
     function _openChannel(string calldata version) internal pure returns (string memory selectedVersion) {

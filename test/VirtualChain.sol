@@ -7,7 +7,8 @@ import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispat
 import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
 import "../contracts/libs/Ibc.sol";
-import "../contracts/core/Dispatcher.sol";
+import {Dispatcher} from "../contracts/core/Dispatcher.sol";
+import {IbcChannelReceiver, IbcPacketReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/interfaces/ProofVerifier.sol";
 import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
@@ -97,7 +98,8 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             setting.feeEnabled,
             counterpartyConnectionHops,
             portIds[localAddr],
-            localChanId
+            localChanId,
+            setting.portId
         );
     }
 
