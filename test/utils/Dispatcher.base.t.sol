@@ -13,6 +13,7 @@ import "../../contracts/core/OptimisticLightClient.sol";
 import "../../contracts/utils/DummyLightClient.sol";
 import "../../contracts/core/OptimisticProofVerifier.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
+import {stdStorage, StdStorage} from "forge-std/Test.sol";
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
@@ -33,6 +34,8 @@ struct ChannelHandshakeSetting {
 
 // Base contract for testing Dispatcher
 contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
+    using stdStorage for StdStorage;
+
     uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 161;
     uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 156;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
@@ -188,6 +191,11 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             : abi.encodePacked('{"error":"', ack.data, '"}');
     }
 
+    // genAckPacket generates an ack packet for the given packet sequence
+    function genAckPacket(string memory packetSeq) internal pure returns (bytes memory) {
+        return ackToBytes(AckPacket(true, bytes(packetSeq)));
+    }
+
     // Store connection in channelid to connection mapping using store
     function _storeChannelidToConnectionMapping(bytes32 channelId, bytes32 connection) internal {
         bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(160)));
@@ -210,5 +218,20 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     function _getConnectiontoClientIdMapping(string memory connection) internal view returns (uint256 clientId) {
         bytes32 clientIdSlot = keccak256(abi.encode(connection, CONNECTION_TO_CLIENT_ID_STARTING_SLOT));
         clientId = uint256(vm.load(address(dispatcherProxy), clientIdSlot));
+    }
+
+    function load_proof(string memory filepath) internal returns (Ics23Proof memory) {
+        (bytes32 apphash, Ics23Proof memory proof) =
+            abi.decode(vm.parseBytes(vm.readFile(string.concat(rootDir, filepath))), (bytes32, Ics23Proof));
+
+        // this loads the app hash we got from the testing data into the consensus state manager internals
+        // at the height it's supposed to go. That is, a block less than where the proof was generated from.
+        stdstore.target(address(opLightClient)).sig("consensusStates(uint256)").with_key(proof.height - 1).checked_write(
+            apphash
+        );
+        // trick the fraud time window check
+        vm.warp(block.timestamp + 1);
+
+        return proof;
     }
 }
