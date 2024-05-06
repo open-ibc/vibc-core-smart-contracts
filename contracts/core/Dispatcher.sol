@@ -515,7 +515,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
-     * @notice Timeout of an IBC packet
+     * @notice Timeout of an IBC packet. This method is not yet implemented but meant as a placeholder for any
+     * integrating dapps.
      * @dev Verifies the given proof and calls the `onTimeoutPacket` function on the given `receiver` contract, ie. the
      * IBC-dApp.
      * Prerequisite: the original packet is committed and not ack'ed or timed out yet.
@@ -524,28 +525,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param proof The non-membership proof data needed to verify the packet timeout
      */
     function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external nonReentrant {
-        // prove absence of packet receipt on Polymer chain
-        // TODO: add non membership support
-        _getLightClientFromChannelId(packet.src.channelId).verifyNonMembership(
-            proof, Ibc.packetCommitmentProofKey(packet)
-        );
-
-        address receiver = _getAddressFromPort(packet.src.portId);
-        // verify packet has been committed and not yet ack'ed or timed out
-        bool hasCommitment = _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
-        if (!hasCommitment) {
-            revert IBCErrors.packetCommitmentNotFound();
-        }
-
-        (bool success, bytes memory data) =
-            _callIfContract(receiver, abi.encodeWithSelector(IbcPacketReceiver.onTimeoutPacket.selector, packet));
-        if (success) {
-            // delete packet commitment to avoid double timeout
-            delete _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
-            emit Timeout(receiver, packet.src.channelId, packet.sequence);
-        } else {
-            emit TimeoutError(receiver, data);
-        }
+        // Note: This method isn't needed for full vibc functionality, since packets can still be timed out in
+        // recvPacket and writeTimeoutPacket, so this method will only eventually be implemented to comply with IbcSpec,
+        // and is meant to only be a placeholder for integrating dapps.
     }
 
     /**

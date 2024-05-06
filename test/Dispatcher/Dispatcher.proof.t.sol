@@ -114,6 +114,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
     }
 
     function test_timeout_packet_revert() public {
+        vm.skip(true);
         bytes32 connectionStr = bytes32(0x636f6e6e656374696f6e2d310000000000000000000000000000000000000018); // Connection-1
         _storeChannelidToConnectionMapping(ch1.channelId, connectionStr);
         // Timeout reverts since it is not yet implemented

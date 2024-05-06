@@ -221,16 +221,19 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     }
 
     function test_timeout_via_universal_channel_ok() public {
+        vm.skip(true);
         uint256 mwBitmap = v1.ucHandlerProxy.MW_ID();
         verifyTimeoutFlow(5, mwBitmap);
     }
 
     function test_timeout_via_mw1_ok() public {
+        vm.skip(true);
         uint256 mwBitmap = register_mw1();
         verifyTimeoutFlow(5, mwBitmap);
     }
 
     function test_timeout_via_mw2_ok() public {
+        vm.skip(true);
         uint256 mwBitmap = register_mw1_mw2();
         verifyTimeoutFlow(5, mwBitmap);
     }
