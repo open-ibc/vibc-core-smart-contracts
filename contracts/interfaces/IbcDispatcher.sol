@@ -72,9 +72,11 @@ interface IbcEventsEmitter {
     event ChannelOpenConfirm(address indexed receiver, bytes32 channelId);
     event ChannelOpenConfirmError(address indexed receiver, bytes error);
 
-    event CloseIbcChannel(address indexed portAddress, bytes32 indexed channelId);
+    event ChannelCloseInit(address indexed portAddress, bytes32 indexed channelId);
+    event ChannelCloseConfirm(address indexed portAddress, bytes32 indexed channelId);
 
-    event CloseIbcChannelError(address indexed receiver, bytes error);
+    event ChannelCloseInitError(address indexed receiver, bytes error);
+    event ChannelCloseConfirmError(address indexed receiver, bytes error);
     event AcknowledgementError(address indexed receiver, bytes error);
     event TimeoutError(address indexed receiver, bytes error);
 

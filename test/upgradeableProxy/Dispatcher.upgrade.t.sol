@@ -146,7 +146,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         assert(vm.load(address(dispatcherProxy), findPacketCommitmentSlot(address(mars), _local.channelId, 2)) > 0);
         assert(vm.load(address(dispatcherProxy), findPacketCommitmentSlot(address(mars), _local.channelId, 3)) > 0);
 
-        // test sending packet with the updated contract
+        // Test sending packet with the updated contract
         sendOnePacket(_local.channelId, 4);
         assert(vm.load(address(dispatcherProxy), findPacketCommitmentSlot(address(mars), _local.channelId, 4)) > 0);
         uint64 nextSequenceSendAfterSending = uint64(
