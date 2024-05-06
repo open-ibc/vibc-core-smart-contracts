@@ -420,7 +420,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     function timeout(IbcPacket calldata packet, Ics23Proof calldata proof) external {
         // prove absence of packet receipt on Polymer chain
         // TODO: add non membership support
-        _lightClient.verifyNonMembership(proof, "packet/receipt/path");
+        _lightClient.verifyNonMembership(proof, Ibc.packetCommitmentProofKey(packet));
 
         address receiver = _getAddressFromPort(packet.src.portId);
         // verify packet has been committed and not yet ack'ed or timed out
@@ -477,7 +477,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         emit RecvPacket(receiver, packet.dest.channelId, packet.sequence);
 
         // If pkt is already timed out, then return early so dApps won't receive it.
-        if (_isPacketTimeout(packet)) {
+        if (_isPacketTimeout(packet.timeoutTimestamp, packet.timeoutHeight.revision_height)) {
             emit WriteTimeoutPacket(
                 receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
             );
@@ -520,7 +520,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
         }
 
         // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        if (!_isPacketTimeout(packet)) {
+        if (!_isPacketTimeout(packet.timeoutTimestamp, packet.timeoutHeight.revision_height)) {
             revert IBCErrors.packetNotTimedOut();
         }
 
@@ -624,12 +624,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, IDispatcher {
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     // _isPacketTimeout returns true if the given packet has timed out acoording to host chain's block height and
-    // timestamp
-    function _isPacketTimeout(IbcPacket calldata packet) internal view returns (bool isTimeOut) {
+    // timestamp, in seconds after the unix epoch.
+    function _isPacketTimeout(uint64 timeoutTimestamp, uint64 revisionHeight) internal view returns (bool isTimeOut) {
         return (
-            isTimeOut = (packet.timeoutTimestamp != 0 && block.timestamp >= packet.timeoutTimestamp)
+            isTimeOut = (timeoutTimestamp != 0 && block.timestamp >= timeoutTimestamp)
             // TODO: check timeoutHeight.revision_number?
-            || (packet.timeoutHeight.revision_height != 0 && block.number >= packet.timeoutHeight.revision_height)
+            || (revisionHeight != 0 && block.number >= revisionHeight)
         );
     }
 
