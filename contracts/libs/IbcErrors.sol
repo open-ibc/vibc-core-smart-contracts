@@ -26,6 +26,7 @@ library IBCErrors {
     error packetNotTimedOut();
     error invalidAddress();
     error invalidPortPrefix();
+    error invalidConnectionHops();
     error notEnoughGas();
     error invalidCharacter();
 

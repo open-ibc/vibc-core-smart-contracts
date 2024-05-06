@@ -165,6 +165,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external nonReentrant {
+        // We need to validate connectionHops & counterpartyPortId since they aren't validated in an internal
+        // function like all other instances of these arguments
+        if (connectionHops.length < 2 || bytes(counterpartyPortId).length == 0) {
+            revert IBCErrors.invalidCounterParty();
+        }
+
         // Have to encode here to avoid stack-too-deep error
         bytes memory chanOpenInitArgs = abi.encode(ordering, connectionHops, counterpartyPortId, version);
         (bool success, bytes memory data) =
@@ -204,6 +210,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
+        if (connectionHops.length < 2) {
+            revert IBCErrors.invalidConnectionHops();
+        }
+        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -272,7 +282,11 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        _checkInValidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
+        if (connectionHops.length < 2) {
+            revert IBCErrors.invalidConnectionHops();
+        }
+
+        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -331,8 +345,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        _checkInValidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
-
+        if (connectionHops.length < 2) {
+            revert IBCErrors.invalidConnectionHops();
+        }
+        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -383,6 +399,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         );
 
         delete _portChannelMap[msg.sender][channelId];
+
         if (success) {
             emit ChannelCloseInit(msg.sender, channelId);
         } else {
@@ -807,13 +824,16 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @return lightClient The light client associated with the connection.
      */
     function _getLightClientFromConnection(string memory connection) internal view returns (ILightClient lightClient) {
+        if (bytes(connection).length == 0) {
+            revert IBCErrors.invalidConnection("");
+        }
         lightClient = _connectionToLightClient[connection];
         if (address(lightClient) == address(0)) {
             revert IBCErrors.lightClientNotFound(connection);
         }
     }
 
-    function _checkInValidCounterParty(
+    function _checkInvalidCounterParty(
         string calldata localPortId,
         bytes32 localChannelId,
         string calldata counterPartyPortId,
