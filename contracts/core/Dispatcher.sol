@@ -181,7 +181,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
                 msg.sender, abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
             );
         } else {
-            emit ChannelOpenInitError(msg.sender, data);
+            emit ChannelOpenInitError(msg.sender, data, counterpartyPortId);
         }
     }
 
@@ -252,7 +252,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
                 counterparty.channelId
             );
         } else {
-            emit ChannelOpenTryError(receiver, data);
+            emit ChannelOpenTryError(receiver, data, local.portId, local.channelId);
         }
     }
 
@@ -312,7 +312,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             _connectChannel(IbcChannelReceiver(receiver), local, connectionHops, ordering, feeEnabled, counterparty);
             emit ChannelOpenAck(receiver, local.channelId);
         } else {
-            emit ChannelOpenAckError(receiver, data);
+            emit ChannelOpenAckError(receiver, data, local.portId, local.channelId);
         }
     }
 
@@ -372,7 +372,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             _connectChannel(IbcChannelReceiver(receiver), local, connectionHops, ordering, feeEnabled, counterparty);
             emit ChannelOpenConfirm(receiver, local.channelId);
         } else {
-            emit ChannelOpenConfirmError(receiver, data);
+            emit ChannelOpenConfirmError(receiver, data, local.portId, local.channelId);
         }
     }
 
@@ -404,7 +404,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         if (success) {
             emit ChannelCloseInit(msg.sender, channelId);
         } else {
-            emit ChannelCloseInitError(address(msg.sender), data);
+            emit ChannelCloseInitError(address(msg.sender), data, channelId);
         }
     }
 
@@ -462,7 +462,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         if (success) {
             emit ChannelCloseConfirm(portAddress, channelId);
         } else {
-            emit ChannelCloseConfirmError(address(portAddress), data);
+            emit ChannelCloseConfirmError(address(portAddress), data, channelId);
         }
     }
 
@@ -530,7 +530,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             delete _sendPacketCommitment[receiver][packet.src.channelId][packet.sequence];
             emit Acknowledgement(receiver, packet.src.channelId, packet.sequence);
         } else {
-            emit AcknowledgementError(receiver, data);
+            emit AcknowledgementError(receiver, data, packet.src.channelId, packet.sequence);
         }
     }
 

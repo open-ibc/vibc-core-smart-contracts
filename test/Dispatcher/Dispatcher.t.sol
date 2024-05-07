@@ -115,7 +115,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
                 le.versionExpected = versions[j];
                 vm.expectEmit(true, true, true, true);
                 emit IbcEventsEmitter.ChannelOpenInitError(
-                    address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
+                    address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector), re.portId
                 );
                 channelOpenInit(le, re, settings[i], false);
             }
@@ -152,7 +152,10 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
                 re.version = versions[j];
                 vm.expectEmit(true, true, true, true);
                 emit IbcEventsEmitter.ChannelOpenAckError(
-                    address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
+                    address(le.receiver),
+                    abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector),
+                    le.portId,
+                    le.channelId
                 );
 
                 channelOpenAck(le, re, settings[i], false);

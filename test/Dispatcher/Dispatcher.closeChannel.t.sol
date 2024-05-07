@@ -105,7 +105,8 @@ contract DappRevertTestsCloseChannel is DappHandlerRevertTests {
         vm.expectEmit(true, true, true, true);
         emit ChannelCloseInitError(
             address(revertingStringCloseMars),
-            abi.encodeWithSignature("Error(string)", "close ibc channel is reverting")
+            abi.encodeWithSignature("Error(string)", "close ibc channel is reverting"),
+            _local.channelId
         );
         revertingStringCloseMars.triggerChannelClose(ch0.channelId);
 
@@ -120,7 +121,8 @@ contract DappRevertTestsCloseChannel is DappHandlerRevertTests {
         vm.expectEmit(true, true, true, true);
         emit ChannelCloseConfirmError(
             address(revertingStringCloseMars),
-            abi.encodeWithSignature("Error(string)", "close ibc channel is reverting")
+            abi.encodeWithSignature("Error(string)", "close ibc channel is reverting"),
+            ch0.channelId
         );
 
         dispatcherProxy.channelCloseConfirm(address(revertingStringCloseMars), ch0.channelId, validProof);

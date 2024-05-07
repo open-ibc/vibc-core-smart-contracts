@@ -34,13 +34,13 @@ contract DappHandlerRevertTests is Base {
     function test_ibc_channel_open_non_dapp_call() public {
         address nonDappAddr = vm.addr(1);
 
-        emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
+        emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"), ch0.portId);
         dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
-        emit ChannelOpenInitError(address(earth), "");
+        emit ChannelOpenInitError(address(earth), "", ch0.portId);
         dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
 
@@ -126,7 +126,9 @@ contract DappHandlerRevertTests is Base {
         vm.expectEmit(true, true, true, true);
         emit AcknowledgementError(
             address(revertingStringMars),
-            abi.encodeWithSignature("Error(string)", "acknowledgement packet is reverting")
+            abi.encodeWithSignature("Error(string)", "acknowledgement packet is reverting"),
+            packet.src.channelId,
+            packet.sequence
         );
         dispatcherProxy.acknowledgement(packet, ack, validProof);
     }
@@ -135,7 +137,9 @@ contract DappHandlerRevertTests is Base {
         vm.expectEmit(true, true, true, true);
         vm.prank(address(revertingStringMars));
         emit ChannelOpenInitError(
-            address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
+            address(revertingStringMars),
+            abi.encodeWithSignature("Error(string)", "open ibc channel is reverting"),
+            ch0.portId
         );
         dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
     }
@@ -144,7 +148,10 @@ contract DappHandlerRevertTests is Base {
         vm.expectEmit(true, true, true, true);
         ch0.portId = IbcUtils.addressToPortId(portPrefix, address(revertingStringMars));
         emit ChannelOpenAckError(
-            address(revertingStringMars), abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting")
+            address(revertingStringMars),
+            abi.encodeWithSignature("Error(string)", "connect ibc channel is reverting"),
+            ch0.portId,
+            ch0.channelId
         );
         dispatcherProxy.channelOpenAck(ch0, connectionHops0, ChannelOrder.NONE, false, ch1, validProof);
     }

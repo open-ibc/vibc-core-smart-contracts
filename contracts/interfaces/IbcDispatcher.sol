@@ -68,7 +68,7 @@ interface IbcEventsEmitter {
         string[] connectionHops,
         string counterpartyPortId
     );
-    event ChannelOpenInitError(address indexed receiver, bytes error);
+    event ChannelOpenInitError(address indexed receiver, bytes error, string counterpartyPortId);
 
     event ChannelOpenTry(
         address indexed receiver,
@@ -79,20 +79,22 @@ interface IbcEventsEmitter {
         string counterpartyPortId,
         bytes32 counterpartyChannelId
     );
-    event ChannelOpenTryError(address indexed receiver, bytes error);
+    event ChannelOpenTryError(address indexed receiver, bytes error, string localPortId, bytes32 counterpartyPortId);
 
     event ChannelOpenAck(address indexed receiver, bytes32 channelId);
-    event ChannelOpenAckError(address indexed receiver, bytes error);
+    event ChannelOpenAckError(address indexed receiver, bytes error, string localPortId, bytes32 localChannelId);
 
     event ChannelOpenConfirm(address indexed receiver, bytes32 channelId);
-    event ChannelOpenConfirmError(address indexed receiver, bytes error);
+    event ChannelOpenConfirmError(
+        address indexed receiver, bytes error, string localPortId, bytes32 counterpartyPortId
+    );
 
     event ChannelCloseInit(address indexed portAddress, bytes32 indexed channelId);
     event ChannelCloseConfirm(address indexed portAddress, bytes32 indexed channelId);
 
-    event ChannelCloseInitError(address indexed receiver, bytes error);
-    event ChannelCloseConfirmError(address indexed receiver, bytes error);
-    event AcknowledgementError(address indexed receiver, bytes error);
+    event ChannelCloseInitError(address indexed receiver, bytes error, bytes32 channelId);
+    event ChannelCloseConfirmError(address indexed receiver, bytes error, bytes32 channelId);
+    event AcknowledgementError(address indexed receiver, bytes error, bytes32 channelId, uint64 sequence);
     event TimeoutError(address indexed receiver, bytes error);
 
     //
