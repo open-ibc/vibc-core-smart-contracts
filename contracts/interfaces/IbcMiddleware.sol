@@ -99,7 +99,7 @@ interface IbcUniversalPacketReceiver {
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet) external;
 }
 
-interface IbcMiddlwareProvider is IbcUniversalPacketSender, IbcMwPacketSender {
+interface IbcMiddlwareProvider is IbcUniversalPacketSender {
     /**
      * @dev MW_ID is the ID of MW contract on all supported virtual chains.
      * MW_ID must:
