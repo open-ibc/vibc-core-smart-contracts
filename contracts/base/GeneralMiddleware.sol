@@ -35,7 +35,7 @@ import {
  *  @notice GeneralMiddleware is a starting point for developers to implement their own middleware logic. It is not
  * intended to be directly deployed, but rather only used for testing and development
  */
-contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter {
+contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcMwPacketSender {
     /**
      * @dev MW_ID is the ID of MW contract on all supported virtual chains.
      * MW_ID must:

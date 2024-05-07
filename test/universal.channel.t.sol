@@ -210,12 +210,14 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
     // packet flow: Earth -> MW1 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW1 -> Earth
     function test_packetFlow_via_mw1_ok() public {
+        vm.skip(true); // uch as middleware sender is not yet supported
         uint256 mwBitmap = register_mw1();
         verifyPacketFlow(5, mwBitmap);
     }
 
     // packet flow: Earth -> MW1 -> MW2 -> UC -> Dispatcher -> (Relayer) -> Dispatcher -> UC -> MW2 -> MW1 -> Earth
     function test_packetFlow_via_mw2_ok() public {
+        vm.skip(true); // uch as middleware sender is not yet supported
         uint256 mwBitmap = register_mw1_mw2();
         verifyPacketFlow(5, mwBitmap);
     }

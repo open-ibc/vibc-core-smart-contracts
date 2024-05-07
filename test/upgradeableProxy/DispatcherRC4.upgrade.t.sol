@@ -172,19 +172,6 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
     IUniversalChannelHandler uch;
     LocalEnd _localUch;
     Earth earth;
-    uint256 mwBitmap;
-
-    GeneralMiddleware mw1;
-
-    event RecvMWPacket(
-        bytes32 indexed channelId,
-        bytes32 indexed srcPortAddr,
-        bytes32 indexed destPortAddr,
-        // middleware UID
-        uint256 mwId,
-        bytes appData,
-        bytes mwData
-    );
 
     function setUp() public override {
         ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, false, true, validProof);
@@ -198,12 +185,6 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
         mars = new Mars(dispatcherProxy);
         uch = deployUCHV2ProxyAndImpl(address(dispatcherProxy));
         earth = new Earth(address(uch));
-        // Register mw stack and test it isn't corrupted after the upgrade
-        mw1 = new GeneralMiddleware(1 << 1, address(uch));
-        mwBitmap = uch.MW_ID() | mw1.MW_ID();
-        address[] memory mwAddrs = new address[](1);
-        mwAddrs[0] = address(mw1);
-        uch.registerMwStack(mwBitmap, mwAddrs);
         receivingMars = new Mars(dispatcherProxy);
 
         sendingPortId = IbcUtils.addressToPortId(portPrefix, address(mars));
@@ -222,7 +203,7 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
 
         channelOpenTry(_re, _le, setting, true);
 
-        // Do channel handshake via uch using mw set before the upgrade, to ensure that mw addrs state is still useful
+        // Do channel handshake via uch
         doProofChannelHandshake(_localUch, _remote);
         earth.greet(address(mars), _localUch.channelId, bytes("hello mars"), UINT64_MAX);
     }
@@ -279,10 +260,9 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
         assertEq(2, nextSequenceSendValue);
 
         // Now recv uch packet
-
         bytes memory appData = abi.encodePacked("hello using mw stack");
         UniversalPacket memory ucPacket =
-            UniversalPacket(IbcUtils.toBytes32(address(mars)), mwBitmap, IbcUtils.toBytes32(address(earth)), appData);
+            UniversalPacket(IbcUtils.toBytes32(address(mars)), uch.MW_ID(), IbcUtils.toBytes32(address(earth)), appData);
         bytes memory packetData = IbcUtils.toUniversalPacketBytes(ucPacket);
         IbcPacket memory uchPacket = IbcPacket(
             IbcEndpoint(sendingPortId, _local.channelId),
@@ -292,15 +272,14 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
             Height(0, 0),
             maxTimeout
         );
+
+        AckPacket memory earthAck = earth.generateAckPacket(0x0, address(mars), appData);
         vm.expectEmit(true, true, true, true);
-        emit RecvMWPacket(
-            _localUch.channelId,
-            ucPacket.srcPortAddr,
-            ucPacket.destPortAddr,
-            mw1.MW_ID(),
-            ucPacket.appData,
-            abi.encodePacked(mw1.MW_ID())
-        );
+        emit WriteAckPacket(address(uch), _localUch.channelId, 1, earthAck);
         dispatcherProxy.recvPacket(uchPacket, validProof);
+
+        (bytes32 actualChannelId, UniversalPacket memory storedUcPacket) = earth.recvedPackets(0);
+        assertEq(actualChannelId, _localUch.channelId);
+        assertEq(storedUcPacket.appData, ucPacket.appData);
     }
 }

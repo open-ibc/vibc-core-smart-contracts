@@ -47,9 +47,6 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
-    // Key: middleware bitmap, Value: middleware address from receiver(chain B)'s perspective
-    mapping(uint256 => address[]) public mwStackAddrs;
-
     event UCHPacketSent(address source, bytes32 destination);
 
     constructor() {
@@ -104,30 +101,6 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
     }
 
     /**
-     * @notice Sends a middleware packet over an IBC channel. This is intended to be called by another middleware
-     * contract, rather than an end Dapp itself.
-     * @param channelId The channel ID through which the packet is sent on the dispatcher
-     * @param destPortAddr The destination port address
-     * @param srcMwIds The mwId bitmap of the middleware stack
-     * @param appData The packet data to be sent
-     * @param timeoutTimestamp of when the packet can timeout
-     */
-    function sendMWPacket(
-        bytes32 channelId,
-        // original source address of the packet
-        bytes32 srcPortAddr,
-        bytes32 destPortAddr,
-        // source middleware ids bit AND
-        uint256 srcMwIds,
-        bytes calldata appData,
-        uint64 timeoutTimestamp
-    ) external {
-        bytes memory packetData =
-            IbcUtils.toUniversalPacketBytes(UniversalPacket(srcPortAddr, srcMwIds | MW_ID, destPortAddr, appData));
-        dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
-    }
-
-    /**
      * @notice Handles the reception of an IBC packet from the counterparty
      * @param packet The received IBC packet
      * @return ackPacket The packet acknowledgement
@@ -139,16 +112,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         returns (AckPacket memory ackPacket)
     {
         UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
-        address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
-        if (mwAddrs.length == 0) {
-            // no other middleware stack registered for this packet. Deliver packet to dApp directly.
-            return IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
-                packet.dest.channelId, ucPacket
-            );
-        } else {
-            // send packet to first MW in the stack
-            return IbcMwPacketReceiver(mwAddrs[0]).onRecvMWPacket(packet.dest.channelId, ucPacket, 0, mwAddrs);
-        }
+        // no other middleware stack registered for this packet. Deliver packet to dApp directly.
+        return IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.destPortAddr)).onRecvUniversalPacket(
+            packet.dest.channelId, ucPacket
+        );
     }
 
     /**
@@ -162,16 +129,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         onlyIbcDispatcher
     {
         UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
-        address[] storage mwAddrs = mwStackAddrs[ucPacket.mwBitmap];
-        if (mwAddrs.length == 0) {
-            // no other middleware stack registered for this packet. Deliver ack to dApp directly.
-            IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
-                packet.src.channelId, ucPacket, ack
-            );
-        } else {
-            // send ack to last MW in the stack
-            IbcMwPacketReceiver(mwAddrs[0]).onRecvMWAck(packet.src.channelId, ucPacket, 0, mwAddrs, ack);
-        }
+        // no other middleware stack registered for this packet. Deliver ack to dApp directly.
+        IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacket.srcPortAddr)).onUniversalAcknowledgement(
+            packet.src.channelId, ucPacket, ack
+        );
     }
 
     /**
@@ -180,29 +141,10 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
      */
     function onTimeoutPacket(IbcPacket calldata packet) external override onlyIbcDispatcher {
         UniversalPacket memory ucPacketData = IbcUtils.fromUniversalPacketBytes(packet.data);
-        address[] storage mwAddrs = mwStackAddrs[ucPacketData.mwBitmap];
-        if (mwAddrs.length == 0) {
-            // no other middleware stack registered for this packet. Deliver timeout to dApp directly.
-            IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacketData.srcPortAddr)).onTimeoutUniversalPacket(
-                packet.src.channelId, ucPacketData
-            );
-        } else {
-            // send timeout to last MW in the stack
-            IbcMwPacketReceiver(mwAddrs[0]).onRecvMWTimeout(packet.src.channelId, ucPacketData, 0, mwAddrs);
-        }
-    }
-
-    /**
-     * @dev Register a middleware stack for universal packet routing.
-     * This is a temporary solution for testing only.
-     * Polymer chain will maintain a global registry of middleware stacks.
-     * @param mwBitmap Bit OR of all MW IDs in the stack, excluding this MW's ID
-     * @param mwAddrs addresses in the stack, from the perspective of the receiver (chain B)
-     * MW closer to UniversalChannel MW has smaller index. MW stack must be in the same order on both chains.
-     */
-    function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external onlyOwner {
-        if (mwBitmap == 0) revert MwBitmpaCannotBeZero();
-        mwStackAddrs[mwBitmap] = mwAddrs;
+        // no other middleware stack registered for this packet. Deliver timeout to dApp directly.
+        IbcUniversalPacketReceiver(IbcUtils.toAddress(ucPacketData.srcPortAddr)).onTimeoutUniversalPacket(
+            packet.src.channelId, ucPacketData
+        );
     }
 
     function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
