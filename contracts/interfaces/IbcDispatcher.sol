@@ -61,7 +61,7 @@ interface IbcEventsEmitter {
     // channel events
     //
     event ChannelOpenInit(
-        address indexed recevier,
+        address indexed receiver,
         string version,
         ChannelOrder ordering,
         bool feeEnabled,
