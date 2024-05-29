@@ -19,6 +19,7 @@ pragma solidity 0.8.15;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {UniversalPacket} from "./Ibc.sol";
 import {IBCErrors} from "./IbcErrors.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // define a library of Ibc utility functions
 library IbcUtils {
@@ -56,41 +57,41 @@ library IbcUtils {
             revert IBCErrors.invalidHexStringLength(); // Addresses must always be 20 bytes long; equal to 40 nibbles
         }
 
-        uint256 total = 0;
+        uint160 total = 0;
         uint256 base = 1;
         uint256 i = 40;
         while (i > 0) {
             i--;
-            uint256 digit;
+            uint160 digit;
             // Convert ASCII to integer value
             if (uint8(hexBytes[i]) >= 48 && uint8(hexBytes[i]) <= 57) {
                 /**
                  * This triggers if hexBytes[i] is equal to '0' to '9'
                  * '0' - '9' are 48-57 in ascii, and we want to map this into 0-9, so we subtract 48
                  */
-                digit = uint160(uint8(hexBytes[i]) - 48);
+                digit = uint8(hexBytes[i]) - 48;
             } else if (uint8(hexBytes[i]) >= 65 && uint8(hexBytes[i]) <= 70) {
                 /**
                  * This triggers if hexBytes[i] is equal to 'A' to 'F'
                  * 'A' - 'F' are 65-70 in ascii, and we want to map this into 0xa-0xf (equal to 10-15), so we
                  * sutract 55
                  */
-                digit = uint160(uint8(hexBytes[i]) - 55);
+                digit = uint8(hexBytes[i]) - 55;
             } else if (uint8(hexBytes[i]) >= 97 && uint8(hexBytes[i]) <= 102) {
                 /**
                  * This triggers if hexBytes[i] is equal to 'a' to 'f'
                  * 'a' to 'f' are 97-102 in ascii, and we want to amp this into 0xa-0xf (equal to 10-15), so we
                  * sutract 87
                  */
-                digit = uint160(uint8(hexBytes[i]) - 87);
+                digit = uint8(hexBytes[i]) - 87;
             } else {
                 revert IBCErrors.invalidCharacter();
             }
-            total += digit * base;
+            total += digit * SafeCast.toUint160(base);
             base *= 16;
         }
 
-        addr = address(uint160(total));
+        addr = address(total);
     }
 
     function toUniversalPacketBytes(UniversalPacket memory data) internal pure returns (bytes memory packetBytes) {
@@ -114,7 +115,7 @@ library IbcUtils {
 
     // toAddress converts a bytes32 to an address
     function toAddress(bytes32 b) internal pure returns (address out) {
-        out = address(uint160(uint256(b)));
+        out = address(SafeCast.toUint160(uint256(b)));
     }
 
     // toBytes32 converts an address to a bytes32
