@@ -273,10 +273,11 @@ contract PacketSenderTestBase is ChannelOpenTestBaseSetup {
     IbcPacket sentPacket;
     // ackPacket is the acknowledgement packet that is expected to be written for the `sentPacket`
     bytes ackPacket;
+    string marsPort;
 
     function setUp() public virtual override {
         super.setUp();
-        string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
+        marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
         string memory revertingMarsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(revertingBytesMars))));
 
         src = IbcEndpoint(marsPort, channelId);

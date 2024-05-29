@@ -640,7 +640,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
 
-        address receiver = _getAddressFromPort(packet.src.portId);
+        address receiver = _getAddressFromPort(packet.dest.portId);
         // verify packet does not have a receipt
         bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
         if (hasReceipt) {
