@@ -101,4 +101,34 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidPacket.selector));
         mars.greet(payloadStr, channelId, uint64(block.timestamp) - 1);
     }
+
+    function test_writeTimeoutPacket() public {
+        IbcEndpoint memory packetSrc = IbcEndpoint("polyibc.bsc.71C95911E9a5D330f4D621842EC243EE1343292e", "channel-99");
+        IbcEndpoint memory packetDest = IbcEndpoint(marsPort, channelId);
+        uint64 timeoutTimestamp = (uint64(block.timestamp));
+        IbcPacket memory packet = IbcPacket(packetSrc, packetDest, 1, payload, ZERO_HEIGHT, timeoutTimestamp);
+
+        vm.warp(block.timestamp + 100);
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
+        emit WriteTimeoutPacket(address(mars), packet.dest.channelId, 1, ZERO_HEIGHT, timeoutTimestamp);
+        dispatcherProxy.writeTimeoutPacket(packet, validProof);
+    }
+
+    function test_writeTimeoutPacket_invalid_PacketReceiptAlreadyExists() public {
+        // This test ensures that we can't call writeTimeout for a packet that has already been received on the dest
+        // chain.
+
+        // First, we receive a packet from another chain, with the Mars contract on this chain as the destination
+        IbcEndpoint memory packetSrc = IbcEndpoint("polyibc.bsc.71C95911E9a5D330f4D621842EC243EE1343292e", "channel-99");
+        IbcEndpoint memory packetDest = IbcEndpoint(marsPort, channelId);
+
+        IbcPacket memory packet = IbcPacket(packetSrc, packetDest, 1, payload, ZERO_HEIGHT, uint64(block.timestamp) + 1);
+        dispatcherProxy.recvPacket(packet, validProof);
+
+        vm.warp(block.timestamp + 100);
+        // Then we ensure that writeTimeoutPacket can't be called once the packet has been received successfully, even
+        // for a block timestap that has passed the packets original timeouttimestmap.
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.packetReceiptAlreadyExists.selector));
+        dispatcherProxy.writeTimeoutPacket(packet, validProof);
+    }
 }
