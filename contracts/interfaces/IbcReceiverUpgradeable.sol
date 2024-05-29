@@ -19,7 +19,6 @@ pragma solidity ^0.8.9;
 
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
 import {IbcDispatcher} from "./IbcDispatcher.sol";
-import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket} from "../libs/Ibc.sol";
 
 contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
     IbcDispatcher public dispatcher;

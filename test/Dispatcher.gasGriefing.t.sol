@@ -3,7 +3,8 @@ pragma solidity ^0.8.13;
 
 import {Base} from "./utils/Dispatcher.base.t.sol";
 import {GasUsingMars} from "./mocks/GasUsingMars.sol";
-import {IbcEndpoint, ChannelEnd, IbcPacket, IBCErrors} from "../contracts/libs/Ibc.sol";
+import {IbcEndpoint, ChannelEnd, IbcPacket} from "../contracts/libs/Ibc.sol";
+import {IBCErrors} from "../contracts/libs/IbcErrors.sol";
 import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 
 import {TestUtilsTest} from "./utils/TestUtils.t.sol";

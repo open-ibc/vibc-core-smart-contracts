@@ -3,6 +3,7 @@ pragma solidity ^0.8.15;
 
 import "../../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
+import {IBCErrors} from "../../contracts/libs/IbcErrors.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import {Base} from "../utils/Dispatcher.base.t.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";

@@ -7,15 +7,9 @@ import {RevertingStringCloseChannelMars, Mars} from "../../contracts/examples/Ma
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import "../utils/Dispatcher.base.t.sol";
 import {
-    Channel,
-    ChannelEnd,
-    ChannelOrder,
-    IbcPacket,
-    ChannelState,
-    AckPacket,
-    IBCErrors,
-    Ibc
+    Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc
 } from "../../contracts/libs/Ibc.sol";
+import {IBCErrors} from "../../contracts/libs/IbcErrors.sol";
 import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 
 contract DispatcherCloseChannelTest is PacketSenderTestBase {

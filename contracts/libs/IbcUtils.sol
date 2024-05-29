@@ -16,7 +16,9 @@
  */
 pragma solidity 0.8.15;
 
-import {UniversalPacket, ChannelEnd, Strings, IBCErrors} from "./Ibc.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {UniversalPacket} from "./Ibc.sol";
+import {IBCErrors} from "./IbcErrors.sol";
 
 // define a library of Ibc utility functions
 library IbcUtils {

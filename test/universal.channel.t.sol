@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "../contracts/libs/Ibc.sol";
-import "../contracts/libs/IbcUtils.sol";
+import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../contracts/interfaces/IbcReceiver.sol";

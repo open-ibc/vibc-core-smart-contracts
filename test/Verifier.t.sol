@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../contracts/core/OptimisticProofVerifier.sol";
 import "../contracts/libs/Ibc.sol";
-import "../contracts/libs/IbcUtils.sol";
+import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 import "forge-std/Test.sol";
 import "./utils/Proof.base.t.sol";
 
