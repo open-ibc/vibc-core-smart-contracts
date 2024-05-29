@@ -36,7 +36,7 @@ struct IbcPacket {
     /// The sequence number of the packet on the given channel
     uint64 sequence;
     bytes data;
-    /// block height after which the packet times out
+    /// block height after which the packet times out; on the receiving chain ONLY
     Height timeoutHeight;
     /// block timestamp (in seconds after the unix epoch) after which the packet times out
     uint64 timeoutTimestamp;
