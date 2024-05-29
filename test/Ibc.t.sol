@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
+import {IBCErrors} from "../contracts/libs/IbcErrors.sol";
 import "forge-std/Test.sol";
 import {IbcChannelReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 
@@ -104,6 +105,11 @@ contract IbcTest is Test {
         string memory invalidHexStr3 = "2G5AD5c4795c026514f8317c7a215E218DcCD6cF"; // Can't have G
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidCharacter.selector));
         IbcUtils.hexStrToAddress(invalidHexStr3);
+
+        string memory invalidHexStr4 = "hellohellohellohellohellohellohellohello"; // Can't convert arbitrary utf-8
+            // strings to addresses
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidCharacter.selector));
+        IbcUtils.hexStrToAddress(invalidHexStr4);
     }
 
     function test_To_From_addr_hexStr(address addr) public {

@@ -27,6 +27,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
 import {IBCErrors} from "../libs/IbcErrors.sol";
+import {IbcUtils} from "../libs/IbcUtils.sol";
 
 /**
  * @title Dispatcher
@@ -804,7 +805,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     function _getAddressFromPort(string calldata port) internal view returns (address addr) {
-        addr = Ibc._hexStrToAddress(port[portPrefixLen:]);
+        addr = IbcUtils.hexStrToAddress(port[portPrefixLen:]);
     }
 
     /**

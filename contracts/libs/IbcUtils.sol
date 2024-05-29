@@ -50,7 +50,7 @@ library IbcUtils {
      * @param hexStr hex string to convert to address. Note that the hex string must not include a 0x prefix.
      * hexStr is case-insensitive.
      */
-    function hexStrToAddress(string memory hexStr) public pure returns (address addr) {
+    function hexStrToAddress(string memory hexStr) external pure returns (address addr) {
         bytes memory hexBytes = bytes(hexStr);
         if (bytes(hexStr).length != 40) {
             revert IBCErrors.invalidHexStringLength(); // Addresses must always be 20 bytes long; equal to 40 nibbles
