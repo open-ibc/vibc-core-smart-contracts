@@ -32,8 +32,6 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
  * @dev This contract can integrate directly with dapps, or a middleware stack for packet routing.
  */
 contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable, IbcUniversalChannelMW {
-    uint256[49] private __gap;
-
     bytes32 private _UNUSED; // Storage placeholder to ensure upgrade from this version is backwards compatible
 
     string public constant VERSION = "1.0";
