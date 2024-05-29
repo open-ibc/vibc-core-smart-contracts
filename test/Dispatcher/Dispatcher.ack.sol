@@ -81,6 +81,4 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
 
         dispatcherProxy.acknowledgement(packet, ackPacket, validProof);
     }
-
-
 }
