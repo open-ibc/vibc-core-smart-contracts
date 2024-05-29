@@ -476,6 +476,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
         }
+        if (timeoutTimestamp <= block.timestamp) {
+            revert IBCErrors.invalidPacket();
+        }
 
         _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
     }

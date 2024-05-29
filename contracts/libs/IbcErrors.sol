@@ -29,6 +29,7 @@ library IBCErrors {
     error invalidConnectionHops();
     error notEnoughGas();
     error invalidCharacter();
+    error invalidPacket();
 
     // packet sequence related errors.
     error invalidPacketSequence();
