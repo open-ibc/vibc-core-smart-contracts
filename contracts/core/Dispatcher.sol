@@ -472,7 +472,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param timeoutTimestamp The timestamp, in seconds after the unix epoch, after which the packet times out if it
      * has not been received.
      */
-    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external {
+    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external nonReentrant {
         // ensure port owns channel
         if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
@@ -481,7 +481,18 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
             revert IBCErrors.invalidPacket();
         }
 
-        _sendPacket(msg.sender, channelId, packet, timeoutTimestamp);
+        // current packet sequence
+        uint64 sequence = _nextSequenceSend[msg.sender][channelId];
+        if (sequence == 0) {
+            revert IBCErrors.invalidPacketSequence();
+        }
+
+        // packet commitment
+        _sendPacketCommitment[msg.sender][channelId][sequence] = true;
+        // increment nextSendPacketSequence
+        _nextSequenceSend[msg.sender][channelId] = sequence + 1;
+
+        emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
     /**
@@ -624,7 +635,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * - The packet must not have a receipt.
      * - The packet must have timed out.
      */
-    function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external {
+    function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external nonReentrant {
         _getLightClientFromChannelId(packet.dest.channelId).verifyMembership(
             proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
         );
@@ -682,28 +693,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         }
 
         _connectionToLightClient[connection] = lightClient;
-    }
-
-    /**
-     * @notice Sends a packet on the specified channel with the provided details.
-     * @param sender The address of the sender.
-     * @param channelId The ID of the channel.
-     * @param packet The packet data to be sent.
-     * @param timeoutTimestamp The timeout timestamp for the packet.
-     */
-    function _sendPacket(address sender, bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
-        // current packet sequence
-        uint64 sequence = _nextSequenceSend[sender][channelId];
-        if (sequence == 0) {
-            revert IBCErrors.invalidPacketSequence();
-        }
-
-        // packet commitment
-        _sendPacketCommitment[sender][channelId][sequence] = true;
-        // increment nextSendPacketSequence
-        _nextSequenceSend[sender][channelId] = sequence + 1;
-
-        emit SendPacket(sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
     /**
