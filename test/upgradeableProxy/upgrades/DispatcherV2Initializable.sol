@@ -19,7 +19,8 @@ pragma solidity ^0.8.9;
 
 import {DispatcherV2} from "./DispatcherV2.sol";
 import {ILightClient} from "../../../contracts/interfaces/ILightClient.sol";
-import {IBCErrors} from "../../../contracts/libs/Ibc.sol";
+import {IBCErrors} from "../../../contracts/libs/IbcErrors.sol";
+
 /**
  * @title Dispatcher
  * @author Polymer Labs
@@ -27,7 +28,6 @@ import {IBCErrors} from "../../../contracts/libs/Ibc.sol";
  *     Contract callers call this contract to send IBC-like msg,
  *     which can be relayed to a rollup module on the Polymerase chain
  */
-
 contract DispatcherV2Initializable is DispatcherV2 {
     function initialize(string memory initPortPrefix) public override reinitializer(2) {
         __Ownable_init();

@@ -5,6 +5,7 @@
     "const-name-snakecase": "error",
     "constructor-syntax": "error",
     "no-global-import" : ["error"],
+    "no-unused-import":["error"],
     "custom-errors": ["error"],
     "no-inline-assembly": "off",
     "named-return-values": ["error"],

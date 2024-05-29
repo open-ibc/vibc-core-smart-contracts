@@ -17,18 +17,10 @@
 
 pragma solidity 0.8.15;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
-import {
-    IbcMiddleware,
-    IbcUniversalChannelMW,
-    IbcUniversalPacketReceiver,
-    IbcMwPacketReceiver,
-    IbcMwEventsEmitter
-} from "../interfaces/IbcMiddleware.sol";
-import {IbcReceiver} from "../interfaces/IbcReceiver.sol";
+import {IbcUniversalChannelMW, IbcUniversalPacketReceiver} from "../interfaces/IbcMiddleware.sol";
 import {IbcReceiverBaseUpgradeable} from "../interfaces/IbcReceiverUpgradeable.sol";
-import {ChannelOrder, ChannelEnd, IbcPacket, AckPacket, UniversalPacket} from "../libs/Ibc.sol";
+import {ChannelOrder, IbcPacket, AckPacket, UniversalPacket} from "../libs/Ibc.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 

@@ -5,7 +5,8 @@ import "../utils/Dispatcher.base.t.sol";
 import "../../contracts/examples/Mars.sol";
 import "../../contracts/examples/Earth.sol";
 import "../../contracts/libs/Ibc.sol";
-import "../../contracts/libs/IbcUtils.sol";
+import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
+import {IBCErrors} from "../../contracts/libs/IbcErrors.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {PacketSenderTestBase} from "./Dispatcher.t.sol";
 

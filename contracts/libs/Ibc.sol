@@ -17,10 +17,8 @@
 
 pragma solidity ^0.8.9;
 
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
 import {Base64} from "base64/base64.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IBCErrors} from "./IbcErrors.sol";
 
 /**
