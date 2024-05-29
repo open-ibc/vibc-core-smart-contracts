@@ -27,7 +27,6 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
 import {IBCErrors} from "../libs/IbcErrors.sol";
-import {IbcUtils} from "../libs/IbcUtils.sol";
 
 /**
  * @title Dispatcher
@@ -362,8 +361,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
 
         address receiver = _getAddressFromPort(local.portId);
         (bool success, bytes memory data) = _callIfContract(
-            receiver,
-            abi.encodeWithSelector(IbcChannelReceiver.onChanOpenConfirm.selector, local.channelId, counterparty.version)
+            receiver, abi.encodeWithSelector(IbcChannelReceiver.onChanOpenConfirm.selector, local.channelId)
         );
 
         if (success) {
