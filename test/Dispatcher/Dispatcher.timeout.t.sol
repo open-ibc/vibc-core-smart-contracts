@@ -93,4 +93,10 @@ contract DispatcherTimeoutPacketTestSuite is PacketSenderTestBase {
         vm.expectRevert(DummyLightClient.InvalidDummyNonMembershipProof.selector);
         dispatcherProxy.timeout(sentPacket, invalidProof);
     }
+
+    function test_invalidSendPacket() public {
+        sentPacket = genPacket(nextSendSeq);
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidPacket.selector));
+        mars.greet(payloadStr, channelId, uint64(block.timestamp) - 1);
+    }
 }
