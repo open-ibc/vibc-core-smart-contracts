@@ -148,7 +148,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @notice Initializes the channel opening process with the specified parameters. This is the first step in the  channel
      * handshake, initiated directly by the dapp which wishes to establish a channel with the receiver.
      * @param ordering The ordering of the channel (ORDERED or UNORDERED).
-     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
+     * used
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on
      * @param counterpartyPortId The port ID of the counterparty.
@@ -193,7 +194,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * chain.
      * @param local The counterparty information for the receiver.
      * @param ordering The ordering of the channel (ORDERED or UNORDERED).
-     * @param feeEnabled Whether fees are enabled for the channel.
+     * @param feeEnabled Whether fees are enabled for the channel. Note: This value isn't currently used
      * @param connectionHops The list of connection hops associated with the channel; with the first channel in this
      * array always starting from the chain this contract is deployed on
      * @param counterparty The counterparty information of the sender
@@ -267,7 +268,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on.
      * @param ordering The ordering of the channel (ORDERED or UNORDERED).
-     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
+     * used
      * @param counterparty The counterparty information for the channel.
      * @param proof The proof that the counterparty is in the ACK_PENDING state (i.e. that it responded with a
      * successful channelOpenTry )
@@ -702,7 +704,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param connectionHops The connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on.
      * @param ordering The ordering of the channel.
-     * @param feeEnabled A boolean indicating whether fees are enabled for the channel.
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
+     * used
      * @param counterparty The details of the counterparty.
      */
     function _connectChannel(
@@ -714,7 +717,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         ChannelEnd calldata counterparty
     ) internal {
         // We don't need to check that a channel isn't already present between a portAddress and a chanenlId since
-        // polymer chain verification should prevent double registration of the same channel.
+        // polymer chain verification should prevent double registration of the same channel (with the execption of the
+        // feeEnabled state, thoguh this isn't currently used anywhere so change a channel's feeEnabled state shouldn't
+        // have any outcome)
         _portChannelMap[address(portAddress)][local.channelId] = Channel(
             local.version,
             ordering,
