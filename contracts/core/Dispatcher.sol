@@ -713,12 +713,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         bool feeEnabled,
         ChannelEnd calldata counterparty
     ) internal {
-        // Register port and channel mapping
-        // TODO: check duplicated channel registration?
-        // TODO: The call to `Channel` constructor MUST be move to `openIbcChannel` phase
-        //       Then `connectIbcChannel` phase can use the `version` as part of `require` condition.
+        // We don't need to check that a channel isn't already present between a portAddress and a chanenlId since
+        // polymer chain verification should prevent double registration of the same channel.
         _portChannelMap[address(portAddress)][local.channelId] = Channel(
-            counterparty.version, // TODO: this should be self version instead of counterparty version
+            local.version,
             ordering,
             feeEnabled,
             connectionHops,
