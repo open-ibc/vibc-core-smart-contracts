@@ -288,6 +288,48 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         vm.stopPrank();
     }
 
+    function test_cannot_send_packets_over_unapproved_UCH_Channels() public {
+        // Earth can't receive packets over channels it hasn't approved
+        (IUniversalChannelHandler newUCH,) = deployUCHProxyAndImpl(address(eth1.dispatcherProxy()));
+
+        // Do channel handshake over unapproved UCH
+        ChannelSetting memory setting =
+            ChannelSetting(ChannelOrder.UNORDERED, "1.0", "", IbcUtils.toBytes32("channel-10"), true, validProof);
+        eth1.assignChannelIds(newUCH, eth2.ucHandlerProxy(), eth2);
+        eth1.setPortId(address(newUCH), IbcUtils.addressToPortId(eth1.dispatcherProxy().portPrefix(), address(newUCH)));
+        eth1.channelOpenInit(newUCH, eth2, eth2.ucHandlerProxy(), setting, true);
+        eth2.channelOpenTry(eth2.ucHandlerProxy(), eth1, newUCH, setting, true);
+        eth1.channelOpenAck(newUCH, eth2, eth2.ucHandlerProxy(), setting, true);
+        eth2.channelOpenConfirm(eth2.ucHandlerProxy(), eth1, newUCH, setting, true);
+
+        // Send a packet from unapproved UCH
+        bytes32 destPortAddr = IbcUtils.toBytes32(address(eth2.earth()));
+        uint64 timeout = uint64(block.timestamp + 100_000);
+        bytes32 srcChannelId = eth1.channelIds(address(newUCH), address(eth2.ucHandlerProxy()));
+        bytes32 destChannelId = eth2.channelIds(address(eth2.ucHandlerProxy()), address(newUCH));
+        newUCH.sendUniversalPacket(srcChannelId, destPortAddr, appData, timeout);
+        packetData = IbcUtils.toUniversalPacketBytes(
+            UniversalPacket(IbcUtils.toBytes32(msg.sender), eth1.ucHandlerProxy().MW_ID(), destPortAddr, appData)
+        );
+        IbcPacket memory packet = IbcPacket(
+            IbcEndpoint(eth1.portIds(address(newUCH)), srcChannelId),
+            IbcEndpoint(eth2.portIds(address(eth2.earth())), destChannelId),
+            10,
+            packetData,
+            Height(0, 0),
+            timeout
+        );
+
+        // Mock dispatcher relaying the packet to UCH since we can't test for dispatcher onrecvpacket reverts due to
+        // try/catch
+        vm.startPrank(address(eth2.dispatcherProxy()));
+        IUniversalChannelHandler uch2 = eth2.ucHandlerProxy();
+        vm.expectRevert(abi.encodeWithSelector(IbcUniversalPacketReceiver.unauthorizedChannel.selector));
+
+        // Onrecvpacket should revert now since earth hasn't approved the channel from the new uch
+        uch2.onRecvPacket(packet);
+    }
+
     /**
      * Test packet flow from chain A to chain B via UniversalChannel MW and optionally other MW that sits on top of
      * UniversalChannel MW.

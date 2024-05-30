@@ -89,6 +89,9 @@ interface IbcMwPacketReceiver {
 // dApps and IBC middleware contracts need to implement this interface to receive universal channel packets as packets'
 // final destination.
 interface IbcUniversalPacketReceiver {
+    error invalidChannelId();
+    error unauthorizedChannel();
+
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
         external
         returns (AckPacket memory ackPacket);
@@ -245,5 +248,43 @@ contract IbcMwUser is Ownable {
 
     function _authorizeMiddleware(address middleware) internal {
         authorizedMws[address(middleware)] = true;
+    }
+}
+
+abstract contract IbcUniversalPacketReceiverBase is IbcMwUser, IbcUniversalPacketReceiver {
+    mapping(bytes32 => bool) public authorizedChannelIds;
+
+    /**
+     * @dev Ensure that UCH packets only sent over trusted UCH channels. See _authorizeChannel natspec
+     */
+    modifier onlyAuthorizedChannel(bytes32 channelId) {
+        if (!authorizedChannelIds[channelId]) {
+            revert unauthorizedChannel();
+        }
+        _;
+    }
+
+    constructor(address _middleware) IbcMwUser(_middleware) {}
+
+    /**
+     * @dev Authorize a channel to be used by middleware.
+     * @dev This is used to distinguish channels owned by uch and other channels that should not be used to completing
+     * universal packet related handshakes
+     * @param channelId: For onRecvUniversalPacket handler, the packet.dest.channelId should be that of the UCH channel
+     * of the counterparty chain. For onUniversalAcknowledgement, the packet.src.channelId should be the UCH channel of
+     * the counterparty chain
+     *      for example:
+     *          Earth A and UCH A are on Chain A; Earth B and UCH B are on chain B. We want to send a packet from:
+     *                 Earth A -> UCH A -> UCH B -> Earth B,
+     *      If both earths are inheriting this contract, the owner of Earth A has to authorize packet.src.channelId and
+     *      the owner of earth B has to authorize packet.dest.channelId
+     * This is to prevent spoofing attacks; otherwise a malicious contract on chain A could trick UCH B into thinking it
+     * is Earth A
+     */
+    function _authorizeChannel(bytes32 channelId) internal {
+        if (channelId == bytes32(0)) {
+            revert invalidChannelId();
+        }
+        authorizedChannelIds[channelId] = true;
     }
 }
