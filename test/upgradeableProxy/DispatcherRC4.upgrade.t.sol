@@ -234,6 +234,7 @@ contract DispatcherRC4MidwayUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeT
         upgradeDispatcher(portPrefix, address(dispatcherProxy));
         upgradeUch(address(uch));
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
+        earth.authorizeChannel(_localUch.channelId);
 
         // Now recv and ack packet
         IbcEndpoint memory src = IbcEndpoint(sendingPortId, _local.channelId);

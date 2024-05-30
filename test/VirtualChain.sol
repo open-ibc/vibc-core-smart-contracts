@@ -14,7 +14,6 @@ import "../contracts/interfaces/IProofVerifier.sol";
 import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
-import {IbcMiddleware} from "../contracts/interfaces/IbcMiddleware.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
 import "../contracts/utils/DummyLightClient.sol";
 import {TestUtilsTest} from "./utils/TestUtils.t.sol";
@@ -141,11 +140,20 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
         vm.prank(address(remoteChain));
         remoteChain.channelOpenTry(remoteEnd, this, localEnd, setting, true); // step-2
 
-        vm.prank(address(remoteChain));
-        this.channelOpenAck(localEnd, remoteChain, remoteEnd, setting, true); // step-4
-
         vm.prank(address(this));
-        remoteChain.channelOpenConfirm(remoteEnd, this, localEnd, setting, true); // step-3
+        this.channelOpenAck(localEnd, remoteChain, remoteEnd, setting, true); // step-3
+
+        vm.prank(address(remoteChain));
+        remoteChain.channelOpenConfirm(remoteEnd, this, localEnd, setting, true); // step-4
+
+        // Authorize channels on earth so that we can trust they are the valid UCH channels
+        vm.prank(address(this));
+        this.earth().authorizeChannel(channelIds[address(localEnd)][address(remoteEnd)]);
+
+        vm.startPrank(address(remoteChain)); // Have to use start prank here since earth() and channelIds count as
+            // separate calls
+        remoteChain.earth().authorizeChannel(remoteChain.channelIds(address(remoteEnd), address(localEnd)));
+        vm.stopPrank();
     }
 
     function channelOpenInit(
@@ -172,7 +180,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
                 remoteChain.portIds(address(remoteEnd))
             );
         }
-        vm.prank(address(ucHandlerProxy));
+        vm.prank(address(localEnd));
         dispatcherProxy.channelOpenInit(setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId);
     }
 
@@ -320,5 +328,9 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             addrWithoutPrefix[i] = addrWithPrefix[i + 2];
         }
         return addrWithoutPrefix;
+    }
+
+    function setPortId(address addr, string memory portId) external {
+        portIds[addr] = portId;
     }
 }
