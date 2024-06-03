@@ -35,11 +35,11 @@ const getDeployData = (
     `cannot find contract factory constructor for contract: ${factoryName}`
   );
 
-  const libs = libraries
-    ? libraries.map((arg: any) => {
-        return { [arg.name]: renderString(arg.address, env) };
-      })
-    : [];
+  let libs: any = {};
+  libraries.forEach((arg: any) => {
+    libs[arg.name] = renderString(arg.address, env);
+  });
+  libs = [libs];
 
   const factory = new contractFactoryConstructor(...libs);
   if (!factory) {
@@ -80,6 +80,8 @@ export async function deployToChain(
       chain.chainName
     } with contractNames: [${deploySpec.keys()}]`
   );
+
+  logger.info(`deploying with contract spec ${deploySpec}`);
 
   if (!dryRun) {
     const provider = ethers.getDefaultProvider(chain.rpc);
@@ -136,11 +138,17 @@ export async function deployToChain(
         deployedAddr = await deployed.getAddress();
       }
       // save deployed contract address for its dependencies
+      logger.info(
+        `deployed contract ${chain.chainName} ${contract.name} at ${deployedAddr}`
+      );
       env[contract.name] = deployedAddr;
       // update contract in registry as output result
       contract.address = deployedAddr;
       contract.deployer = deployer.address;
       contract.abi = constructorData.contractFactoryConstructor.abi;
+      logger.info(
+        `[${chain.chainName}]: deployed ${contract.name} to address: ${deployedAddr}`
+      );
       if (writeContracts) {
         const contractObject = {
           factory: factoryName,

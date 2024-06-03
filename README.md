@@ -51,8 +51,17 @@ This file is read in-order, so each entry in this file should be in-order, where
 This npm package exposes two commands - one to deploy new contacts (which automatically creates persisted deployment files), and one to send transactions to contracts from persisted artifact files. The following steps are needed to deploy contracts via the command line: 
 
 1. Ensure that your deployer account and constructor arguments are configured. This can either be done through adding contract spec yaml files located in the specs/ from the root of where this npm module is installed from (requires adding a `specs/evm.accounts.yaml` file and either a `specs/contracts.spec.yaml` or  `specs/upgrade.spec.yaml`), or by setting the KEY_POLYMER, RPC_URL, DEPLOYMENT_CHAIN_ID, CHAIN_NAME environment variables. For examples of contract and account spec files, see the `/specs` folder in this repo.
-2. Run either `npx deploy-vibc-core-smart-contracts` to deploy contracts from the contract spec, or `npx upgrade-vibc-core-smart-contracts` to  send an upgrade transaction.
+2. Pass in optional command arguments:  
+   - RPC_URL - the rpc url to submit deploy txs to, can be a local fork as well 
+   - ACCOUNTS_SPECS_PATH - the path to the accounts spec file
+   - CHAIN_NAME - the name of the chain to deploy to
+   - 
+3. Run either `npx deploy-vibc-core-smart-contracts` to deploy contracts from the contract spec, or `npx upgrade-vibc-core-smart-contracts` to  send an upgrade transaction.
 
+The hierarcy of how configuration is read is: 
+- any arguments passed in via clia
+- any arguments from the env
+- default arugments as defined in src/utils/constants.ts
 ### Deploying via imports 
 Deployments can also be done through calls through the `deployToChain` and the `sendTxToChain` methods. 
 

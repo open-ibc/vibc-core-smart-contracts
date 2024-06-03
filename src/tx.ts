@@ -47,8 +47,8 @@ export async function sendTxToChain(
   });
 
   // @ts-ignore
-  let env = { ...existingContractAddresses, chain };
-  env = await readDeploymentFilesIntoEnv(env);
+  let env = await readDeploymentFilesIntoEnv({}); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
+  env = { env, ...existingContractAddresses, chain };
 
   const eachTx = async (tx: ReturnType<TxRegistry["mustGet"]>) => {
     try {

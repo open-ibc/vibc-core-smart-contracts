@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "2.1.5",
+  "version": "2.2.1",
   "main": "dist/index.js",
   "bin": {
     "deploy-vibc-core-smart-contracts": "dist/scripts/deploy-script.js",
@@ -36,7 +36,7 @@
     "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "evm",
@@ -81,9 +81,9 @@
     "./utils/cli": "./dist/utils/cli.js",
     "./utils/io": "./dist/utils/io.js",
     "./constants": {
-      "require": "./dist/utils/constants/index.js",
-      "import": "./dist/utils/constants/index.js",
-      "types": "./dist/utils/constants/index.d.ts"
+      "require": "./dist/utils/constants.js",
+      "import": "./dist/utils/constants.js",
+      "types": "./dist/utils/constants.d.ts"
     }
   }
 }
