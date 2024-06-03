@@ -20,12 +20,12 @@ import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 
-import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "./Dispatcher.upgrade.t.sol";
+import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "./UpgradeUtils.t.sol";
 import {IDispatcherRc4, DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {VirtualChain} from "../VirtualChain.sol";
 import {GeneralMiddleware} from "../../contracts/base/GeneralMiddleware.sol";
-import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "./upgrades/MarsRc4.sol";
+import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "../../contracts/examples/MarsRc4.sol";
 import {
     Earth as EarthRc4,
     UniversalPacket as UniversalPacketRc4,

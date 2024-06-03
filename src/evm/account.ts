@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import fs from "fs";
 import path from "path";
 import { Registry } from "../utils/registry";
-import { parseZodSchema } from "../utils/io";
+import { parseZodSchema, renderString } from "../utils/io";
 
 const privateKey = z.object({
   name: z.string().min(1),
@@ -109,7 +109,16 @@ export function createWallet(opt: {
   index?: number;
 }): Wallet {
   if (opt.privateKey && typeof opt.privateKey === "string") {
-    return new ethers.Wallet(opt.privateKey);
+    let renderedPrivatekey = opt.privateKey;
+    if (!ethers.isHexString(renderedPrivatekey, 32)) {
+      // check if is a valid private key - if not, see if it represents an env variable that represents a private key.
+      try {
+        renderedPrivatekey = renderString(opt.privateKey, process.env); // look up in env if not.
+      } catch (e) {
+        console.log("no valid private key found for account spec", e);
+      }
+    }
+    return new ethers.Wallet(renderedPrivatekey);
   }
   if (opt.mnemonic && typeof opt.mnemonic === "string") {
     let wallet = ethers.Wallet.fromPhrase(opt.mnemonic);

@@ -17,7 +17,6 @@ cache
 artifacts
 
 # Foundry files
-out/
 forge-cache/
 
 *.tgz
