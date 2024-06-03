@@ -38,6 +38,8 @@
   libraries: 
     - name: 'contracts/libs/Ibc.sol:Ibc'
       address: '{{Ibc}}'
+    - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
+      address: '{{IbcUtils}}'
   deployer: 'KEY_POLYMER'
 
 - name: DispatcherProxy
@@ -77,10 +79,10 @@
   description: 'Mars contract directly owns a IBC channel'
   deployArgs:
     - '{{DispatcherProxy}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DAPP1'
 
 - name: Earth
   description: 'Earth contract uses shared universal channel'
   deployArgs:
     - '{{UCProxy}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DAPP2'

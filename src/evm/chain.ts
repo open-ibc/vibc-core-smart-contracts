@@ -12,7 +12,7 @@ const ChainConfigSchema = z.object({
 
 export const chainRegistrySchema = z.array(ChainConfigSchema).min(1);
 export type ChainRegistry = Registry<z.infer<typeof ChainConfigSchema>>;
-export type Chain = ChainRegistry["Element"];
+export type Chain = ChainRegistry["Element"] & object; // Chains must specify base data but are used as env properties so can specify any arbitrary data
 
 // load chain registry from a config object
 export function loadChainRegistry(config: z.input<typeof chainRegistrySchema>) {

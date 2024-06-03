@@ -72,7 +72,6 @@ export type AckPacketStructOutput = [success: boolean, data: string] & {
 export interface IbcInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "_hexStrToAddress"
       | "ackProofKey"
       | "ackProofValue"
       | "channelProofKey"
@@ -86,10 +85,6 @@ export interface IbcInterface extends Interface {
       | "toStr(uint256)"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "_hexStrToAddress",
-    values: [string]
-  ): string;
   encodeFunctionData(
     functionFragment: "ackProofKey",
     values: [IbcPacketStruct]
@@ -135,10 +130,6 @@ export interface IbcInterface extends Interface {
     values: [BigNumberish]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "_hexStrToAddress",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "ackProofKey",
     data: BytesLike
@@ -228,8 +219,6 @@ export interface Ibc extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  _hexStrToAddress: TypedContractMethod<[hexStr: string], [string], "view">;
-
   ackProofKey: TypedContractMethod<[packet: IbcPacketStruct], [string], "view">;
 
   ackProofValue: TypedContractMethod<[ack: BytesLike], [string], "view">;
@@ -302,9 +291,6 @@ export interface Ibc extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
-  getFunction(
-    nameOrSignature: "_hexStrToAddress"
-  ): TypedContractMethod<[hexStr: string], [string], "view">;
   getFunction(
     nameOrSignature: "ackProofKey"
   ): TypedContractMethod<[packet: IbcPacketStruct], [string], "view">;
