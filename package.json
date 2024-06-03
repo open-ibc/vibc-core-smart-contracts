@@ -3,9 +3,10 @@
   "version": "2.1.5",
   "main": "dist/index.js",
   "bin": {
-    "deploy-vibc-core-smart-contracts": "dist/scripts/deploy-script.js",
-    "upgrade-vibc-core-smart-contracts": "dist/scripts/upgrade-script.js",
-    "setup-vibc-core-dispatcher": "dist/scripts/setup-dispatcher-script.js"
+    "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
+    "upgrade-vibc-core-smart-contracts": "./dist/scripts/upgrade-script.js",
+    "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
+    "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -36,7 +37,7 @@
     "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "evm",
@@ -81,9 +82,9 @@
     "./utils/cli": "./dist/utils/cli.js",
     "./utils/io": "./dist/utils/io.js",
     "./constants": {
-      "require": "./dist/utils/constants/index.js",
-      "import": "./dist/utils/constants/index.js",
-      "types": "./dist/utils/constants/index.d.ts"
+      "require": "./dist/utils/constants.js",
+      "import": "./dist/utils/constants.js",
+      "types": "./dist/utils/constants.d.ts"
     }
   }
 }

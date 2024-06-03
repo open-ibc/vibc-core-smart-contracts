@@ -25,4 +25,3 @@ export function loadTxRegistry(config: any): TxRegistry {
     nameInParent: "transactions",
   });
 }
-

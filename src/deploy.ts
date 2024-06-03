@@ -35,11 +35,11 @@ const getDeployData = (
     `cannot find contract factory constructor for contract: ${factoryName}`
   );
 
-  const libs = libraries
-    ? libraries.map((arg: any) => {
-        return { [arg.name]: renderString(arg.address, env) };
-      })
-    : [];
+  let libs: any = {};
+  libraries.forEach((arg: any) => {
+    libs[arg.name] = renderString(arg.address, env);
+  });
+  libs = [libs];
 
   const factory = new contractFactoryConstructor(...libs);
   if (!factory) {
@@ -76,11 +76,12 @@ export async function deployToChain(
   writeContracts: boolean = true // True if you want to save persisted artifact files.
 ) {
   logger.info(
-    `deploying ${deploySpec.size} contract(s) to chain ${
-      chain.chainName
+    `deploying ${deploySpec.size} contract(s) to chain ${chain.chainName}-${
+      chain.deploymentEnvironment
     } with contractNames: [${deploySpec.keys()}]`
   );
 
+  let nonces: Record<string, number> = {}; // maps addresses to nonces
   if (!dryRun) {
     const provider = ethers.getDefaultProvider(chain.rpc);
     const newAccounts = accountRegistry.subset([]);
@@ -94,7 +95,7 @@ export async function deployToChain(
   const env: StringToStringMap = { chain };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
-    await readDeploymentFilesIntoEnv(env);
+    await readDeploymentFilesIntoEnv(env, chain);
   }
 
   // result is the final contract registry after deployment, modified in place
@@ -119,28 +120,47 @@ export async function deployToChain(
       );
 
       logger.info(
-        `[${chain.chainName}]: deploying ${contract.name} with args: [${
-          constructorData.args
-        }] with libraries: ${JSON.stringify(constructorData.libraries)}`
+        `[${chain.chainName}-${chain.deploymentEnvironment}]: deploying ${
+          contract.name
+        } with args: [${constructorData.args}] with libraries: ${JSON.stringify(
+          constructorData.libraries
+        )}`
       );
       let deployedAddr = `new.${contract.name}.address`;
       const deployer = accountRegistry.mustGet(
         contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
       );
 
+      // To avoid nonce too low bug, we manually increment nonces for each account
+      if (!(deployer.address in nonces)) {
+        nonces[deployer.address] = await deployer.getNonce();
+      } else {
+        nonces[deployer.address] += 1;
+      }
+
+      const nonce = nonces[deployer.address];
       if (!dryRun) {
+        const overrides = {
+          nonce,
+        };
         const deployed = await constructorData.factory
           .connect(deployer)
-          .deploy(...constructorData.args);
-        await deployed.deploymentTransaction()?.wait();
+          .deploy(...constructorData.args, overrides);
+        await deployed.deploymentTransaction()?.wait(1);
         deployedAddr = await deployed.getAddress();
       }
       // save deployed contract address for its dependencies
+      logger.info(
+        `deployed contract ${chain.chainName} ${contract.name} at ${deployedAddr}`
+      );
       env[contract.name] = deployedAddr;
       // update contract in registry as output result
       contract.address = deployedAddr;
       contract.deployer = deployer.address;
       contract.abi = constructorData.contractFactoryConstructor.abi;
+      logger.info(
+        `[${chain.chainName}-${chain.deploymentEnvironment}]: deployed ${contract.name} to address: ${deployedAddr}`
+      );
       if (writeContracts) {
         const contractObject = {
           factory: factoryName,
@@ -154,17 +174,18 @@ export async function deployToChain(
       }
     } catch (err) {
       logger.error(
-        `[${chain.chainName}] deploy ${contract.name} failed: ${err}`
+        `[${chain.chainName}-${chain.deploymentEnvironment}] deploy ${contract.name} failed: ${err}`
       );
       throw err;
     }
   };
+
   for (const contract of result.values()) {
     await eachContract(contract);
   }
 
   logger.info(
-    `[${chain.chainName}]: finished deploying ${result.size} contracts`
+    `[${chain.chainName}-${chain.deploymentEnvironment}]: finished deploying ${result.size} contracts`
   );
 
   return {

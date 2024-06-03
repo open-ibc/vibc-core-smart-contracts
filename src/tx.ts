@@ -25,6 +25,8 @@ export async function sendTxToChain(
   logger.debug(
     `sending ${transactionSpec.size} transaction(s) to chain ${
       chain.chainName
+    }-${
+      chain.deploymentEnvironment
     } with contractNames: [${transactionSpec.keys()}]`
   );
 
@@ -47,8 +49,8 @@ export async function sendTxToChain(
   });
 
   // @ts-ignore
-  let env = { ...existingContractAddresses, chain };
-  env = await readDeploymentFilesIntoEnv(env);
+  let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
+  env = { ...env, ...existingContractAddresses, chain };
 
   const eachTx = async (tx: ReturnType<TxRegistry["mustGet"]>) => {
     try {
@@ -89,12 +91,16 @@ export async function sendTxToChain(
         try {
           await sentTx.wait();
         } catch (err) {
-          logger.error(`[${chain.chainName}] sendTx ${tx.name} failed: ${err}`);
+          logger.error(
+            `[${chain.chainName}-${chain.deploymentEnvironment}] sendTx ${tx.name} failed: ${err}`
+          );
           throw err;
         }
       }
     } catch (err) {
-      logger.error(`[${chain.chainName}] sendTx ${tx.name} failed: ${err}`);
+      logger.error(
+        `[${chain.chainName}-${chain.deploymentEnvironment}] sendTx ${tx.name} failed: ${err}`
+      );
       throw err;
     }
   };
