@@ -32,6 +32,7 @@ import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {DispatcherRc4} from "../upgradeableProxy/upgrades/DispatcherRc4.sol";
+import {Mars as MarsRc4} from "../../contracts/examples/MarsRc4.sol";
 import {UniversalChannelHandlerV2} from "./upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
@@ -106,8 +107,40 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
         }
     }
 
+    // Do 2 steps of the channel that happen only on the source chain. On the sc layer, the source chain is oblivious to
+    // what happens on the dest chain, so to test proof path we just have to simulate 1/2 of the handshake as long as we
+    // mock the chanOpenAck proof
+    function doSrcProofChannelHandshake(LocalEnd memory localEnd, ChannelEnd memory remoteEnd) public {
+        ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.NONE, false, true, validProof);
+
+        channelOpenInit(localEnd, remoteEnd, setting, true);
+
+        setting.proof = load_proof("/test/payload/channel_ack_pending_proof.hex");
+        channelOpenAck(localEnd, remoteEnd, setting, true);
+    }
+
+    function doDestProofChannelHandshake(
+        ChannelEnd memory localEnd,
+        ChannelEnd memory remoteEnd,
+        string[] memory connectionHops,
+        string memory expectedVersion,
+        IbcChannelReceiver receiver
+    ) public {
+        LocalEnd memory le =
+            LocalEnd(receiver, localEnd.portId, localEnd.channelId, connectionHops, localEnd.version, expectedVersion);
+
+        ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.NONE, false, true, validProof);
+
+        setting.proof = load_proof("/test/payload/channel_try_pending_proof.hex");
+        channelOpenTry(le, remoteEnd, setting, true);
+
+        setting.proof = load_proof("/test/payload/channel_confirm_pending_proof.hex");
+        channelOpenConfirm(le, remoteEnd, setting, true);
+    }
+
+    // For sending packets from dest chain
     function doProofChannelHandshake(LocalEnd memory localEnd, ChannelEnd memory remoteEnd) public {
-        ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, false, true, validProof);
+        ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.NONE, false, true, validProof);
 
         channelOpenInit(localEnd, remoteEnd, setting, true);
         channelOpenTry(localEnd, remoteEnd, setting, true);
@@ -121,10 +154,21 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
         sender.greet(payload, channelId, timeoutTimestamp);
     }
 
-    function sendPacket(bytes32 channelId) public {
+    function sendOneLegacyPacket(bytes32 channelId, uint64 packetSeq, address sender) public {
+        vm.expectEmit(true, true, true, true);
+        emit SendPacket(address(sender), channelId, packet, packetSeq, timeoutTimestamp);
+        // We have to assume an RC4 interface for testing sending legacy packets, for when the sender address is an old
+        // Mars implementation; since otherwise it would try to unpack a returned packet sequence from greet, and
+        // foundry would revert
+        MarsRc4(payable(sender)).greet(payload, channelId, timeoutTimestamp);
+    }
+
+    // Send a packet from the old Rc4 mars implementation, to ensure upgrade compatibility between versions that assume
+    // the Rc4 dispatcher interface
+    function sendLegacyPacket(bytes32 channelId) public {
         for (uint64 index = 0; index < 3; index++) {
             uint64 packetSeq = index + 1;
-            sendOnePacket(channelId, packetSeq, mars);
+            sendOneLegacyPacket(channelId, packetSeq, address(mars));
             IbcEndpoint memory dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
             string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
             IbcEndpoint memory src = IbcEndpoint(marsPort, channelId);

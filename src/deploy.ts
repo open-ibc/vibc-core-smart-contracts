@@ -81,7 +81,7 @@ export async function deployToChain(
     } with contractNames: [${deploySpec.keys()}]`
   );
 
-  let nonces: Record<string, number> = {}; // maps addreses to nonces
+  let nonces: Record<string, number> = {}; // maps addresses to nonces
   if (!dryRun) {
     const provider = ethers.getDefaultProvider(chain.rpc);
     const newAccounts = accountRegistry.subset([]);

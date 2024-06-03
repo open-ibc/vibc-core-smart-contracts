@@ -16,13 +16,14 @@ import {
   CHAIN_ID,
   RPC_URL,
   DEPLOY_SPECS_PATH,
-  DEPLOYMENT_ENVIRONMENT,
   PACKAGE_VERSION,
+  DEPLOYMENT_ENVIRONMENT,
+  ANVIL_PORT,
+  UPGRADE_SPECS_PATH,
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import { AccountRegistry } from "../evm/account";
-import * as contracts from "../evm/contracts/index";
 
 export interface StringToStringMap {
   [key: string]: string | null | undefined;
@@ -300,7 +301,11 @@ export async function parseArgsFromCLI() {
     argv1.DEPLOYMENT_ENVIRONMENT || DEPLOYMENT_ENVIRONMENT;
   const accountSpecs =
     (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+
   const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
+  const upgradeSpecs =
+    (argv1.UPGRADE_SPECS_PATH as string) || UPGRADE_SPECS_PATH;
+  const anvilPort = (argv1.ANVIL_PORT as string) || ANVIL_PORT;
 
   const chainParse = ChainConfigSchema.safeParse({
     rpc: rpcUrl,
@@ -325,7 +330,9 @@ export async function parseArgsFromCLI() {
     chain: chainParse.data,
     accounts,
     accountSpecs,
+    upgradeSpecs,
     deploySpecs,
     args: argv1,
+    anvilPort,
   };
 }

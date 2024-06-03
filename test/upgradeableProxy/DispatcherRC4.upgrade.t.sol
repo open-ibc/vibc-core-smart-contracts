@@ -25,7 +25,7 @@ import {IDispatcherRc4, DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {VirtualChain} from "../VirtualChain.sol";
 import {GeneralMiddleware} from "../../contracts/base/GeneralMiddleware.sol";
-import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "./upgrades/MarsRc4.sol";
+import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "../../contracts/examples/MarsRc4.sol";
 import {
     Earth as EarthRc4,
     UniversalPacket as UniversalPacketRc4,

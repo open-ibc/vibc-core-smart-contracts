@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "2.2.1",
+  "version": "2.1.4",
   "main": "dist/index.js",
   "bin": {
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
