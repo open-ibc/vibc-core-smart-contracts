@@ -23,9 +23,10 @@ import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 
 /**
  * @title Moon
- * @notice Moon is a simple IBC receiver contract that receives packets and sends acks. For now, it is a copy of Mars.sol, but may be extended in the future.
- * @dev This contract is used for only testing IBC functionality and as an example for dapp developers on how to
- * integrate with the vibc protocol. 
+ * @notice Moon is a simple IBC receiver contract that receives packets and sends acks. 
+ * For now, it is a copy of Mars.sol, but may be extended in the future.
+ * @dev This contract is used for only testing IBC functionality and as an example for dapp developers 
+ *  on how to integrate with the vibc protocol. 
  */
 contract Moon is IbcReceiverBase, IbcReceiver {
     // received packet as chain B
