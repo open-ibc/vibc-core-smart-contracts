@@ -27,9 +27,8 @@ import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
  * @dev This contract is used for only testing IBC functionality and as an example for dapp developers
  *  on how to integrate with the vibc protocol.
  */
-contract Moon is Mars {
+contract Moon is Mars { 
         constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
-
 }
 
 
