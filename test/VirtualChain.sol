@@ -6,12 +6,14 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {IbcDispatcher, IbcEventsEmitter} from "../contracts/interfaces/IbcDispatcher.sol";
 import {IUniversalChannelHandler} from "../contracts/interfaces/IUniversalChannelHandler.sol";
 import {IDispatcher} from "../contracts/interfaces/IDispatcher.sol";
+import {IFeeVault} from "../contracts/interfaces/IFeeVault.sol";
 import "../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 import {Dispatcher} from "../contracts/core/Dispatcher.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../contracts/interfaces/IbcReceiver.sol";
 import "../contracts/interfaces/IProofVerifier.sol";
 import {UniversalChannelHandler} from "../contracts/core/UniversalChannelHandler.sol";
+import {FeeVault} from "../contracts/core/FeeVault.sol";
 import {Mars} from "../contracts/examples/Mars.sol";
 import {Earth} from "../contracts/examples/Earth.sol";
 import {GeneralMiddleware} from "../contracts/base/GeneralMiddleware.sol";
@@ -35,6 +37,7 @@ struct VirtualChainData {
     GeneralMiddleware mw1;
     GeneralMiddleware mw2;
     string[] connectionHops;
+    IFeeVault feeVault;
 }
 
 // A test contract that keeps two types of dApps, 1. regular IBC-enabled dApp, 2. universal channel dApp
@@ -42,6 +45,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
     IUniversalChannelHandler public ucHandlerProxy;
+    IFeeVault public feeVault;
     GeneralMiddleware public mw1;
     GeneralMiddleware public mw2;
 
@@ -60,8 +64,9 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
     // ChannelIds are not initialized until channel handshake is started
     constructor(uint256 seed, string memory portPrefix) {
         _seed = seed;
+        feeVault = new FeeVault();
 
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
         (ucHandlerProxy,) = deployUCHProxyAndImpl(address(dispatcherProxy));
 
         mars = new Mars(dispatcherProxy);
@@ -82,7 +87,7 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
 
     // return virtualChainData
     function getVirtualChainData() external view returns (VirtualChainData memory) {
-        return VirtualChainData(dispatcherProxy, ucHandlerProxy, mars, earth, mw1, mw2, connectionHops);
+        return VirtualChainData(dispatcherProxy, ucHandlerProxy, mars, earth, mw1, mw2, connectionHops, feeVault);
     }
 
     // expectedChannel returns a Channel struct with expected values

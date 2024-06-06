@@ -20,6 +20,7 @@ pragma solidity ^0.8.9;
 import {AckPacket, ChannelOrder} from "../libs/Ibc.sol";
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
+import {FeeSender} from "../implementation_templates/FeeSender.sol";
 
 /**
  * @title Mars
@@ -27,7 +28,7 @@ import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
  * @dev This contract is used for only testing IBC functionality and as an example for dapp developers on how to
  * integrate with the vibc protocol.
  */
-contract Mars is IbcReceiverBase, IbcReceiver {
+contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
     // received packet as chain B
     IbcPacket[] public recvedPackets;
     // received ack packet as chain A
@@ -48,6 +49,18 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         string calldata counterpartyPortId
     ) external onlyOwner {
         dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+    }
+
+    function triggerChannelInitWithFee(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) external payable onlyOwner {
+        IbcDispatcher _dispatcher = dispatcher; // cache for gas savings to avoid 2 SLOADS
+        _dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+        _depositOpenChannelFee(_dispatcher, version, ordering, connectionHops, counterpartyPortId);
     }
 
     function onRecvPacket(IbcPacket memory packet)
@@ -92,13 +105,36 @@ contract Mars is IbcReceiverBase, IbcReceiver {
     }
 
     /**
-     * @dev Sends a packet with a greeting message over a specified channel.
+     * @dev Sends a packet with a greeting message over a specified channel, without depositing any sendPacket relaying
+     * fees.
+     * @notice Use greetWithFee for sending packets with fees.
+     * @param message The greeting message to be sent.
+     * @param channelId The ID of the channel to send the packet to.
+     * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
+     * @dev This method also returns sequence from the dispatcher for easy testing
+     */
+    function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp)
+        external
+        returns (uint64 sequence)
+    {
+        sequence = dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
+    }
+
+    /**
+     * @dev Sends a packet with a greeting message over a specified channel, and deposits a fee for relaying the packet
      * @param message The greeting message to be sent.
      * @param channelId The ID of the channel to send the packet to.
      * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
      */
-    function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp) external {
-        dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
+    function greetWithFee(
+        string calldata message,
+        bytes32 channelId,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimits,
+        uint256[2] calldata gasPrices
+    ) external payable returns (uint64 sequence) {
+        sequence = dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
+        _depositSendPacketFee(dispatcher, channelId, sequence, gasLimits, gasPrices);
     }
 
     function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)

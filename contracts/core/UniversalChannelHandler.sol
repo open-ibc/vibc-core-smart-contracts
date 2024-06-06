@@ -19,10 +19,11 @@ pragma solidity 0.8.15;
 
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 import {IbcUniversalChannelMW, IbcUniversalPacketReceiver} from "../interfaces/IbcMiddleware.sol";
-import {IbcReceiverBaseUpgradeable} from "../interfaces/IbcReceiverUpgradeable.sol";
+import {IbcReceiverBaseUpgradeable} from "../implementation_templates/IbcReceiverUpgradeable.sol";
 import {ChannelOrder, IbcPacket, AckPacket, UniversalPacket} from "../libs/Ibc.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {FeeSender} from "../implementation_templates/FeeSender.sol";
 
 /**
  * @title Universal Channel Handler
@@ -31,7 +32,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
  * channel handshake to establish a channel.
  * @dev This contract can integrate directly with dapps, or a middleware stack for packet routing.
  */
-contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable, IbcUniversalChannelMW {
+contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSUpgradeable, IbcUniversalChannelMW {
     bytes32 private _UNUSED; // Storage placeholder to ensure upgrade from this version is backwards compatible
 
     string public constant VERSION = "1.0";
@@ -82,12 +83,38 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         bytes32 destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) external {
+    ) external returns (uint64 sequence) {
         bytes memory packetData = IbcUtils.toUniversalPacketBytes(
             UniversalPacket(IbcUtils.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
         );
         emit UCHPacketSent(msg.sender, destPortAddr);
-        dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+        sequence = dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+    }
+
+    /**
+     * @notice Sends a universal packet over an IBC channel
+     * @param channelId The channel ID through which the packet is sent on the dispatcher
+     * @param destPortAddr The destination port address
+     * @param appData The packet data to be sent
+     * @param timeoutTimestamp of when the packet can timeout
+     */
+    function sendUniversalPacketWithFee(
+        bytes32 channelId,
+        bytes32 destPortAddr,
+        bytes calldata appData,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimits,
+        uint256[2] calldata gasPrices
+    ) external payable returns (uint64 sequence) {
+        // Cache dispatcher for gas savings
+        IbcDispatcher _dispatcher = dispatcher;
+
+        bytes memory packetData = IbcUtils.toUniversalPacketBytes(
+            UniversalPacket(IbcUtils.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
+        );
+        emit UCHPacketSent(msg.sender, destPortAddr);
+        sequence = _dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+        _depositSendPacketFee(dispatcher, channelId, sequence, gasLimits, gasPrices);
     }
 
     /**

@@ -24,12 +24,15 @@ import {IbcReceiver, IbcChannelReceiver} from "../../contracts/interfaces/IbcRec
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
 import {IProofVerifier} from "../../contracts/core/OptimisticProofVerifier.sol";
+import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
+import {FeeVault} from "../../contracts/core/FeeVault.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
-import {DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
+import {DispatcherRc4, IDispatcherRc4} from "./upgrades/DispatcherRc4.sol";
+import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "./upgrades/MarsRc4.sol";
 import {UniversalChannelHandlerV2} from "./upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
@@ -41,13 +44,13 @@ abstract contract UpgradeTestUtils {
     LocalEnd _localDummy;
     ChannelEnd _remoteDummy;
 
-    function upgradeDispatcher(string memory portPrefix, address dispatcherProxy)
+    function upgradeDispatcher(string memory portPrefix, IFeeVault feeVault, address dispatcherProxy)
         public
         returns (DispatcherV2Initializable newDispatcherImplementation)
     {
         // Upgrade dispatcherProxy for tests
         newDispatcherImplementation = new DispatcherV2Initializable();
-        bytes memory initData = abi.encodeWithSignature("initialize(string)", portPrefix);
+        bytes memory initData = abi.encodeWithSignature("initialize(string,address)", portPrefix, feeVault);
         UUPSUpgradeable(dispatcherProxy).upgradeToAndCall(address(newDispatcherImplementation), initData);
     }
 
@@ -58,12 +61,12 @@ abstract contract UpgradeTestUtils {
 
     function deployDispatcherRC4ProxyAndImpl(string memory initPortPrefix, ILightClient initLightClient)
         public
-        returns (IDispatcher proxy)
+        returns (IbcDispatcherRc4 proxy)
     {
         DispatcherRc4 dispatcherImplementation = new DispatcherRc4();
         bytes memory initData =
             abi.encodeWithSelector(DispatcherRc4.initialize.selector, initPortPrefix, initLightClient);
-        proxy = IDispatcher(address(new ERC1967Proxy(address(dispatcherImplementation), initData)));
+        proxy = IbcDispatcherRc4(address(new ERC1967Proxy(address(dispatcherImplementation), initData)));
     }
 
     function deployUCHV2ProxyAndImpl(address dispatcherProxy) public returns (IUniversalChannelHandler proxy) {
@@ -171,7 +174,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     function setUp() public override {
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
         deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
@@ -184,8 +187,9 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         doChannelHandshake(_local, _remote);
         sendPacket(_local.channelId);
 
+        IFeeVault newFeeVault = new FeeVault();
         // Upgrade dispatcherProxy for tests
-        upgradeDispatcher("adfsafsa", address(dispatcherProxy));
+        upgradeDispatcher("adfsafsa", newFeeVault, address(dispatcherProxy));
     }
 
     function test_SentPacketState_Conserved() public {

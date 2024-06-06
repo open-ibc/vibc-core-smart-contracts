@@ -21,11 +21,13 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
     }
 
     function test_closeChannelInit_success() public {
+        vm.startPrank(mars.owner());
         assertNotEq0(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
         vm.expectEmit(true, true, true, true);
         emit ChannelCloseInit(address(mars), channelId);
         mars.triggerChannelClose(channelId);
         assertEq(abi.encode(dispatcherProxy.getChannel(address(mars), channelId)), abi.encode(defaultChannel));
+        vm.stopPrank();
     }
 
     function test_closeChannelInit_mustOwner() public {
@@ -56,11 +58,20 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
     }
 
     function test_sendPacket_afterChannelCloseInit() public {
+        vm.startPrank(mars.owner());
         mars.triggerChannelClose(channelId);
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(Ibc.toStr(nextSendSeq));
         vm.expectRevert(IBCErrors.channelNotOwnedBySender.selector);
         mars.greet(payloadStr, channelId, maxTimeout);
+
+        // Should also revert for fee enabled packets
+        vm.deal(address(this), totalSendPacketFees);
+        vm.expectRevert(IBCErrors.channelNotOwnedBySender.selector);
+        mars.greetWithFee{value: totalSendPacketFees}(
+            payloadStr, channelId, maxTimeout, sendPacketGasLimit, sendPacketGasPrice
+        );
+        vm.stopPrank();
     }
 
     function test_sendPacket_afterChannelCloseConfirm() public {
@@ -69,6 +80,13 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
         ackPacket = genAckPacket(Ibc.toStr(nextSendSeq));
         vm.expectRevert(IBCErrors.channelNotOwnedBySender.selector);
         mars.greet(payloadStr, channelId, maxTimeout);
+
+        // Should also revert for fee enabled packets
+        vm.deal(address(this), totalSendPacketFees);
+        vm.expectRevert(IBCErrors.channelNotOwnedBySender.selector);
+        mars.greetWithFee{value: totalSendPacketFees}(
+            payloadStr, channelId, maxTimeout, sendPacketGasLimit, sendPacketGasPrice
+        );
     }
 }
 

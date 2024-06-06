@@ -5,6 +5,7 @@ import "../../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
+import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import "../utils/Dispatcher.base.t.sol";
@@ -21,7 +22,7 @@ contract DispatcherUUPSAccessControl is Base {
     DispatcherV2Initializable dispatcherImplementation3;
 
     function setUp() public override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         dispatcherImplementation2 = new DispatcherV2();
         dispatcherImplementation3 = new DispatcherV2Initializable();
@@ -35,11 +36,13 @@ contract DispatcherUUPSAccessControl is Base {
     }
 
     function test_Dispatcher_Allows_Upgrade_To_And_Call() public {
+        IFeeVault newFeeVault = new FeeVault();
         assertEq(address(dispatcherImplementation), getProxyImplementation(address(dispatcherProxy), vm));
-        bytes memory initData = abi.encodeWithSignature("initialize(string)", portPrefix2);
+        bytes memory initData = abi.encodeWithSignature("initialize(string,address)", portPrefix2, newFeeVault);
         UUPSUpgradeable(address(dispatcherProxy)).upgradeToAndCall(address(dispatcherImplementation3), initData);
         assertEq(address(dispatcherImplementation3), getProxyImplementation(address(dispatcherProxy), vm));
         assertEq(dispatcherProxy.portPrefix(), portPrefix2);
+        assertEq(address(dispatcherProxy.feeVault()), address(newFeeVault));
     }
 
     function test_Dispatcher_Prevents_Non_Owner_Updgrade() public {
@@ -55,6 +58,6 @@ contract DispatcherUUPSAccessControl is Base {
 
     function test_Dispatcher_Prevents_Reinit_Attacks() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        dispatcherImplementation.initialize("IIpolyibc.eth.");
+        dispatcherImplementation.initialize("IIpolyibc.eth.", IFeeVault(vm.addr(1)));
     }
 }

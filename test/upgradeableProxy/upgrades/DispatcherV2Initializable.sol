@@ -19,6 +19,7 @@ pragma solidity ^0.8.9;
 
 import {DispatcherV2} from "./DispatcherV2.sol";
 import {ILightClient} from "../../../contracts/interfaces/ILightClient.sol";
+import {IFeeVault} from "../../../contracts/interfaces/IFeeVault.sol";
 import {IBCErrors} from "../../../contracts/libs/IbcErrors.sol";
 
 /**
@@ -29,9 +30,10 @@ import {IBCErrors} from "../../../contracts/libs/IbcErrors.sol";
  *     which can be relayed to a rollup module on the Polymerase chain
  */
 contract DispatcherV2Initializable is DispatcherV2 {
-    function initialize(string memory initPortPrefix) public override reinitializer(2) {
+    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public override reinitializer(2) {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
+        feeVault = _feeVault;
     }
 }

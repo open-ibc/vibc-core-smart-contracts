@@ -21,6 +21,7 @@ import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket} from "../libs/Ibc.sol";
 import {ILightClient} from "./ILightClient.sol";
+import {IFeeVault} from "./IFeeVault.sol";
 
 interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
@@ -105,6 +106,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
 
     function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
+    function feeVault() external returns (IFeeVault feeVault);
 
     function getOptimisticConsensusState(uint256 height, string calldata connection)
         external

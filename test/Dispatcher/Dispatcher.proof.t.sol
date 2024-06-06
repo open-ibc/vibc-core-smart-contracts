@@ -32,6 +32,26 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
     }
 
+    function test_ibc_channel_open_init_WithFee() public {
+        vm.deal(address(mars), totalOpenChannelFees);
+        uint256 startingBal = address(feeVault).balance;
+
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
+        emit ChannelOpenInit(address(mars), "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+
+        vm.expectEmit(true, true, true, true, address(feeVault));
+        emit OpenChannelFeeDeposited(
+            address(mars), "1.0", ChannelOrder.NONE, connectionHops1, ch1.portId, totalOpenChannelFees
+        );
+        // since this is open chann init, the proof is not used. so use an invalid one
+        mars.triggerChannelInitWithFee{value: totalOpenChannelFees}(
+            "1.0", ChannelOrder.NONE, false, connectionHops1, ch1.portId
+        );
+
+        vm.stopPrank();
+        assertEq(address(feeVault).balance, startingBal + totalOpenChannelFees);
+    }
+
     function test_ibc_channel_open_try() public {
         Ics23Proof memory proof = load_proof("/test/payload/channel_try_pending_proof.hex");
 
@@ -139,7 +159,7 @@ contract DispatcherIbcWithRealProofs is DispatcherIbcWithRealProofsSuite {
 
         string memory portPrefix1 = "polyibc.eth1.";
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix1, feeVault);
         dispatcherProxy.setClientForConnection(connectionHops0[0], opLightClient);
         dispatcherProxy.setClientForConnection(connectionHops0[1], opLightClient);
         dispatcherProxy.setClientForConnection(connectionHops1[0], opLightClient);

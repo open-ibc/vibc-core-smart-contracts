@@ -21,7 +21,7 @@ contract DappHandlerRevertTests is Base {
         ChannelEnd("polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e", IbcUtils.toBytes32("channel-1"), "1.0");
 
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = TestUtilsTest.deployDispatcherProxyAndImpl(portPrefix, feeVault);
         dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient);
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient);
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
