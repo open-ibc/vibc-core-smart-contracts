@@ -19,6 +19,7 @@ pragma solidity ^0.8.9;
 
 import {Height, ChannelOrder, AckPacket} from "../libs/Ibc.sol";
 import {Ics23Proof} from "./IProofVerifier.sol";
+import {IFeeVault} from "./IFeeVault.sol";
 
 /**
  * @title IbcPacketSender
@@ -49,7 +50,7 @@ interface IbcDispatcher is IbcPacketSender {
 
     function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external;
     function channelCloseInit(bytes32 channelId) external;
-
+    function feeVault() external returns (IFeeVault feeVault);
     function portPrefix() external view returns (string memory portPrefix);
 }
 

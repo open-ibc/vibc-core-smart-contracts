@@ -61,10 +61,19 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         bytes32 destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) external override {
+    ) external override returns (uint64 sequence) {
         emit UCHPacketSent(msg.sender, destPortAddr);
-        _sendPacket(channelId, IbcUtils.toBytes32(msg.sender), destPortAddr, 0, appData, timeoutTimestamp);
+        return _sendPacket(channelId, IbcUtils.toBytes32(msg.sender), destPortAddr, 0, appData, timeoutTimestamp);
     }
+
+    function sendUniversalPacketWithFee(
+        bytes32 channelId,
+        bytes32 destPortAddr,
+        bytes calldata appData,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimits,
+        uint256[2] calldata gasPrices
+    ) external payable override returns (uint64 sequence) {}
 
     function sendMWPacket(
         bytes32 channelId,
@@ -73,8 +82,8 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         uint256 srcMwIds,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) external override {
-        _sendPacket(channelId, srcPortAddr, destPortAddr, srcMwIds, appData, timeoutTimestamp);
+    ) external override returns (uint64 sequence) {
+        return _sendPacket(channelId, srcPortAddr, destPortAddr, srcMwIds, appData, timeoutTimestamp);
     }
 
     function onRecvMWPacket(
@@ -191,7 +200,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         uint256 srcMwIds,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) internal virtual {
+    ) internal virtual returns (uint64 sequence) {
         // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
@@ -200,7 +209,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         );
 
         // send packet to next MW
-        IbcMwPacketSender(mw).sendMWPacket(
+        return IbcMwPacketSender(mw).sendMWPacket(
             channelId, srcPortAddr, destPortAddr, srcMwIds | MW_ID, appData, timeoutTimestamp
         );
     }

@@ -12,6 +12,7 @@ import "../contracts/interfaces/IbcMiddleware.sol";
 import "../contracts/core/OptimisticLightClient.sol";
 import "./utils/Dispatcher.base.t.sol";
 import "./VirtualChain.sol";
+import {IFeeVault} from "../contracts/interfaces/IFeeVault.sol";
 
 contract UniversalChannelTest is Base {
     function test_channel_settings_ok() public {
@@ -243,7 +244,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
     function test_uch_new_dispatcher_set_ok() public {
         IUniversalChannelHandler uch = eth1.ucHandlerProxy();
         vm.startPrank(address(eth1)); // Prank eth1 since that address is the owner
-        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.");
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", feeVault);
         assertFalse(
             address(uch.dispatcher()) == address(newDispatcher), "new dispatcher in uch test not setup correctly"
         );
@@ -256,7 +257,7 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         IUniversalChannelHandler uch = eth1.ucHandlerProxy();
         address notOwner = vm.addr(1);
         vm.startPrank(notOwner);
-        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.");
+        (IDispatcher newDispatcher,) = deployDispatcherProxyAndImpl("polyibc.new.", feeVault);
 
         vm.expectRevert("Ownable: caller is not the owner");
         uch.setDispatcher(newDispatcher);
@@ -460,9 +461,26 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
             }
 
             // Verify event emitted by Dispatcher
-            vm.expectEmit(true, true, true, true);
-            emit SendPacket(address(v1.ucHandlerProxy), channelId1, packetData, packetSeq, timeout);
-            v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
+
+            // Alternate test non fee & fee
+            if (packetSeq % 2 == 1) {
+                vm.expectEmit(true, true, true, true);
+                emit SendPacket(address(v1.ucHandlerProxy), channelId1, packetData, packetSeq, timeout);
+                v1.earth.greet(address(v2.earth), channelId1, appData, timeout);
+            } else {
+                uint256 beforeBalance = address(v1.feeVault).balance;
+                vm.deal(address(this), totalSendPacketFees);
+
+                vm.expectEmit(true, true, true, true, address(v1.dispatcherProxy));
+                emit SendPacket(address(v1.ucHandlerProxy), channelId1, packetData, packetSeq, timeout);
+                vm.expectEmit(true, true, true, true, address(v1.feeVault));
+                emit SendPacketFeeDeposited(channelId1, packetSeq, sendPacketGasLimit, sendPacketGasPrice);
+                uint64 sequence = v1.earth.greetWithFee{value: totalSendPacketFees}(
+                    address(v2.earth), channelId1, appData, timeout, sendPacketGasLimit, sendPacketGasPrice
+                );
+                assertEq(address(v1.feeVault).balance, beforeBalance + totalSendPacketFees);
+                assertEq(sequence, packetSeq);
+            }
 
             // simulate relayer calling dispatcherProxy.recvPacket on chain B
             // recvPacket is an IBC packet

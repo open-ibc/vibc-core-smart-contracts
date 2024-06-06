@@ -66,13 +66,16 @@ contract DispatcherRC4UpgradeTest is DispatcherRC4TestUtils, UpgradeTestUtils {
     function setUp() public override {
         // In Rc4 version, there can only be one dispatcher per light client so we deploy multiple clients
         // Deploy dummy old dispathcer
-        oldDummyDispatcherProxy = IbcDispatcherRc4(address(deployDispatcherRC4ProxyAndImpl(portPrefix, dummyLightClient))); // we have to manually cast here because solidity is confused by having interfaces coming from seperate files
+        oldDummyDispatcherProxy =
+            IbcDispatcherRc4(address(deployDispatcherRC4ProxyAndImpl(portPrefix, dummyLightClient))); // we have to manually
+            // cast here because solidity is confused by having interfaces coming from seperate files
 
         // Deploy op old dispatcher
         DummyLightClient dummyLightClient2 = new DummyLightClient(); // dummyLightClient2 models the op light client in
             // prod - it will be the light client that is chosen for the upgrade (and the oldDummyDispatcherProxy will
             // be deprecated)
-        oldDispatcherInterface = IbcDispatcherRc4(address(deployDispatcherRC4ProxyAndImpl(portPrefix, dummyLightClient2)));
+        oldDispatcherInterface =
+            IbcDispatcherRc4(address(deployDispatcherRC4ProxyAndImpl(portPrefix, dummyLightClient2)));
         dispatcherProxy = IDispatcher(address(oldDispatcherInterface));
         uch = deployUCHV2ProxyAndImpl(address(dispatcherProxy));
         earth = new EarthRc4(address(uch));
@@ -101,7 +104,7 @@ contract DispatcherRC4UpgradeTest is DispatcherRC4TestUtils, UpgradeTestUtils {
         earth.greet(address(sendingMars), _localUch.channelId, bytes("hello sendingMars"), UINT64_MAX);
 
         // Upgrade dispatcherProxy and uch for tests
-        upgradeDispatcher(portPrefix, address(dispatcherProxy));
+        upgradeDispatcher(portPrefix, feeVault, address(dispatcherProxy));
         upgradeUch(address(uch));
         dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient2);
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
@@ -258,7 +261,7 @@ contract DispatcherRC4MidwayUpgradeTest is DispatcherRC4TestUtils, UpgradeTestUt
 
     // Test that channel handshake can be finished even if done during an upgrade
     function test_UpgradeBetween_ChannelOpen() public {
-        upgradeDispatcher(portPrefix, address(dispatcherProxy));
+        upgradeDispatcher(portPrefix, feeVault, address(dispatcherProxy));
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
         ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.ORDERED, false, true, validProof);
         channelOpenAck(_local, _remote, setting, true);
@@ -282,7 +285,7 @@ contract DispatcherRC4MidwayUpgradeTest is DispatcherRC4TestUtils, UpgradeTestUt
         );
 
         // Do upgrade before finishing packet handshake
-        upgradeDispatcher(portPrefix, address(dispatcherProxy));
+        upgradeDispatcher(portPrefix, feeVault, address(dispatcherProxy));
         upgradeUch(address(uch));
         dispatcherProxy.setClientForConnection(connectionHops1[0], dummyLightClient2);
         // earth.authorizeChannel(_localUch.channelId);

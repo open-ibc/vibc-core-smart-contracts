@@ -24,7 +24,7 @@ contract DispatcherRealProofMultiClient is Base {
     function setUp() public override {
         opLightClient = new OptimisticLightClient(1, opProofVerifier, l1BlockProvider);
         dummyLightClient = new DummyLightClient();
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.");
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl("polyibc.eth1.", feeVault);
         dispatcherProxy.setClientForConnection(connectionHops0[0], dummyLightClient);
         dispatcherProxy.setClientForConnection(connectionHops1[0], opLightClient);
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;

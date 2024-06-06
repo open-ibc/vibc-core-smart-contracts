@@ -103,6 +103,21 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
                 channelOpenConfirm(le, re, settings[i], true);
             }
         }
+
+        // Should also be able to do the same with fee-enabled channels
+        for (uint256 i = 0; i < settings.length; i++) {
+            for (uint256 j = 0; j < versions.length; j++) {
+                LocalEnd memory le = _local;
+                ChannelEnd memory re = _remote;
+                le.versionCall = versions[j];
+                le.versionExpected = versions[j];
+                re.version = versions[j];
+                channelOpenInitWithFee(le, re, settings[i], true);
+                channelOpenTry(le, re, settings[i], true);
+                channelOpenAck(le, re, settings[i], true);
+                channelOpenConfirm(le, re, settings[i], true);
+            }
+        }
     }
 
     function test_openChannel_initiator_revert_unsupportedVersion() public {
@@ -183,7 +198,7 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
 
 contract ChannelHandshakeTest is ChannelHandshakeTestSuite {
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         portId = IbcUtils.addressToPortId(portPrefix, address(mars));
@@ -208,7 +223,7 @@ contract ChannelOpenTestBaseSetup is Base {
     RevertingBytesMars revertingBytesMars;
 
     function setUp() public virtual override {
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         ChannelHandshakeSetting memory setting =
             ChannelHandshakeSetting(ChannelOrder.ORDERED, feeEnabled, true, validProof);
@@ -233,6 +248,7 @@ contract ChannelOpenTestBaseSetup is Base {
 
         channelOpenAck(_local, _remote, setting, true);
         channelOpenConfirm(_localRevertingMars, _remote, setting, true);
+        vm.stopPrank();
     }
 }
 
@@ -288,8 +304,30 @@ contract PacketSenderTestBase is ChannelOpenTestBaseSetup {
     function sendPacket() internal {
         sentPacket = genPacket(nextSendSeq);
         ackPacket = genAckPacket(Ibc.toStr(nextSendSeq));
-        mars.greet(payloadStr, channelId, maxTimeout);
+
+        uint256 currentSeqSend;
+        // Test both fee and non-fee incentivized packet sending by switching off every other nextSendSeq.
+        if (nextSendSeq % 2 == 0) {
+            currentSeqSend = _doFeeSendPacket();
+        } else {
+            currentSeqSend = mars.greet(payloadStr, channelId, maxTimeout);
+        }
+
+        assertEq(nextSendSeq, currentSeqSend);
         nextSendSeq += 1;
+    }
+
+    function _doFeeSendPacket() internal returns (uint64 currentSeqSend) {
+        uint256 beforeBalance = address(feeVault).balance;
+
+        vm.deal(address(this), totalSendPacketFees);
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
+        emit SendPacket(address(mars), channelId, payload, nextSendSeq, maxTimeout);
+        // Test both fee and non-fee incentivized packet sending by switching off every other nextSendSeq.
+        currentSeqSend = mars.greetWithFee{value: totalSendPacketFees}(
+            payloadStr, channelId, maxTimeout, sendPacketGasLimit, sendPacketGasPrice
+        );
+        assertEq(address(feeVault).balance, beforeBalance + totalSendPacketFees);
     }
 
     // genPacket generates a packet for the given packet sequence

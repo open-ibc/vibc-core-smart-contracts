@@ -28,6 +28,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
 import {IBCErrors} from "../libs/IbcErrors.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
+import {IFeeVault} from "../interfaces/IFeeVault.sol";
 
 /**
  * @title Dispatcher
@@ -64,6 +65,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     ILightClient _UNUSED; // From previous dispatcher version
     mapping(bytes32 => string) private _channelIdToConnection;
     mapping(string => ILightClient) private _connectionToLightClient;
+    IFeeVault public feeVault;
 
     constructor() {
         _disableInitializers();
@@ -75,13 +77,17 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @dev This method should be called only once during contract deployment.
      * @dev For contract upgarades, which need to reinitialize the contract, use the reinitializer modifier.
      */
-    function initialize(string memory initPortPrefix) public virtual initializer nonReentrant {
+    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public virtual initializer nonReentrant {
         if (bytes(initPortPrefix).length == 0) {
             revert IBCErrors.invalidPortPrefix();
+        }
+        if (address(_feeVault) == address(0)) {
+            revert IBCErrors.invalidAddress();
         }
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
+        feeVault = _feeVault;
     }
 
     /**

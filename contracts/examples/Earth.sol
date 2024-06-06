@@ -20,6 +20,7 @@ pragma solidity ^0.8.9;
 import {UniversalPacket, AckPacket} from "../libs/Ibc.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
 import {IbcUniversalPacketReceiverBase, IbcUniversalPacketSender} from "../interfaces/IbcMiddleware.sol";
+import {IUniversalChannelHandler} from "../interfaces/IUniversalChannelHandler.sol";
 
 /**
  * @title Earth
@@ -48,9 +49,30 @@ contract Earth is IbcUniversalPacketReceiverBase {
 
     constructor(address _middleware) IbcUniversalPacketReceiverBase(_middleware) {}
 
+    /**
+     * @notice Send a packet to a destination chain. without a fee
+     * @notice this is useful for self-relaying apckets which don't rely on polymer to fund.
+     * @param destPortAddr The destination chain's port address.
+     * @param channelId The channel id to send the packet on.
+     * @param message The message to send.
+     * @param timeoutTimestamp The timeout timestamp for the packet.
+     */
     function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
         IbcUniversalPacketSender(mw).sendUniversalPacket(
             channelId, IbcUtils.toBytes32(destPortAddr), message, timeoutTimestamp
+        );
+    }
+
+    function greetWithFee(
+        address destPortAddr,
+        bytes32 channelId,
+        bytes calldata message,
+        uint64 timeoutTimestamp,
+        uint256[2] memory gasLimits,
+        uint256[2] memory gasPrices
+    ) external payable returns (uint64 sequence) {
+        return IUniversalChannelHandler(mw).sendUniversalPacketWithFee{value: msg.value}(
+            channelId, IbcUtils.toBytes32(destPortAddr), message, timeoutTimestamp, gasLimits, gasPrices
         );
     }
 

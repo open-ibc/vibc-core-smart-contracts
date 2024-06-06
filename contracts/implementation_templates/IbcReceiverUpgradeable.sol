@@ -18,12 +18,13 @@
 pragma solidity ^0.8.9;
 
 import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
-import {IbcDispatcher} from "./IbcDispatcher.sol";
+import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 
 contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
     IbcDispatcher public dispatcher;
 
     error notIbcDispatcher();
+    error invalidAddress();
     error UnsupportedVersion();
     error ChannelNotFound();
 

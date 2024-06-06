@@ -3,6 +3,7 @@ import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {ILightClient} from "../../contracts/interfaces/ILightClient.sol";
+import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 import {Test} from "forge-std/Test.sol";
@@ -15,7 +16,7 @@ abstract contract TestUtilsTest {
     bytes32 private constant _ROLLBACK_SLOT = 0x4910fdfa16fed3260ed0e7147f7cc6da11a60208b5b9406d12a635614ffd9143;
     bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
-    function deployDispatcherProxyAndImpl(string memory initPortPrefix)
+    function deployDispatcherProxyAndImpl(string memory initPortPrefix, IFeeVault feeVault)
         public
         returns (IDispatcher proxy, Dispatcher dispatcherImplementation)
     {
@@ -24,7 +25,7 @@ abstract contract TestUtilsTest {
             address(
                 new ERC1967Proxy(
                     address(dispatcherImplementation),
-                    abi.encodeWithSelector(Dispatcher.initialize.selector, initPortPrefix)
+                    abi.encodeWithSelector(Dispatcher.initialize.selector, initPortPrefix, feeVault)
                 )
             )
         );

@@ -14,6 +14,8 @@ import "../../contracts/utils/DummyLightClient.sol";
 import "../../contracts/core/OptimisticProofVerifier.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
+import {FeeVault} from "../../contracts/core/FeeVault.sol";
+import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
 
 struct LocalEnd {
     IbcChannelReceiver receiver;
@@ -36,6 +38,16 @@ struct ChannelHandshakeSetting {
 contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     using stdStorage for StdStorage;
 
+    event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices);
+    event OpenChannelFeeDeposited(
+        address sourceAddress,
+        string version,
+        ChannelOrder ordering,
+        string[] connectionHops,
+        string counterpartyPortId,
+        uint256 fees
+    );
+
     uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 161;
     uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 156;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
@@ -45,11 +57,21 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
 
     ILightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
     ILightClient dummyLightClient = new DummyLightClient();
+    IFeeVault feeVault = new FeeVault();
 
     IDispatcher public dispatcherProxy;
     Dispatcher public dispatcherImplementation;
     string portPrefix = "polyibc.eth.";
     string[] connectionHops = ["connection-1", "connection-2"];
+
+    uint256 BASE_GAS_LIMIT = 1_000_000;
+    uint256 BASE_GAS_PRICE = 50 gwei;
+    uint256[2] public sendPacketGasLimit = [BASE_GAS_LIMIT, BASE_GAS_LIMIT];
+    uint256[2] public sendPacketGasPrice = [BASE_GAS_PRICE, BASE_GAS_PRICE];
+    uint256 public totalSendPacketFees = BASE_GAS_LIMIT * BASE_GAS_PRICE * 2;
+
+    uint256 public totalOpenChannelFees = BASE_GAS_LIMIT * BASE_GAS_PRICE * 3; // The msg.value sent in a
+        // channelOpenInit call
 
     // ⬇️ Utility functions for testing
 
@@ -89,6 +111,46 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
             );
         }
         dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        vm.stopPrank();
+    }
+
+    /**
+     * @dev Step-1 of the 4-step handshake to open an IBC channel.
+     * @param le Local end settings for the channel.
+     * @param re Remote end settings for the channel.
+     * @param s Channel handshake settings.
+     * @param expPass Expected pass status of the operation.
+     * If expPass is false, `vm.expectRevert` should be called before this function.
+     */
+    function channelOpenInitWithFee(
+        LocalEnd memory le,
+        ChannelEnd memory re,
+        ChannelHandshakeSetting memory s,
+        bool expPass
+    ) public {
+        uint256 beforeBalance = address(feeVault).balance;
+        vm.deal(address(le.receiver), totalOpenChannelFees);
+
+        vm.startPrank(address(le.receiver));
+        if (expPass) {
+            vm.expectEmit(true, true, true, true);
+            emit ChannelOpenInit(
+                address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
+            );
+        }
+        dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        if (expPass) {
+            vm.expectEmit(true, true, true, true, address(feeVault));
+            emit OpenChannelFeeDeposited(
+                address(le.receiver), le.versionCall, s.ordering, connectionHops, re.portId, totalOpenChannelFees
+            );
+        }
+        feeVault.depositOpenChannelFee{value: totalOpenChannelFees}(
+            address(le.receiver), le.versionCall, s.ordering, le.connectionHops, re.portId
+        );
+
+        assertEq(address(feeVault).balance, beforeBalance + totalOpenChannelFees);
+
         vm.stopPrank();
     }
 

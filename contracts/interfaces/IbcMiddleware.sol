@@ -31,7 +31,16 @@ interface IbcUniversalPacketSender {
         bytes32 destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) external;
+    ) external returns (uint64 sequence);
+
+    function sendUniversalPacketWithFee(
+        bytes32 channelId,
+        bytes32 destPortAddr,
+        bytes calldata appData,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimits,
+        uint256[2] calldata gasPrices
+    ) external payable returns (uint64 sequence);
 }
 
 interface IbcMwPacketSender {
@@ -47,7 +56,7 @@ interface IbcMwPacketSender {
         uint256 srcMwIds,
         bytes calldata appData,
         uint64 timeoutTimestamp
-    ) external;
+    ) external returns (uint64 sequence);
 }
 
 // IBC middleware contracts must implement this interface to relay universal channel packets to other IBC middleware
