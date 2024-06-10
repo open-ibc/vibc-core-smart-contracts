@@ -475,26 +475,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * has not been received.
      */
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external nonReentrant {
-        // ensure port owns channel
-        if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
-            revert IBCErrors.channelNotOwnedBySender();
-        }
-        if (timeoutTimestamp <= block.timestamp) {
-            revert IBCErrors.invalidPacket();
-        }
-
-        // current packet sequence
-        uint64 sequence = _nextSequenceSend[msg.sender][channelId];
-        if (sequence == 0) {
-            revert IBCErrors.invalidPacketSequence();
-        }
-
-        // packet commitment
-        _sendPacketCommitment[msg.sender][channelId][sequence] = true;
-        // increment nextSendPacketSequence
-        _nextSequenceSend[msg.sender][channelId] = sequence + 1;
-
-        emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp);
+        _sendPacket(channelId, packet, timeoutTimestamp);
     }
 
     /**
@@ -695,6 +676,35 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         }
 
         _connectionToLightClient[connection] = lightClient;
+    }
+
+    /**
+     * @notice Sends a packet on the specified channel with the provided details.
+     * @param channelId The ID of the channel.
+     * @param packet The packet data to be sent.
+     * @param timeoutTimestamp The timeout timestamp for the packet.
+     */
+    function _sendPacket(bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
+        // ensure port owns channel
+        if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
+            revert IBCErrors.channelNotOwnedBySender();
+        }
+        if (timeoutTimestamp <= block.timestamp) {
+            revert IBCErrors.invalidPacket();
+        }
+
+        // current packet sequence
+        uint64 sequence = _nextSequenceSend[msg.sender][channelId];
+        if (sequence == 0) {
+            revert IBCErrors.invalidPacketSequence();
+        }
+
+        // packet commitment
+        _sendPacketCommitment[msg.sender][channelId][sequence] = true;
+        // increment nextSendPacketSequence
+        _nextSequenceSend[msg.sender][channelId] = sequence + 1;
+
+        emit SendPacket(msg.sender, channelId, packet, sequence, timeoutTimestamp);
     }
 
     /**
