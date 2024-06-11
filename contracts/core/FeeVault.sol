@@ -18,14 +18,18 @@
 pragma solidity 0.8.15;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {
+    IFeeVault,
+    SendpacketFeeDeposited,
+    ChannelOpenFeeDeposited,
+    ChannelCloseFeeDeposited
+} from "../interfaces/IFeeVault.sol";
 
-contract FeeVault is Ownable {
-    error SenderNotDispatcher();
-    error IncorrectFeeSent();
-
-    event feeDeposited(address indexed from, uint256 ackFee, uint256 recvFee);
-
+contract FeeVault is Ownable, IFeeVault {
     address public dispatcher;
+    mapping(bytes32 => mapping(uint64 => SendpacketFeeDeposited)) private sendPacketFees;
+    mapping(address => mapping(string => ChannelOpenFeeDeposited)) private channelOpenFees;
+    mapping(bytes32 => ChannelCloseFeeDeposited) private channelCloseFees;
 
     modifier onlyDispatcher() {
         if (msg.sender != dispatcher) revert SenderNotDispatcher();
@@ -36,12 +40,36 @@ contract FeeVault is Ownable {
         dispatcher = _dispatcher;
     }
 
-    function depositFee(uint256 ackFee, uint256 recvFee) external payable onlyDispatcher {
-        if (ackFee + recvFee != msg.value) {
-            revert IncorrectFeeSent();
-        }
+    function depositSendPacketFee(bytes32 channelId, uint64 sequence, uint256[2] calldata gasLimits)
+        external
+        payable
+        onlyDispatcher
+    {
+        // if ((gasLimits[0] * gasPrices[0] + gasLimits[1] * gasPrices[1]) != msg.value) revert IncorrectFeeSent();
+        // sendPacketFees[channelId][sequence] = new SendpacketFeeDeposited(gasLimits, gasPrices);
+        // emit sendPacketFeeDeposited(msg.sender, gasLimitsgasPrices);
+    }
 
-        emit feeDeposited(msg.sender, ackFee, recvFee);
+    function depositOpenChannelFee(
+        address sender,
+        string memory destPortId,
+        uint256[3] calldata gasLimits,
+        uint256[3] calldata gasPrices
+    ) external payable onlyDispatcher {
+        uint256 fee = gasLimits[0] * gasPrices[0] + gasLimits[1] * gasPrices[1] + gasLimits[2] * gasPrices[2];
+        if (fee != msg.value) revert IncorrectFeeSent();
+        emit openChannelFeeDeposited(msg.sender, gasLimits, gasPrices);
+    }
+
+    function depositCloseChannelFee(bytes32 channelId, uint256[1] calldata gasLimits, uint256[1] calldata gasPrices)
+        external
+        payable
+        onlyDispatcher
+    {
+        uint256 fee = gasLimits[0] * gasPrices[0];
+        if (fee != msg.value) revert IncorrectFeeSent();
+
+        emit closeChannelFeeDeposited(msg.sender, gasLimits, gasPrices);
     }
 
     function withdraw() external onlyOwner {

@@ -88,7 +88,15 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
                 address(le.receiver), le.versionExpected, s.ordering, s.feeEnabled, le.connectionHops, re.portId
             );
         }
-        dispatcherProxy.channelOpenInit(le.versionCall, s.ordering, s.feeEnabled, le.connectionHops, re.portId);
+        dispatcherProxy.channelOpenInitWithFee(
+            le.versionCall,
+            s.ordering,
+            s.feeEnabled,
+            le.connectionHops,
+            re.portId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
         vm.stopPrank();
     }
 

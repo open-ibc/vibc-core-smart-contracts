@@ -29,7 +29,15 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
 
         // since this is open chann init, the proof is not used. so use an invalid one
         vm.prank(address(mars));
-        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch1.portId);
+        dispatcherProxy.channelOpenInitWithFee(
+            ch1.version,
+            ChannelOrder.NONE,
+            false,
+            connectionHops1,
+            ch1.portId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function test_ibc_channel_open_try() public {

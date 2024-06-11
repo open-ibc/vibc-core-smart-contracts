@@ -181,7 +181,15 @@ contract VirtualChain is Test, IbcEventsEmitter, TestUtilsTest {
             );
         }
         vm.prank(address(localEnd));
-        dispatcherProxy.channelOpenInit(setting.version, setting.ordering, setting.feeEnabled, connectionHops, cpPortId);
+        dispatcherProxy.channelOpenInitWithFee(
+            setting.version,
+            setting.ordering,
+            setting.feeEnabled,
+            connectionHops,
+            cpPortId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function channelOpenTry(

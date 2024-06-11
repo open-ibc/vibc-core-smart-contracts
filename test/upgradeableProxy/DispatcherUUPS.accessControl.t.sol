@@ -5,6 +5,7 @@ import "../../contracts/libs/Ibc.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 import {IbcEventsEmitter} from "../../contracts/interfaces/IbcDispatcher.sol";
 import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
+import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import "../utils/Dispatcher.base.t.sol";
@@ -55,6 +56,6 @@ contract DispatcherUUPSAccessControl is Base {
 
     function test_Dispatcher_Prevents_Reinit_Attacks() public {
         vm.expectRevert("Initializable: contract is already initialized");
-        dispatcherImplementation.initialize("IIpolyibc.eth.");
+        dispatcherImplementation.initialize("IIpolyibc.eth.", IFeeVault(vm.addr(1)));
     }
 }

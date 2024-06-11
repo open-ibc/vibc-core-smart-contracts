@@ -23,6 +23,7 @@ import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.s
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
+import {IFeeVault} from "../interfaces/IFeeVault.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
@@ -65,6 +66,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     mapping(bytes32 => string) private _channelIdToConnection;
     mapping(string => ILightClient) private _connectionToLightClient;
 
+    IFeeVault private FEE_VAULT;
+
     constructor() {
         _disableInitializers();
     }
@@ -75,13 +78,14 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @dev This method should be called only once during contract deployment.
      * @dev For contract upgarades, which need to reinitialize the contract, use the reinitializer modifier.
      */
-    function initialize(string memory initPortPrefix) public virtual initializer nonReentrant {
+    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public virtual initializer nonReentrant {
         if (bytes(initPortPrefix).length == 0) {
             revert IBCErrors.invalidPortPrefix();
         }
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
+        FEE_VAULT = _feeVault;
     }
 
     /**
@@ -164,8 +168,32 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external nonReentrant {
+        _channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+    }
+
+    function channelOpenInitWithFee(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId,
+        uint256[3] calldata gasLimits,
+        uint256[3] calldata gasPrices
+    ) external nonReentrant {
+        FEE_VAULT.depositOpenChannelFee(msg.sender, counterpartyPortId, gasLimits, gasPrices);
+        _channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+    }
+
+    function _channelOpenInit(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId
+    ) internal {
         // We need to validate connectionHops & counterpartyPortId since they aren't validated in an internal
         // function like all other instances of these arguments
+
         if (connectionHops.length < 2 || bytes(counterpartyPortId).length == 0) {
             revert IBCErrors.invalidCounterParty();
         }
@@ -174,7 +202,6 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         bytes memory chanOpenInitArgs = abi.encode(ordering, connectionHops, counterpartyPortId, version);
         (bool success, bytes memory data) =
             _callIfContract(msg.sender, bytes.concat(IbcChannelReceiver.onChanOpenInit.selector, chanOpenInitArgs));
-
         if (success) {
             emit ChannelOpenInit(
                 msg.sender, abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
@@ -182,6 +209,15 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         } else {
             emit ChannelOpenInitError(msg.sender, data);
         }
+    }
+
+    function addPacketFees(
+        bytes32 channelId,
+        uint64 sequence,
+        uint256[2] calldata gasLimits,
+        uint256[2] calldata gasPrices
+    ) external {
+        FEE_VAULT.depositSendPacketFee(channelId, sequence, gasLimits);
     }
 
     /**
@@ -479,6 +515,26 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     }
 
     /**
+     * @notice Sends an IBC packet on a existing channel with the specified packet data and timeout block timestamp,
+     * with a fee incentive for polymer's relayer.
+     * @dev Emits an `IbcPacketEvent` event containing the sender address, channel ID, packet data, and timeout block
+     * timestamp (formatted as seconds after the unix epoch).
+     * @param channelId The ID of the channel on which to send the packet.
+     * @param packet The packet data to send.
+     * @param timeoutTimestamp The timestamp, in seconds after the unix epoch, after which the packet times out if it
+     * has not been received.
+     */
+    function sendPacketWithFee(
+        bytes32 channelId,
+        bytes calldata packet,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimits
+    ) external nonReentrant {
+        uint64 nextSequenceSend = _sendPacket(channelId, packet, timeoutTimestamp);
+        FEE_VAULT.depositSendPacketFee(channelId, nextSequenceSend, gasLimits);
+    }
+
+    /**
      * @notice Handle the acknowledgement of an IBC packet by the counterparty, called by a relayer.
      * @dev To minimize trust assumptions, an inclusion proof must be given that proves the packet commitment is
      * in the IBC/VIBC hub chain.
@@ -618,27 +674,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * - The packet must not have a receipt.
      * - The packet must have timed out.
      */
-    function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external nonReentrant {
-        _getLightClientFromChannelId(packet.dest.channelId).verifyMembership(
-            proof, Ibc.packetCommitmentProofKey(packet), abi.encode(Ibc.packetCommitmentProofValue(packet))
-        );
-
-        address receiver = _getAddressFromPort(packet.dest.portId);
-        // verify packet does not have a receipt
-        bool hasReceipt = _recvPacketReceipt[receiver][packet.dest.channelId][packet.sequence];
-        if (hasReceipt) {
-            revert IBCErrors.packetReceiptAlreadyExists();
-        }
-
-        // verify packet has timed out; zero-value in packet.timeout means no timeout set
-        if (!_isPacketTimeout(packet.timeoutTimestamp, packet.timeoutHeight.revision_height)) {
-            revert IBCErrors.packetNotTimedOut();
-        }
-
-        emit WriteTimeoutPacket(
-            receiver, packet.dest.channelId, packet.sequence, packet.timeoutHeight, packet.timeoutTimestamp
-        );
-    }
+    function writeTimeoutPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external nonReentrant {}
 
     /**
      * @notice Get the IBC channel with the specified port and channel ID
@@ -684,7 +720,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param packet The packet data to be sent.
      * @param timeoutTimestamp The timeout timestamp for the packet.
      */
-    function _sendPacket(bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp) internal {
+    function _sendPacket(bytes32 channelId, bytes memory packet, uint64 timeoutTimestamp)
+        internal
+        returns (uint64 sequence)
+    {
         // ensure port owns channel
         if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
@@ -694,7 +733,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         }
 
         // current packet sequence
-        uint64 sequence = _nextSequenceSend[msg.sender][channelId];
+        sequence = _nextSequenceSend[msg.sender][channelId];
         if (sequence == 0) {
             revert IBCErrors.invalidPacketSequence();
         }

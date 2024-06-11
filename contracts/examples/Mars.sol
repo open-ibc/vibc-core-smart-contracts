@@ -47,7 +47,15 @@ contract Mars is IbcReceiverBase, IbcReceiver {
         string[] calldata connectionHops,
         string calldata counterpartyPortId
     ) external onlyOwner {
-        dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
+        dispatcher.channelOpenInitWithFee(
+            version,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            counterpartyPortId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function onRecvPacket(IbcPacket memory packet)
@@ -98,7 +106,7 @@ contract Mars is IbcReceiverBase, IbcReceiver {
      * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
      */
     function greet(string calldata message, bytes32 channelId, uint64 timeoutTimestamp) external {
-        dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
+        dispatcher.sendPacketWithFee(channelId, bytes(message), timeoutTimestamp, [uint256(0), uint256(0)]);
     }
 
     function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)

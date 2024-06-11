@@ -27,6 +27,12 @@ import {Ics23Proof} from "./IProofVerifier.sol";
  */
 interface IbcPacketSender {
     function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external;
+    function sendPacketWithFee(
+        bytes32 channelId,
+        bytes calldata payload,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasFees
+    ) external;
 }
 
 /**
@@ -43,6 +49,16 @@ interface IbcDispatcher is IbcPacketSender {
         bool feeEnabled,
         string[] calldata connectionHops,
         string calldata counterpartyPortId
+    ) external;
+
+    function channelOpenInitWithFee(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId,
+        uint256[3] calldata gasLimits,
+        uint256[3] calldata gasFees
     ) external;
 
     function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external;

@@ -38,6 +38,16 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
      * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
      * will be relayed to the  IBC/VIBC hub chain.
      */
+    function channelOpenInitWithFee(
+        string calldata version,
+        ChannelOrder ordering,
+        bool feeEnabled,
+        string[] calldata connectionHops,
+        string calldata counterpartyPortId,
+        uint256[3] calldata gasLimits,
+        uint256[3] calldata gasFees
+    ) external;
+
     function channelOpenInit(
         string calldata version,
         ChannelOrder ordering,
@@ -93,8 +103,13 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
 
     function channelCloseConfirm(address portAddress, bytes32 channelId, Ics23Proof calldata proof) external;
     function channelCloseInit(bytes32 channelId) external;
-
     function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external;
+    function sendPacketWithFee(
+        bytes32 channelId,
+        bytes calldata packet,
+        uint64 timeoutTimestamp,
+        uint256[2] calldata gasLimit
+    ) external;
 
     function acknowledgement(IbcPacket calldata packet, bytes calldata ack, Ics23Proof calldata proof) external;
 

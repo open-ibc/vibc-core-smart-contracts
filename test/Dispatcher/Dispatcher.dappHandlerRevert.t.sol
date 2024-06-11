@@ -35,13 +35,29 @@ contract DappHandlerRevertTests is Base {
         address nonDappAddr = vm.addr(1);
 
         emit ChannelOpenInitError(nonDappAddr, bytes("call to non-contract"));
-        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
+        dispatcherProxy.channelOpenInitWithFee(
+            ch1.version,
+            ChannelOrder.NONE,
+            false,
+            connectionHops1,
+            ch0.portId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function test_ibc_channel_open_dapp_without_handler() public {
         Earth earth = new Earth(vm.addr(1));
         emit ChannelOpenInitError(address(earth), "");
-        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
+        dispatcherProxy.channelOpenInitWithFee(
+            ch1.version,
+            ChannelOrder.NONE,
+            false,
+            connectionHops1,
+            ch0.portId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function test_recv_packet_callback_revert_and_panic() public {
@@ -137,7 +153,15 @@ contract DappHandlerRevertTests is Base {
         emit ChannelOpenInitError(
             address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
         );
-        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
+        dispatcherProxy.channelOpenInitWithFee(
+            ch1.version,
+            ChannelOrder.NONE,
+            false,
+            connectionHops1,
+            ch0.portId,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     function test_ibc_channel_ack_dapp_revert() public {

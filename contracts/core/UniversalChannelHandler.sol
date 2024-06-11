@@ -67,7 +67,15 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
         string[] calldata connectionHops,
         string calldata counterpartyPortIdentifier
     ) external onlyOwner {
-        dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortIdentifier);
+        dispatcher.channelOpenInitWithFee(
+            version,
+            ordering,
+            feeEnabled,
+            connectionHops,
+            counterpartyPortIdentifier,
+            [uint256(0), uint256(0), uint256(0)],
+            [uint256(0), uint256(0), uint256(0)]
+        );
     }
 
     /**
@@ -87,7 +95,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, UUPSUpgradeable,
             UniversalPacket(IbcUtils.toBytes32(msg.sender), MW_ID, destPortAddr, appData)
         );
         emit UCHPacketSent(msg.sender, destPortAddr);
-        dispatcher.sendPacket(channelId, packetData, timeoutTimestamp);
+        dispatcher.sendPacketWithFee(channelId, packetData, timeoutTimestamp, [uint256(0), uint256(0)]);
     }
 
     /**
