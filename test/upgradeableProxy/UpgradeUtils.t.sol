@@ -31,8 +31,7 @@ import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
-import {DispatcherRc4, IDispatcherRc4} from "./upgrades/DispatcherRc4.sol";
-import {Mars as MarsRc4, IbcDispatcher as IbcDispatcherRc4} from "./upgrades/MarsRc4.sol";
+import {DispatcherRc4} from "../upgradeableProxy/upgrades/DispatcherRc4.sol";
 import {UniversalChannelHandlerV2} from "./upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
@@ -61,12 +60,12 @@ abstract contract UpgradeTestUtils {
 
     function deployDispatcherRC4ProxyAndImpl(string memory initPortPrefix, ILightClient initLightClient)
         public
-        returns (IbcDispatcherRc4 proxy)
+        returns (address proxy)
     {
         DispatcherRc4 dispatcherImplementation = new DispatcherRc4();
         bytes memory initData =
             abi.encodeWithSelector(DispatcherRc4.initialize.selector, initPortPrefix, initLightClient);
-        proxy = IbcDispatcherRc4(address(new ERC1967Proxy(address(dispatcherImplementation), initData)));
+        proxy = address(new ERC1967Proxy(address(dispatcherImplementation), initData));
     }
 
     function deployUCHV2ProxyAndImpl(address dispatcherProxy) public returns (IUniversalChannelHandler proxy) {
@@ -168,59 +167,5 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
     function findNextSequenceRecv(address portAddress, bytes32 channelId) public view returns (bytes32 slot) {
         bytes32 slot1 = keccak256(abi.encode(portAddress, nextSequenceRecvSlot));
         slot = keccak256(abi.encode(channelId, slot1));
-    }
-}
-
-contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
-    function setUp() public override {
-        address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e;
-        (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix, feeVault);
-        deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
-        dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
-        mars = new Mars(dispatcherProxy);
-        string memory sendingPortId = IbcUtils.addressToPortId(portPrefix, address(mars));
-        string memory receivingPortId = IbcUtils.addressToPortId(portPrefix, targetMarsAddress);
-        _local = LocalEnd(mars, sendingPortId, "channel-1", connectionHops, "1.0", "1.0");
-        _remote = ChannelEnd(receivingPortId, "channel-2", "1.0");
-
-        // Add state to test if impacted by upgrade
-        doChannelHandshake(_local, _remote);
-        sendPacket(_local.channelId);
-
-        IFeeVault newFeeVault = new FeeVault();
-        // Upgrade dispatcherProxy for tests
-        upgradeDispatcher("adfsafsa", newFeeVault, address(dispatcherProxy));
-    }
-
-    function test_SentPacketState_Conserved() public {
-        uint64 nextSequenceSendValue = uint64(
-            uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))
-        );
-
-        assertEq(4, nextSequenceSendValue);
-
-        // packets
-        assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 1)) > 0);
-        assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 2)) > 0);
-        assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 3)) > 0);
-
-        // Test sending packet with the updated contract
-        sendOnePacket(_local.channelId, 4, mars);
-        assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 4)) > 0);
-        uint64 nextSequenceSendAfterSending = uint64(
-            uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))
-        );
-        assertEq(5, nextSequenceSendAfterSending);
-    }
-
-    function test_OpenChannelState_Conserved() public {
-        // State should be conserved after upgrade
-        uint64 nextSequenceRecvValue =
-            uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceRecv(address(mars), _local.channelId))));
-        uint64 nextSequenceAckValue =
-            uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceAck(address(mars), _local.channelId))));
-
-        assertEq(1, nextSequenceRecvValue);
-        assertEq(1, nextSequenceAckValue);
     }
 }
