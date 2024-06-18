@@ -189,6 +189,7 @@ export interface DispatcherInterface extends Interface {
       | "channelOpenConfirm"
       | "channelOpenInit"
       | "channelOpenTry"
+      | "feeVault"
       | "getChannel"
       | "getOptimisticConsensusState"
       | "initialize"
@@ -288,6 +289,7 @@ export interface DispatcherInterface extends Interface {
       Ics23ProofStruct
     ]
   ): string;
+  encodeFunctionData(functionFragment: "feeVault", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getChannel",
     values: [AddressLike, BytesLike]
@@ -296,7 +298,10 @@ export interface DispatcherInterface extends Interface {
     functionFragment: "getOptimisticConsensusState",
     values: [BigNumberish, string]
   ): string;
-  encodeFunctionData(functionFragment: "initialize", values: [string]): string;
+  encodeFunctionData(
+    functionFragment: "initialize",
+    values: [string, AddressLike]
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "portPrefix",
@@ -393,6 +398,7 @@ export interface DispatcherInterface extends Interface {
     functionFragment: "channelOpenTry",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "feeVault", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getChannel", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getOptimisticConsensusState",
@@ -989,6 +995,8 @@ export interface Dispatcher extends BaseContract {
     "nonpayable"
   >;
 
+  feeVault: TypedContractMethod<[], [string], "view">;
+
   getChannel: TypedContractMethod<
     [portAddress: AddressLike, channelId: BytesLike],
     [ChannelStructOutput],
@@ -1008,7 +1016,7 @@ export interface Dispatcher extends BaseContract {
   >;
 
   initialize: TypedContractMethod<
-    [initPortPrefix: string],
+    [initPortPrefix: string, _feeVault: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -1037,7 +1045,7 @@ export interface Dispatcher extends BaseContract {
 
   sendPacket: TypedContractMethod<
     [channelId: BytesLike, packet: BytesLike, timeoutTimestamp: BigNumberish],
-    [void],
+    [bigint],
     "nonpayable"
   >;
 
@@ -1172,6 +1180,9 @@ export interface Dispatcher extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "feeVault"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "getChannel"
   ): TypedContractMethod<
     [portAddress: AddressLike, channelId: BytesLike],
@@ -1193,7 +1204,11 @@ export interface Dispatcher extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "initialize"
-  ): TypedContractMethod<[initPortPrefix: string], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [initPortPrefix: string, _feeVault: AddressLike],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
@@ -1223,7 +1238,7 @@ export interface Dispatcher extends BaseContract {
     nameOrSignature: "sendPacket"
   ): TypedContractMethod<
     [channelId: BytesLike, packet: BytesLike, timeoutTimestamp: BigNumberish],
-    [void],
+    [bigint],
     "nonpayable"
   >;
   getFunction(

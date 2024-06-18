@@ -59,6 +59,7 @@ export interface EarthInterface extends Interface {
       | "authorizedMws"
       | "generateAckPacket"
       | "greet"
+      | "greetWithFee"
       | "mw"
       | "onRecvUniversalPacket"
       | "onTimeoutUniversalPacket"
@@ -100,6 +101,17 @@ export interface EarthInterface extends Interface {
   encodeFunctionData(
     functionFragment: "greet",
     values: [AddressLike, BytesLike, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "greetWithFee",
+    values: [
+      AddressLike,
+      BytesLike,
+      BytesLike,
+      BigNumberish,
+      [BigNumberish, BigNumberish],
+      [BigNumberish, BigNumberish]
+    ]
   ): string;
   encodeFunctionData(functionFragment: "mw", values?: undefined): string;
   encodeFunctionData(
@@ -158,6 +170,10 @@ export interface EarthInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "greet", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "greetWithFee",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "mw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onRecvUniversalPacket",
@@ -299,6 +315,19 @@ export interface Earth extends BaseContract {
     "nonpayable"
   >;
 
+  greetWithFee: TypedContractMethod<
+    [
+      destPortAddr: AddressLike,
+      channelId: BytesLike,
+      message: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
+  >;
+
   mw: TypedContractMethod<[], [string], "view">;
 
   onRecvUniversalPacket: TypedContractMethod<
@@ -404,6 +433,20 @@ export interface Earth extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "greetWithFee"
+  ): TypedContractMethod<
+    [
+      destPortAddr: AddressLike,
+      channelId: BytesLike,
+      message: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
   getFunction(nameOrSignature: "mw"): TypedContractMethod<[], [string], "view">;
   getFunction(
