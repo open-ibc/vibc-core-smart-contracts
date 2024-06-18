@@ -20,7 +20,7 @@ import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 
-import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "./Dispatcher.upgrade.t.sol";
+import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "./UpgradeUtils.t.sol";
 import {IDispatcherRc4, DispatcherRc4} from "./upgrades/DispatcherRc4.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
 import {VirtualChain} from "../VirtualChain.sol";

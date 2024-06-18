@@ -15,6 +15,7 @@ import {
   CHAIN_NAME,
   CHAIN_ID,
   RPC_URL,
+  DEPLOY_SPECS_PATH,
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
@@ -283,6 +284,7 @@ export async function parseArgsFromCLI() {
   const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
   const accountSpecs =
     (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+  const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
 
   const chain: Chain = {
     rpc: rpcUrl,
@@ -303,6 +305,7 @@ export async function parseArgsFromCLI() {
     chain,
     accounts,
     accountSpecs,
+    deploySpecs,
     args: argv1,
   };
 }
