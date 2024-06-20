@@ -3,9 +3,10 @@
   "version": "2.2.1",
   "main": "dist/index.js",
   "bin": {
-    "deploy-vibc-core-smart-contracts": "dist/scripts/deploy-script.js",
-    "upgrade-vibc-core-smart-contracts": "dist/scripts/upgrade-script.js",
-    "setup-vibc-core-dispatcher": "dist/scripts/setup-dispatcher-script.js"
+    "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
+    "upgrade-vibc-core-smart-contracts": "./dist/scripts/upgrade-script.js",
+    "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
+    "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js"
   },
   "license": "MIT",
   "dependencies": {

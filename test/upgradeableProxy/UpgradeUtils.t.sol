@@ -84,7 +84,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
     IbcPacket[3] packets;
     string payload = "msgPayload";
     bytes packet = abi.encodePacked(payload);
-    uint64 timeoutTimestamp = 1000;
+    uint64 timeoutTimestamp = maxTimeout;
 
     // Conduct 4-step channel handshake between localChannelEnd and remoteChannelEnd end
     // Have to pass in receivingDapp because it's hard to parse out the addresss from the portId
