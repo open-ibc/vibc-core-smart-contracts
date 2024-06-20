@@ -45,7 +45,7 @@ struct ChainAddresses {
     address owner; // Owner Address of dispatcher
 }
 
-contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
+contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     string newPortPrefix = "port-ID-2";
 
     function setUp() public override {
