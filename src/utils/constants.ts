@@ -16,6 +16,7 @@ const DEFAULT_SPECS_PATH = path.join(MODULE_ROOT_PATH, "./specs");
 export const CHAIN_NAME = process.env.CHAIN_NAME || DEFAULT_CHAIN_NAME;
 export const CHAIN_ID = parseInt(process.env.CHAIN_ID || DEFAULT_CHAIN_ID);
 export const RPC_URL = process.env.RPC_URL || DEFAULT_RPC_URL;
+export const ANVIL_PORT = process.env.ANVIL_PORT || "8545";
 
 // The path where we access artifacts for already deployed contracts
 export const ARTIFACTS_PATH = process.env.ARTIFACTS_PATH

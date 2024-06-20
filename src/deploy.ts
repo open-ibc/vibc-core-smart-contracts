@@ -81,6 +81,7 @@ export async function deployToChain(
     } with contractNames: [${deploySpec.keys()}]`
   );
 
+  let nonces: Record<string, number> = {}; // maps addreses to nonces
   logger.info(`deploying with contract spec ${deploySpec}`);
 
   if (!dryRun) {
@@ -130,11 +131,22 @@ export async function deployToChain(
         contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
       );
 
+      // To avoid nonce too low bug, we manually increment nonces for each account
+      if (!(deployer.address in nonces)) {
+        nonces[deployer.address] = await deployer.getNonce();
+      } else {
+        nonces[deployer.address] += 1;
+      }
+
+      const nonce = nonces[deployer.address];
       if (!dryRun) {
+        const overrides = {
+          nonce,
+        };
         const deployed = await constructorData.factory
           .connect(deployer)
-          .deploy(...constructorData.args);
-        await deployed.deploymentTransaction()?.wait();
+          .deploy(...constructorData.args, overrides);
+        await deployed.deploymentTransaction()?.wait(1);
         deployedAddr = await deployed.getAddress();
       }
       // save deployed contract address for its dependencies
@@ -167,6 +179,7 @@ export async function deployToChain(
       throw err;
     }
   };
+
   for (const contract of result.values()) {
     await eachContract(contract);
   }

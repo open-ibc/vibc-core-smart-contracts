@@ -40,10 +40,9 @@ import "forge-std/Test.sol";
 struct ChainAddresses {
     IDispatcher dispatcherProxy;
     IUniversalChannelHandler uch;
-    IProofVerifier proofVerifier;
     ILightClient dummyLightClient;
     ILightClient optimisticLightClient;
-    address sender; // Owner Address of dispatcher
+    address owner; // Owner Address of dispatcher
 }
 
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
@@ -51,12 +50,11 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
 
     function setUp() public override {
         ChainAddresses memory addresses = ChainAddresses(
-            IDispatcher(0x8087388885Fc8dB7324446C183024091E012BA55),
-            IUniversalChannelHandler(0x418f41c625FA2D380a5d469DE7B2d72aAe732cfe),
-            IProofVerifier(0xC5Dc8Ae7Dc657883e9f97A7B0FD434b7E0656eE4),
-            ILightClient(0x7be360D72Eb7B9584b5776e2E576bFc79Ea1f929),
-            ILightClient(0xD6509E34cE23830d59f1B0720Ab6086cab269a7C),
-            0xD2b654e3FD89237F8C8a5d7E1AfB5989A13C886e
+            IDispatcher(vm.envAddress("DispatcherProxy")),
+            IUniversalChannelHandler(vm.envAddress("UC")),
+            ILightClient(vm.envAddress("LightClient")),
+            ILightClient(vm.envAddress("LightClient")),
+            vm.envAddress("OWNER")
         );
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e; // Need to have this mars address so we
             // can test proof verifcation path
@@ -64,7 +62,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         dispatcherProxy = addresses.dispatcherProxy;
         string memory dispatcherPortPrefix = dispatcherProxy.portPrefix();
         deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
-        vm.prank(addresses.sender); // Only sender should have permission
+        vm.prank(addresses.owner); // Only sender should have permission
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
         string memory sendingPortId = IbcUtils.addressToPortId(dispatcherPortPrefix, address(mars));
@@ -77,7 +75,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         sendPacket(_local.channelId);
 
         // Upgrade dispatcherProxy for tests
-        vm.startPrank(addresses.sender);
+        vm.startPrank(addresses.owner);
         upgradeDispatcher(newPortPrefix, feeVault, address(dispatcherProxy));
     }
 
