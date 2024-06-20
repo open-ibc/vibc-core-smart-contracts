@@ -35,36 +35,40 @@ import {DispatcherV2Initializable} from "../upgradeableProxy/upgrades/Dispatcher
 import {DispatcherV2} from "../upgradeableProxy/upgrades/DispatcherV2.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ChannelHandShakeUpgradeUtil, UpgradeTestUtils} from "../upgradeableProxy/UpgradeUtils.t.sol";
+import "forge-std/Test.sol";
 
 struct ChainAddresses {
     IDispatcher dispatcherProxy;
-    Dispatcher dispatcherImplementation;
     IUniversalChannelHandler uch;
     IProofVerifier proofVerifier;
     ILightClient dummyLightClient;
+    ILightClient optimisticLightClient;
+    address sender; // Owner Address of dispatcher
 }
 
 contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
+    string newPortPrefix = "port-ID-2";
+
     function setUp() public override {
         ChainAddresses memory addresses = ChainAddresses(
-            IDispatcher(address(0)),
-            Dispatcher(address(0)),
-            IUniversalChannelHandler(address(0)),
-            IProofVerifier(address(0)),
-            ILightClient(address(0))
+            IDispatcher(0x8087388885Fc8dB7324446C183024091E012BA55),
+            IUniversalChannelHandler(0x418f41c625FA2D380a5d469DE7B2d72aAe732cfe),
+            IProofVerifier(0xC5Dc8Ae7Dc657883e9f97A7B0FD434b7E0656eE4),
+            ILightClient(0x7be360D72Eb7B9584b5776e2E576bFc79Ea1f929),
+            ILightClient(0xD6509E34cE23830d59f1B0720Ab6086cab269a7C),
+            0xD2b654e3FD89237F8C8a5d7E1AfB5989A13C886e
         );
         address targetMarsAddress = 0x71C95911E9a5D330f4D621842EC243EE1343292e; // Need to have this mars address so we
-        // can inject code
-        // dispatcherImplementation = new Dispatcher();
+            // can test proof verifcation path
 
         dispatcherProxy = addresses.dispatcherProxy;
-        dispatcherImplementation = addresses.dispatcherImplementation;
-        // (dispatcherProxy, dispatcherImplementation) = deployDispatcherProxyAndImpl(portPrefix);
+        string memory dispatcherPortPrefix = dispatcherProxy.portPrefix();
         deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
+        vm.prank(addresses.sender); // Only sender should have permission
         dispatcherProxy.setClientForConnection(connectionHops[0], dummyLightClient);
         mars = new Mars(dispatcherProxy);
-        string memory sendingPortId = IbcUtils.addressToPortId(portPrefix, address(mars));
-        string memory receivingPortId = IbcUtils.addressToPortId(portPrefix, targetMarsAddress);
+        string memory sendingPortId = IbcUtils.addressToPortId(dispatcherPortPrefix, address(mars));
+        string memory receivingPortId = IbcUtils.addressToPortId(dispatcherPortPrefix, targetMarsAddress);
         _local = LocalEnd(mars, sendingPortId, "channel-1", connectionHops, "1.0", "1.0");
         _remote = ChannelEnd(receivingPortId, "channel-2", "1.0");
 
@@ -73,10 +77,11 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         sendPacket(_local.channelId);
 
         // Upgrade dispatcherProxy for tests
-        upgradeDispatcher("port-ID-2", feeVault, address(dispatcherProxy));
+        vm.startPrank(addresses.sender);
+        upgradeDispatcher(newPortPrefix, feeVault, address(dispatcherProxy));
     }
 
-    function test_SentPacketState_Conserved() public {
+    function test_Deployment_SentPacketState_Conserved() public {
         uint64 nextSequenceSendValue = uint64(
             uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))
         );
@@ -97,7 +102,7 @@ contract DispatcherUpgradeTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils 
         assertEq(5, nextSequenceSendAfterSending);
     }
 
-    function test_OpenChannelState_Conserved() public {
+    function test_Deployment_OpenChannelState_Conserved() public {
         // State should be conserved after upgrade
         uint64 nextSequenceRecvValue =
             uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceRecv(address(mars), _local.channelId))));

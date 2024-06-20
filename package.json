@@ -5,7 +5,8 @@
   "bin": {
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
     "upgrade-vibc-core-smart-contracts": "./dist/scripts/upgrade-script.js",
-    "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js"
+    "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
+    "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -19,7 +20,7 @@
     "yaml": "^2.4.1",
     "yargs": "^17.7.2",
     "zod": "^3.23.4",
-    "zx": "^8.0.2"
+    "zx": "^8.1.3"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.6",
