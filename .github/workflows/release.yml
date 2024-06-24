@@ -25,9 +25,8 @@ jobs:
 
       - name: Save compiled contracts and ABIs
         run: |
-          mkdir -p artifacts/contracts artifacts/abis
-          cp out/contracts/* artifacts/contracts/
-          cp out/abis/* artifacts/abis/
+          mkdir -p artifacts
+          cp -r out/* artifacts/
         if: success()
 
       - name: Upload artifacts
