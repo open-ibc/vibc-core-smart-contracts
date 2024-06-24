@@ -26,7 +26,9 @@ import {Ics23Proof} from "./IProofVerifier.sol";
  * @dev IBC packet sender interface.
  */
 interface IbcPacketSender {
-    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp) external;
+    function sendPacket(bytes32 channelId, bytes calldata payload, uint64 timeoutTimestamp)
+        external
+        returns (uint64 sequence);
 }
 
 /**
