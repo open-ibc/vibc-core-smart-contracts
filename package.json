@@ -25,7 +25,7 @@
     "@types/nunjucks": "^3.2.6",
     "@types/winston": "^2.4.4",
     "@types/yargs": "^17.0.32",
-    "chai": "^4.2.0",
+    "chai": "^5.1.1",
     "solidity-coverage": "^0.8.0",
     "tsup": "^8.0.2"
   },
