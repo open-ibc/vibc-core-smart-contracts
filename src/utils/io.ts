@@ -7,7 +7,7 @@ import { z } from "zod";
 import nunjucks from "nunjucks";
 import assert from "assert";
 import { ProcessPromise } from "zx";
-import { Chain } from "../evm/chain";
+import { Chain, ChainConfigSchema } from "../evm/chain";
 import {
   DEPLOYMENTS_PATH,
   ARTIFACTS_PATH,
@@ -16,10 +16,12 @@ import {
   CHAIN_ID,
   RPC_URL,
   DEPLOY_SPECS_PATH,
+  DEPLOYMENT_ENVIRONMENT,
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import { AccountRegistry } from "../evm/account";
+import * as contracts from "../evm/contracts/index";
 
 export interface StringToStringMap {
   [key: string]: string | null | undefined;
@@ -155,7 +157,7 @@ export function toEnvVarName(e: string) {
   return e.replaceAll("-", "_").toUpperCase();
 }
 
-/** Reads a deployment metadata rom a foundry build file*/
+/** Reads a deployment metadata rom a foundry build file. used to generate bytecode for deployment files*/
 async function readMetadata(factoryName: string) {
   const filePath = path.join(
     ARTIFACTS_PATH,
@@ -171,12 +173,13 @@ async function readMetadata(factoryName: string) {
   }
 }
 
-const createFolderIfNeeded = async (folder: string) => {
-  fs.stat(folder, async (err, stats) => {
-    if (err) {
-      await fsAsync.mkdir(folder); // create the folder if it doesn't exist
-    }
-  });
+// Given a chain object, return the folder in which deployments for this chain will be
+export const getDeployFolderForChain = (chain: Chain) => {
+  return path.join(
+    DEPLOYMENTS_PATH,
+    chain.chainId.toString(),
+    chain.deploymentEnvironment
+  );
 };
 
 export async function writeDeployedContractToFile(
@@ -187,9 +190,12 @@ export async function writeDeployedContractToFile(
     deployedContract.name,
     chain.chainId
   );
-  const fullPath = path.join(DEPLOYMENTS_PATH, deployFileName);
-  await createFolderIfNeeded(DEPLOYMENTS_PATH);
-  // get metadata from contract./
+
+  const deploymentFolder = getDeployFolderForChain(chain);
+  const fullPath = path.join(deploymentFolder, deployFileName);
+  ensureDir(deploymentFolder);
+
+  // get metadata from contract from forge build output
   const metadata = await readMetadata(deployedContract.factory);
   deployedContract.metadata = metadata;
   const outData = JSON.stringify(deployedContract);
@@ -202,11 +208,13 @@ export async function writeDeployedContractToFile(
   });
 }
 
-export async function readDeploymentFilesIntoEnv(env: any) {
-  await createFolderIfNeeded(DEPLOYMENTS_PATH);
+// Read existing deployment files into env, so that we can use them in the deployment scripts
+export async function readDeploymentFilesIntoEnv(env: any, chain: Chain) {
+  const deploymentFolder = getDeployFolderForChain(chain);
+  await ensureDir(deploymentFolder); // In case there are no existing files written yet to directory
   let files: any[] = [];
   try {
-    files = await fsAsync.readdir(DEPLOYMENTS_PATH);
+    files = await fsAsync.readdir(deploymentFolder);
   } catch (e) {
     console.log(`no files to read from`);
     return env;
@@ -215,7 +223,7 @@ export async function readDeploymentFilesIntoEnv(env: any) {
     if (file.endsWith(".json")) {
       try {
         const data = JSON.parse(
-          fs.readFileSync(path.join(DEPLOYMENTS_PATH, file), "utf8")
+          fs.readFileSync(path.join(deploymentFolder, file), "utf8")
         );
         env[data.name] = data.address;
       } catch (e) {
@@ -230,8 +238,10 @@ export async function readFromDeploymentFile(
   deploymentName: string,
   chain: Chain
 ) {
+  const fileFolder = getDeployFolderForChain(chain);
+
   const filePath = path.join(
-    DEPLOYMENTS_PATH,
+    fileFolder,
     contractNameToDeployFile(deploymentName, chain.chainId)
   );
   try {
@@ -279,20 +289,26 @@ export async function parseArgsFromCLI() {
   const argv1 = await yargs(hideBin(process.argv)).argv;
 
   // write a method that uses argv1 if specified, otherwsie use the imported files from utils/constants
-  const chainName = (argv1.CHAIN_NAME as string) || CHAIN_NAME;
-  const chainId = (argv1.CHAIN_ID as number) || CHAIN_ID;
-  const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
+  const chainName = argv1.CHAIN_NAME || CHAIN_NAME;
+  const chainId = argv1.CHAIN_ID || CHAIN_ID;
+  const rpcUrl = argv1.RPC_URL || RPC_URL;
+  const deploymentEnvironment =
+    argv1.DEPLOYMENT_ENVIRONMENT || DEPLOYMENT_ENVIRONMENT;
   const accountSpecs =
     (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
   const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
 
-  const chain: Chain = {
+  const chainParse = ChainConfigSchema.safeParse({
     rpc: rpcUrl,
     chainId,
     chainName,
     vmType: "evm",
     description: "local chain",
-  };
+    deploymentEnvironment,
+  });
+  if (!chainParse.success) {
+    throw new Error(`failed to parse chain config: ${chainParse.error.errors}`);
+  }
 
   const accountConfigFromYaml = {
     name: "local",
@@ -302,7 +318,7 @@ export async function parseArgsFromCLI() {
   const accounts = AccountRegistry.loadMultiple([accountConfigFromYaml]);
 
   return {
-    chain,
+    chain: chainParse.data,
     accounts,
     accountSpecs,
     deploySpecs,
