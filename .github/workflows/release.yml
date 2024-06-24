@@ -1,8 +1,9 @@
 name: Foundry
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
   test:
@@ -53,5 +54,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: artifacts/**
+          generate_release_notes: true
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
