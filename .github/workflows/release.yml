@@ -25,8 +25,9 @@ jobs:
 
       - name: Save compiled contracts and ABIs
         run: |
-          mkdir -p artifacts
-          cp -r out/* artifacts/
+          mkdir -p artifacts/contracts artifacts/abis
+          cp out/contracts/* artifacts/contracts/
+          cp out/abis/* artifacts/abis/
         if: success()
 
       - name: Upload artifacts
@@ -54,4 +55,4 @@ jobs:
         with:
           files: artifacts/**
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
