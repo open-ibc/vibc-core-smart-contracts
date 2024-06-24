@@ -7,8 +7,6 @@ import { parseArgsFromCLI } from "../utils/io";
 
 async function main() {
   const { chain, accounts, args, deploySpecs } = await parseArgsFromCLI();
-  // const deploySpecs = (args.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
-  console.log("deploying", deploySpecs);
   const contracts = ContractRegistryLoader.loadSingle(
     parseObjFromFile(deploySpecs)
   );
