@@ -473,8 +473,14 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param packet The packet data to send.
      * @param timeoutTimestamp The timestamp, in seconds after the unix epoch, after which the packet times out if it
      * has not been received.
+     * @return sequence The sequence number of the packet, starting from 1 and incremented with each sendPacket. This
+     * sequence number is used to link with depositing packet fees in the fee vault
      */
-    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp) external nonReentrant {
+    function sendPacket(bytes32 channelId, bytes calldata packet, uint64 timeoutTimestamp)
+        external
+        nonReentrant
+        returns (uint64 sequence)
+    {
         // ensure port owns channel
         if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
             revert IBCErrors.channelNotOwnedBySender();
@@ -484,7 +490,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         }
 
         // current packet sequence
-        uint64 sequence = _nextSequenceSend[msg.sender][channelId];
+        sequence = _nextSequenceSend[msg.sender][channelId];
         if (sequence == 0) {
             revert IBCErrors.invalidPacketSequence();
         }
