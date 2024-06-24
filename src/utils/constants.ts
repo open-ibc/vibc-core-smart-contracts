@@ -1,5 +1,7 @@
 import path from "path";
 
+export const PACKAGE_VERSION = require("../../package.json").version;
+
 // Defaults
 export const DEFAULT_DEPLOYER = "default";
 export const DEFAULT_RPC_URL = "http://127.0.0.1:8545";

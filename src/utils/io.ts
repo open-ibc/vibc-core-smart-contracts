@@ -17,6 +17,7 @@ import {
   RPC_URL,
   DEPLOY_SPECS_PATH,
   DEPLOYMENT_ENVIRONMENT,
+  PACKAGE_VERSION,
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
@@ -77,7 +78,7 @@ export function parseObjFromFile(
 }
 
 // configure the renderer to throw an error if a template variable is not found
-const renderEnv = nunjucks.configure({ throwOnUndefined: true });
+export const renderEnv = nunjucks.configure({ throwOnUndefined: true });
 
 /**
  * Renders a template string using the provided environment variables.
@@ -197,8 +198,11 @@ export async function writeDeployedContractToFile(
 
   // get metadata from contract from forge build output
   const metadata = await readMetadata(deployedContract.factory);
-  deployedContract.metadata = metadata;
-  const outData = JSON.stringify(deployedContract);
+  const outData = JSON.stringify({
+    ...deployedContract,
+    metadata,
+    version: PACKAGE_VERSION,
+  });
 
   fs.writeFile(fullPath, outData, (err) => {
     if (err) {
