@@ -3,54 +3,80 @@
 import { createWriteStream, WriteStream } from "fs";
 import { $, ProcessPromise } from "zx";
 import { deployToChain } from "../deploy";
-import { ANVIL_PORT, RPC_URL } from "../utils/constants";
+import { ANVIL_PORT, MODULE_ROOT_PATH, RPC_URL } from "../utils/constants";
 import {
   parseArgsFromCLI,
   parseObjFromFile,
   readDeploymentFilesIntoEnv,
 } from "../utils/io";
 import { ContractRegistryLoader } from "../evm/schemas/contract";
-import { getMainLogger } from "../utils/cli";
+import { getMainLogger, getOutputLogger } from "../utils/cli";
+import { sendTxToChain } from "../tx";
+import { loadTxRegistry } from "../evm/schemas/tx";
 
 const main = async () => {
-  await startAnvilServer(RPC_URL, ANVIL_PORT, "anvil.out");
-  const anvilUrl = `http://127.0.0.1:8545`;
+  const { chain, accounts, args, deploySpecs, upgradeSpecs, anvilPort } =
+    await parseArgsFromCLI();
 
-  const { chain, accounts, args, deploySpecs } = await parseArgsFromCLI();
-
-  console.log("deploying from", deploySpecs);
-  const contracts = ContractRegistryLoader.loadSingle(
-    parseObjFromFile(deploySpecs)
+  const { anvilProcess } = await startAnvilServer(
+    chain.rpc,
+    anvilPort,
+    `anvil-${anvilPort}.out`
   );
+  const anvilUrl = `http://127.0.0.1:${anvilPort}`;
 
-  chain.rpc = anvilUrl;
+  const forkedChain = { ...chain, rpc: anvilUrl };
 
-  await deployToChain(
-    chain,
-    accounts.mustGet(chain.chainName),
-    contracts.subset(),
-    getMainLogger(),
-    false,
-    false,
-    true
-  );
+  const parsedDeploySpecs = parseObjFromFile(deploySpecs);
+  if (parsedDeploySpecs) {
+    const contracts = ContractRegistryLoader.loadSingle(
+      parseObjFromFile(deploySpecs)
+    );
+
+    await deployToChain(
+      forkedChain,
+      accounts.mustGet(chain.chainName),
+      contracts.subset(),
+      getMainLogger(),
+      false,
+      false,
+      true
+    );
+  } else {
+    console.log("empty deploy file detected, skipping fork deploy for test");
+  }
+
+  const parsedUpgradeSpec = parseObjFromFile(upgradeSpecs);
+  if (parsedUpgradeSpec) {
+    const upgradeTxs = loadTxRegistry(parsedUpgradeSpec);
+
+    await sendTxToChain(
+      forkedChain,
+      accounts.mustGet(chain.chainName),
+      ContractRegistryLoader.emptySingle(),
+      upgradeTxs.subset(),
+      getOutputLogger(),
+      false
+    );
+  } else {
+    console.log("empty upload file detected, skipping upgrade for test");
+  }
   let env = {};
-  env = await readDeploymentFilesIntoEnv(env, chain);
+  env = await readDeploymentFilesIntoEnv(env, chain); // Read deployment files from non-forked chain to get live addresses
 
   $.env = {
     ...env,
-    OWNER: "0xD2b654e3FD89237F8C8a5d7E1AfB5989A13C886e",
     ...process.env,
   };
 
-  await $`forge test --match-contract DispatcherUpgradeTest --fork-url ${anvilUrl} -vvvv `.pipe(
+  await $`cd ${MODULE_ROOT_PATH} && forge test --match-contract DispatcherDeployTest --fork-url ${anvilUrl} -vvvv `.pipe(
     createWriteStream("fork-test.out")
   );
 
-  console.log("done running tests");
+  anvilProcess.kill();
 };
 
-// Starts anvil server, and waits until it's started
+// Starts anvil server from an RPC fork, and waits until it's started
 const startAnvilServer = async (
   rpcUrl: string,
   port: string,
@@ -60,7 +86,7 @@ const startAnvilServer = async (
     createWriteStream(outFileName)
   );
   await waitForAnvilServer(outFileName);
-  return;
+  return { anvilProcess: p };
 };
 
 const waitForAnvilServer = async (anvilOutFile: string) => {
