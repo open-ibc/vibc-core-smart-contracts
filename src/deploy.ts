@@ -76,14 +76,12 @@ export async function deployToChain(
   writeContracts: boolean = true // True if you want to save persisted artifact files.
 ) {
   logger.info(
-    `deploying ${deploySpec.size} contract(s) to chain ${
-      chain.chainName
+    `deploying ${deploySpec.size} contract(s) to chain ${chain.chainName}-${
+      chain.deploymentEnvironment
     } with contractNames: [${deploySpec.keys()}]`
   );
 
   let nonces: Record<string, number> = {}; // maps addreses to nonces
-  logger.info(`deploying with contract spec ${deploySpec}`);
-
   if (!dryRun) {
     const provider = ethers.getDefaultProvider(chain.rpc);
     const newAccounts = accountRegistry.subset([]);
@@ -97,7 +95,7 @@ export async function deployToChain(
   const env: StringToStringMap = { chain };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
-    await readDeploymentFilesIntoEnv(env);
+    await readDeploymentFilesIntoEnv(env, chain);
   }
 
   // result is the final contract registry after deployment, modified in place
@@ -122,9 +120,11 @@ export async function deployToChain(
       );
 
       logger.info(
-        `[${chain.chainName}]: deploying ${contract.name} with args: [${
-          constructorData.args
-        }] with libraries: ${JSON.stringify(constructorData.libraries)}`
+        `[${chain.chainName}-${chain.deploymentEnvironment}]: deploying ${
+          contract.name
+        } with args: [${constructorData.args}] with libraries: ${JSON.stringify(
+          constructorData.libraries
+        )}`
       );
       let deployedAddr = `new.${contract.name}.address`;
       const deployer = accountRegistry.mustGet(
@@ -159,7 +159,7 @@ export async function deployToChain(
       contract.deployer = deployer.address;
       contract.abi = constructorData.contractFactoryConstructor.abi;
       logger.info(
-        `[${chain.chainName}]: deployed ${contract.name} to address: ${deployedAddr}`
+        `[${chain.chainName}-${chain.deploymentEnvironment}]: deployed ${contract.name} to address: ${deployedAddr}`
       );
       if (writeContracts) {
         const contractObject = {
@@ -174,7 +174,7 @@ export async function deployToChain(
       }
     } catch (err) {
       logger.error(
-        `[${chain.chainName}] deploy ${contract.name} failed: ${err}`
+        `[${chain.chainName}-${chain.deploymentEnvironment}] deploy ${contract.name} failed: ${err}`
       );
       throw err;
     }
@@ -185,7 +185,7 @@ export async function deployToChain(
   }
 
   logger.info(
-    `[${chain.chainName}]: finished deploying ${result.size} contracts`
+    `[${chain.chainName}-${chain.deploymentEnvironment}]: finished deploying ${result.size} contracts`
   );
 
   return {

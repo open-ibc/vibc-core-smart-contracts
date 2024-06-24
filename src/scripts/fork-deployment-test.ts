@@ -35,7 +35,7 @@ const main = async () => {
     true
   );
   let env = {};
-  env = await readDeploymentFilesIntoEnv(env);
+  env = await readDeploymentFilesIntoEnv(env, chain);
 
   $.env = {
     ...env,
