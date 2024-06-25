@@ -58,7 +58,7 @@ jobs:
           git checkout -b "gb/go-bindings-bot-$LAST_COMMIT"
 
           git remote set-url origin \
-            https://github.com/${{github.repository}}.git
+            https://${{github.actor}}:${{secrets.GITHUB_TOKEN}}@github.com/${{github.repository}}.git
           git push -f -u origin "gb/go-bindings-bot-$LAST_COMMIT"
 
           gh pr create --base main --head "gb/go-bindings-bot-$LAST_COMMIT" \
