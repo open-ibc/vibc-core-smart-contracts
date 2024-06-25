@@ -50,23 +50,6 @@ jobs:
           name: compiled-contracts
           path: ./artifacts
 
-      - name: Debug Token
-        run: |
-          if [ -n "${{ secrets.RELEASE_TOKEN }}" ]; then
-            echo "RELEASE_TOKEN is set"
-          else
-            echo "RELEASE_TOKEN is not set"
-          fi
-          if [ -n "${{ env.FOO }}" ]; then
-            echo "FOO is set"
-          else
-            echo "FOO is not set"
-          fi
-          if [ -n "${{ secrets.RELEASE_TOKEN_V2 }}" ]; then
-            echo "RELEASE_TOKEN_V2 is set"
-          else
-            echo "RELEASE_TOKEN_V2 is not set"
-          fi
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -75,4 +58,4 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-          token: ${{ secrets.RELEASE_TOKEN_V2 }}
+          token: ${{ secrets.RELEASE_TOKEN }}
