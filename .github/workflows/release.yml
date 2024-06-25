@@ -27,7 +27,11 @@ jobs:
       - name: Save compiled contracts and ABIs
         run: |
           mkdir -p artifacts
-          cp -r out/* artifacts/
+          cp -r out/Dispatcher.sol/Dispatcher.json artifacts/
+          cp -r out/UniversalChannelHandler.sol/UniversalChannelHandler.json artifacts/
+          cp -r out/Mars.sol/Mars.json artifacts/
+          cp -r out/Earth.sol/Earth.json artifacts/
+          cp -r out/Moon.sol/Moon.json artifacts/
         if: success()
 
       - name: Upload artifacts
