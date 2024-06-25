@@ -57,7 +57,16 @@ jobs:
           else
             echo "RELEASE_TOKEN is not set"
           fi
-
+          if [ -n "${{ env.FOO }}" ]; then
+            echo "FOO is set"
+          else
+            echo "FOO is not set"
+          fi
+          if [ -n "${{ secrets.RELEASE_TOKEN_V2 }}" ]; then
+            echo "RELEASE_TOKEN_V2 is set"
+          else
+            echo "RELEASE_TOKEN_V2 is not set"
+          fi
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
