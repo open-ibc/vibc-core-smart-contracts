@@ -27,6 +27,7 @@ coverage
 coverage.json
 typechain
 typechain-types
+.tmp_abi_vibc
 
 #Hardhat files
 cache
