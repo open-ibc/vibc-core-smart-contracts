@@ -1,7 +1,7 @@
 name: Validate Bindings
 
 on:
-  pull-request:
+  pull_request:
     branches: ["main"]
 
 concurrency:
