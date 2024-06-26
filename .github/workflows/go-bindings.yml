@@ -43,7 +43,8 @@ jobs:
           if [ $(git status --porcelain | sed 's/^...//' | grep bindings/ | wc -l) -ne 0 ]; then
             git config --local user.email "gen-go-bindings[bot]@polymerlabs.org"
             git config --local user.name "gen-go-bindings[bot]"
-            git add ./bindings
+            go mod tidy
+            git add ./bindings ./go.mod ./go.sum
             git commit -m "feat: generate go bindings [gen-go-bindings bot]"
             echo "committed=true" >> $GITHUB_OUTPUT
           else
