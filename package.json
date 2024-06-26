@@ -34,7 +34,7 @@
     "lint": "solhint contracts/**/*.sol",
     "test": "forge test",
     "build": "npm run build-ts-contract-bindings && npm run build-go-contract-bindings && tsup",
-    "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient|FeeVault).sol/*.json'",
+    "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient|IFeeVault|IbcDispatcher|IDispatcher|ILightClient|IProofVerifier|IUniversalChannelHandler|FeeVault).sol/*.json'",
     "build-go-contract-bindings": "echo go bindings generation not yet implemented!",
     "build-contracts": "forge build",
     "deploy-contracts": "npm run build && node dist/deploy.js",
