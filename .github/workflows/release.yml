@@ -67,6 +67,7 @@ jobs:
   registries:
     runs-on: ubuntu-latest
     needs: release
+    environment: release
     steps:
       - name: Get Latest Version
         id: version
