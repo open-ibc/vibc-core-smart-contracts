@@ -94,6 +94,7 @@ export interface UniversalChannelHandlerInterface extends Interface {
       | "proxiableUUID"
       | "renounceOwnership"
       | "sendUniversalPacket"
+      | "sendUniversalPacketWithFee"
       | "setDispatcher"
       | "transferOwnership"
       | "upgradeTo"
@@ -178,6 +179,17 @@ export interface UniversalChannelHandlerInterface extends Interface {
     values: [BytesLike, BytesLike, BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "sendUniversalPacketWithFee",
+    values: [
+      BytesLike,
+      BytesLike,
+      BytesLike,
+      BigNumberish,
+      [BigNumberish, BigNumberish],
+      [BigNumberish, BigNumberish]
+    ]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setDispatcher",
     values: [AddressLike]
   ): string;
@@ -253,6 +265,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "sendUniversalPacket",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "sendUniversalPacketWithFee",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -492,8 +508,21 @@ export interface UniversalChannelHandler extends BaseContract {
       appData: BytesLike,
       timeoutTimestamp: BigNumberish
     ],
-    [void],
+    [bigint],
     "nonpayable"
+  >;
+
+  sendUniversalPacketWithFee: TypedContractMethod<
+    [
+      channelId: BytesLike,
+      destPortAddr: BytesLike,
+      appData: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
 
   setDispatcher: TypedContractMethod<
@@ -632,8 +661,22 @@ export interface UniversalChannelHandler extends BaseContract {
       appData: BytesLike,
       timeoutTimestamp: BigNumberish
     ],
-    [void],
+    [bigint],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "sendUniversalPacketWithFee"
+  ): TypedContractMethod<
+    [
+      channelId: BytesLike,
+      destPortAddr: BytesLike,
+      appData: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
   getFunction(
     nameOrSignature: "setDispatcher"
