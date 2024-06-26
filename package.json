@@ -34,7 +34,7 @@
     "test": "forge test",
     "build": "npm run build-ts-contract-bindings && npm run build-go-contract-bindings && tsup",
     "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient).sol/*.json'",
-    "build-go-contract-bindings": "make abigen clean",
+    "build-go-contract-bindings": "make abigen clean && (cd ./bindings && go mod tidy)",
     "build-contracts": "forge build",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",

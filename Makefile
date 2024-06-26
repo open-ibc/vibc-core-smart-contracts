@@ -16,8 +16,8 @@ build-contracts:
 
 extract_artifacts: build-contracts
 	echo "Extracting ABI artifacts..."; \
-	rm -rf $(TMP_ABI_DIR)
-	mkdir -p $(TMP_ABI_DIR)
+	rm -rf $(TMP_ABI_DIR); \
+	mkdir -p $(TMP_ABI_DIR); \
 	for abi_file in $(CONTRACT_ABI_FILES); do \
 		cat $$abi_file | jq .abi > $(TMP_ABI_DIR)/$$(basename $$abi_file); \
 	done
@@ -30,7 +30,7 @@ abigen: extract_artifacts
 		pkg=$$(basename $$abi_base .json | tr "[:upper:]" "[:lower:]"); \
 		mkdir -p ./bindings/$$pkg; \
 		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/$$pkg/$$type.go; \
-	done; \
+	done
 
 clean:
 	echo "Cleaning up all artifacts..."; \
