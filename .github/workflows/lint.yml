@@ -30,14 +30,13 @@ jobs:
         run: |
           go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22.3.0"
-          registry-url: "https://registry.npmjs.org"
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
 
-      - run: npm ci
-
-      - run: npm run lint
+      - name: Install Dependencies
+        run: |
+          bun install --frozen-lockfile
+          bun run lint
 
       - name: Check formatting
         run: forge fmt --check
