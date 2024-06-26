@@ -2,8 +2,10 @@
 
 CONTRACT_ABI_FILES = \
 	./out/Dispatcher.sol/Dispatcher.json \
+	./out/UniversalChannelHandler.sol/UniversalChannelHandler.json \
 	./out/Mars.sol/Mars.json \
-	./out/Earth.sol/Earth.json
+	./out/Earth.sol/Earth.json \
+	./out/Moon.sol/Moon.json
 
 TMP_ABI_DIR = .tmp_abi_vibc
 
