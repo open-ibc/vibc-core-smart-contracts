@@ -53,10 +53,13 @@ export interface EarthInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "ackPackets"
+      | "authorizeChannel"
       | "authorizeMiddleware"
+      | "authorizedChannelIds"
       | "authorizedMws"
       | "generateAckPacket"
       | "greet"
+      | "greetWithFee"
       | "mw"
       | "onRecvUniversalPacket"
       | "onTimeoutUniversalPacket"
@@ -76,8 +79,16 @@ export interface EarthInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "authorizeChannel",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "authorizeMiddleware",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "authorizedChannelIds",
+    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "authorizedMws",
@@ -90,6 +101,17 @@ export interface EarthInterface extends Interface {
   encodeFunctionData(
     functionFragment: "greet",
     values: [AddressLike, BytesLike, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "greetWithFee",
+    values: [
+      AddressLike,
+      BytesLike,
+      BytesLike,
+      BigNumberish,
+      [BigNumberish, BigNumberish],
+      [BigNumberish, BigNumberish]
+    ]
   ): string;
   encodeFunctionData(functionFragment: "mw", values?: undefined): string;
   encodeFunctionData(
@@ -128,7 +150,15 @@ export interface EarthInterface extends Interface {
 
   decodeFunctionResult(functionFragment: "ackPackets", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "authorizeChannel",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "authorizeMiddleware",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "authorizedChannelIds",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -140,6 +170,10 @@ export interface EarthInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "greet", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "greetWithFee",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "mw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onRecvUniversalPacket",
@@ -244,10 +278,22 @@ export interface Earth extends BaseContract {
     "view"
   >;
 
+  authorizeChannel: TypedContractMethod<
+    [channelId: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+
   authorizeMiddleware: TypedContractMethod<
     [middleware: AddressLike],
     [void],
     "nonpayable"
+  >;
+
+  authorizedChannelIds: TypedContractMethod<
+    [arg0: BytesLike],
+    [boolean],
+    "view"
   >;
 
   authorizedMws: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
@@ -267,6 +313,19 @@ export interface Earth extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+
+  greetWithFee: TypedContractMethod<
+    [
+      destPortAddr: AddressLike,
+      channelId: BytesLike,
+      message: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
 
   mw: TypedContractMethod<[], [string], "view">;
@@ -345,8 +404,14 @@ export interface Earth extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "authorizeChannel"
+  ): TypedContractMethod<[channelId: BytesLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "authorizeMiddleware"
   ): TypedContractMethod<[middleware: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "authorizedChannelIds"
+  ): TypedContractMethod<[arg0: BytesLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "authorizedMws"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
@@ -368,6 +433,20 @@ export interface Earth extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "greetWithFee"
+  ): TypedContractMethod<
+    [
+      destPortAddr: AddressLike,
+      channelId: BytesLike,
+      message: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
   getFunction(nameOrSignature: "mw"): TypedContractMethod<[], [string], "view">;
   getFunction(

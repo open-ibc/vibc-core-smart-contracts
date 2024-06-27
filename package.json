@@ -3,9 +3,9 @@
   "version": "2.1.0",
   "main": "dist/index.js",
   "bin": {
-    "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
-    "upgrade-vibc-core-smart-contracts": "./dist/scripts/upgrade-script.js",
-    "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js"
+    "deploy-vibc-core-smart-contracts": "dist/scripts/deploy-script.js",
+    "upgrade-vibc-core-smart-contracts": "dist/scripts/upgrade-script.js",
+    "setup-vibc-core-dispatcher": "dist/scripts/setup-dispatcher-script.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -34,7 +34,7 @@
     "test": "forge test",
     "build": "npm run build-ts-contract-bindings && npm run build-go-contract-bindings && tsup",
     "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient).sol/*.json'",
-    "build-go-contract-bindings": "echo go bindings generation not yet implemented!",
+    "build-go-contract-bindings": "make abigen clean && (cd ./bindings && go mod tidy)",
     "build-contracts": "forge build",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",

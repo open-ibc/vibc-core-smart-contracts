@@ -1,0 +1,54 @@
+name: Validate Bindings
+
+on:
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  verify-bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: "recursive"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.3"
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install ABIGen
+        run: |
+          go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Generate Bindings
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+
+      - name: Check for Go Bindings Changes
+        run: |
+          if [ $(git status --porcelain | sed 's/^...//' | grep bindings/ | wc -l) -ne 0 ]; then
+            echo "Changes in Go Bindings"
+            echo $(git status --porcelain | sed 's/^...//' | grep bindings/)
+            exit 1
+          fi
+
+      - name: Check for TypeScript Bindings Changes
+        run: |
+          if [ $(git status --porcelain | sed 's/^...//' | grep src/evm/contracts/ | wc -l) -ne 0 ]; then
+            echo "Changes in TypeScript Bindings"
+            echo $(git status --porcelain | sed 's/^...//' | grep src/evm/contracts/)
+            exit 1
+          fi

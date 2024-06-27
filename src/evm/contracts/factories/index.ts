@@ -11,5 +11,4 @@ export { Ibc__factory } from "./Ibc__factory";
 export { IbcUtils__factory } from "./IbcUtils__factory";
 export { OptimisticLightClient__factory } from "./OptimisticLightClient__factory";
 export { OptimisticProofVerifier__factory } from "./OptimisticProofVerifier__factory";
-export { ProofVerifier__factory } from "./ProofVerifier__factory";
 export { UniversalChannelHandler__factory } from "./UniversalChannelHandler__factory";

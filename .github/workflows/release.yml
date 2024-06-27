@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: "recursive"
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Check contract sizes
+        run: forge build --sizes --deny-warnings
+
+      - name: Tests
+        run: forge test
+
+      - name: Save compiled contracts and ABIs
+        if: success()
+        run: |
+          mkdir -p artifacts
+          cp -r out/Dispatcher.sol/Dispatcher.json artifacts/
+          cp -r out/UniversalChannelHandler.sol/UniversalChannelHandler.json artifacts/
+          cp -r out/Mars.sol/Mars.json artifacts/
+          cp -r out/Earth.sol/Earth.json artifacts/
+          cp -r out/Moon.sol/Moon.json artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-contracts
+          path: artifacts
+
+  release:
+    runs-on: ubuntu-latest
+    needs: artifacts
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: compiled-contracts
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: artifacts/**
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+  registries:
+    runs-on: ubuntu-latest
+    needs: release
+    environment: release
+    steps:
+      - name: Get Latest Version
+        id: version
+        uses: pozetroninc/github-action-get-latest-release@master
+        with:
+          repository: ${{ github.repository }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21.3"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.3.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Update NPM Registry
+        run: |
+          npm ci
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Update Go Registry
+        run: |
+          ( cd ./bindings && \
+            GOPROXY=proxy.golang.org go list \
+            -m github.com/open-ibc/vibc-core-smart-contracts/bindings@${{ steps.version.outputs.release }} )

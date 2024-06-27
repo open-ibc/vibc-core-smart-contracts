@@ -79,6 +79,7 @@ export interface MarsInterface extends Interface {
       | "connectedChannels"
       | "dispatcher"
       | "greet"
+      | "greetWithFee"
       | "onAcknowledgementPacket"
       | "onChanCloseConfirm"
       | "onChanCloseInit"
@@ -96,6 +97,7 @@ export interface MarsInterface extends Interface {
       | "transferOwnership"
       | "triggerChannelClose"
       | "triggerChannelInit"
+      | "triggerChannelInitWithFee"
   ): FunctionFragment;
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
@@ -115,6 +117,16 @@ export interface MarsInterface extends Interface {
   encodeFunctionData(
     functionFragment: "greet",
     values: [string, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "greetWithFee",
+    values: [
+      string,
+      BytesLike,
+      BigNumberish,
+      [BigNumberish, BigNumberish],
+      [BigNumberish, BigNumberish]
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "onAcknowledgementPacket",
@@ -181,6 +193,10 @@ export interface MarsInterface extends Interface {
     functionFragment: "triggerChannelInit",
     values: [string, BigNumberish, boolean, string[], string]
   ): string;
+  encodeFunctionData(
+    functionFragment: "triggerChannelInitWithFee",
+    values: [string, BigNumberish, boolean, string[], string]
+  ): string;
 
   decodeFunctionResult(functionFragment: "ackPackets", data: BytesLike): Result;
   decodeFunctionResult(
@@ -189,6 +205,10 @@ export interface MarsInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "dispatcher", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "greet", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "greetWithFee",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "onAcknowledgementPacket",
     data: BytesLike
@@ -252,6 +272,10 @@ export interface MarsInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "triggerChannelInit",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "triggerChannelInitWithFee",
     data: BytesLike
   ): Result;
 }
@@ -328,8 +352,20 @@ export interface Mars extends BaseContract {
 
   greet: TypedContractMethod<
     [message: string, channelId: BytesLike, timeoutTimestamp: BigNumberish],
-    [void],
+    [bigint],
     "nonpayable"
+  >;
+
+  greetWithFee: TypedContractMethod<
+    [
+      message: string,
+      channelId: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
 
   onAcknowledgementPacket: TypedContractMethod<
@@ -471,6 +507,18 @@ export interface Mars extends BaseContract {
     "nonpayable"
   >;
 
+  triggerChannelInitWithFee: TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortId: string
+    ],
+    [void],
+    "payable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -492,8 +540,21 @@ export interface Mars extends BaseContract {
     nameOrSignature: "greet"
   ): TypedContractMethod<
     [message: string, channelId: BytesLike, timeoutTimestamp: BigNumberish],
-    [void],
+    [bigint],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "greetWithFee"
+  ): TypedContractMethod<
+    [
+      message: string,
+      channelId: BytesLike,
+      timeoutTimestamp: BigNumberish,
+      gasLimits: [BigNumberish, BigNumberish],
+      gasPrices: [BigNumberish, BigNumberish]
+    ],
+    [bigint],
+    "payable"
   >;
   getFunction(
     nameOrSignature: "onAcknowledgementPacket"
@@ -630,6 +691,19 @@ export interface Mars extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "triggerChannelInitWithFee"
+  ): TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortId: string
+    ],
+    [void],
+    "payable"
   >;
 
   getEvent(

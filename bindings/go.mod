@@ -1,4 +1,4 @@
-module github.com/open-ibc/vib-core-smart-contracts
+module github.com/open-ibc/vib-core-smart-contracts/bindings
 
 go 1.21
 
