@@ -35,7 +35,7 @@ jobs:
           cp -r out/Moon.sol/Moon.json artifacts/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compiled-contracts
           path: artifacts
@@ -49,7 +49,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: compiled-contracts
           path: ./artifacts
@@ -79,6 +79,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.21.3"
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install ABIGen
+        run: |
+          go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
 
       - uses: actions/setup-node@v4
         with:
