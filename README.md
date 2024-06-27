@@ -55,13 +55,18 @@ This npm package exposes two commands - one to deploy new contacts (which automa
    - RPC_URL - the rpc url to submit deploy txs to, can be a local fork as well 
    - ACCOUNTS_SPECS_PATH - the path to the accounts spec file
    - CHAIN_NAME - the name of the chain to deploy to
-   - 
+   - CHAIN_ID - the chain id of the chain to deploy to
+   - DEVELOPMENT_ENVIRONMENT - the environment to deploy to, should be one of staging, production, local, or mainnet
+  In addition to these params, any sensitive env variables that can't be saved to yaml files can be passed into the environment as well. For example, if you want to avoid saving a private key to the accounts spec yaml file, you can add that reference the name of the environment in the account spec and pass in the private key as an environment variable.
+
 3. Run either `npx deploy-vibc-core-smart-contracts` to deploy contracts from the contract spec, or `npx upgrade-vibc-core-smart-contracts` to  send an upgrade transaction.
 
 The hierarcy of how configuration is read is: 
 - any arguments passed in via clia
 - any arguments from the env
 - default arugments as defined in src/utils/constants.ts
+
+The deployment files are saved in the format `deployments/<CHAIN_ID>/<DEPLOYMENT_ENVIRONMENT>/<CHAIN_ID>-<DEPLOYMENT_NAME>.json`
 ### Deploying via imports 
 Deployments can also be done through calls through the `deployToChain` and the `sendTxToChain` methods. 
 
