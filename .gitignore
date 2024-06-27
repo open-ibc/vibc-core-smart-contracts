@@ -22,7 +22,6 @@ src/contracts.template.ts
 forge-cache/
 
 node_modules
-package-lock.json
 .env
 coverage
 coverage.json
