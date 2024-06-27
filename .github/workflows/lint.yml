@@ -31,7 +31,7 @@ jobs:
           go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
 
       - name: Install Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
 
       - name: Install Dependencies
         run: |
