@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "2.2.1",
+  "version": "2.1.4",
   "main": "dist/index.js",
   "bin": {
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
@@ -34,7 +34,7 @@
     "lint": "solhint contracts/**/*.sol",
     "test": "forge test",
     "build": "npm run build-ts-contract-bindings && npm run build-go-contract-bindings && tsup",
-    "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient).sol/*.json'",
+    "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient|FeeVault).sol/*.json'",
     "build-go-contract-bindings": "echo go bindings generation not yet implemented!",
     "build-contracts": "forge build",
     "deploy-contracts": "npm run build && node dist/deploy.js",

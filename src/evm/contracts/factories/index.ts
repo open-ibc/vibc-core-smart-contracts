@@ -7,6 +7,7 @@ export { DummyLightClient__factory } from "./DummyLightClient__factory";
 export { DummyProofVerifier__factory } from "./DummyProofVerifier__factory";
 export { ERC1967Proxy__factory } from "./ERC1967Proxy__factory";
 export { Earth__factory } from "./Earth__factory";
+export { FeeVault__factory } from "./FeeVault__factory";
 export { Ibc__factory } from "./Ibc__factory";
 export { IbcUtils__factory } from "./IbcUtils__factory";
 export { OptimisticLightClient__factory } from "./OptimisticLightClient__factory";

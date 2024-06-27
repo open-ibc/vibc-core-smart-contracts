@@ -8,6 +8,7 @@ export type { DummyLightClient } from "./DummyLightClient";
 export type { DummyProofVerifier } from "./DummyProofVerifier";
 export type { ERC1967Proxy } from "./ERC1967Proxy";
 export type { Earth } from "./Earth";
+export type { FeeVault } from "./FeeVault";
 export type { Ibc } from "./Ibc";
 export type { IbcUtils } from "./IbcUtils";
 export type { OptimisticLightClient } from "./OptimisticLightClient";
@@ -19,6 +20,7 @@ export { DummyLightClient__factory } from "./factories/DummyLightClient__factory
 export { DummyProofVerifier__factory } from "./factories/DummyProofVerifier__factory";
 export { Earth__factory } from "./factories/Earth__factory";
 export { ERC1967Proxy__factory } from "./factories/ERC1967Proxy__factory";
+export { FeeVault__factory } from "./factories/FeeVault__factory";
 export { Ibc__factory } from "./factories/Ibc__factory";
 export { IbcUtils__factory } from "./factories/IbcUtils__factory";
 export type { Mars } from "./Mars.sol/Mars";
