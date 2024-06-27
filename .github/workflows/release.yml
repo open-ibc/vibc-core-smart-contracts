@@ -101,7 +101,6 @@ jobs:
       - name: Update NPM Registry
         run: |
           npm i
-          npm access set status restricted
           npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
