@@ -4,6 +4,7 @@ deployments
 # Auto generated code Go and TypeScript bindings
 bindings/
 
+.coderabit.yml
 node_modules
 .env
 coverage

@@ -1,12 +1,45 @@
 .SILENT:
 
-.PHONY: build-contracts bindings-gen-go
+# Hardcoded for simplicity
+CONTRACT_NAMES = channel \
+				 Dispatcher \
+				 DummyLightClient \
+				 DummyProofVerifier \
+				 Earth \
+				 ERC1967Proxy \
+				 FeeVault \
+				 Ibc \
+				 IbcDispatcher \
+				 IbcUtils \
+				 IDispatcher \
+				 IFeeVault \
+				 ILightClient \
+				 IProofVerifier \
+				 IUniversalChannelHandler \
+				 Mars \
+				 Moon \
+				 OptimisticLightClient \
+				 OptimisticProofVerifier \
+				 UniversalChannelHandler
+
+# Create the pattern for each contract
+CONTRACT_ABI_PATTERNS = $(addsuffix .sol/*.abi.json,$(addprefix ./out/,$(CONTRACT_NAMES)))
+CONTRACT_JSON_PATTERNS := $(addsuffix .sol/*.json,$(addprefix ./out/,$(CONTRACT_NAMES)))
+
+# Use wildcard to expand each pattern
+CONTRACT_ABI_FILES = $(foreach pattern,$(CONTRACT_ABI_PATTERNS),$(wildcard $(pattern)))
+CONTRACT_BOTH_FILES = $(foreach pattern,$(CONTRACT_JSON_PATTERNS),$(wildcard $(pattern)))
+CONTRACT_JSON_FILES = $(filter-out $(CONTRACT_ABI_FILES),$(CONTRACT_BOTH_FILES))
+
+.PHONY: build-contracts bindings-gen-go bindings-gen-ts
 
 build-contracts:
 	echo "Building contracts"; \
 	rm -frd ./out; \
 	forge install; \
-	forge build contracts lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Upgrade.sol -C contracts --lib-paths lib --skip test script $(wildcard contracts/implementation_templates/**/*) utils draft Rc $(wildcard contracts/mocks/**/*) --extra-output-files abi
+	forge build --skip test script -C contracts \
+		-R $$(cat remappings.txt) --lib-paths lib \
+		--extra-output-files abi --force
 
 # Libraries do not generate the correct ABI code (ChannelState enum causes errors)
 # So the Ibc.sol abi generated code from abigen throws errors but is not needed.
@@ -19,8 +52,7 @@ build-contracts:
 bindings-gen-go: build-contracts
 	echo "Generating Go vIBC bindings..."; \
 	rm -rfd ./bindings/go/* ; \
-	files=$$(/usr/bin/find $$(pwd)/out -type d | sed 's,^.*/out/,out/,' | awk -F'/' '{if ($$NF ~ /\.sol$$/) print $$0}' | awk '{split($$1,p,"[/]"); if (p[2] !~ /([Rr]c|[Vv])[0-9]+|Init|Std|AddressUpgradeable|[0-9]\$$/ && gsub(/\./,"",p[2])==1) print $$0}' | grep "out/[A-Z]" | xargs -I {} /usr/bin/find {} -maxdepth 1 -name '*.abi.json'); \
-	for abi_file in $$files; do \
+	for abi_file in $(CONTRACT_ABI_FILES); do \
 		abi_base=$$(basename $$(dirname $$abi_file)); \
 		if [ "$$abi_base" = "Ibc.sol" ]; then \
 			continue; \
@@ -32,3 +64,8 @@ bindings-gen-go: build-contracts
 	done; \
 	echo "Done."
 
+bindings-gen-ts: build-contracts
+	echo "Generating TypeScript bindings..."; \
+	rm -rfd ./src/evm/contracts/*; \
+	typechain --target ethers-v6 --out-dir ./src/evm/contracts $(CONTRACT_JSON_FILES); \
+	echo "Done."

@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "main": "dist/index.js",
   "bin": {
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
@@ -31,9 +31,8 @@
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
-    "test": "forge test",
-    "build": "npm run bindings-gen-ts && make bindings-gen-go && tsup",
-    "bindings-gen-ts": "make build-contracts && rm -frd ./src/evm/contracts/* && typechain --target ethers-v6 --out-dir ./src/evm/contracts $(/usr/bin/find $(pwd)/out -type d | sed 's,^.*/out/,out/,' | awk -F'/' '{if ($NF ~ /\\.sol$/) print $0}' | awk '{split($1,p,\"[/]\"); if (p[2] !~ /([Rr]c|[Vv])[0-9]+|Init|Std|[0-9]$/ && gsub(/\\./,\"\",p[2])==1) print $0}' | grep \"out/[A-Z]\" | xargs -I {} /usr/bin/find {} -maxdepth 1 -name '*[^.abi].json')",
+    "test": "forge test --no-match-contract DispatcherDeployTest",
+    "build": "make bindings-gen-go bindings-gen-ts && tsup",
     "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",

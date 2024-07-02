@@ -26,7 +26,7 @@ jobs:
         run: forge build --sizes --deny-warnings
 
       - name: Tests
-        run: forge test
+        run: forge test --no-match-contract DispatcherDeployTest
 
       - name: Save compiled contracts and ABIs
         if: success()

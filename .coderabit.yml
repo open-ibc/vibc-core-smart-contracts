@@ -14,9 +14,9 @@ reviews:
   path_instructions:
     - path: "./bindings"
       instructions: |
-        Ignore the generated files in this directory
+        Ignore all the files in this directory recursively from any form of review.
     - path: "./src/evm/contracts"
       instructions: |
-        Ignore the generated files in this directory
+        Ignore all the files in this directory recursively from any form of review.
 chat:
   auto_reply: true
