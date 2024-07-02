@@ -30,7 +30,7 @@ import {IBCErrors} from "../../../contracts/libs/IbcErrors.sol";
  *     which can be relayed to a rollup module on the Polymerase chain
  */
 contract DispatcherV2Initializable is DispatcherV2 {
-    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public override reinitializer(2) {
+    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public override reinitializer(3) {
         __Ownable_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);

@@ -77,7 +77,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @dev This method should be called only once during contract deployment.
      * @dev For contract upgarades, which need to reinitialize the contract, use the reinitializer modifier.
      */
-    function initialize(string memory initPortPrefix, IFeeVault _feeVault) public virtual initializer nonReentrant {
+    function initialize(string memory initPortPrefix, IFeeVault _feeVault)
+        external
+        virtual
+        reinitializer(2)
+        nonReentrant
+    {
         if (bytes(initPortPrefix).length == 0) {
             revert IBCErrors.invalidPortPrefix();
         }

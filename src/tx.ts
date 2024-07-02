@@ -75,14 +75,15 @@ export async function sendTxToChain(
       const deployer = accountRegistry.mustGet(
         tx.deployer ? tx.deployer : DEFAULT_DEPLOYER
       );
-      const deployedContractAddress = renderArgs([tx.address], "", env)[0];
+
+      const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 
       const ethersContract = new ethers.Contract(
         deployedContractAddress,
         deployedContractAbi,
         deployer
       );
-      const args = renderArgs(tx.args, "", env);
+      const args = renderArgs(tx.args, tx.init, env);
       logger.info(
         `calling ${tx.signature} on ${tx.name} @:${deployedContractAddress} with args: \n [${args}]`
       );
