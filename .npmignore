@@ -1,6 +1,9 @@
 # specific to npm package
 deployments
 
+# Auto generated code Go and TypeScript bindings
+bindings/
+
 node_modules
 .env
 coverage
@@ -24,6 +27,7 @@ src/contracts.template.ts
 .direnv/
 forge-cache/
 
+bun.lockb
 node_modules
 .env
 coverage

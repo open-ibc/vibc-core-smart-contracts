@@ -9,33 +9,31 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@commander-js/extra-typings": "^12.0.1",
-    "@typechain/ethers-v6": "^0.5.0",
-    "ethers": "^6.7.1",
+    "@commander-js/extra-typings": "^12.1.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "ethers": "^6.13.1",
     "nunjucks": "^3.2.4",
     "solhint": "^5.0.1",
     "typechain": "^8.3.2",
     "winston": "^3.13.0",
-    "yaml": "^2.4.1",
+    "yaml": "^2.4.5",
     "yargs": "^17.7.2",
-    "zod": "^3.23.4",
-    "zx": "^8.0.2"
+    "zod": "^3.23.8",
+    "zx": "^8.1.3"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.6",
-    "@types/winston": "^2.4.4",
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
-    "solidity-coverage": "^0.8.0",
-    "tsup": "^8.0.2"
+    "solidity-coverage": "^0.8.12",
+    "tsup": "^8.1.0"
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
     "test": "forge test",
-    "build": "npm run build-ts-contract-bindings && npm run build-go-contract-bindings && tsup",
-    "build-ts-contract-bindings": "npm run build-contracts && typechain --target ethers-v6 --out-dir src/evm/contracts/ './out/?(OptimisticProofVerifier|ProofVerifier|Ibc|IbcUtils|Channel|Dispatcher|Mars|Earth|UniversalChannelHandler|DummyProofVerifier|DummyLightClient|ERC1967Proxy|OptimisticLightClient).sol/*.json'",
-    "build-go-contract-bindings": "make abigen clean && (cd ./bindings && go mod tidy)",
-    "build-contracts": "forge build",
+    "build": "npm run bindings-gen-ts && make bindings-gen-go && tsup",
+    "bindings-gen-ts": "make build-contracts && rm -frd ./src/evm/contracts/* && typechain --target ethers-v6 --out-dir ./src/evm/contracts $(/usr/bin/find $(pwd)/out -type d | sed 's,^.*/out/,out/,' | awk -F'/' '{if ($NF ~ /\\.sol$/) print $0}' | awk '{split($1,p,\"[/]\"); if (p[2] !~ /([Rr]c|[Vv])[0-9]+|Init|Std|[0-9]$/ && gsub(/\\./,\"\",p[2])==1) print $0}' | grep \"out/[A-Z]\" | xargs -I {} /usr/bin/find {} -maxdepth 1 -name '*[^.abi].json')",
+    "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",
     "prepublish": "npm run build"

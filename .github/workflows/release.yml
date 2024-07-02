@@ -5,6 +5,10 @@ on:
     tags:
       - "v*.*.*"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   artifacts:
     runs-on: ubuntu-latest
@@ -35,7 +39,7 @@ jobs:
           cp -r out/Moon.sol/Moon.json artifacts/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compiled-contracts
           path: artifacts
@@ -44,12 +48,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: artifacts
     environment: release
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: "recursive"
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: compiled-contracts
           path: ./artifacts
@@ -69,6 +78,12 @@ jobs:
     needs: release
     environment: release
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: "recursive"
+
       - name: Get Latest Version
         id: version
         uses: pozetroninc/github-action-get-latest-release@master
@@ -80,20 +95,31 @@ jobs:
         with:
           go-version: "1.21.3"
 
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install ABIGen
+        run: |
+          go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22.3.0"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Update NPM Registry
-        run: |
-          npm ci
-          npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
 
+      # Ensure /v2 is updated as the major version changes
       - name: Update Go Registry
         run: |
-          ( cd ./bindings && \
-            GOPROXY=proxy.golang.org go list \
-            -m github.com/open-ibc/vibc-core-smart-contracts/bindings@${{ steps.version.outputs.release }} )
+          GOPROXY=proxy.golang.org go list \
+          -m github.com/open-ibc/vibc-core-smart-contracts/v2@${{ steps.version.outputs.release }}
+
+      - name: Update NPM Registry
+        run: |
+          bun install --frozen-lockfile
+          bun run build
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

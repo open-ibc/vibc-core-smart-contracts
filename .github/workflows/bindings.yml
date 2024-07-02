@@ -25,30 +25,22 @@ jobs:
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install ABIGen
         run: |
           go install github.com/ethereum/go-ethereum/cmd/abigen@v1.13.5
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v1
 
       - name: Generate Bindings
         run: |
           bun install --frozen-lockfile
           bun run build
 
-      - name: Check for Go Bindings Changes
+      - name: Check for Bindings Changes
         run: |
-          if [ $(git status --porcelain | sed 's/^...//' | grep bindings/ | wc -l) -ne 0 ]; then
-            echo "Changes in Go Bindings"
-            echo $(git status --porcelain | sed 's/^...//' | grep bindings/)
-            exit 1
-          fi
-
-      - name: Check for TypeScript Bindings Changes
-        run: |
-          if [ $(git status --porcelain | sed 's/^...//' | grep src/evm/contracts/ | wc -l) -ne 0 ]; then
-            echo "Changes in TypeScript Bindings"
-            echo $(git status --porcelain | sed 's/^...//' | grep src/evm/contracts/)
+          changes=$( git status --porcelain -- ./bindings )
+          if [ -n "$changes" ]; then
+            echo -e "Changes in Generated Bindings:\n$changes"
             exit 1
           fi
