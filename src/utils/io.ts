@@ -24,6 +24,7 @@ import {
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import { AccountRegistry } from "../evm/account";
+import { ethers } from "ethers";
 
 export interface StringToStringMap {
   [key: string]: string | null | undefined;
@@ -257,6 +258,20 @@ export async function readFromDeploymentFile(
   }
 }
 
+const compileInitArgs = (
+  init: { args: any[]; signature: string } | undefined,
+  env: StringToStringMap
+) => {
+  if (!init) {
+    return "";
+  }
+  const initArgs = init.args.map((arg: any) => {
+    return typeof arg === "string" ? renderString(arg, env) : arg;
+  });
+  const iFace = new ethers.Interface([`function ${init.signature}`]);
+  return iFace.encodeFunctionData(init.signature, initArgs);
+};
+
 /**
  *
  * @param args Render the args for the contract deployment through looking them up in environment
@@ -264,14 +279,20 @@ export async function readFromDeploymentFile(
  * @param env to look up the args in
  * @returns
  */
-export const renderArgs = (args: any[] | undefined, init: string, env: any) => {
+export const renderArgs = (
+  args: any[] | undefined,
+  init: { args: any[]; signature: string } | undefined,
+  env: any
+) => {
+  const initData = compileInitArgs(init, env);
+
   return args
     ? args.map((arg: any) => {
         if (typeof arg !== "string") return arg;
         if (arg === "$INITARGS") {
-          if (init === "")
+          if (initData === "")
             throw new Error(`Found $INITARGS but no args to replace it with.`);
-          return init;
+          return initData;
         }
         return renderString(arg, env);
       })

@@ -11,6 +11,12 @@ const TxItemSchema = z.object({
   address: z.string().nullish(),
   factoryName: z.optional(z.string()),
   args: z.optional(z.array(z.any())),
+  init: z.optional(
+    z.object({
+      signature: z.string().min(1),
+      args: z.array(z.string().min(1)),
+    })
+  ),
 });
 
 type TxItem = z.infer<typeof TxItemSchema>;

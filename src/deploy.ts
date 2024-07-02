@@ -48,18 +48,8 @@ const getDeployData = (
     );
   }
 
-  // var encodedInitData = "";
-  let initData = "";
-
-  if (init) {
-    const initArgs = init.args.map((arg: any) => {
-      return typeof arg === "string" ? renderString(arg, env) : arg;
-    });
-    const iFace = new ethers.Interface([`function ${init.signature}`]);
-    initData = iFace.encodeFunctionData(init.signature, initArgs);
-  }
   return {
-    args: renderArgs(deployArgs, initData, env),
+    args: renderArgs(deployArgs, init, env),
     libraries: libs,
     factory,
     contractFactoryConstructor,
