@@ -42,6 +42,11 @@
       address: '{{IbcUtils}}'
   deployer: 'KEY_POLYMER'
 
+- name: FeeVault
+  description: 'FeeVault'
+  factoryName: 'FeeVault'
+  deployer: 'KEY_POLYMER'
+
 - name: DispatcherProxy
   description: 'Dispatcher proxy contract'
   factoryName: 'ERC1967Proxy'
@@ -49,9 +54,10 @@
     - '{{Dispatcher}}'
     - '$INITARGS' 
   init:
-    signature: 'initialize(string)'
+    signature: 'initialize(string,address)'
     args:
       - 'polyibc.{{chain.chainName}}.'
+      - '{{FeeVault}}'
   deployer: 'KEY_POLYMER'
 
 - name: UC
