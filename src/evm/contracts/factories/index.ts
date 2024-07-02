@@ -2,37 +2,21 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as ibcDispatcherSol from "./IbcDispatcher.sol";
-export * as ibcErrorsSol from "./IbcErrors.sol";
-export * as ibcMiddlewareSol from "./IbcMiddleware.sol";
-export * as ibcReceiverSol from "./IbcReceiver.sol";
-export * as ibcReceiverUpgradeableSol from "./IbcReceiverUpgradeable.sol";
 export * as marsSol from "./Mars.sol";
-export { ContextUpgradeable__factory } from "./ContextUpgradeable__factory";
 export { Dispatcher__factory } from "./Dispatcher__factory";
 export { DummyLightClient__factory } from "./DummyLightClient__factory";
 export { DummyProofVerifier__factory } from "./DummyProofVerifier__factory";
 export { ERC1967Proxy__factory } from "./ERC1967Proxy__factory";
-export { ERC1967Upgrade__factory } from "./ERC1967Upgrade__factory";
 export { Earth__factory } from "./Earth__factory";
 export { FeeVault__factory } from "./FeeVault__factory";
-export { GasAudit__factory } from "./GasAudit__factory";
-export { GeneralMiddleware__factory } from "./GeneralMiddleware__factory";
-export { IBeacon__factory } from "./IBeacon__factory";
 export { IDispatcher__factory } from "./IDispatcher__factory";
-export { IERC1967__factory } from "./IERC1967__factory";
 export { IFeeVault__factory } from "./IFeeVault__factory";
 export { ILightClient__factory } from "./ILightClient__factory";
 export { IProofVerifier__factory } from "./IProofVerifier__factory";
-export { ISemver__factory } from "./ISemver__factory";
 export { IUniversalChannelHandler__factory } from "./IUniversalChannelHandler__factory";
 export { Ibc__factory } from "./Ibc__factory";
 export { IbcUtils__factory } from "./IbcUtils__factory";
-export { L1Block__factory } from "./L1Block__factory";
 export { Moon__factory } from "./Moon__factory";
 export { OptimisticLightClient__factory } from "./OptimisticLightClient__factory";
 export { OptimisticProofVerifier__factory } from "./OptimisticProofVerifier__factory";
-export { Ownable__factory } from "./Ownable__factory";
-export { OwnableUpgradeable__factory } from "./OwnableUpgradeable__factory";
-export { Proxy__factory } from "./Proxy__factory";
-export { UUPSUpgradeable__factory } from "./UUPSUpgradeable__factory";
 export { UniversalChannelHandler__factory } from "./UniversalChannelHandler__factory";

@@ -39,7 +39,7 @@ jobs:
 
       - name: Check for Bindings Changes
         run: |
-          changes=$( git status --porcelain -- ./bindings )
+          changes=$( git status --porcelain -- ./bindings ./src/evm/contracts )
           if [ -n "$changes" ]; then
             echo -e "Changes in Generated Bindings:\n$changes"
             exit 1

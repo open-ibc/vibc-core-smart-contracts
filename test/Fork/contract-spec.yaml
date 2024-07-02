@@ -2,25 +2,25 @@
 # {{name}} is replaced with one of the following, whichever matches first
 # - the deployed contract address whose name matches `name` (not factoryName)
 # - variables of the running chain, e.g. {{chain.chainName}}, {{chain.chainId}}
-# - deployment factory names from written deployment files 
+# - deployment factory names from written deployment files
 # NOTE: order of the contracts matters, as some contracts depend on others
 # contracts with no deps should be placed before those with deps
 
-## The following arguments can be specified in contracts spec: 
+## The following arguments can be specified in contracts spec:
 # name: name of key that will be stored in the contract registry
 # deployer: must be # name of key that will be stored in the contract registry a valid name in accountRegistry; default to 'default' if not specified
 # description: description to be stored in the contract registry
 # factoryName: the name of the typechain factory used to deploy the contract
 # deployer: deployer key, should correspond to either a private key or one that can be looked up in the evm.accounts.yaml
-# libraries: if a contract depends on libraries, the location of the library file & the deployed library address can be specified here, as an array with 2 elements 
+# libraries: if a contract depends on libraries, the location of the library file & the deployed library address can be specified here, as an array with 2 elements
 # deployArgs: The arguments that will be called in the contract constructor. Note: if $INITARGS is passed in as an argument, it will be abi.encode the arguments passed to the init paramater
 # init: any arguments that need to be abi encoded (e.g. for calling upgradeToAndCall for ERC1967Proxy). These will be rendered in the place of $INITARGS
 
 
 - name: LightClient
-  description: 'DummyLightClient' 
-  factoryName: 'DummyLightClient' 
-  deployer: 'KEY_POLYMER' 
+  description: 'DummyLightClient'
+  factoryName: 'DummyLightClient'
+  deployer: 'KEY_POLYMER'
 
 - name: Ibc
   description: 'IBC library'
@@ -35,23 +35,29 @@
 - name: Dispatcher
   description: 'IBC Core contract'
   factoryName: 'Dispatcher'
-  libraries: 
+  libraries:
     - name: 'contracts/libs/Ibc.sol:Ibc'
       address: '{{Ibc}}'
     - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
       address: '{{IbcUtils}}'
   deployer: 'KEY_POLYMER'
 
+- name: FeeVault
+  description: 'FeeVault'
+  factoryName: 'FeeVault'
+  deployer: 'KEY_POLYMER'
+
 - name: DispatcherProxy
   description: 'Dispatcher proxy contract'
   factoryName: 'ERC1967Proxy'
-  deployArgs: 
+  deployArgs:
     - '{{Dispatcher}}'
-    - '$INITARGS' 
+    - '$INITARGS'
   init:
-    signature: 'initialize(string)'
+    signature: 'initialize(string,address)'
     args:
       - 'polyibc.{{chain.chainName}}.'
+      - '{{FeeVault}}'
   deployer: 'KEY_POLYMER'
 
 - name: UC
@@ -63,7 +69,7 @@
       address: '{{IbcUtils}}'
 
 - name: UCProxy
-  description: 'Universal Chanel IBC-middleware proxy' 
+  description: 'Universal Chanel IBC-middleware proxy'
   factoryName: 'ERC1967Proxy'
   deployer: 'KEY_POLYMER'
   deployArgs:
