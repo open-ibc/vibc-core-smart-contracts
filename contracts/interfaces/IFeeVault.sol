@@ -30,7 +30,9 @@ struct SendpacketFeeDeposited {
 }
 
 interface IFeeVault {
-    event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices);
+    event SendPacketFeeDeposited(
+        bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices
+    );
     event OpenChannelFeeDeposited(
         address sourceAddress,
         string version,

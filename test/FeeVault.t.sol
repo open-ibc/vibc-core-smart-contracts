@@ -66,12 +66,16 @@ contract FeeVaultTest is ChannelOpenTestBaseSetup {
     function greetMarsWithFee() internal {
         vm.deal(address(mars), feePerGreet);
         vm.prank(address(mars));
-        vm.expectEmit(false, true, true, false, address(feeVault)); // Ignore the emitted seuqence since we don't know
-            // what it will be before we call sendpacket (vm.expect emit assumes the first event will always be
-            // chedcked, so to avoid checking second argument we pass false for the first argument)
+
+        // Expect the event, ignoring the sequence (second parameter)
+        vm.expectEmit(true, false, true, true, address(feeVault));
         emit SendPacketFeeDeposited(
-            channelId, 1, [uint256(600_000), uint256(700_000)], [uint256(60 gwei), uint256(70 gwei)]
+            channelId,
+            0, // Use 0 or any placeholder value for the ignored sequence
+            [uint256(600_000), uint256(700_000)],
+            [uint256(60 gwei), uint256(70 gwei)]
         );
+
         mars.greetWithFee{value: feePerGreet}(
             "hello", channelId, maxTimeout, [uint256(600_000), uint256(700_000)], [uint256(60 gwei), uint256(70 gwei)]
         );

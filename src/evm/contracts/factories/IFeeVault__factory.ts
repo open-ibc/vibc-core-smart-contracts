@@ -124,13 +124,13 @@ const _abi = [
       {
         name: "channelId",
         type: "bytes32",
-        indexed: false,
+        indexed: true,
         internalType: "bytes32",
       },
       {
         name: "sequence",
         type: "uint64",
-        indexed: false,
+        indexed: true,
         internalType: "uint64",
       },
       {
