@@ -31,7 +31,7 @@ var (
 
 // IFeeVaultMetaData contains all meta data concerning the IFeeVault contract.
 var IFeeVaultMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"depositOpenChannelFee\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"depositSendPacketFee\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"withdrawFeesToOwner\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OpenChannelFeeDeposited\",\"inputs\":[{\"name\":\"sourceAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"indexed\":false,\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"feeAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SendPacketFeeDeposited\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectFeeSent\",\"inputs\":[{\"name\":\"expected\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"sent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"NoFeeSent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SenderNotDispatcher\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"depositOpenChannelFee\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"depositSendPacketFee\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"withdrawFeesToOwner\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OpenChannelFeeDeposited\",\"inputs\":[{\"name\":\"sourceAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"indexed\":false,\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"feeAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SendPacketFeeDeposited\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectFeeSent\",\"inputs\":[{\"name\":\"expected\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"sent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"NoFeeSent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SenderNotDispatcher\",\"inputs\":[]}]",
 }
 
 // IFeeVaultABI is the input ABI used to generate the binding from.
@@ -460,10 +460,19 @@ type IFeeVaultSendPacketFeeDeposited struct {
 
 // FilterSendPacketFeeDeposited is a free log retrieval operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
-func (_IFeeVault *IFeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.FilterOpts) (*IFeeVaultSendPacketFeeDepositedIterator, error) {
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+func (_IFeeVault *IFeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.FilterOpts, channelId [][32]byte, sequence []uint64) (*IFeeVaultSendPacketFeeDepositedIterator, error) {
 
-	logs, sub, err := _IFeeVault.contract.FilterLogs(opts, "SendPacketFeeDeposited")
+	var channelIdRule []interface{}
+	for _, channelIdItem := range channelId {
+		channelIdRule = append(channelIdRule, channelIdItem)
+	}
+	var sequenceRule []interface{}
+	for _, sequenceItem := range sequence {
+		sequenceRule = append(sequenceRule, sequenceItem)
+	}
+
+	logs, sub, err := _IFeeVault.contract.FilterLogs(opts, "SendPacketFeeDeposited", channelIdRule, sequenceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -472,10 +481,19 @@ func (_IFeeVault *IFeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.Fil
 
 // WatchSendPacketFeeDeposited is a free log subscription operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
-func (_IFeeVault *IFeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.WatchOpts, sink chan<- *IFeeVaultSendPacketFeeDeposited) (event.Subscription, error) {
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+func (_IFeeVault *IFeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.WatchOpts, sink chan<- *IFeeVaultSendPacketFeeDeposited, channelId [][32]byte, sequence []uint64) (event.Subscription, error) {
 
-	logs, sub, err := _IFeeVault.contract.WatchLogs(opts, "SendPacketFeeDeposited")
+	var channelIdRule []interface{}
+	for _, channelIdItem := range channelId {
+		channelIdRule = append(channelIdRule, channelIdItem)
+	}
+	var sequenceRule []interface{}
+	for _, sequenceItem := range sequence {
+		sequenceRule = append(sequenceRule, sequenceItem)
+	}
+
+	logs, sub, err := _IFeeVault.contract.WatchLogs(opts, "SendPacketFeeDeposited", channelIdRule, sequenceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -509,7 +527,7 @@ func (_IFeeVault *IFeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.Watc
 
 // ParseSendPacketFeeDeposited is a log parse operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
 func (_IFeeVault *IFeeVaultFilterer) ParseSendPacketFeeDeposited(log types.Log) (*IFeeVaultSendPacketFeeDeposited, error) {
 	event := new(IFeeVaultSendPacketFeeDeposited)
 	if err := _IFeeVault.contract.UnpackLog(event, "SendPacketFeeDeposited", log); err != nil {

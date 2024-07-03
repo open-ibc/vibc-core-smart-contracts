@@ -31,7 +31,7 @@ var (
 
 // FeeVaultMetaData contains all meta data concerning the FeeVault contract.
 var FeeVaultMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"depositOpenChannelFee\",\"inputs\":[{\"name\":\"src\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"depositSendPacketFee\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFeesToOwner\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OpenChannelFeeDeposited\",\"inputs\":[{\"name\":\"sourceAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"indexed\":false,\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"feeAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SendPacketFeeDeposited\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectFeeSent\",\"inputs\":[{\"name\":\"expected\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"sent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"NoFeeSent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SenderNotDispatcher\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"depositOpenChannelFee\",\"inputs\":[{\"name\":\"src\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"depositSendPacketFee\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"withdrawFeesToOwner\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OpenChannelFeeDeposited\",\"inputs\":[{\"name\":\"sourceAddress\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"version\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"ordering\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumChannelOrder\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"indexed\":false,\"internalType\":\"string[]\"},{\"name\":\"counterpartyPortId\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"feeAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SendPacketFeeDeposited\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"indexed\":true,\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"indexed\":false,\"internalType\":\"uint256[2]\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"IncorrectFeeSent\",\"inputs\":[{\"name\":\"expected\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"sent\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"NoFeeSent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"SenderNotDispatcher\",\"inputs\":[]}]",
 }
 
 // FeeVaultABI is the input ABI used to generate the binding from.
@@ -686,10 +686,19 @@ type FeeVaultSendPacketFeeDeposited struct {
 
 // FilterSendPacketFeeDeposited is a free log retrieval operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
-func (_FeeVault *FeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.FilterOpts) (*FeeVaultSendPacketFeeDepositedIterator, error) {
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+func (_FeeVault *FeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.FilterOpts, channelId [][32]byte, sequence []uint64) (*FeeVaultSendPacketFeeDepositedIterator, error) {
 
-	logs, sub, err := _FeeVault.contract.FilterLogs(opts, "SendPacketFeeDeposited")
+	var channelIdRule []interface{}
+	for _, channelIdItem := range channelId {
+		channelIdRule = append(channelIdRule, channelIdItem)
+	}
+	var sequenceRule []interface{}
+	for _, sequenceItem := range sequence {
+		sequenceRule = append(sequenceRule, sequenceItem)
+	}
+
+	logs, sub, err := _FeeVault.contract.FilterLogs(opts, "SendPacketFeeDeposited", channelIdRule, sequenceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -698,10 +707,19 @@ func (_FeeVault *FeeVaultFilterer) FilterSendPacketFeeDeposited(opts *bind.Filte
 
 // WatchSendPacketFeeDeposited is a free log subscription operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
-func (_FeeVault *FeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.WatchOpts, sink chan<- *FeeVaultSendPacketFeeDeposited) (event.Subscription, error) {
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+func (_FeeVault *FeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.WatchOpts, sink chan<- *FeeVaultSendPacketFeeDeposited, channelId [][32]byte, sequence []uint64) (event.Subscription, error) {
 
-	logs, sub, err := _FeeVault.contract.WatchLogs(opts, "SendPacketFeeDeposited")
+	var channelIdRule []interface{}
+	for _, channelIdItem := range channelId {
+		channelIdRule = append(channelIdRule, channelIdItem)
+	}
+	var sequenceRule []interface{}
+	for _, sequenceItem := range sequence {
+		sequenceRule = append(sequenceRule, sequenceItem)
+	}
+
+	logs, sub, err := _FeeVault.contract.WatchLogs(opts, "SendPacketFeeDeposited", channelIdRule, sequenceRule)
 	if err != nil {
 		return nil, err
 	}
@@ -735,7 +753,7 @@ func (_FeeVault *FeeVaultFilterer) WatchSendPacketFeeDeposited(opts *bind.WatchO
 
 // ParseSendPacketFeeDeposited is a log parse operation binding the contract event 0x0733dc80f277e205edf5d913fa5d91fa0c4cc2635db600b365471c688356c034.
 //
-// Solidity: event SendPacketFeeDeposited(bytes32 channelId, uint64 sequence, uint256[2] gasLimits, uint256[2] gasPrices)
+// Solidity: event SendPacketFeeDeposited(bytes32 indexed channelId, uint64 indexed sequence, uint256[2] gasLimits, uint256[2] gasPrices)
 func (_FeeVault *FeeVaultFilterer) ParseSendPacketFeeDeposited(log types.Log) (*FeeVaultSendPacketFeeDeposited, error) {
 	event := new(FeeVaultSendPacketFeeDeposited)
 	if err := _FeeVault.contract.UnpackLog(event, "SendPacketFeeDeposited", log); err != nil {
