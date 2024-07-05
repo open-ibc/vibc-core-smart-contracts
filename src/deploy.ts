@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import {
+  DeployedContractObject,
   StringToStringMap,
   readDeploymentFilesIntoEnv,
   renderArgs,
@@ -161,13 +162,14 @@ export async function deployToChain(
         `[${chain.chainName}-${chain.deploymentEnvironment}]: deployed ${contract.name} to address: ${deployedAddr}`
       );
       if (writeContracts) {
-        const contractObject = {
+        const contractObject: DeployedContractObject = {
           factory: factoryName,
           address: deployedAddr,
           abi: constructorData.contractFactoryConstructor.abi,
           bytecode: constructorData.factory.bytecode,
           name: contract.name,
           args: constructorData.args,
+          libraries: constructorData.libraries,
         };
         writeDeployedContractToFile(chain, contractObject);
       }

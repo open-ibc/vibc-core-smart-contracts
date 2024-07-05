@@ -7,6 +7,7 @@ export const DEFAULT_DEPLOYER = "default";
 export const DEFAULT_RPC_URL = "http://127.0.0.1:8545";
 export const DEFAULT_CHAIN_ID = "31337";
 export const DEFAULT_CHAIN_NAME = "local";
+export const DEFAULT_VERIFIER = "blockscout";
 export const MODULE_ROOT_PATH =
   process.env.MODULE_ROOT_PATH ||
   "./node_modules/@open-ibc/vibc-core-smart-contracts/";

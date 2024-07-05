@@ -7,7 +7,7 @@ import { z } from "zod";
 import nunjucks from "nunjucks";
 import assert from "assert";
 import { ProcessPromise } from "zx";
-import { Chain, ChainConfigSchema } from "../evm/chain";
+import { Chain, ChainConfigSchema, ChainFolderSchema } from "../evm/chain";
 import {
   DEPLOYMENTS_PATH,
   ARTIFACTS_PATH,
@@ -30,6 +30,16 @@ export interface StringToStringMap {
   [key: string]: string | null | undefined;
 }
 
+export type ChainFolder = {
+  chainId: number;
+  deploymentEnvironment: "local" | "staging" | "production" | "mainnet";
+};
+
+export type LibraryMetadata = {
+  address: string;
+  path: string;
+};
+
 export type DeployedContractObject = {
   factory: string;
   address: string;
@@ -38,6 +48,7 @@ export type DeployedContractObject = {
   args: any[];
   metadata?: string;
   name: string;
+  libraries: LibraryMetadata[];
 };
 
 // readYamlFile reads a yaml file and returns the parsed object.
@@ -160,24 +171,30 @@ export function toEnvVarName(e: string) {
   return e.replaceAll("-", "_").toUpperCase();
 }
 
-/** Reads a deployment metadata rom a foundry build file. used to generate bytecode for deployment files*/
-async function readMetadata(factoryName: string) {
+/** Reads a foundry build file given */
+export async function readArtifactFile(artifactName: string) {
   const filePath = path.join(
     ARTIFACTS_PATH,
-    `${factoryName}.sol`,
-    `${factoryName}.json`
+    `${artifactName}.sol`,
+    `${artifactName}.json`
   );
 
   try {
-    const data = await fsAsync.readFile(filePath, "utf8");
-    return JSON.stringify(JSON.parse(data).metadata);
+    return await fsAsync.readFile(filePath, "utf8");
   } catch (e) {
     console.error(`error reading from file ${filePath}: \n`, e);
+    return "";
   }
 }
 
+/** Reads a deployment metadata rom a foundry build file. used to generate bytecode for deployment files*/
+export async function readMetadata(factoryName: string) {
+  const data = await readArtifactFile(factoryName);
+  return JSON.stringify(JSON.parse(data).metadata);
+}
+
 // Given a chain object, return the folder in which deployments for this chain will be
-export const getDeployFolderForChain = (chain: Chain) => {
+export const getDeployFolderForChain = (chain: ChainFolder) => {
   return path.join(
     DEPLOYMENTS_PATH,
     chain.chainId.toString(),
@@ -204,6 +221,7 @@ export async function writeDeployedContractToFile(
     ...deployedContract,
     metadata,
     version: PACKAGE_VERSION,
+    libraries: deployedContract.libraries,
   });
 
   fs.writeFile(fullPath, outData, (err) => {
@@ -242,7 +260,7 @@ export async function readDeploymentFilesIntoEnv(env: any, chain: Chain) {
 
 export async function readFromDeploymentFile(
   deploymentName: string,
-  chain: Chain
+  chain: ChainFolder
 ) {
   const fileFolder = getDeployFolderForChain(chain);
 
@@ -357,3 +375,46 @@ export async function parseArgsFromCLI() {
     anvilPort,
   };
 }
+
+export const parseVerifyArgsFromCLI = async () => {
+  // Load args from command line. CLI args take priority. Then env vars. Then default values if none are specified
+  const argv1 = await yargs(hideBin(process.argv)).argv;
+
+  // write a method that uses argv1 if specified, otherwsie use the imported files from utils/constants
+  const chainId = (argv1.CHAIN_ID as number) || CHAIN_ID;
+  const deploymentName = argv1.DEPLOYMENT_NAME as string;
+  const verifierUrl = argv1.VERIFIER_URL as string;
+  const rpcUrl = argv1.RPC_URL || RPC_URL;
+  const etherscanApiKey = argv1.ETHERSCAN_API_KEY as string;
+  const deploymentEnvironment =
+    (argv1.DEPLOYMENT_ENVIRONMENT as string) || DEPLOYMENT_ENVIRONMENT; // Needed to search for deployment
+
+  if (!verifierUrl) {
+    throw new Error(`Verifier URL not provided`);
+  }
+  if (!deploymentName) {
+    throw new Error(`Deployment name not provided`);
+  }
+  if (!rpcUrl) {
+    throw new Error(`RPC url needed`);
+  }
+
+  const chainFolderParse = ChainFolderSchema.safeParse({
+    chainId,
+    deploymentEnvironment,
+  });
+
+  if (!chainFolderParse.success) {
+    throw new Error(
+      `failed to parse chain config: ${chainFolderParse.error.errors}`
+    );
+  }
+
+  return {
+    deploymentName,
+    verifierUrl,
+    chainFolder: chainFolderParse.data,
+    rpcUrl,
+    etherscanApiKey,
+  };
+};

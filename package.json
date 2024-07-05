@@ -1,8 +1,9 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "main": "dist/index.js",
   "bin": {
+    "verify-vibc-core-smart-contracts": "./dist/scripts/verify-contract-script.js",
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
     "upgrade-vibc-core-smart-contracts": "./dist/scripts/upgrade-script.js",
     "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
@@ -23,6 +24,7 @@
     "zx": "^8.1.3"
   },
   "devDependencies": {
+    "@types/node": "^20.14.9",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
