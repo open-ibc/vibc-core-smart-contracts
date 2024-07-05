@@ -14,7 +14,17 @@ export const ChainConfigSchema = z.object({
     .default("local"),
 });
 
+// Reduced version of chain
+export const ChainFolderSchema = z.object({
+  chainId: z.number().int().min(1),
+  deploymentEnvironment: z
+    .enum(["local", "staging", "production", "mainnet"])
+    .optional()
+    .default("local"),
+});
+
 export const chainRegistrySchema = z.array(ChainConfigSchema).min(1);
+
 export type ChainRegistry = Registry<z.infer<typeof ChainConfigSchema>>;
 export type Chain = ChainRegistry["Element"] & object; // Chains must specify base data but are used as env properties so can specify any arbitrary data
 
