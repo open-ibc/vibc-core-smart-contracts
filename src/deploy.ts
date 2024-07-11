@@ -15,7 +15,7 @@ import {
 import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { Chain } from "./evm/chain";
-import * as contracts from "./evm/contracts/index";
+import * as vibcContractFactories from "./evm/contracts/index";
 
 /**
  * Return deployment libraries, factory, factory constructor,
@@ -26,10 +26,11 @@ const getDeployData = (
   deployArgs: any[] | undefined,
   env: StringToStringMap,
   libraries: any[] = [],
-  init: { args: any[]; signature: string } | undefined
+  init: { args: any[]; signature: string } | undefined,
+  contractFactories: Record<string, any>,
 ) => {
   // @ts-ignore
-  const contractFactoryConstructor = contracts[`${factoryName}__factory`];
+  const contractFactoryConstructor = contractFactories[`${factoryName}__factory`];
   assert(
     contractFactoryConstructor,
     `cannot find contract factory constructor for contract: ${factoryName}`
@@ -63,7 +64,8 @@ export async function deployToChain(
   logger: Logger,
   dryRun = false,
   forceDeployNewContracts = false, // True if you want to use existing deployments when possible
-  writeContracts: boolean = true // True if you want to save persisted artifact files.
+  writeContracts: boolean = true, // True if you want to save persisted artifact files.
+  extraContractFactories: Record<string, any> = {},
 ) {
   logger.info(
     `deploying ${deploySpec.size} contract(s) to chain ${chain.chainName}-${
@@ -93,6 +95,12 @@ export async function deployToChain(
     JSON.parse(JSON.stringify(deploySpec.serialize()))
   );
 
+  // merge extra contracts into the registry
+  let contractFactories = {
+    ...vibcContractFactories,
+    ...extraContractFactories,
+  } 
+
   const eachContract = async (
     contract: ReturnType<ContractRegistry["mustGet"]>
   ) => {
@@ -106,7 +114,8 @@ export async function deployToChain(
         contract.deployArgs,
         env,
         contract.libraries,
-        contract.init
+        contract.init,
+        contractFactories,
       );
 
       logger.info(
