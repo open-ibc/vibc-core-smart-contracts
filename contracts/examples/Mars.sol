@@ -41,6 +41,10 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
 
     constructor(IbcDispatcher _dispatcher) IbcReceiverBase(_dispatcher) {}
 
+    /**
+     * @notice trigger a channelInit in the dispatcher with no relayer fees.
+     * @notice If you want polymer to relay txs for you, use triggerChannelInitWithFee instead.
+     */
     function triggerChannelInit(
         string calldata version,
         ChannelOrder ordering,
@@ -51,6 +55,11 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
     }
 
+    /**
+     * @notice trigger a channelInit in the dispatcher with an additional call to deposit a fee into the FeeVault
+     * @notice This should not be used if you are relaying your own txs, and triggerChannelInit should instead be
+     * called.
+     */
     function triggerChannelInitWithFee(
         string calldata version,
         ChannelOrder ordering,
@@ -63,6 +72,12 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         _depositOpenChannelFee(_dispatcher, version, ordering, connectionHops, counterpartyPortId);
     }
 
+    /**
+     * @notice Callback for receiving a packet; triggered when a counterparty sends an an IBC packet
+     * @param packet The IBC packet received
+     * @return ackPacket The acknowledgement packet generated in response
+     * @dev Make sure to validate packet's source and destiation channels and ports.
+     */
     function onRecvPacket(IbcPacket memory packet)
         external
         virtual
@@ -75,14 +90,30 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
+    /**
+     * @notice Callback for acknowledging a packet; triggered on reciept of an IBC packet by the counterparty
+     * @dev Make sure to validate packet's source and destiation channels and ports.
+     */
     function onAcknowledgementPacket(IbcPacket calldata, AckPacket calldata ack) external virtual onlyIbcDispatcher {
         ackPackets.push(ack);
     }
 
+    /**
+     * @notice Callback for handling a packet timeout
+     * @notice Direct timeouts are currently unimplemented, so this callback is currently unused. Packets can still be
+     * indirectly timedout in the recieve callback.
+     * @param packet The IBC packet that has timed out
+     * @dev Make sure to validate packet's source and destiation channels and ports.
+     */
     function onTimeoutPacket(IbcPacket calldata packet) external virtual onlyIbcDispatcher {
         timeoutPackets.push(packet);
     }
 
+    /**
+     * @notice Handles channel close callback on the dest chain
+     * @param channelId The unique identifier of the channel
+     * @dev Make sure to validate channelId and counterpartyVersion
+     */
     function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {
         // logic to determine if the channel should be closed
         bool channelFound = false;
@@ -97,8 +128,7 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
     }
 
     /**
-     * This func triggers channel closure from the dApp.
-     * Func args can be arbitary, as long as dispatcher.channelCloseInit is invoked propperly.
+     * Trigger a channel close handhake
      */
     function triggerChannelClose(bytes32 channelId) external onlyOwner {
         dispatcher.channelCloseInit(channelId);
@@ -125,18 +155,33 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
      * @param message The greeting message to be sent.
      * @param channelId The ID of the channel to send the packet to.
      * @param timeoutTimestamp The timestamp at which the packet will expire if not received.
+     * @notice If you are relaying your own packets, you should not call this method, and instead call greet.
+     * @param gasLimits An array containing two gas limit values:
+     *                  - gasLimits[0] for `recvPacket` fees
+     *                  - gasLimits[1] for `ackPacket` fees.
+     * @param gasPrices An array containing two gas price values:
+     *                  - gasPrices[0] for `recvPacket` fees, for the dest chain
+     *                  - gasPrices[1] for `ackPacket` fees, for the src chain
+     * @notice The total fees sent in the msg.value should be equal to the total gasLimits[0] * gasPrices[0] +
+     * @notice Use the Polymer fee estimation api to get the required fees to ensure that enough fees are sent.
+     * gasLimits[1] * gasPrices[1]. The transaction will revert if a higher or lower value is sent
      */
     function greetWithFee(
         string calldata message,
         bytes32 channelId,
         uint64 timeoutTimestamp,
-        uint256[2] calldata gasLimits,
-        uint256[2] calldata gasPrices
+        uint256[2] memory gasLimits,
+        uint256[2] memory gasPrices
     ) external payable returns (uint64 sequence) {
         sequence = dispatcher.sendPacket(channelId, bytes(message), timeoutTimestamp);
         _depositSendPacketFee(dispatcher, channelId, sequence, gasLimits, gasPrices);
     }
 
+    /**
+     * @notice Handles the channel close init event
+     * @dev Make sure to validate channelId and counterpartyVersion
+     * @param version The channel version
+     */
     function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
         external
         view
@@ -147,6 +192,14 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         return _openChannel(version);
     }
 
+    /**
+     * @notice Handles the channel open try event (step 2 of the open channel handshake)
+     * @dev Make sure to validate that the counterparty version is indeed one supported by the dapp; this callback
+     * should
+     * revert if not.
+     * @param counterpartyVersion The version string provided by the counterparty
+     * @return selectedVersion The selected version string
+     */
     // solhint-disable-next-line ordering
     function onChanOpenTry(
         ChannelOrder,
@@ -159,6 +212,12 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         return _connectChannel(channelId, counterpartyVersion);
     }
 
+    /**
+     * @notice Handles the channel open acknowledgment event (step 3 of the open channel handshake)
+     * @dev Make sure to validate channelId and counterpartyVersion
+     * @param channelId The unique identifier of the channel
+     * @param counterpartyVersion The version string provided by the counterparty
+     */
     function onChanOpenAck(bytes32 channelId, bytes32, string calldata counterpartyVersion)
         external
         virtual
@@ -167,6 +226,11 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         _connectChannel(channelId, counterpartyVersion);
     }
 
+    /**
+     * @notice Handles the channel open confirmation event (step 4 of the open channel handshake)
+     * @dev Make sure to validate channelId and counterpartyVersion
+     * @param channelId The unique identifier of the channel
+     */
     function onChanOpenConfirm(bytes32 channelId) external onlyIbcDispatcher {}
 
     function _connectChannel(bytes32 channelId, string calldata counterpartyVersion)

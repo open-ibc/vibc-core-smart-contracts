@@ -58,11 +58,31 @@ contract Earth is IbcUniversalPacketReceiverBase {
      * @param timeoutTimestamp The timeout timestamp for the packet.
      */
     function greet(address destPortAddr, bytes32 channelId, bytes calldata message, uint64 timeoutTimestamp) external {
-        IbcUniversalPacketSender(mw).sendUniversalPacket(
+        IbcUniversalPacketSender(uch).sendUniversalPacket(
             channelId, IbcUtils.toBytes32(destPortAddr), message, timeoutTimestamp
         );
     }
 
+    /**
+     * @notice Sends a universal packet with fee.
+     * @param destPortAddr The destination port address.
+     * @param channelId The channel ID.
+     * @param message The message to send.
+     * @param timeoutTimestamp The timeout timestamp.
+     * @param gasLimits The gas limits for the packet and the ack.
+     * @param gasPrices The gas prices for the packet and the ack.
+     * @return sequence The sequence number of the packet.
+     * @param gasLimits An array containing two gas limit values:
+     *                  - gasLimits[0] for `recvPacket` fees
+     *                  - gasLimits[1] for `ackPacket` fees.
+     * @param gasPrices An array containing two gas price values:
+     *                  - gasPrices[0] for `recvPacket` fees, for the dest chain
+     *                  - gasPrices[1] for `ackPacket` fees, for the src chain
+     * @notice If you are relaying your own packets, you should not call this method, and instead call greet.
+     * @notice The total fees sent in the msg.value should be equal to the total gasLimits[0] * gasPrices[0] +
+     * @notice Use the Polymer fee estimation api to get the required fees to ensure that enough fees are sent.
+     * gasLimits[1] * gasPrices[1]. The transaction will revert if a higher or lower value is sent
+     */
     function greetWithFee(
         address destPortAddr,
         bytes32 channelId,
@@ -71,14 +91,22 @@ contract Earth is IbcUniversalPacketReceiverBase {
         uint256[2] memory gasLimits,
         uint256[2] memory gasPrices
     ) external payable returns (uint64 sequence) {
-        return IUniversalChannelHandler(mw).sendUniversalPacketWithFee{value: msg.value}(
+        return IUniversalChannelHandler(uch).sendUniversalPacketWithFee{value: msg.value}(
             channelId, IbcUtils.toBytes32(destPortAddr), message, timeoutTimestamp, gasLimits, gasPrices
         );
     }
 
+    /**
+     * @notice Handles the recv callback of a universal packet.
+     * @param channelId The channel ID.
+     * @param packet The universal packet.
+     * @return ackPacket The acknowledgement packet.
+     * @dev It's recommended to always validate the authorized channel of any packet or channel using the
+     * onlyAuthorizedChannel modifier.
+     */
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
         external
-        onlyIbcMw
+        onlyUCH
         onlyAuthorizedChannel(channelId)
         returns (AckPacket memory ackPacket)
     {
@@ -86,9 +114,17 @@ contract Earth is IbcUniversalPacketReceiverBase {
         return this.generateAckPacket(channelId, IbcUtils.toAddress(packet.srcPortAddr), packet.appData);
     }
 
+    /**
+     * @notice Handles the acknowledgement of a universal packet.
+     * @param channelId The channel ID.
+     * @param packet The universal packet.
+     * @param ack The acknowledgement packet.
+     * @dev It's recommended to always validate the authorized channel of any packet or channel using the
+     * onlyAuthorizedChannel modifier.
+     */
     function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
         external
-        onlyIbcMw
+        onlyUCH
         onlyAuthorizedChannel(channelId)
     {
         // verify packet's destPortAddr is the ack's first encoded address. See generateAckPacket())
@@ -98,16 +134,25 @@ contract Earth is IbcUniversalPacketReceiverBase {
         ackPackets.push(UcAckWithChannel(channelId, packet, ack));
     }
 
+    /**
+     * @notice Handles the timeout of a universal packet. Timeouts are currently unimplemented, so this handler is
+     * unused.
+     * @param channelId The channel ID.
+     * @param packet The universal packet.
+     * @dev It's recommended to always validate the authorized channel of any packet or channel using the
+     * onlyAuthorizedChannel modifier.
+     */
     function onTimeoutUniversalPacket(bytes32 channelId, UniversalPacket calldata packet)
         external
-        onlyIbcMw
+        onlyUCH
         onlyAuthorizedChannel(channelId)
     {
         timeoutPackets.push(UcPacketWithChannel(channelId, packet));
     }
 
     /**
-     * @notice Authorize a channel that can receive/ack packets to this contract.
+     * @notice Authorize a channel that can receive/ack packets to this contract. If channels are not validated, this
+     * could allow any arbitrary dapps to trigger callbacks on this dapp.
      * @param channelId The channel id to authorize; should be packet.dest.channelId for recv packets &
      * packet.src.channelId for ack packets.
      */

@@ -153,14 +153,12 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
         // change Earth's default middleware to mw1, which sits on top of UniversalChannel MW
         vm.startPrank(address(eth1));
-        v1.earth.setDefaultMw(address(v1.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v1.mw1);
         v1.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
-        v2.earth.setDefaultMw(address(v2.mw1));
         // register mw1 as the only middleware in the stack
         mwAddrs[0] = address(v2.mw1);
         v2.ucHandlerProxy.registerMwStack(mwBitmap, mwAddrs);
@@ -176,7 +174,6 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
 
         // change Earth's default middleware to mw1, which calls mw2, then UniversalChannel MW
         vm.startPrank(address(eth1));
-        v1.earth.setDefaultMw(address(v1.mw1));
         v1.mw1.setDefaultMw(address(v1.mw2));
         // register middleware stack
         mwAddrs[0] = address(v1.mw2);
@@ -186,7 +183,6 @@ contract UniversalChannelPacketTest is Base, IbcMwEventsEmitter {
         vm.stopPrank();
 
         vm.startPrank(address(eth2));
-        v2.earth.setDefaultMw(address(v2.mw1));
         v2.mw1.setDefaultMw(address(v2.mw2));
         // register middleware stack
         mwAddrs[0] = address(v2.mw2);

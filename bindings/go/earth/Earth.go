@@ -45,7 +45,7 @@ type UniversalPacket struct {
 
 // EarthMetaData contains all meta data concerning the Earth contract.
 var EarthMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_middleware\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"receive\",\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"ackPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"ack\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"authorizeChannel\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"authorizeMiddleware\",\"inputs\":[{\"name\":\"middleware\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"authorizedChannelIds\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"authorizedMws\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"generateAckPacket\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"srcPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"ackPacket\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"greet\",\"inputs\":[{\"name\":\"destPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"greetWithFee\",\"inputs\":[{\"name\":\"destPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"mw\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onRecvUniversalPacket\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[{\"name\":\"ackPacket\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onTimeoutUniversalPacket\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onUniversalAcknowledgement\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"ack\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recvedPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setDefaultMw\",\"inputs\":[{\"name\":\"_middleware\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"timeoutPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"UnauthorizedIbcMiddleware\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ackAddressMismatch\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ackDataTooShort\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidChannelId\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"unauthorizedChannel\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_middleware\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"receive\",\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"ackPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"ack\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"authorizeChannel\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"authorizedChannelIds\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"generateAckPacket\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"srcPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"ackPacket\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"greet\",\"inputs\":[{\"name\":\"destPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"greetWithFee\",\"inputs\":[{\"name\":\"destPortAddr\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"gasLimits\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"},{\"name\":\"gasPrices\",\"type\":\"uint256[2]\",\"internalType\":\"uint256[2]\"}],\"outputs\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"onRecvUniversalPacket\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[{\"name\":\"ackPacket\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onTimeoutUniversalPacket\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onUniversalAcknowledgement\",\"inputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"ack\",\"type\":\"tuple\",\"internalType\":\"structAckPacket\",\"components\":[{\"name\":\"success\",\"type\":\"bool\",\"internalType\":\"bool\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"recvedPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"timeoutPackets\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"channelId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structUniversalPacket\",\"components\":[{\"name\":\"srcPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"mwBitmap\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destPortAddr\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"appData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"uch\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateUch\",\"inputs\":[{\"name\":\"_newUch\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"CallerNotUCH\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidUCHAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ackAddressMismatch\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ackDataTooShort\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidChannelId\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"unauthorizedChannel\",\"inputs\":[]}]",
 }
 
 // EarthABI is the input ABI used to generate the binding from.
@@ -275,37 +275,6 @@ func (_Earth *EarthCallerSession) AuthorizedChannelIds(arg0 [32]byte) (bool, err
 	return _Earth.Contract.AuthorizedChannelIds(&_Earth.CallOpts, arg0)
 }
 
-// AuthorizedMws is a free data retrieval call binding the contract method 0x3a7fbcbd.
-//
-// Solidity: function authorizedMws(address ) view returns(bool)
-func (_Earth *EarthCaller) AuthorizedMws(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
-	var out []interface{}
-	err := _Earth.contract.Call(opts, &out, "authorizedMws", arg0)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
-
-}
-
-// AuthorizedMws is a free data retrieval call binding the contract method 0x3a7fbcbd.
-//
-// Solidity: function authorizedMws(address ) view returns(bool)
-func (_Earth *EarthSession) AuthorizedMws(arg0 common.Address) (bool, error) {
-	return _Earth.Contract.AuthorizedMws(&_Earth.CallOpts, arg0)
-}
-
-// AuthorizedMws is a free data retrieval call binding the contract method 0x3a7fbcbd.
-//
-// Solidity: function authorizedMws(address ) view returns(bool)
-func (_Earth *EarthCallerSession) AuthorizedMws(arg0 common.Address) (bool, error) {
-	return _Earth.Contract.AuthorizedMws(&_Earth.CallOpts, arg0)
-}
-
 // GenerateAckPacket is a free data retrieval call binding the contract method 0x866f3f97.
 //
 // Solidity: function generateAckPacket(bytes32 , address srcPortAddr, bytes appData) view returns((bool,bytes) ackPacket)
@@ -335,37 +304,6 @@ func (_Earth *EarthSession) GenerateAckPacket(arg0 [32]byte, srcPortAddr common.
 // Solidity: function generateAckPacket(bytes32 , address srcPortAddr, bytes appData) view returns((bool,bytes) ackPacket)
 func (_Earth *EarthCallerSession) GenerateAckPacket(arg0 [32]byte, srcPortAddr common.Address, appData []byte) (AckPacket, error) {
 	return _Earth.Contract.GenerateAckPacket(&_Earth.CallOpts, arg0, srcPortAddr, appData)
-}
-
-// Mw is a free data retrieval call binding the contract method 0xa742d78c.
-//
-// Solidity: function mw() view returns(address)
-func (_Earth *EarthCaller) Mw(opts *bind.CallOpts) (common.Address, error) {
-	var out []interface{}
-	err := _Earth.contract.Call(opts, &out, "mw")
-
-	if err != nil {
-		return *new(common.Address), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-
-	return out0, err
-
-}
-
-// Mw is a free data retrieval call binding the contract method 0xa742d78c.
-//
-// Solidity: function mw() view returns(address)
-func (_Earth *EarthSession) Mw() (common.Address, error) {
-	return _Earth.Contract.Mw(&_Earth.CallOpts)
-}
-
-// Mw is a free data retrieval call binding the contract method 0xa742d78c.
-//
-// Solidity: function mw() view returns(address)
-func (_Earth *EarthCallerSession) Mw() (common.Address, error) {
-	return _Earth.Contract.Mw(&_Earth.CallOpts)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -489,6 +427,37 @@ func (_Earth *EarthCallerSession) TimeoutPackets(arg0 *big.Int) (struct {
 	return _Earth.Contract.TimeoutPackets(&_Earth.CallOpts, arg0)
 }
 
+// Uch is a free data retrieval call binding the contract method 0x2cc422d9.
+//
+// Solidity: function uch() view returns(address)
+func (_Earth *EarthCaller) Uch(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Earth.contract.Call(opts, &out, "uch")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Uch is a free data retrieval call binding the contract method 0x2cc422d9.
+//
+// Solidity: function uch() view returns(address)
+func (_Earth *EarthSession) Uch() (common.Address, error) {
+	return _Earth.Contract.Uch(&_Earth.CallOpts)
+}
+
+// Uch is a free data retrieval call binding the contract method 0x2cc422d9.
+//
+// Solidity: function uch() view returns(address)
+func (_Earth *EarthCallerSession) Uch() (common.Address, error) {
+	return _Earth.Contract.Uch(&_Earth.CallOpts)
+}
+
 // AuthorizeChannel is a paid mutator transaction binding the contract method 0x92dfa392.
 //
 // Solidity: function authorizeChannel(bytes32 channelId) returns()
@@ -508,27 +477,6 @@ func (_Earth *EarthSession) AuthorizeChannel(channelId [32]byte) (*types.Transac
 // Solidity: function authorizeChannel(bytes32 channelId) returns()
 func (_Earth *EarthTransactorSession) AuthorizeChannel(channelId [32]byte) (*types.Transaction, error) {
 	return _Earth.Contract.AuthorizeChannel(&_Earth.TransactOpts, channelId)
-}
-
-// AuthorizeMiddleware is a paid mutator transaction binding the contract method 0x3b90b042.
-//
-// Solidity: function authorizeMiddleware(address middleware) returns()
-func (_Earth *EarthTransactor) AuthorizeMiddleware(opts *bind.TransactOpts, middleware common.Address) (*types.Transaction, error) {
-	return _Earth.contract.Transact(opts, "authorizeMiddleware", middleware)
-}
-
-// AuthorizeMiddleware is a paid mutator transaction binding the contract method 0x3b90b042.
-//
-// Solidity: function authorizeMiddleware(address middleware) returns()
-func (_Earth *EarthSession) AuthorizeMiddleware(middleware common.Address) (*types.Transaction, error) {
-	return _Earth.Contract.AuthorizeMiddleware(&_Earth.TransactOpts, middleware)
-}
-
-// AuthorizeMiddleware is a paid mutator transaction binding the contract method 0x3b90b042.
-//
-// Solidity: function authorizeMiddleware(address middleware) returns()
-func (_Earth *EarthTransactorSession) AuthorizeMiddleware(middleware common.Address) (*types.Transaction, error) {
-	return _Earth.Contract.AuthorizeMiddleware(&_Earth.TransactOpts, middleware)
 }
 
 // Greet is a paid mutator transaction binding the contract method 0xd24ba024.
@@ -657,27 +605,6 @@ func (_Earth *EarthTransactorSession) RenounceOwnership() (*types.Transaction, e
 	return _Earth.Contract.RenounceOwnership(&_Earth.TransactOpts)
 }
 
-// SetDefaultMw is a paid mutator transaction binding the contract method 0x00e82cef.
-//
-// Solidity: function setDefaultMw(address _middleware) returns()
-func (_Earth *EarthTransactor) SetDefaultMw(opts *bind.TransactOpts, _middleware common.Address) (*types.Transaction, error) {
-	return _Earth.contract.Transact(opts, "setDefaultMw", _middleware)
-}
-
-// SetDefaultMw is a paid mutator transaction binding the contract method 0x00e82cef.
-//
-// Solidity: function setDefaultMw(address _middleware) returns()
-func (_Earth *EarthSession) SetDefaultMw(_middleware common.Address) (*types.Transaction, error) {
-	return _Earth.Contract.SetDefaultMw(&_Earth.TransactOpts, _middleware)
-}
-
-// SetDefaultMw is a paid mutator transaction binding the contract method 0x00e82cef.
-//
-// Solidity: function setDefaultMw(address _middleware) returns()
-func (_Earth *EarthTransactorSession) SetDefaultMw(_middleware common.Address) (*types.Transaction, error) {
-	return _Earth.Contract.SetDefaultMw(&_Earth.TransactOpts, _middleware)
-}
-
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
 //
 // Solidity: function transferOwnership(address newOwner) returns()
@@ -697,6 +624,27 @@ func (_Earth *EarthSession) TransferOwnership(newOwner common.Address) (*types.T
 // Solidity: function transferOwnership(address newOwner) returns()
 func (_Earth *EarthTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
 	return _Earth.Contract.TransferOwnership(&_Earth.TransactOpts, newOwner)
+}
+
+// UpdateUch is a paid mutator transaction binding the contract method 0x1b2f37d0.
+//
+// Solidity: function updateUch(address _newUch) returns()
+func (_Earth *EarthTransactor) UpdateUch(opts *bind.TransactOpts, _newUch common.Address) (*types.Transaction, error) {
+	return _Earth.contract.Transact(opts, "updateUch", _newUch)
+}
+
+// UpdateUch is a paid mutator transaction binding the contract method 0x1b2f37d0.
+//
+// Solidity: function updateUch(address _newUch) returns()
+func (_Earth *EarthSession) UpdateUch(_newUch common.Address) (*types.Transaction, error) {
+	return _Earth.Contract.UpdateUch(&_Earth.TransactOpts, _newUch)
+}
+
+// UpdateUch is a paid mutator transaction binding the contract method 0x1b2f37d0.
+//
+// Solidity: function updateUch(address _newUch) returns()
+func (_Earth *EarthTransactorSession) UpdateUch(_newUch common.Address) (*types.Transaction, error) {
+	return _Earth.Contract.UpdateUch(&_Earth.TransactOpts, _newUch)
 }
 
 // Receive is a paid mutator transaction binding the contract receive function.

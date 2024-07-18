@@ -48,7 +48,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     string public portPrefix;
     uint32 public portPrefixLen;
 
-    mapping(address => mapping(bytes32 => Channel)) private _portChannelMap;
+    mapping(address => mapping(bytes32 => Channel)) private _portChannelMap; // Mapping used to check if a channel is
+        // owned by a port
     mapping(address => mapping(bytes32 => uint64)) private _nextSequenceSend;
     // keep track of received packets' sequences to ensure channel ordering is enforced for ordered channels
     mapping(address => mapping(bytes32 => uint64)) private _nextSequenceRecv;
@@ -158,9 +159,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     /**
      * @notice Initializes the channel opening process with the specified parameters. This is the first step in the  channel
      * handshake, initiated directly by the dapp which wishes to establish a channel with the receiver.
-     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED). Note: ORDERED channels are not currently
+     * supported
      * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
-     * used
+     * used, and is not being verified in light client proofs.
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on
      * @param counterpartyPortId The port ID of the counterparty.
@@ -204,8 +206,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * succeeds, the dApp should return the selected version and the emitted even will be relayed to the  IBC/VIBC hub
      * chain.
      * @param local The counterparty information for the receiver.
-     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
-     * @param feeEnabled Whether fees are enabled for the channel. Note: This value isn't currently used
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED). Note: ORDERED channels are not currently
+     * supported
+     * @param feeEnabled Whether fees are enabled for the channel. Note: This value isn't currently used, and is not
+     * being verified in light client proofs
      * @param connectionHops The list of connection hops associated with the channel; with the first channel in this
      * array always starting from the chain this contract is deployed on
      * @param counterparty The counterparty information of the sender
@@ -278,9 +282,10 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param local The counterparty information for the local channel.
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on.
-     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED). Note: ORDERED channels are not currently
+     * supported
      * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
-     * used
+     * used and is not being verified in light client proofs.
      * @param counterparty The counterparty information for the channel.
      * @param proof The proof that the counterparty is in the ACK_PENDING state (i.e. that it responded with a
      * successful channelOpenTry )
@@ -338,9 +343,12 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * The receiver should implement the onChannelConnect method to handle the last channel handshake method:
      * ChannelOpenConfirm
      * @param local The counterparty information for the local channel.
-     * @param ordering The ordering of the channel (ORDERED or UNORDERED).
+     * @param ordering The ordering of the channel (ORDERED or UNORDERED). Note: ORDERED channels are not currently
+     * supported
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on.
+     * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
+     * used and is not being verified in light client proofs.
      * @param counterparty The counterparty information for the channel.
      * @param proof The proof of channel opening confirm.
      * @dev This function initiates the channel opening confirm process by calling the onChanOpenConfirm function of the
@@ -396,6 +404,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     function channelCloseInit(bytes32 channelId) external nonReentrant {
         Channel memory channel = _portChannelMap[msg.sender][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
+            // _portChannelMap is used to check ownership of a channel by a port
             revert IBCErrors.channelNotOwnedBySender();
         }
         (bool success, bytes memory data) = _callIfContract(
@@ -439,6 +448,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         // ensure port owns channel
         Channel memory channel = _portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
+            // _portChannelMap is used to check ownership of a channel by a port
             revert IBCErrors.channelNotOwnedByPortAddress();
         }
 
@@ -494,6 +504,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     {
         // ensure port owns channel
         if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
+            // _portChannelMap is used to check ownership of a channel by a port
             revert IBCErrors.channelNotOwnedBySender();
         }
         if (timeoutTimestamp <= block.timestamp) {
@@ -684,6 +695,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * default values per EVM.
      */
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel) {
+        // _portChannelMap is used to check ownership of a channel by a port
         channel = _portChannelMap[portAddress][channelId];
     }
 
@@ -720,9 +732,9 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
      * @param local The details of the local counterparty.
      * @param connectionHops The connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on.
-     * @param ordering The ordering of the channel.
+     * @param ordering The ordering of the channel. Note: ORDERED channels are not currently supported
      * @param feeEnabled A boolean indicating whether fees are enabled for the channel. Note: This value isn't currently
-     * used
+     * used and is not being verified in light client proofs.
      * @param counterparty The details of the counterparty.
      */
     function _connectChannel(
@@ -735,7 +747,7 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
     ) internal {
         // We don't need to check that a channel isn't already present between a portAddress and a chanenlId since
         // polymer chain verification should prevent double registration of the same channel (with the execption of the
-        // feeEnabled state, thoguh this isn't currently used anywhere so change a channel's feeEnabled state shouldn't
+        // feeEnabled state, though this isn't currently used anywhere so change a channel's feeEnabled state shouldn't
         // have any outcome)
         _portChannelMap[address(portAddress)][local.channelId] = Channel(
             local.version,

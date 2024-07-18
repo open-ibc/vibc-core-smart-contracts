@@ -71,8 +71,8 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         bytes32 destPortAddr,
         bytes calldata appData,
         uint64 timeoutTimestamp,
-        uint256[2] calldata gasLimits,
-        uint256[2] calldata gasPrices
+        uint256[2] memory gasLimits,
+        uint256[2] memory gasPrices
     ) external payable override returns (uint64 sequence) {}
 
     function sendMWPacket(
