@@ -54,22 +54,20 @@ export interface EarthInterface extends Interface {
     nameOrSignature:
       | "ackPackets"
       | "authorizeChannel"
-      | "authorizeMiddleware"
       | "authorizedChannelIds"
-      | "authorizedMws"
       | "generateAckPacket"
       | "greet"
       | "greetWithFee"
-      | "mw"
       | "onRecvUniversalPacket"
       | "onTimeoutUniversalPacket"
       | "onUniversalAcknowledgement"
       | "owner"
       | "recvedPackets"
       | "renounceOwnership"
-      | "setDefaultMw"
       | "timeoutPackets"
       | "transferOwnership"
+      | "uch"
+      | "updateUch"
   ): FunctionFragment;
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
@@ -83,16 +81,8 @@ export interface EarthInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "authorizeMiddleware",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "authorizedChannelIds",
     values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "authorizedMws",
-    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "generateAckPacket",
@@ -113,7 +103,6 @@ export interface EarthInterface extends Interface {
       [BigNumberish, BigNumberish]
     ]
   ): string;
-  encodeFunctionData(functionFragment: "mw", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "onRecvUniversalPacket",
     values: [BytesLike, UniversalPacketStruct]
@@ -136,15 +125,16 @@ export interface EarthInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "setDefaultMw",
-    values: [AddressLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "timeoutPackets",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(functionFragment: "uch", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "updateUch",
     values: [AddressLike]
   ): string;
 
@@ -154,15 +144,7 @@ export interface EarthInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "authorizeMiddleware",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "authorizedChannelIds",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "authorizedMws",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -174,7 +156,6 @@ export interface EarthInterface extends Interface {
     functionFragment: "greetWithFee",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "mw", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "onRecvUniversalPacket",
     data: BytesLike
@@ -197,10 +178,6 @@ export interface EarthInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "setDefaultMw",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "timeoutPackets",
     data: BytesLike
   ): Result;
@@ -208,6 +185,8 @@ export interface EarthInterface extends Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "uch", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "updateUch", data: BytesLike): Result;
 }
 
 export namespace OwnershipTransferredEvent {
@@ -284,19 +263,11 @@ export interface Earth extends BaseContract {
     "nonpayable"
   >;
 
-  authorizeMiddleware: TypedContractMethod<
-    [middleware: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
   authorizedChannelIds: TypedContractMethod<
     [arg0: BytesLike],
     [boolean],
     "view"
   >;
-
-  authorizedMws: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
   generateAckPacket: TypedContractMethod<
     [arg0: BytesLike, srcPortAddr: AddressLike, appData: BytesLike],
@@ -327,8 +298,6 @@ export interface Earth extends BaseContract {
     [bigint],
     "payable"
   >;
-
-  mw: TypedContractMethod<[], [string], "view">;
 
   onRecvUniversalPacket: TypedContractMethod<
     [channelId: BytesLike, packet: UniversalPacketStruct],
@@ -363,12 +332,6 @@ export interface Earth extends BaseContract {
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
-  setDefaultMw: TypedContractMethod<
-    [_middleware: AddressLike],
-    [void],
-    "nonpayable"
-  >;
-
   timeoutPackets: TypedContractMethod<
     [arg0: BigNumberish],
     [
@@ -385,6 +348,10 @@ export interface Earth extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  uch: TypedContractMethod<[], [string], "view">;
+
+  updateUch: TypedContractMethod<[_newUch: AddressLike], [void], "nonpayable">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -407,14 +374,8 @@ export interface Earth extends BaseContract {
     nameOrSignature: "authorizeChannel"
   ): TypedContractMethod<[channelId: BytesLike], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "authorizeMiddleware"
-  ): TypedContractMethod<[middleware: AddressLike], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "authorizedChannelIds"
   ): TypedContractMethod<[arg0: BytesLike], [boolean], "view">;
-  getFunction(
-    nameOrSignature: "authorizedMws"
-  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "generateAckPacket"
   ): TypedContractMethod<
@@ -448,7 +409,6 @@ export interface Earth extends BaseContract {
     [bigint],
     "payable"
   >;
-  getFunction(nameOrSignature: "mw"): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "onRecvUniversalPacket"
   ): TypedContractMethod<
@@ -489,9 +449,6 @@ export interface Earth extends BaseContract {
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "setDefaultMw"
-  ): TypedContractMethod<[_middleware: AddressLike], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "timeoutPackets"
   ): TypedContractMethod<
     [arg0: BigNumberish],
@@ -506,6 +463,12 @@ export interface Earth extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "uch"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "updateUch"
+  ): TypedContractMethod<[_newUch: AddressLike], [void], "nonpayable">;
 
   getEvent(
     key: "OwnershipTransferred"

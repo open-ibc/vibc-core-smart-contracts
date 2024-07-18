@@ -72,7 +72,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
     }
 
     /**
-     * @notice Sends a universal packet over an IBC channel
+     * @notice Sends a universal packet over an IBC channel, without sending relaying fees to the FeeVault
      * @param channelId The channel ID through which the packet is sent on the dispatcher
      * @param destPortAddr The destination port address
      * @param appData The packet data to be sent
@@ -92,11 +92,23 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
     }
 
     /**
-     * @notice Sends a universal packet over an IBC channel
+     * @notice Sends a universal packet over an IBC channel, and deposits relaying fees to a FeeVault within the same
+     * tx.
      * @param channelId The channel ID through which the packet is sent on the dispatcher
      * @param destPortAddr The destination port address
      * @param appData The packet data to be sent
      * @param timeoutTimestamp of when the packet can timeout
+     * @param gasLimits An array containing two gas limit values:
+     *                  - gasLimits[0] for `recvPacket` fees
+     *                  - gasLimits[1] for `ackPacket` fees.
+     * @param gasPrices An array containing two gas price values:
+     *                  - gasPrices[0] for `recvPacket` fees, for the dest chain
+     *                  - gasPrices[1] for `ackPacket` fees, for the src chain
+     * @notice The total fees sent in the msg.value should be equal to the total gasLimits[0] * gasPrices[0] +
+     * gasLimits[1] * gasPrices[1]. The transaction will revert if a higher or lower value is sent
+     * @notice if you are relaying your own transactions, you should not call this method, and instead call
+     * sendUniversalPacket
+     * @notice Use the Polymer fee estimation api to get the required fees to ensure that enough fees are sent.
      */
     function sendUniversalPacketWithFee(
         bytes32 channelId,

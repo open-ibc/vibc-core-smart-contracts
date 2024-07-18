@@ -26,6 +26,8 @@ contract FeeVault is Ownable, ReentrancyGuard, IFeeVault {
     /**
      * @notice Deposits the send packet fee for a given channel and sequence that is used for relaying recieve and
      * acknowledge steps of a packet handhsake after a dapp has called the sendPacket on dispatcher.
+     * @notice If you are relaying your own packets, you should not call this method.
+     * @notice Use the Polymer fee estimation api to get the required fees to ensure that enough fees are sent.
      * @dev This function calculates the required fee based on provided gas limits and gas prices,
      *      and reverts if the sent value does not match the calculated fee.
      *      The first entry in `gasLimits` and `gasPrices` arrays corresponds to `recvPacket` fees,
@@ -38,6 +40,10 @@ contract FeeVault is Ownable, ReentrancyGuard, IFeeVault {
      * @param gasPrices An array containing two gas price values:
      *                  - gasPrices[0] for `recvPacket` fees, for the dest chain
      *                  - gasPrices[1] for `ackPacket` fees, for the src chain
+     * @notice The total fees sent in the msg.value should be equal to the total gasLimits[0] * gasPrices[0] +
+     * gasLimits[1] * gasPrices[1]. The transaction will revert if a higher or lower value is sent
+     * @dev Note: if you're having trouble with your packet data being mysteriously lost, try passing in the gasLimits
+     * and gasPrices as memory, solidity sometimes misbehaves when trying to pass in too much calldata.
      */
     function depositSendPacketFee(
         bytes32 channelId,
@@ -55,6 +61,7 @@ contract FeeVault is Ownable, ReentrancyGuard, IFeeVault {
     /**
      * @notice Deposits the fee for a channel handshake, to pay a relayer for relaying the channelOpenTry,
      * channelOpenConfirm, and channelOpenAck steps after a dapp has called channelOpenInit
+     * @notice If you are relaying your own channelHandshake transactions, you should not call this method.
      * @dev The fee amount that needs to be sent for Polymer to relay the whole channel handshake can be queried on the
      * web2 layer.
      * @param src The address of the sender, should be the address in the localportId.

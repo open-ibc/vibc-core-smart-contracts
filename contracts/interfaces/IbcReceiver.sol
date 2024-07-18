@@ -118,6 +118,8 @@ interface IbcPacketReceiver {
 
     /**
      * @notice Callback for handling a packet timeout
+     * @notice Direct timeouts are currently unimplemented, so this callback is currently unused. Packets can still be
+     * indirectly timedout in the recieve callback.
      * @param packet The IBC packet that has timed out
      * @dev Make sure to validate packet's source and destiation channels and ports.
      */

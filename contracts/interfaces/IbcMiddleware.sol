@@ -198,6 +198,60 @@ interface IbcMwEventsEmitter {
  * functions.
  * @notice IbcMwUser ensures only authorized IBC middleware can call IBC callback functions.
  */
+abstract contract UCHUser is Ownable {
+    // default middleware
+    address public uch;
+
+    error CallerNotUCH();
+    error InvalidUCHAddress();
+    error ackDataTooShort();
+    error ackAddressMismatch();
+
+    /**
+     * @dev Modifier to restrict access to only the IBC middleware.
+     * Only the address with the IBC_ROLE can execute the function.
+     * Should add this modifier to all IBC-related callback functions.
+     */
+    modifier onlyUCH() {
+        if (msg.sender != uch) {
+            revert CallerNotUCH();
+        }
+        _;
+    }
+
+    /**
+     * @dev Constructor function that takes an IbcMiddleware address and grants the IBC_ROLE to the Polymer IBC
+     * Dispatcher.
+     * @param _uch The address of the uch contract.
+     */
+    constructor(address _uch) Ownable() {
+        uch = _uch;
+    }
+
+    /// This function is called for plain Ether transfers, i.e. for every call with empty calldata.
+    // An empty function body is sufficient to receive packet fee refunds.
+    receive() external payable {}
+
+    /**
+     * @dev register an authorized middleware so that modifier onlyIbcMw can be used to restrict access to only
+     * authorized middleware.
+     * Only the address with the IBC_ROLE can execute the function.
+     * @notice Should add this modifier to all IBC-related callback functions.
+     */
+    function updateUch(address _newUch) external onlyOwner {
+        if (_newUch == address(0)) {
+            revert InvalidUCHAddress();
+        }
+        uch = _newUch;
+    }
+}
+
+/**
+ * @title IbcMwUser
+ * @dev Contracts that send and recv universal packets via IBC MW should inherit IbcMwUser or implement similiar
+ * functions.
+ * @notice IbcMwUser ensures only authorized IBC middleware can call IBC callback functions.
+ */
 contract IbcMwUser is Ownable {
     // default middleware
     address public mw;
@@ -260,7 +314,7 @@ contract IbcMwUser is Ownable {
     }
 }
 
-abstract contract IbcUniversalPacketReceiverBase is IbcMwUser, IbcUniversalPacketReceiver {
+abstract contract IbcUniversalPacketReceiverBase is UCHUser, IbcUniversalPacketReceiver {
     mapping(bytes32 => bool) public authorizedChannelIds;
 
     /**
@@ -273,7 +327,7 @@ abstract contract IbcUniversalPacketReceiverBase is IbcMwUser, IbcUniversalPacke
         _;
     }
 
-    constructor(address _middleware) IbcMwUser(_middleware) {}
+    constructor(address _uch) UCHUser(_uch) {}
 
     /**
      * @dev Authorize a channel to be used by middleware.
