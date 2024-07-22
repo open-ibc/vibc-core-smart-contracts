@@ -14,7 +14,7 @@ export default defineConfig({
     "src/evm/contracts/*.ts",
     "src/evm/account.ts",
     "src/scripts/deploy-script.ts",
-    "src/scripts/upgrade-script.ts",
+    "src/scripts/update-contracts-script.ts",
     "src/scripts/verify-contract-script.ts",
     "src/scripts/fork-deployment-test.ts",
     "src/scripts/setup-dispatcher-script.ts",

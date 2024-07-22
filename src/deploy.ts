@@ -8,10 +8,11 @@ import {
   writeDeployedContractToFile,
 } from "./utils/io";
 import assert from "assert";
-import { AccountRegistry } from "./evm/account";
+import { AccountRegistry, connectProviderAccounts } from "./evm/account";
 import {
   ContractRegistry,
   ContractRegistryLoader,
+  ContractItem,
 } from "./evm/schemas/contract";
 import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
@@ -28,10 +29,11 @@ const getDeployData = (
   env: StringToStringMap,
   libraries: any[] = [],
   init: { args: any[]; signature: string } | undefined,
-  contractFactories: Record<string, any>,
+  contractFactories: Record<string, any>
 ) => {
   // @ts-ignore
-  const contractFactoryConstructor = contractFactories[`${factoryName}__factory`];
+  const contractFactoryConstructor =
+    contractFactories[`${factoryName}__factory`];
   assert(
     contractFactoryConstructor,
     `cannot find contract factory constructor for contract: ${factoryName}`
@@ -58,6 +60,100 @@ const getDeployData = (
   };
 };
 
+export const deployContract = async (
+  chain: Chain,
+  accountRegistry: AccountRegistry,
+  contract: ContractItem,
+  logger: Logger,
+  dryRun: boolean = false,
+  writeContracts: boolean = true, // True if you want to save persisted artifact files.
+  extraContractFactories: Record<string, any> = {},
+  nonces: Record<string, number> = {},
+  env: StringToStringMap = {}
+) => {
+  // merge extra contracts into the registry
+  const contractFactories = {
+    ...vibcContractFactories,
+    ...extraContractFactories,
+  };
+
+  try {
+    const factoryName = contract.factoryName
+      ? contract.factoryName
+      : contract.name;
+
+    const constructorData = getDeployData(
+      factoryName,
+      contract.deployArgs,
+      env,
+      contract.libraries,
+      contract.init,
+      contractFactories
+    );
+
+    logger.info(
+      `[${chain.chainName}-${chain.deploymentEnvironment}]: deploying ${
+        contract.name
+      } with args: [${constructorData.args}] with libraries: ${JSON.stringify(
+        constructorData.libraries
+      )}`
+    );
+    let deployedAddr = `new.${contract.name}.address`;
+    const deployer = accountRegistry.mustGet(
+      contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
+    );
+
+    // To avoid nonce too low bug, we manually increment nonces for each account
+    if (!(deployer.address in nonces)) {
+      nonces[deployer.address] = await deployer.getNonce();
+    } else {
+      nonces[deployer.address] += 1;
+    }
+
+    const nonce = nonces[deployer.address];
+    if (!dryRun) {
+      const overrides = {
+        nonce,
+      };
+      const deployed = await constructorData.factory
+        .connect(deployer)
+        .deploy(...constructorData.args, overrides);
+      await deployed.deploymentTransaction()?.wait(1);
+      deployedAddr = await deployed.getAddress();
+    }
+    // save deployed contract address for its dependencies
+    logger.info(
+      `deployed contract ${chain.chainName} ${contract.name} at ${deployedAddr}`
+    );
+    env[contract.name] = deployedAddr;
+    // update contract in registry as output result
+    contract.address = deployedAddr;
+    contract.deployer = deployer.address;
+    contract.abi = constructorData.contractFactoryConstructor.abi;
+    logger.info(
+      `[${chain.chainName}-${chain.deploymentEnvironment}]: deployed ${contract.name} to address: ${deployedAddr}`
+    );
+    if (writeContracts) {
+      const contractObject: DeployedContractObject = {
+        factory: factoryName,
+        address: deployedAddr,
+        abi: constructorData.contractFactoryConstructor.abi,
+        bytecode: constructorData.factory.bytecode,
+        name: contract.name,
+        args: constructorData.args,
+        libraries: constructorData.libraries,
+      };
+      writeDeployedContractToFile(chain, contractObject);
+    }
+    return contract;
+  } catch (err) {
+    logger.error(
+      `[${chain.chainName}-${chain.deploymentEnvironment}] deploy ${contract.name} failed: ${err}`
+    );
+    throw err;
+  }
+};
+
 export async function deployToChain(
   chain: Chain,
   accountRegistry: AccountRegistry,
@@ -66,7 +162,7 @@ export async function deployToChain(
   dryRun = false,
   forceDeployNewContracts = false, // True if you want to use existing deployments when possible
   writeContracts: boolean = true, // True if you want to save persisted artifact files.
-  extraContractFactories: Record<string, any> = {},
+  extraContractFactories: Record<string, any> = {}
 ) {
   logger.info(
     `deploying ${deploySpec.size} contract(s) to chain ${chain.chainName}-${
@@ -76,12 +172,7 @@ export async function deployToChain(
 
   let nonces: Record<string, number> = {}; // maps addresses to nonces
   if (!dryRun) {
-    const provider = ethers.getDefaultProvider(chain.rpc);
-    const newAccounts = accountRegistry.subset([]);
-    for (const [name, wallet] of accountRegistry.entries()) {
-      newAccounts.set(name, wallet.connect(provider));
-    }
-    accountRegistry = newAccounts;
+    accountRegistry = connectProviderAccounts(accountRegistry, chain.rpc);
   }
 
   //  @ts-ignore
@@ -92,97 +183,25 @@ export async function deployToChain(
   }
 
   // result is the final contract registry after deployment, modified in place
-  const result = ContractRegistryLoader.loadSingle(
+  const cleanedSourceSpec = ContractRegistryLoader.loadSingle(
     JSON.parse(JSON.stringify(deploySpec.serialize()))
   );
 
-  // merge extra contracts into the registry
-  let contractFactories = {
-    ...vibcContractFactories,
-    ...extraContractFactories,
-  } 
+  const result = ContractRegistryLoader.emptySingle(); // Contains the filled in deployed addresses
 
-  const eachContract = async (
-    contract: ReturnType<ContractRegistry["mustGet"]>
-  ) => {
-    try {
-      const factoryName = contract.factoryName
-        ? contract.factoryName
-        : contract.name;
-
-      const constructorData = getDeployData(
-        factoryName,
-        contract.deployArgs,
-        env,
-        contract.libraries,
-        contract.init,
-        contractFactories,
-      );
-
-      logger.info(
-        `[${chain.chainName}-${chain.deploymentEnvironment}]: deploying ${
-          contract.name
-        } with args: [${constructorData.args}] with libraries: ${JSON.stringify(
-          constructorData.libraries
-        )}`
-      );
-      let deployedAddr = `new.${contract.name}.address`;
-      const deployer = accountRegistry.mustGet(
-        contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
-      );
-
-      // To avoid nonce too low bug, we manually increment nonces for each account
-      if (!(deployer.address in nonces)) {
-        nonces[deployer.address] = await deployer.getNonce();
-      } else {
-        nonces[deployer.address] += 1;
-      }
-
-      const nonce = nonces[deployer.address];
-      if (!dryRun) {
-        const overrides = {
-          nonce,
-        };
-        const deployed = await constructorData.factory
-          .connect(deployer)
-          .deploy(...constructorData.args, overrides);
-        await deployed.deploymentTransaction()?.wait(1);
-        deployedAddr = await deployed.getAddress();
-      }
-      // save deployed contract address for its dependencies
-      logger.info(
-        `deployed contract ${chain.chainName} ${contract.name} at ${deployedAddr}`
-      );
-      env[contract.name] = deployedAddr;
-      // update contract in registry as output result
-      contract.address = deployedAddr;
-      contract.deployer = deployer.address;
-      contract.abi = constructorData.contractFactoryConstructor.abi;
-      logger.info(
-        `[${chain.chainName}-${chain.deploymentEnvironment}]: deployed ${contract.name} to address: ${deployedAddr}`
-      );
-      if (writeContracts) {
-        const contractObject: DeployedContractObject = {
-          factory: factoryName,
-          address: deployedAddr,
-          abi: constructorData.contractFactoryConstructor.abi,
-          bytecode: constructorData.factory.bytecode,
-          name: contract.name,
-          args: constructorData.args,
-          libraries: constructorData.libraries,
-        };
-        writeDeployedContractToFile(chain, contractObject);
-      }
-    } catch (err) {
-      logger.error(
-        `[${chain.chainName}-${chain.deploymentEnvironment}] deploy ${contract.name} failed: ${err}`
-      );
-      throw err;
-    }
-  };
-
-  for (const contract of result.values()) {
-    await eachContract(contract);
+  for (const contract of cleanedSourceSpec.values()) {
+    const deployedContract = await deployContract(
+      chain,
+      accountRegistry,
+      contract,
+      logger,
+      dryRun,
+      writeContracts,
+      extraContractFactories,
+      nonces,
+      env
+    );
+    result.set(deployedContract.name, deployedContract);
   }
 
   logger.info(

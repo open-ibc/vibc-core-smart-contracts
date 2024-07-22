@@ -102,6 +102,20 @@ export function loadEvmAccounts(config: any): Registry<Wallet> {
   return walletMap;
 }
 
+// Connect all accounts to the provider
+export const connectProviderAccounts = (
+  accountRegistry: AccountRegistry,
+  rpc: string
+) => {
+  const provider = ethers.getDefaultProvider(rpc);
+  const newAccounts = accountRegistry.subset([]);
+  for (const [name, wallet] of accountRegistry.entries()) {
+    newAccounts.set(name, wallet.connect(provider));
+  }
+
+  return newAccounts;
+};
+
 export function createWallet(opt: {
   privateKey?: string;
   mnemonic?: string;

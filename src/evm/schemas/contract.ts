@@ -3,30 +3,32 @@ import { Registry } from "../../utils/registry";
 import { parseZodSchema } from "../../utils/io";
 
 // A contract may or may not be deployed (null address).
-const ContractItemSchema = z.object({
-  name: z.string().min(1),
-  description: z.optional(z.string()),
-  factoryName: z.optional(z.string()),
-  deployArgs: z.optional(z.array(z.any())),
-  libraries: z.optional(
-    z.array(
+export const ContractItemSchema = z
+  .object({
+    name: z.string().min(1),
+    description: z.optional(z.string()),
+    factoryName: z.optional(z.string()),
+    deployArgs: z.optional(z.array(z.any())),
+    libraries: z.optional(
+      z.array(
+        z.object({
+          name: z.string().min(1),
+          address: z.string().min(1),
+        })
+      )
+    ),
+    // either a account name from account registry, or a private key or a mnemonic signer
+    deployer: z.string().nullish(),
+    address: z.string().nullish(),
+    init: z.optional(
       z.object({
-        name: z.string().min(1),
-        address: z.string().min(1),
+        signature: z.string().min(1),
+        args: z.array(z.string().min(1)),
       })
-    )
-  ),
-  // either a account name from account registry, or a private key or a mnemonic signer
-  deployer: z.string().nullish(),
-  address: z.string().nullish(),
-  init: z.optional(
-    z.object({
-      signature: z.string().min(1),
-      args: z.array(z.string().min(1)),
-    })
-  ),
-  abi: z.optional(z.any()),
-});
+    ),
+    abi: z.optional(z.any()),
+  })
+  .strict();
 
 const ContractItemList = z.array(ContractItemSchema);
 const registryName = "contracts";
@@ -35,7 +37,7 @@ const MultiChainContractRegistrySchema = z.array(
   z.object({ chainName: z.string().min(1), [registryName]: ContractItemList })
 );
 
-type ContractItem = z.infer<typeof ContractItemSchema>;
+export type ContractItem = z.infer<typeof ContractItemSchema>;
 
 // export type ContractRegistry = Registry<ContractItem>
 export type MultiChainContractRegistry = Registry<{
