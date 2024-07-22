@@ -46,6 +46,10 @@ export const UPGRADE_SPECS_PATH = process.env.UPGRADE_SPECS_PATH
   ? process.env.UPGRADE_SPECS_PATH
   : path.join(SPECS_BASE_PATH, "upgrade.spec.yaml");
 
+export const UPDATE_SPECS_PATH = process.env.UPDATE_SPECS_PATH
+  ? process.env.UPDATE_SPECS_PATH
+  : path.join(SPECS_BASE_PATH, "update.spec.yaml");
+
 export const ACCOUNTS_SPECS_PATH = process.env.ACCOUNTS_SPECS_PATH
   ? process.env.ACCOUNTS_SPECS_PATH
   : path.join(SPECS_BASE_PATH, "evm.accounts.yaml");

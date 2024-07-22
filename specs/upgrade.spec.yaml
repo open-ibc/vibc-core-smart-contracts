@@ -24,3 +24,12 @@
   factoryName: "Dispatcher" 
   args:   
     - '{{Dispatcher}}'
+
+- name: UCH Upgrade 
+  description: 'Upgrade for uch contract'
+  deployer: 'KEY_POLYMER' 
+  signature: "upgradeTo(address)"
+  address: '{{ UC Proxy }}' 
+  factoryName: "UC"
+  args: 
+    - '{{UC}}'
