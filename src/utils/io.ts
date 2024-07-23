@@ -20,6 +20,7 @@ import {
   DEPLOYMENT_ENVIRONMENT,
   ANVIL_PORT,
   UPGRADE_SPECS_PATH,
+  UPDATE_SPECS_PATH,
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
@@ -389,14 +390,10 @@ export const parseVerifyArgsFromCLI = async () => {
   const deploymentEnvironment =
     (argv1.DEPLOYMENT_ENVIRONMENT as string) || DEPLOYMENT_ENVIRONMENT; // Needed to search for deployment
 
+  const updateSpecs = (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
+
   if (!verifierUrl) {
     throw new Error(`Verifier URL not provided`);
-  }
-  if (!deploymentName) {
-    throw new Error(`Deployment name not provided`);
-  }
-  if (!rpcUrl) {
-    throw new Error(`RPC url needed`);
   }
 
   const chainFolderParse = ChainFolderSchema.safeParse({
@@ -416,5 +413,7 @@ export const parseVerifyArgsFromCLI = async () => {
     chainFolder: chainFolderParse.data,
     rpcUrl,
     etherscanApiKey,
+    updateSpecs,
+    args: argv1,
   };
 };

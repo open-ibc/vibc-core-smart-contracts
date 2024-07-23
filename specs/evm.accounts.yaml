@@ -1,11 +1,12 @@
 # These accounts are derived from a test mnemonic by Anvil/Hardhat and used for testing purposes only.
 - name: 'KEY_POLYMER'
-  privateKey: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+  privateKey: '{{DEPLOYER_PRIVATE_KEY}}'
+
 
   # Dapp accounts
 - name: 'KEY_DAPP1'
-  privateKey: '0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1ffdd59b2a1'
+  privateKey: '{{ DAPP_PRIVATE_KEY_1 }}'
 - name: 'KEY_DAPP2'
-  privateKey: '0xb0057716d5917badaf911b193b12b910811c1497b5bada8d7711f758981c3773'
+  privateKey: '{{ DAPP_PRIVATE_KEY_2 }}'
 - name: 'KEY_DAPP3'
-  privateKey: '0x829e924fdf021ba3dbbc4225edfece9aca04b929d6e75613329ca6f1d31c0bb4'
+  privateKey: '{{ DAPP_PRIVATE_KEY_2 }}' 
