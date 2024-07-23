@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 
-import { createWriteStream, WriteStream } from "fs";
-import { $, ProcessPromise } from "zx";
-import { deployToChain } from "../deploy";
-import { ANVIL_PORT, MODULE_ROOT_PATH, RPC_URL } from "../utils/constants";
+import { createWriteStream } from "fs";
+import { $ } from "zx";
+import { MODULE_ROOT_PATH } from "../utils/constants";
 import {
   parseArgsFromCLI,
   parseObjFromFile,
   readDeploymentFilesIntoEnv,
 } from "../utils/io";
 import { ContractRegistryLoader } from "../evm/schemas/contract";
-import { getMainLogger, getOutputLogger } from "../utils/cli";
-import { sendTxToChain } from "../tx";
-import { loadTxRegistry } from "../evm/schemas/tx";
+import { getOutputLogger } from "../utils/cli";
+import { loadContractUpdateRegistry } from "../evm/schemas/contractUpdate";
+import { updateContractsForChain } from "../updateContract";
 
 const main = async () => {
-  const { chain, accounts, args, deploySpecs, upgradeSpecs, anvilPort } =
-    await parseArgsFromCLI();
+  const { chain, accounts, upgradeSpecs, anvilPort } = await parseArgsFromCLI();
 
   const { anvilProcess } = await startAnvilServer(
     chain.rpc,
@@ -27,40 +25,21 @@ const main = async () => {
 
   const forkedChain = { ...chain, rpc: anvilUrl };
 
-  const parsedDeploySpecs = parseObjFromFile(deploySpecs);
-  if (parsedDeploySpecs) {
-    const contracts = ContractRegistryLoader.loadSingle(
-      parseObjFromFile(deploySpecs)
-    );
+  const contractUpdates = loadContractUpdateRegistry(
+    parseObjFromFile(upgradeSpecs)
+  );
 
-    await deployToChain(
-      forkedChain,
-      accounts.mustGet(chain.chainName),
-      contracts.subset(),
-      getMainLogger(),
-      false,
-      false,
-      true
-    );
-  } else {
-    console.log("empty deploy file detected, skipping fork deploy for test");
-  }
+  updateContractsForChain(
+    forkedChain,
+    accounts.mustGet(chain.chainName),
+    ContractRegistryLoader.emptySingle(),
+    contractUpdates,
+    getOutputLogger(),
+    false,
+    false,
+    true
+  );
 
-  const parsedUpgradeSpec = parseObjFromFile(upgradeSpecs);
-  if (parsedUpgradeSpec) {
-    const upgradeTxs = loadTxRegistry(parsedUpgradeSpec);
-
-    await sendTxToChain(
-      forkedChain,
-      accounts.mustGet(chain.chainName),
-      ContractRegistryLoader.emptySingle(),
-      upgradeTxs.subset(),
-      getOutputLogger(),
-      false
-    );
-  } else {
-    console.log("empty upload file detected, skipping upgrade for test");
-  }
   let env = {};
   env = await readDeploymentFilesIntoEnv(env, chain); // Read deployment files from non-forked chain to get live addresses
 
