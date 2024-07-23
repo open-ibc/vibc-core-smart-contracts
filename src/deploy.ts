@@ -8,7 +8,11 @@ import {
   writeDeployedContractToFile,
 } from "./utils/io";
 import assert from "assert";
-import { AccountRegistry, connectProviderAccounts } from "./evm/account";
+import {
+  AccountRegistry,
+  connectProviderAccounts,
+  Wallet,
+} from "./evm/account";
 import {
   ContractRegistry,
   ContractRegistryLoader,
@@ -18,6 +22,19 @@ import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { Chain } from "./evm/chain";
 import * as vibcContractFactories from "./evm/contracts/index";
+
+export const updateNoncesForSender = async (
+  nonces: Record<string, number>,
+  sender: Wallet
+) => {
+  // To avoid nonce too low bug, we manually increment nonces for each account
+  if (!(sender.address in nonces)) {
+    nonces[sender.address] = await sender.getNonce();
+  } else {
+    nonces[sender.address] += 1;
+  }
+  return nonces;
+};
 
 /**
  * Return deployment libraries, factory, factory constructor,
@@ -103,14 +120,8 @@ export const deployContract = async (
       contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
     );
 
-    // To avoid nonce too low bug, we manually increment nonces for each account
-    if (!(deployer.address in nonces)) {
-      nonces[deployer.address] = await deployer.getNonce();
-    } else {
-      nonces[deployer.address] += 1;
-    }
-
-    const nonce = nonces[deployer.address];
+    const updatedNonces = await updateNoncesForSender(nonces, deployer);
+    const nonce = updatedNonces[deployer.address];
     if (!dryRun) {
       const overrides = {
         nonce,

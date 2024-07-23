@@ -12,7 +12,7 @@ import { readDeploymentFilesIntoEnv } from "./utils/io";
 import { TxItemSchema } from "./evm/schemas/tx";
 
 // Combination of sendTxToChain and deployContracts. Can do both from a single deploy file, and uses zod to parse the schema.
-export async function updateContractForChain(
+export async function updateContractsForChain(
   chain: Chain,
   accountRegistry: AccountRegistry,
   existingContracts: ContractRegistry,
@@ -82,6 +82,7 @@ export async function updateContractForChain(
         parsedTxItem.data,
         logger,
         dryRun,
+        nonces,
         env
       );
       continue;

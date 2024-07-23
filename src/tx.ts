@@ -11,6 +11,7 @@ import {
 } from "./utils/io";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
+import { updateNoncesForSender } from "./deploy";
 
 export const sendTx = async (
   chain: Chain,
@@ -19,6 +20,7 @@ export const sendTx = async (
   tx: TxItem,
   logger: Logger,
   dryRun: boolean = false,
+  nonces: Record<string, number>,
   env: StringToStringMap
 ) => {
   try {
@@ -56,7 +58,14 @@ export const sendTx = async (
       `calling ${tx.signature} on ${tx.name} @:${deployedContractAddress} with args: \n [${args}]`
     );
     if (!dryRun) {
-      const sentTx = await ethersContract.getFunction(tx.signature!)(...args);
+      const updatedNonces = await updateNoncesForSender(nonces, deployer);
+      const overrides = {
+        nonce: updatedNonces[deployer.address],
+      };
+      const sentTx = await ethersContract.getFunction(tx.signature!)(
+        ...args,
+        overrides
+      );
       try {
         await sentTx.wait();
       } catch (err) {
@@ -118,6 +127,7 @@ export async function sendTxToChain(
       tx,
       logger,
       dryRun,
+      {},
       env
     );
   }

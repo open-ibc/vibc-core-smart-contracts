@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { ContractRegistryLoader, parseObjFromFile } from "..";
 import { loadContractUpdateRegistry } from "../evm/schemas/contractUpdate";
-import { updateContractForChain } from "../updateContract";
+import { updateContractsForChain } from "../updateContract";
 
 import { getOutputLogger } from "../utils/cli";
 import { UPDATE_SPECS_PATH } from "../utils/constants";
@@ -15,7 +15,7 @@ async function main() {
     parseObjFromFile(updateSpecs)
   );
 
-  updateContractForChain(
+  updateContractsForChain(
     chain,
     accounts.mustGet(chain.chainName),
     ContractRegistryLoader.emptySingle(),
