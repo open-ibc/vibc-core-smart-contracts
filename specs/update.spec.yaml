@@ -35,20 +35,36 @@
 # signature: signature of method to call for this tx
 # args: args to make the function call with, need to be compatible with the signature
 
-- name: LightClient
+- name: OptimisticProofVerifier
+  description: 'OptimisticProofVerifier'
+  factoryName: 'OptimisticProofVerifier'
+  deployer: 'KEY_DEPLOYER'
+  deployArgs:
+    - '{{PolymerL2OutputOracleProxyAddress}}'
+
+- name: OptimisticLightClient
+  description: 'OptimisticLightClient'
+  factoryName: 'OptimisticLightClient'
+  deployer: 'KEY_DEPLOYER'
+  deployArgs:
+    - 0
+    - '{{OptimisticProofVerifier}}'
+    - '{{L1BlockAddress}}'
+
+- name: DummyLightClient
   description: 'DummyLightClient'
   factoryName: 'DummyLightClient'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: Ibc
   description: 'IBC library'
   factoryName: 'Ibc'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: IbcUtils
   description: 'IBC utils library'
   factoryName: 'IbcUtils'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: Dispatcher
   description: 'IBC Core contract'
@@ -58,12 +74,12 @@
       address: '{{Ibc}}'
     - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
       address: '{{IbcUtils}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: FeeVault
   description: 'FeeVault'
   factoryName: 'FeeVault'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: DispatcherProxy
   description: 'Dispatcher proxy contract'
@@ -76,12 +92,12 @@
     args:
       - 'polyibc.{{chain.chainName}}.'
       - '{{FeeVault}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: UC
   description: 'Universal Chanel IBC-middleware contract'
   factoryName: 'UniversalChannelHandler'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
   libraries:
     - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
       address: '{{IbcUtils}}'
@@ -89,7 +105,7 @@
 - name: UCProxy
   description: 'Universal Chanel IBC-middleware proxy'
   factoryName: 'ERC1967Proxy'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
   deployArgs:
     - '{{UC}}'
     - '$INITARGS'
@@ -115,7 +131,7 @@
 # Contract Setup below 
 - name: DispatcherUpgrade 
   description: 'UUPS Upgrade for dispatcher contract implementation' 
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "upgradeTo(address)" 
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher" 
@@ -124,7 +140,7 @@
 
 - name: DispatcherUpgrade 
   description: 'UUPS Upgrade for dispatcher contract implementation' 
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "upgradeTo(address)" 
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher" 
@@ -133,7 +149,7 @@
 
 - name: UCH Upgrade 
   description: 'Upgrade for uch contract'
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "upgradeTo(address)"
   address: '{{ UCProxy }}' 
   factoryName: "UC"
@@ -142,20 +158,20 @@
 
 - name: DispatcherClientSetup-Connection-0
   description: 'Setup client for dispatcher contracts'
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "setClientForConnection(string,address)"
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher"
   args: 
-    - 'connection-0'
-    - '{{LightClient}}'
+    - 'connection-1'
+    - '{{DummyLightClient}}'
 
 - name: DispatcherClientSetup-Connection-1
   description: 'Setup client for dispatcher contracts'
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "setClientForConnection(string,address)"
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher"
   args: 
-    - 'connection-2'
-    - '{{LightClient}}'
+    - 'connection-3'
+    - '{{DummyLightClient}}'

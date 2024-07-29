@@ -20,17 +20,17 @@
 - name: LightClient
   description: 'DummyLightClient'
   factoryName: 'DummyLightClient'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: Ibc
   description: 'IBC library'
   factoryName: 'Ibc'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: IbcUtils
   description: 'IBC utils library'
   factoryName: 'IbcUtils'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: Dispatcher
   description: 'IBC Core contract'
@@ -40,12 +40,12 @@
       address: '{{Ibc}}'
     - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
       address: '{{IbcUtils}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: FeeVault
   description: 'FeeVault'
   factoryName: 'FeeVault'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: DispatcherProxy
   description: 'Dispatcher proxy contract'
@@ -58,12 +58,12 @@
     args:
       - 'polyibc.{{chain.chainName}}.'
       - '{{FeeVault}}'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
 
 - name: UC
   description: 'Universal Chanel IBC-middleware contract'
   factoryName: 'UniversalChannelHandler'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
   libraries:
     - name: 'contracts/libs/IbcUtils.sol:IbcUtils'
       address: '{{IbcUtils}}'
@@ -71,7 +71,7 @@
 - name: UCProxy
   description: 'Universal Chanel IBC-middleware proxy'
   factoryName: 'ERC1967Proxy'
-  deployer: 'KEY_POLYMER'
+  deployer: 'KEY_DEPLOYER'
   deployArgs:
     - '{{UC}}'
     - '$INITARGS'

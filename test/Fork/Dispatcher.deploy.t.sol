@@ -42,7 +42,7 @@ struct ChainAddresses {
     IUniversalChannelHandler uch;
     ILightClient dummyLightClient;
     ILightClient optimisticLightClient;
-    bytes32 ownerKey; // Owner Address of dispatcher
+    address owner; // Owner Address of dispatcher
 }
 
 contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
@@ -57,17 +57,16 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
             IUniversalChannelHandler(vm.envAddress("UCProxy")),
             ILightClient(vm.envAddress("DummyLightClient")),
             ILightClient(vm.envAddress("OptimisticLightClient")),
-            vm.envBytes32("OWNER_KEY")
+            vm.envAddress("OwnerAddress")
         );
 
         opLightClient = addresses.optimisticLightClient; // Need to set this so that when we call load_proof, it loads
             // the proof to the right address
 
-        address owner = vm.addr(uint256(addresses.ownerKey));
         mars = Mars(payable(targetMarsAddress));
 
         dispatcherProxy = addresses.dispatcherProxy;
-        vm.prank(owner);
+        vm.prank(addresses.owner);
 
         // For now, we need to change the portPrefix to that of the one which was used to generate the proof. We also
         // have to set that for the connectionHop to light client mapping.
@@ -80,7 +79,7 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         connectionHops0 = ["connection-0", "connection-3"];
         connectionHops1 = ["connection-2", "connection-1"];
 
-        vm.startPrank(owner); // Only sender should have permission
+        vm.startPrank(addresses.owner); // Only sender should have permission
         dispatcherProxy.setClientForConnection("connection-0", opLightClient);
 
         dispatcherProxy.setClientForConnection("connection-2", opLightClient);

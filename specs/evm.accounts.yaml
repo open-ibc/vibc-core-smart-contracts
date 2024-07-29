@@ -1,7 +1,6 @@
 # These accounts are derived from a test mnemonic by Anvil/Hardhat and used for testing purposes only.
-- name: 'KEY_POLYMER'
-  privateKey: '{{DEPLOYER_PRIVATE_KEY}}'
-
+- name: 'KEY_DEPLOYER'
+  privateKey: '{{ DUMMY_DEPLOYER_PRIVATE_KEY }}'
 
   # Dapp accounts
 - name: 'KEY_DAPP1'
@@ -9,4 +8,4 @@
 - name: 'KEY_DAPP2'
   privateKey: '{{ DAPP_PRIVATE_KEY_2 }}'
 - name: 'KEY_DAPP3'
-  privateKey: '{{ DAPP_PRIVATE_KEY_2 }}' 
+  privateKey: '{{ DAPP_PRIVATE_KEY_3 }}' 
