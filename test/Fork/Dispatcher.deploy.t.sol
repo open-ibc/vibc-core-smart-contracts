@@ -29,7 +29,6 @@ import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
-import {DispatcherRc4} from "../upgradeableProxy/upgrades/DispatcherRc4.sol";
 import {UniversalChannelHandlerV2} from "../upgradeableProxy/upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "../upgradeableProxy/upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "../upgradeableProxy/upgrades/DispatcherV2.sol";
@@ -113,7 +112,9 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         // Send a few packets as if mars was sending party
         payload = "packet-1"; // Overwrite these values for inheriting class
         packet = abi.encodePacked(payload);
-        sendLegacyPacket(_local.channelId);
+        sendOnePacket(_local.channelId, 1, Mars(payable(targetMarsAddress)));
+        sendOnePacket(_local.channelId, 2, Mars(payable(targetMarsAddress)));
+        sendOnePacket(_local.channelId, 3, Mars(payable(targetMarsAddress)));
 
         uint64 nextSequenceSendValue = uint64(
             uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))
@@ -149,7 +150,7 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         dispatcherProxy.acknowledgement(packet, ack, proof);
 
         // We can send more packets (but we neglect testing them for now since it would require generating more proofs)
-        sendOneLegacyPacket(_local.channelId, 4, targetMarsAddress);
+        sendOnePacket(_local.channelId, 4, Mars(payable(targetMarsAddress)));
         assert(vm.load(address(dispatcherProxy), findSendPacketCommitmentSlot(address(mars), _local.channelId, 4)) > 0);
         uint64 nextSequenceSendAfterSending = uint64(
             uint256(vm.load(address(dispatcherProxy), findNextSequenceSendSlot(address(mars), _local.channelId)))

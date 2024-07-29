@@ -101,7 +101,7 @@ contract DappHandlerRevertTests is Base {
     function test_ack_packet_dapp_revert() public {
         // plant a fake packet commitment so the ack checks go through
         // use "forge inspect --storage" to find the slot
-        bytes32 slot1 = keccak256(abi.encode(address(revertingStringMars), uint32(156))); // current nested mapping
+        bytes32 slot1 = keccak256(abi.encode(address(revertingStringMars), uint32(255))); // current nested mapping
             // slot:
         bytes32 slot2 = keccak256(abi.encode(ch0.channelId, slot1));
         bytes32 slot3 = keccak256(abi.encode(uint256(1), slot2));
