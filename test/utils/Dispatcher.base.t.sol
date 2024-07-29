@@ -50,8 +50,8 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         uint256 fees
     );
 
-    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 161;
-    uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 156;
+    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 259;
+    uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 255;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
 
     Height ZERO_HEIGHT = Height(0, 0);
@@ -262,7 +262,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
 
     // Store connection in channelid to connection mapping using store
     function _storeChannelidToConnectionMapping(bytes32 channelId, bytes32 connection) internal {
-        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(160)));
+        bytes32 chanIdToConnectionMapping = keccak256(abi.encode(channelId, uint32(259)));
         vm.store(address(dispatcherProxy), chanIdToConnectionMapping, connection);
     }
 

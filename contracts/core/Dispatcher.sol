@@ -18,13 +18,13 @@
 pragma solidity 0.8.15;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
 import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
 import {IBCErrors} from "../libs/IbcErrors.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
@@ -41,7 +41,7 @@ import {IFeeVault} from "../interfaces/IFeeVault.sol";
  * @notice This contract is upgradeable and uses the UUPS pattern
  *
  */
-contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDispatcher {
+contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable, IDispatcher {
     // Gap to allow for additional contract inheritance, similar to OpenZeppelin's Initializable contract
     uint256[48] private __gap;
 
@@ -90,7 +90,8 @@ contract Dispatcher is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard, IDi
         if (address(_feeVault) == address(0)) {
             revert IBCErrors.invalidAddress();
         }
-        __Ownable_init();
+        __Ownable2Step_init();
+        __ReentrancyGuard_init();
         portPrefix = initPortPrefix;
         portPrefixLen = uint32(bytes(initPortPrefix).length);
         feeVault = _feeVault;
