@@ -14,7 +14,7 @@ import { loadContractUpdateRegistry } from "../evm/schemas/contractUpdate";
 import { updateContractsForChain } from "../updateContract";
 
 const main = async () => {
-  const { chain, accounts, upgradeSpecs, anvilPort } = await parseArgsFromCLI();
+  const { chain, accounts, updateSpecs, anvilPort } = await parseArgsFromCLI();
 
   const { anvilProcess } = await startAnvilServer(
     chain.rpc,
@@ -26,10 +26,10 @@ const main = async () => {
   const forkedChain = { ...chain, rpc: anvilUrl };
 
   const contractUpdates = loadContractUpdateRegistry(
-    parseObjFromFile(upgradeSpecs)
+    parseObjFromFile(updateSpecs)
   );
 
-  updateContractsForChain(
+  await updateContractsForChain(
     forkedChain,
     accounts.mustGet(chain.chainName),
     ContractRegistryLoader.emptySingle(),
@@ -52,7 +52,7 @@ const main = async () => {
     createWriteStream("fork-test.out")
   );
 
-  anvilProcess.kill();
+  await anvilProcess.kill();
 };
 
 // Starts anvil server from an RPC fork, and waits until it's started
