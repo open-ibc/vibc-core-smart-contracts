@@ -44,8 +44,8 @@ const main = async () => {
   env = await readDeploymentFilesIntoEnv(env, chain); // Read deployment files from non-forked chain to get live addresses
 
   $.env = {
-    ...env,
     ...process.env,
+    ...env,
   };
 
   await $`cd ${MODULE_ROOT_PATH} && forge test --match-contract DispatcherDeployTest --fork-url ${anvilUrl} -vvvv `.pipe(

@@ -20,9 +20,32 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+      
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+      
+      - name: Generate Bindings
+        run: |
+          bun install --frozen-lockfile
+          bun run build
 
       - name: Check contract sizes
         run: forge build --sizes --deny-warnings
 
       - name: Tests
         run: forge test --no-match-contract DispatcherDeployTest
+      - name: set Owner Address
+        run: echo "OwnerAddress=$(cast wallet address ${{ secrets.DUMMY_DEPLOYER_PRIVATE_KEY }})" >> $GITHUB_ENV
+      - name: Fork Deploy Test
+        run: npx vibc-core-deploy-test  
+        env:
+          MODULE_ROOT_PATH: "./"                                                                      
+          RPC_URL: ${{ secrets.FORK_RPC_URL }}
+          CHAIN_NAME: "fork-test-ci"
+          DUMMY_DEPLOYER_PRIVATE_KEY: ${{ secrets.DUMMY_DEPLOYER_PRIVATE_KEY }}
+          DAPP_PRIVATE_KEY_1: ${{ secrets.DAPP_PRIVATE_KEY_1 }}
+          DAPP_PRIVATE_KEY_2: ${{ secrets.DAPP_PRIVATE_KEY_2 }}
+          DAPP_PRIVATE_KEY_3: ${{ secrets.DAPP_PRIVATE_KEY_3 }}
+          PolymerL2OutputOracleProxyAddress: "0xB901B810B30f4d8D179FA5e4dFA73B6EC81f2dB0"
+          L2OutputOracleProxyAddress: "0xB901B810B30f4d8D179FA5e4dFA73B6EC81f2dB0"
+          L1BlockAddress: "0x4200000000000000000000000000000000000015"

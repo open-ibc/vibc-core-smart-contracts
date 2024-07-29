@@ -50,7 +50,7 @@ This file is read in-order, so each entry in this file should be in-order, where
 ### Deploying via Command Line 
 This npm package exposes two commands - one to deploy new contacts (which automatically creates persisted deployment files), and one to send transactions to contracts from persisted artifact files. The following steps are needed to deploy contracts via the command line: 
 
-1. Ensure that your deployer account and constructor arguments are configured. This can either be done through adding contract spec yaml files located in the specs/ from the root of where this npm module is installed from (requires adding a `specs/evm.accounts.yaml` file and either a `specs/contracts.spec.yaml` or  `specs/upgrade.spec.yaml`), or by setting the KEY_POLYMER, RPC_URL, DEPLOYMENT_CHAIN_ID, CHAIN_NAME environment variables. For examples of contract and account spec files, see the `/specs` folder in this repo.
+1. Ensure that your deployer account and constructor arguments are configured. This can either be done through adding contract spec yaml files located in the specs/ from the root of where this npm module is installed from (requires adding a `specs/evm.accounts.yaml` file and either a `specs/contracts.spec.yaml` or  `specs/upgrade.spec.yaml`), or by setting the KEY_DEPLOYER, RPC_URL, DEPLOYMENT_CHAIN_ID, CHAIN_NAME environment variables. For examples of contract and account spec files, see the `/specs` folder in this repo.
 2. Pass in optional command arguments:  
    - RPC_URL - the rpc url to submit deploy txs to, can be a local fork as well 
    - ACCOUNTS_SPECS_PATH - the path to the accounts spec file
@@ -89,8 +89,8 @@ const accountConfig = {
   name: "local",
   registry: [
     {
-      name: "KEY_POLYMER",
-      privateKey: process.env.KEY_POLYMER
+      name: "KEY_DEPLOYER",
+      privateKey: process.env.KEY_DEPLOYER
     },
   ],
 };
@@ -138,8 +138,8 @@ const accountConfig = {
   name: "local",
   registry: [
     {
-      name: "KEY_POLYMER",
-      privateKey: process.env.KEY_POLYMER,
+      name: "KEY_DEPLOYER",
+      privateKey: process.env.KEY_DEPLOYER,
     },
   ],
 };

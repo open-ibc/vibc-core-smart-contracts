@@ -187,7 +187,7 @@ export async function deployToChain(
   }
 
   //  @ts-ignore
-  const env: StringToStringMap = { chain };
+  const env: StringToStringMap = {...process.env , chain , };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
     await readDeploymentFilesIntoEnv(env, chain);

@@ -41,7 +41,7 @@ export async function updateContractsForChain(
 
   //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
-  env = { chain, ...existingContractAddresses, ...env };
+  env = {...process.env, chain, ...existingContractAddresses, ...env };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
     await readDeploymentFilesIntoEnv(env, chain);

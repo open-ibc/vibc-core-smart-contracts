@@ -10,7 +10,7 @@
 # args: args to make the function call with, need to be compatible with the signature
 - name: DispatcherClientSetup-Connection-0
   description: 'Setup client for dispatcher contracts'
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "setClientForConnection(string,address)"
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher"
@@ -20,7 +20,7 @@
 
 - name: DispatcherClientSetup-Connection-1
   description: 'Setup client for dispatcher contracts'
-  deployer: 'KEY_POLYMER' 
+  deployer: 'KEY_DEPLOYER' 
   signature: "setClientForConnection(string,address)"
   address: '{{DispatcherProxy}}' 
   factoryName: "Dispatcher"
