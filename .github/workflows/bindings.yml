@@ -24,6 +24,8 @@ jobs:
 
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly-94b6c6bf857b52d11b90f0ce248ff67ca45460b1
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
