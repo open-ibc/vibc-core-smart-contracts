@@ -345,6 +345,8 @@ export async function parseArgsFromCLI() {
   const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
   const upgradeSpecs =
     (argv1.UPGRADE_SPECS_PATH as string) || UPGRADE_SPECS_PATH;
+  const updateSpecs=
+    (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
   const anvilPort = (argv1.ANVIL_PORT as string) || ANVIL_PORT;
 
   const chainParse = ChainConfigSchema.safeParse({
@@ -360,7 +362,7 @@ export async function parseArgsFromCLI() {
   }
 
   const accountConfigFromYaml = {
-    name: "local",
+    name: chainParse.data.chainName,
     registry: parseObjFromFile(accountSpecs),
   };
 
@@ -371,6 +373,7 @@ export async function parseArgsFromCLI() {
     accounts,
     accountSpecs,
     upgradeSpecs,
+    updateSpecs,
     deploySpecs,
     args: argv1,
     anvilPort,

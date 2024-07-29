@@ -135,7 +135,7 @@
   description: 'Upgrade for uch contract'
   deployer: 'KEY_POLYMER' 
   signature: "upgradeTo(address)"
-  address: '{{ UC Proxy }}' 
+  address: '{{ UCProxy }}' 
   factoryName: "UC"
   args: 
     - '{{UC}}'
