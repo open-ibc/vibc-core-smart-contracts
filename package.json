@@ -29,7 +29,7 @@
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
     "solidity-coverage": "^0.8.12",
-    "tsup": "^8.1.0"
+    "tsup": "^8.2.3"
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
