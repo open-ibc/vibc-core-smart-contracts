@@ -31,8 +31,6 @@ import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {UniversalChannelHandler} from "../../contracts/core/UniversalChannelHandler.sol";
 import {IUniversalChannelHandler} from "../../contracts/interfaces/IUniversalChannelHandler.sol";
-import {DispatcherRc4} from "../upgradeableProxy/upgrades/DispatcherRc4.sol";
-import {Mars as MarsRc4} from "../../contracts/examples/MarsRc4.sol";
 import {UniversalChannelHandlerV2} from "./upgrades/UCHV2.sol";
 import {DispatcherV2Initializable} from "./upgrades/DispatcherV2Initializable.sol";
 import {DispatcherV2} from "./upgrades/DispatcherV2.sol";
@@ -59,16 +57,6 @@ abstract contract UpgradeTestUtils {
         UUPSUpgradeable(address(uchProxy)).upgradeTo(address(newUCHImplementation));
     }
 
-    function deployDispatcherRC4ProxyAndImpl(string memory initPortPrefix, ILightClient initLightClient)
-        public
-        returns (address proxy)
-    {
-        DispatcherRc4 dispatcherImplementation = new DispatcherRc4();
-        bytes memory initData =
-            abi.encodeWithSelector(DispatcherRc4.initialize.selector, initPortPrefix, initLightClient);
-        proxy = address(new ERC1967Proxy(address(dispatcherImplementation), initData));
-    }
-
     function deployUCHV2ProxyAndImpl(address dispatcherProxy) public returns (IUniversalChannelHandler proxy) {
         UniversalChannelHandlerV2 uchImplementation = new UniversalChannelHandlerV2();
         bytes memory initData = abi.encodeWithSelector(UniversalChannelHandlerV2.initialize.selector, dispatcherProxy);
@@ -77,11 +65,11 @@ abstract contract UpgradeTestUtils {
 }
 
 contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
-    uint32 nextSequenceSendSlot = 153;
-    uint32 sendPacketCommitmentSlot = 156;
-    uint32 ackPacketCommitmentSlot = 158;
-    uint32 nextSequenceAckSlot = 155;
-    uint32 nextSequenceRecvSlot = 154;
+    uint32 nextSequenceSendSlot = 252;
+    uint32 sendPacketCommitmentSlot = 255;
+    uint32 ackPacketCommitmentSlot = 257;
+    uint32 nextSequenceAckSlot = 252;
+    uint32 nextSequenceRecvSlot = 253;
     IbcPacket[3] packets;
     string payload = "msgPayload";
     bytes packet = abi.encodePacked(payload);
@@ -152,28 +140,6 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
         vm.expectEmit(true, true, true, true);
         emit SendPacket(address(sender), channelId, packet, packetSeq, timeoutTimestamp);
         sender.greet(payload, channelId, timeoutTimestamp);
-    }
-
-    function sendOneLegacyPacket(bytes32 channelId, uint64 packetSeq, address sender) public {
-        vm.expectEmit(true, true, true, true);
-        emit SendPacket(address(sender), channelId, packet, packetSeq, timeoutTimestamp);
-        // We have to assume an RC4 interface for testing sending legacy packets, for when the sender address is an old
-        // Mars implementation; since otherwise it would try to unpack a returned packet sequence from greet, and
-        // foundry would revert
-        MarsRc4(payable(sender)).greet(payload, channelId, timeoutTimestamp);
-    }
-
-    // Send a packet from the old Rc4 mars implementation, to ensure upgrade compatibility between versions that assume
-    // the Rc4 dispatcher interface
-    function sendLegacyPacket(bytes32 channelId) public {
-        for (uint64 index = 0; index < 3; index++) {
-            uint64 packetSeq = index + 1;
-            sendOneLegacyPacket(channelId, packetSeq, address(mars));
-            IbcEndpoint memory dest = IbcEndpoint("polyibc.bsc.9876543210", "channel-99");
-            string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
-            IbcEndpoint memory src = IbcEndpoint(marsPort, channelId);
-            packets[index] = IbcPacket(src, dest, packetSeq, bytes(payload), ZERO_HEIGHT, maxTimeout);
-        }
     }
 
     function acknowledgePacket() public {}
