@@ -26,9 +26,11 @@ import type {
 export interface FeeVaultInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "acceptOwnership"
       | "depositOpenChannelFee"
       | "depositSendPacketFee"
       | "owner"
+      | "pendingOwner"
       | "renounceOwnership"
       | "transferOwnership"
       | "withdrawFeesToOwner"
@@ -37,10 +39,15 @@ export interface FeeVaultInterface extends Interface {
   getEvent(
     nameOrSignatureOrTopic:
       | "OpenChannelFeeDeposited"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "SendPacketFeeDeposited"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "depositOpenChannelFee",
     values: [AddressLike, string, BigNumberish, string[], string]
@@ -56,6 +63,10 @@ export interface FeeVaultInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "renounceOwnership",
     values?: undefined
   ): string;
@@ -69,6 +80,10 @@ export interface FeeVaultInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "depositOpenChannelFee",
     data: BytesLike
   ): Result;
@@ -77,6 +92,10 @@ export interface FeeVaultInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -115,6 +134,19 @@ export namespace OpenChannelFeeDepositedEvent {
     connectionHops: string[];
     counterpartyPortId: string;
     feeAmount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -203,6 +235,8 @@ export interface FeeVault extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   depositOpenChannelFee: TypedContractMethod<
     [
       src: AddressLike,
@@ -228,6 +262,8 @@ export interface FeeVault extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  pendingOwner: TypedContractMethod<[], [string], "view">;
+
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
   transferOwnership: TypedContractMethod<
@@ -242,6 +278,9 @@ export interface FeeVault extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "depositOpenChannelFee"
   ): TypedContractMethod<
@@ -271,6 +310,9 @@ export interface FeeVault extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "pendingOwner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
@@ -286,6 +328,13 @@ export interface FeeVault extends BaseContract {
     OpenChannelFeeDepositedEvent.InputTuple,
     OpenChannelFeeDepositedEvent.OutputTuple,
     OpenChannelFeeDepositedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -312,6 +361,17 @@ export interface FeeVault extends BaseContract {
       OpenChannelFeeDepositedEvent.InputTuple,
       OpenChannelFeeDepositedEvent.OutputTuple,
       OpenChannelFeeDepositedEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

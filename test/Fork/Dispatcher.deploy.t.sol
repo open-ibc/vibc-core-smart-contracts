@@ -72,7 +72,7 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         // Ideally, we can move to eventually automatically generating the proof by querying on chain.
         dispatcherProxy.setPortPrefix(portPrefix1);
         // Use legacy mars implementation to test upgrade compatibility
-        deployCodeTo("contracts/examples/MarsRc4.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
+        deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
 
         // We have to set the connection hops to hard-coded values since these will be checked in the proof
         connectionHops0 = ["connection-0", "connection-3"];

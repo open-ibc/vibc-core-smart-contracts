@@ -33,8 +33,6 @@ import {FeeSender} from "../implementation_templates/FeeSender.sol";
  * @dev This contract can integrate directly with dapps, or a middleware stack for packet routing.
  */
 contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSUpgradeable, IbcUniversalChannelMW {
-    bytes32 private _UNUSED; // Storage placeholder to ensure upgrade from this version is backwards compatible
-
     string public constant VERSION = "1.0";
     uint256 public constant MW_ID = 1;
 
