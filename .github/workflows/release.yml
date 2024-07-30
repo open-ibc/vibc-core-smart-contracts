@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -17,32 +17,28 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: "recursive"
+          submodules: 'recursive'
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Check contract sizes
-        run: forge build --sizes --deny-warnings
-
       - name: Tests
         run: forge test --no-match-contract DispatcherDeployTest
+
+      - name: Check contract sizes
+        run: rm -rf out && forge build contracts/ --sizes --deny-warnings
 
       - name: Save compiled contracts and ABIs
         if: success()
         run: |
-          mkdir -p artifacts
-          cp -r out/Dispatcher.sol/Dispatcher.json artifacts/
-          cp -r out/UniversalChannelHandler.sol/UniversalChannelHandler.json artifacts/
-          cp -r out/Mars.sol/Mars.json artifacts/
-          cp -r out/Earth.sol/Earth.json artifacts/
-          cp -r out/Moon.sol/Moon.json artifacts/
+          mkdir -p release-artifacts
+          cp -r out release-artifacts
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: compiled-contracts
-          path: artifacts
+          path: release-artifacts
 
   release:
     runs-on: ubuntu-latest
@@ -61,13 +57,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: compiled-contracts
-          path: ./artifacts
+          path: ./release-artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: artifacts/**
+          files: release-artifacts/**
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -93,7 +89,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21.3"
+          go-version: '1.21.3'
 
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -104,8 +100,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22.3.0"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '22.3.0'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
