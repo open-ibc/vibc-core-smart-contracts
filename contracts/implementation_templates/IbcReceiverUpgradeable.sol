@@ -17,10 +17,10 @@
 
 pragma solidity ^0.8.9;
 
-import {OwnableUpgradeable} from "@openzeppelin-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 
-contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
+contract IbcReceiverBaseUpgradeable is Ownable2StepUpgradeable {
     IbcDispatcher public dispatcher;
 
     error notIbcDispatcher();
@@ -54,7 +54,7 @@ contract IbcReceiverBaseUpgradeable is OwnableUpgradeable {
      * @param _dispatcher The address of the IbcDispatcher contract.
      */
     function __IbcReceiverBase_init(IbcDispatcher _dispatcher) internal onlyInitializing {
-        __Ownable_init();
+        __Ownable2Step_init();
         dispatcher = _dispatcher;
     }
 

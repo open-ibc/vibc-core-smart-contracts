@@ -182,6 +182,7 @@ export type AckPacketStructOutput = [success: boolean, data: string] & {
 export interface DispatcherInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "acceptOwnership"
       | "acknowledgement"
       | "channelCloseConfirm"
       | "channelCloseInit"
@@ -194,6 +195,7 @@ export interface DispatcherInterface extends Interface {
       | "getOptimisticConsensusState"
       | "initialize"
       | "owner"
+      | "pendingOwner"
       | "portPrefix"
       | "portPrefixLen"
       | "proxiableUUID"
@@ -230,6 +232,7 @@ export interface DispatcherInterface extends Interface {
       | "ChannelOpenTry"
       | "ChannelOpenTryError"
       | "Initialized"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "RecvPacket"
       | "SendPacket"
@@ -240,6 +243,10 @@ export interface DispatcherInterface extends Interface {
       | "WriteTimeoutPacket"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "acknowledgement",
     values: [IbcPacketStruct, BytesLike, Ics23ProofStruct]
@@ -303,6 +310,10 @@ export interface DispatcherInterface extends Interface {
     values: [string, AddressLike]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "portPrefix",
     values?: undefined
@@ -371,6 +382,10 @@ export interface DispatcherInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "acknowledgement",
     data: BytesLike
   ): Result;
@@ -406,6 +421,10 @@ export interface DispatcherInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "portPrefix", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "portPrefixLen",
@@ -720,6 +739,19 @@ export namespace InitializedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace OwnershipTransferredEvent {
   export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
   export type OutputTuple = [previousOwner: string, newOwner: string];
@@ -926,6 +958,8 @@ export interface Dispatcher extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   acknowledgement: TypedContractMethod<
     [packet: IbcPacketStruct, ack: BytesLike, proof: Ics23ProofStruct],
     [void],
@@ -1023,6 +1057,8 @@ export interface Dispatcher extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  pendingOwner: TypedContractMethod<[], [string], "view">;
+
   portPrefix: TypedContractMethod<[], [string], "view">;
 
   portPrefixLen: TypedContractMethod<[], [bigint], "view">;
@@ -1107,6 +1143,9 @@ export interface Dispatcher extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "acknowledgement"
   ): TypedContractMethod<
@@ -1211,6 +1250,9 @@ export interface Dispatcher extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingOwner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "portPrefix"
@@ -1414,6 +1456,13 @@ export interface Dispatcher extends BaseContract {
     InitializedEvent.InputTuple,
     InitializedEvent.OutputTuple,
     InitializedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
   >;
   getEvent(
     key: "OwnershipTransferred"
@@ -1658,6 +1707,17 @@ export interface Dispatcher extends BaseContract {
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

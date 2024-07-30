@@ -77,6 +77,7 @@ export interface UniversalChannelHandlerInterface extends Interface {
     nameOrSignature:
       | "MW_ID"
       | "VERSION"
+      | "acceptOwnership"
       | "closeChannel"
       | "dispatcher"
       | "initialize"
@@ -91,6 +92,7 @@ export interface UniversalChannelHandlerInterface extends Interface {
       | "onTimeoutPacket"
       | "openChannel"
       | "owner"
+      | "pendingOwner"
       | "proxiableUUID"
       | "renounceOwnership"
       | "sendUniversalPacket"
@@ -106,6 +108,7 @@ export interface UniversalChannelHandlerInterface extends Interface {
       | "AdminChanged"
       | "BeaconUpgraded"
       | "Initialized"
+      | "OwnershipTransferStarted"
       | "OwnershipTransferred"
       | "UCHPacketSent"
       | "Upgraded"
@@ -113,6 +116,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
 
   encodeFunctionData(functionFragment: "MW_ID", values?: undefined): string;
   encodeFunctionData(functionFragment: "VERSION", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "closeChannel",
     values: [BytesLike]
@@ -167,6 +174,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "proxiableUUID",
     values?: undefined
   ): string;
@@ -208,6 +219,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
 
   decodeFunctionResult(functionFragment: "MW_ID", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "VERSION", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "closeChannel",
     data: BytesLike
@@ -255,6 +270,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "proxiableUUID",
     data: BytesLike
@@ -316,6 +335,19 @@ export namespace InitializedEvent {
   export type OutputTuple = [version: bigint];
   export interface OutputObject {
     version: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -408,6 +440,8 @@ export interface UniversalChannelHandler extends BaseContract {
 
   VERSION: TypedContractMethod<[], [string], "view">;
 
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   closeChannel: TypedContractMethod<
     [channelId: BytesLike],
     [void],
@@ -497,6 +531,8 @@ export interface UniversalChannelHandler extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  pendingOwner: TypedContractMethod<[], [string], "view">;
+
   proxiableUUID: TypedContractMethod<[], [string], "view">;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
@@ -559,6 +595,9 @@ export interface UniversalChannelHandler extends BaseContract {
   getFunction(
     nameOrSignature: "VERSION"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "closeChannel"
   ): TypedContractMethod<[channelId: BytesLike], [void], "nonpayable">;
@@ -647,6 +686,9 @@ export interface UniversalChannelHandler extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "pendingOwner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "proxiableUUID"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -721,6 +763,13 @@ export interface UniversalChannelHandler extends BaseContract {
     InitializedEvent.OutputObject
   >;
   getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
+  >;
+  getEvent(
     key: "OwnershipTransferred"
   ): TypedContractEvent<
     OwnershipTransferredEvent.InputTuple,
@@ -774,6 +823,17 @@ export interface UniversalChannelHandler extends BaseContract {
       InitializedEvent.InputTuple,
       InitializedEvent.OutputTuple,
       InitializedEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<
