@@ -17,12 +17,12 @@
 
 pragma solidity 0.8.15;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IFeeVault} from "../interfaces/IFeeVault.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ChannelOrder} from "../libs/Ibc.sol";
 
-contract FeeVault is Ownable, ReentrancyGuard, IFeeVault {
+contract FeeVault is Ownable2Step, ReentrancyGuard, IFeeVault {
     /**
      * @notice Deposits the send packet fee for a given channel and sequence that is used for relaying recieve and
      * acknowledge steps of a packet handhsake after a dapp has called the sendPacket on dispatcher.
