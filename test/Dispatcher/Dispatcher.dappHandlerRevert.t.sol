@@ -131,15 +131,6 @@ contract DappHandlerRevertTests is Base {
         dispatcherProxy.acknowledgement(packet, ack, validProof);
     }
 
-    function test_ibc_channel_open_dapp_revert() public {
-        vm.expectEmit(true, true, true, true);
-        vm.prank(address(revertingStringMars));
-        emit ChannelOpenInitError(
-            address(revertingStringMars), abi.encodeWithSignature("Error(string)", "open ibc channel is reverting")
-        );
-        dispatcherProxy.channelOpenInit(ch1.version, ChannelOrder.NONE, false, connectionHops1, ch0.portId);
-    }
-
     function test_ibc_channel_ack_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
         ch0.portId = IbcUtils.addressToPortId(portPrefix, address(revertingStringMars));

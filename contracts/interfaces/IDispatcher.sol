@@ -35,9 +35,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     ) external returns (uint256 fraudProofEndTime, bool ended);
 
     /**
-     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
-     * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
-     * will be relayed to the  IBC/VIBC hub chain.
+     * This function is called by a 'relayer' on behalf of a dApp.
      */
     function channelOpenInit(
         string calldata version,

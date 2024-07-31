@@ -28,20 +28,6 @@ import {ChannelOrder, IbcPacket, AckPacket} from "../libs/Ibc.sol";
  */
 interface IbcChannelReceiver {
     /**
-     * @notice Handles the channel open initialization event (step 1 of the open channel handshake)
-     * @dev Make sure to validate that the channel version is indeed one supported by the dapp; this callback should
-     * revert if not.
-     * @param version The version string provided by the counterparty
-     * @return selectedVersion The selected version string
-     */
-    function onChanOpenInit(
-        ChannelOrder order,
-        string[] calldata connectionHops,
-        string calldata counterpartyPortIdentifier,
-        string calldata version
-    ) external returns (string memory selectedVersion);
-
-    /**
      * @notice Handles the channel open try event (step 2 of the open channel handshake)
      * @dev Make sure to validate that the counterparty version is indeed one supported by the dapp; this callback
      * should

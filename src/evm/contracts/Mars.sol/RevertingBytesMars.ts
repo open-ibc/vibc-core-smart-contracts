@@ -85,7 +85,6 @@ export interface RevertingBytesMarsInterface extends Interface {
       | "onChanCloseInit"
       | "onChanOpenAck"
       | "onChanOpenConfirm"
-      | "onChanOpenInit"
       | "onChanOpenTry"
       | "onRecvPacket"
       | "onTimeoutPacket"
@@ -147,10 +146,6 @@ export interface RevertingBytesMarsInterface extends Interface {
   encodeFunctionData(
     functionFragment: "onChanOpenConfirm",
     values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "onChanOpenInit",
-    values: [BigNumberish, string[], string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "onChanOpenTry",
@@ -227,10 +222,6 @@ export interface RevertingBytesMarsInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "onChanOpenConfirm",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "onChanOpenInit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -396,12 +387,6 @@ export interface RevertingBytesMars extends BaseContract {
     [channelId: BytesLike],
     [void],
     "nonpayable"
-  >;
-
-  onChanOpenInit: TypedContractMethod<
-    [arg0: BigNumberish, arg1: string[], arg2: string, version: string],
-    [string],
-    "view"
   >;
 
   onChanOpenTry: TypedContractMethod<
@@ -583,13 +568,6 @@ export interface RevertingBytesMars extends BaseContract {
   getFunction(
     nameOrSignature: "onChanOpenConfirm"
   ): TypedContractMethod<[channelId: BytesLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "onChanOpenInit"
-  ): TypedContractMethod<
-    [arg0: BigNumberish, arg1: string[], arg2: string, version: string],
-    [string],
-    "view"
-  >;
   getFunction(
     nameOrSignature: "onChanOpenTry"
   ): TypedContractMethod<

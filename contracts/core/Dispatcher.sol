@@ -153,9 +153,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
     }
 
     /**
-     * This function is called by a 'relayer' on behalf of a dApp. The dApp should implement IbcChannelHandler's
-     * onChanOpenInit. If the callback succeeds, the dApp should return the selected version and the emitted event
-     * will be relayed to the  IBC/VIBC hub chain.
+     * This function is called by a dApp to initiate a channel handshake.
      */
     /**
      * @notice Initializes the channel opening process with the specified parameters. This is the first step in the  channel
@@ -167,9 +165,6 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      * @param connectionHops The list of connection hops associated with the channel, with the first channel in this
      * array always starting from the chain this contract is deployed on
      * @param counterpartyPortId The port ID of the counterparty.
-     * @dev This function initializes the channel opening process by calling the onChanOpenInit function of the
-     *      specified receiver contract.
-     *      It can only be called by authorized parties.
      */
     function channelOpenInit(
         string calldata version,
@@ -184,18 +179,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
             revert IBCErrors.invalidCounterParty();
         }
 
-        // Have to encode here to avoid stack-too-deep error
-        bytes memory chanOpenInitArgs = abi.encode(ordering, connectionHops, counterpartyPortId, version);
-        (bool success, bytes memory data) =
-            _callIfContract(msg.sender, bytes.concat(IbcChannelReceiver.onChanOpenInit.selector, chanOpenInitArgs));
-
-        if (success) {
-            emit ChannelOpenInit(
-                msg.sender, abi.decode(data, (string)), ordering, feeEnabled, connectionHops, counterpartyPortId
-            );
-        } else {
-            emit ChannelOpenInitError(msg.sender, data);
-        }
+        emit ChannelOpenInit(msg.sender, version, ordering, feeEnabled, connectionHops, counterpartyPortId);
     }
 
     /**

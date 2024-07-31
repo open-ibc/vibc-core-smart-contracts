@@ -109,6 +109,8 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         timeoutPackets.push(packet);
     }
 
+    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {}
+
     /**
      * @notice Handles channel close callback on the dest chain
      * @param channelId The unique identifier of the channel
@@ -178,21 +180,6 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
     }
 
     /**
-     * @notice Handles the channel close init event
-     * @dev Make sure to validate channelId and counterpartyVersion
-     * @param version The channel version
-     */
-    function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
-        external
-        view
-        virtual
-        onlyIbcDispatcher
-        returns (string memory selectedVersion)
-    {
-        return _openChannel(version);
-    }
-
-    /**
      * @notice Handles the channel open try event (step 2 of the open channel handshake)
      * @dev Make sure to validate that the counterparty version is indeed one supported by the dapp; this callback
      * should
@@ -246,17 +233,6 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         }
         revert UnsupportedVersion();
     }
-
-    function _openChannel(string calldata version) private view returns (string memory selectedVersion) {
-        for (uint256 i = 0; i < supportedVersions.length; i++) {
-            if (keccak256(abi.encodePacked(version)) == keccak256(abi.encodePacked(supportedVersions[i]))) {
-                return version;
-            }
-        }
-        revert UnsupportedVersion();
-    }
-
-    function onChanCloseInit(bytes32 channelId, string calldata, bytes32) external virtual onlyIbcDispatcher {}
 }
 
 /*
@@ -265,20 +241,6 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
  */
 contract RevertingStringMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
-
-    // solhint-disable-next-line
-    function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata)
-        external
-        view
-        virtual
-        override
-        onlyIbcDispatcher
-        returns (string memory selectedVersion)
-    {
-        // solhint-disable-next-line
-        require(false, "open ibc channel is reverting");
-        return "";
-    }
 
     // solhint-disable-next-line
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
