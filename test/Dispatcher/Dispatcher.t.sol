@@ -120,24 +120,6 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
         }
     }
 
-    function test_openChannel_initiator_revert_unsupportedVersion() public {
-        ChannelHandshakeSetting[4] memory settings = createSettings(true, true);
-        string[2] memory versions = ["", "xxxxxxx"];
-        for (uint256 i = 0; i < settings.length; i++) {
-            for (uint256 j = 0; j < versions.length; j++) {
-                LocalEnd memory le = _local;
-                ChannelEnd memory re = _remote;
-                le.versionCall = versions[j];
-                le.versionExpected = versions[j];
-                vm.expectEmit(true, true, true, true);
-                emit IbcEventsEmitter.ChannelOpenInitError(
-                    address(le.receiver), abi.encodeWithSelector(IbcReceiverBase.UnsupportedVersion.selector)
-                );
-                channelOpenInit(le, re, settings[i], false);
-            }
-        }
-    }
-
     function test_openChannel_receiver_fail_invalidProof() public {
         // When localEnd initiates, no proof verification is done in channelOpenTry
         ChannelHandshakeSetting[4] memory settings = createSettings(false, false);

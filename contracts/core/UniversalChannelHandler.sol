@@ -179,19 +179,6 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
     function setDispatcher(IbcDispatcher _dispatcher) external onlyOwner {
         dispatcher = _dispatcher;
     }
-    /**
-     * @notice Handles the initialization of channel opening.
-     * @param version The new channel's version
-     */
-
-    function onChanOpenInit(ChannelOrder, string[] calldata, string calldata, string calldata version)
-        external
-        view
-        onlyIbcDispatcher
-        returns (string memory selectedVersion)
-    {
-        return _openChannel(version);
-    }
 
     // solhint-disable-next-line ordering
     function onChanOpenTry(
@@ -231,17 +218,5 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
             revert UnsupportedVersion();
         }
         return version;
-    }
-
-    /**
-     * @dev Internal function to open a channel only if the version matches what is expected.
-     * @param version The version string provided by the counterparty
-     * @return selectedVersion The selected version string
-     */
-    function _openChannel(string calldata version) internal pure returns (string memory selectedVersion) {
-        if (keccak256(abi.encodePacked(version)) != keccak256(abi.encodePacked(VERSION))) {
-            revert UnsupportedVersion();
-        }
-        return VERSION;
     }
 }

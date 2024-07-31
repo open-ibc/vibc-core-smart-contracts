@@ -82,7 +82,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
       | "onChanCloseInit"
       | "onChanOpenAck"
       | "onChanOpenConfirm"
-      | "onChanOpenInit"
       | "onChanOpenTry"
       | "onRecvPacket"
       | "onTimeoutPacket"
@@ -125,10 +124,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "onChanOpenConfirm",
     values: [BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "onChanOpenInit",
-    values: [BigNumberish, string[], string, string]
   ): string;
   encodeFunctionData(
     functionFragment: "onChanOpenTry",
@@ -198,10 +193,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "onChanOpenConfirm",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "onChanOpenInit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -339,17 +330,6 @@ export interface IUniversalChannelHandler extends BaseContract {
     "nonpayable"
   >;
 
-  onChanOpenInit: TypedContractMethod<
-    [
-      order: BigNumberish,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string,
-      version: string
-    ],
-    [string],
-    "nonpayable"
-  >;
-
   onChanOpenTry: TypedContractMethod<
     [
       order: BigNumberish,
@@ -482,18 +462,6 @@ export interface IUniversalChannelHandler extends BaseContract {
   getFunction(
     nameOrSignature: "onChanOpenConfirm"
   ): TypedContractMethod<[channelId: BytesLike], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "onChanOpenInit"
-  ): TypedContractMethod<
-    [
-      order: BigNumberish,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string,
-      version: string
-    ],
-    [string],
-    "nonpayable"
-  >;
   getFunction(
     nameOrSignature: "onChanOpenTry"
   ): TypedContractMethod<

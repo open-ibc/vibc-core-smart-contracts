@@ -249,40 +249,6 @@ const _abi = [
   },
   {
     type: "function",
-    name: "onChanOpenInit",
-    inputs: [
-      {
-        name: "order",
-        type: "uint8",
-        internalType: "enum ChannelOrder",
-      },
-      {
-        name: "connectionHops",
-        type: "string[]",
-        internalType: "string[]",
-      },
-      {
-        name: "counterpartyPortIdentifier",
-        type: "string",
-        internalType: "string",
-      },
-      {
-        name: "version",
-        type: "string",
-        internalType: "string",
-      },
-    ],
-    outputs: [
-      {
-        name: "selectedVersion",
-        type: "string",
-        internalType: "string",
-      },
-    ],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "onChanOpenTry",
     inputs: [
       {
