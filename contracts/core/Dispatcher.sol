@@ -387,11 +387,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      * @notice Must be called by the channel owner, ie. _portChannelMap[msg.sender][channelId] must exist
      */
     function channelCloseInit(bytes32 channelId) external nonReentrant {
-        Channel memory channel = _portChannelMap[msg.sender][channelId];
-        if (channel.counterpartyChannelId == bytes32(0)) {
-            // _portChannelMap is used to check ownership of a channel by a port
-            revert IBCErrors.channelNotOwnedBySender();
-        }
+        _checkChannelOwner(channelId);
 
         // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
         // a faulty callback cannot close a channel (as is done on channelCloseConfirm)
@@ -417,7 +413,8 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         if (portAddress == address(0)) {
             revert IBCErrors.invalidAddress();
         }
-        // ensure port owns channel
+        // ensure port owns channel - note: we don't use _checkChannelOwner here since we need the channel aftewards and
+        // we save an SLOAD here.
         Channel memory channel = _portChannelMap[portAddress][channelId];
         if (channel.counterpartyChannelId == bytes32(0)) {
             // _portChannelMap is used to check ownership of a channel by a port
@@ -474,11 +471,8 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         nonReentrant
         returns (uint64 sequence)
     {
-        // ensure port owns channel
-        if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
-            // _portChannelMap is used to check ownership of a channel by a port
-            revert IBCErrors.channelNotOwnedBySender();
-        }
+        _checkChannelOwner(channelId);
+
         if (timeoutTimestamp <= block.timestamp) {
             revert IBCErrors.invalidPacket();
         }
@@ -781,6 +775,13 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      * @inheritdoc UUPSUpgradeable
      */
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    function _checkChannelOwner(bytes32 channelId) internal view {
+        if (_portChannelMap[msg.sender][channelId].counterpartyChannelId == bytes32(0)) {
+            // _portChannelMap is used to check ownership of a channel by a port
+            revert IBCErrors.channelNotOwnedBySender();
+        }
+    }
 
     /**
      * @notice Checks if the given packet has timed out according to the host chain's block height and timestamp.
