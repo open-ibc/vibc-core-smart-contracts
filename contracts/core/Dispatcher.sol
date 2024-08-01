@@ -392,24 +392,11 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
             // _portChannelMap is used to check ownership of a channel by a port
             revert IBCErrors.channelNotOwnedBySender();
         }
-        (bool success, bytes memory data) = _callIfContract(
-            msg.sender,
-            abi.encodeWithSelector(
-                IbcChannelReceiver.onChanCloseInit.selector,
-                channelId,
-                channel.counterpartyPortId,
-                channel.counterpartyChannelId
-            )
-        );
 
         // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
         // a faulty callback cannot close a channel (as is done on channelCloseConfirm)
         delete _portChannelMap[msg.sender][channelId];
-        if (success) {
-            emit ChannelCloseInit(msg.sender, channelId);
-        } else {
-            emit ChannelCloseInitError(address(msg.sender), data);
-        }
+        emit ChannelCloseInit(msg.sender, channelId);
     }
 
     /**

@@ -268,11 +268,6 @@ contract RevertingStringCloseChannelMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
     // solhint-disable-next-line
 
-    function onChanCloseInit(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
-        // solhint-disable-next-line
-        require(false, "close ibc channel is reverting");
-    }
-
     function onChanCloseConfirm(bytes32, string calldata, bytes32) external view override onlyIbcDispatcher {
         // solhint-disable-next-line
         require(false, "close ibc channel is reverting");

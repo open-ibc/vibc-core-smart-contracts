@@ -372,9 +372,9 @@ export interface RevertingStringCloseChannelMars extends BaseContract {
   >;
 
   onChanCloseInit: TypedContractMethod<
-    [arg0: BytesLike, arg1: string, arg2: BytesLike],
+    [channelId: BytesLike, arg1: string, arg2: BytesLike],
     [void],
-    "view"
+    "nonpayable"
   >;
 
   onChanOpenAck: TypedContractMethod<
@@ -558,9 +558,9 @@ export interface RevertingStringCloseChannelMars extends BaseContract {
   getFunction(
     nameOrSignature: "onChanCloseInit"
   ): TypedContractMethod<
-    [arg0: BytesLike, arg1: string, arg2: BytesLike],
+    [channelId: BytesLike, arg1: string, arg2: BytesLike],
     [void],
-    "view"
+    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "onChanOpenAck"
