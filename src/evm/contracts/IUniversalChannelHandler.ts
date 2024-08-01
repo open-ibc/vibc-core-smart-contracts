@@ -79,7 +79,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
       | "dispatcher"
       | "onAcknowledgementPacket"
       | "onChanCloseConfirm"
-      | "onChanCloseInit"
       | "onChanOpenAck"
       | "onChanOpenConfirm"
       | "onChanOpenTry"
@@ -111,10 +110,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "onChanCloseConfirm",
-    values: [BytesLike, string, BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "onChanCloseInit",
     values: [BytesLike, string, BytesLike]
   ): string;
   encodeFunctionData(
@@ -181,10 +176,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "onChanCloseConfirm",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "onChanCloseInit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -295,16 +286,6 @@ export interface IUniversalChannelHandler extends BaseContract {
   >;
 
   onChanCloseConfirm: TypedContractMethod<
-    [
-      channelId: BytesLike,
-      counterpartyPortId: string,
-      counterpartyChannelId: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-
-  onChanCloseInit: TypedContractMethod<
     [
       channelId: BytesLike,
       counterpartyPortId: string,
@@ -428,17 +409,6 @@ export interface IUniversalChannelHandler extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "onChanCloseConfirm"
-  ): TypedContractMethod<
-    [
-      channelId: BytesLike,
-      counterpartyPortId: string,
-      counterpartyChannelId: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "onChanCloseInit"
   ): TypedContractMethod<
     [
       channelId: BytesLike,

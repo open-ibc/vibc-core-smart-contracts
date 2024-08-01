@@ -112,22 +112,6 @@ contract DappRevertTestsCloseChannel is DappHandlerRevertTests {
         channelOpenConfirm(_local, _remote, setting, true);
     }
 
-    function test_ibc_channel_close_init_dapp_revert() public {
-        // We need to actually setup channelhandshake since foundry doesn't support packed slots
-        vm.expectEmit(true, true, true, true);
-        emit ChannelCloseInitError(
-            address(revertingStringCloseMars),
-            abi.encodeWithSignature("Error(string)", "close ibc channel is reverting")
-        );
-        revertingStringCloseMars.triggerChannelClose(ch0.channelId);
-
-        // Channels should still be deleted on dapp revert
-        assertEq(
-            abi.encode(defaultChannel),
-            abi.encode(dispatcherProxy.getChannel(address(revertingStringCloseMars), ch0.channelId))
-        );
-    }
-
     function test_ibc_channel_close_confirm_dapp_revert() public {
         vm.expectEmit(true, true, true, true);
         emit ChannelCloseConfirmError(

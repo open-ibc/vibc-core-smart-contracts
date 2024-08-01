@@ -190,29 +190,6 @@ const _abi = [
   },
   {
     type: "function",
-    name: "onChanCloseInit",
-    inputs: [
-      {
-        name: "channelId",
-        type: "bytes32",
-        internalType: "bytes32",
-      },
-      {
-        name: "counterpartyPortId",
-        type: "string",
-        internalType: "string",
-      },
-      {
-        name: "counterpartyChannelId",
-        type: "bytes32",
-        internalType: "bytes32",
-      },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "onChanOpenAck",
     inputs: [
       {
