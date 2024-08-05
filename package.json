@@ -15,7 +15,7 @@
     "@typechain/ethers-v6": "^0.5.1",
     "ethers": "^6.13.1",
     "nunjucks": "^3.2.4",
-    "solhint": "^5.0.1",
+    "solhint": "^5.0.3",
     "typechain": "^8.3.2",
     "winston": "^3.13.1",
     "yaml": "^2.4.5",
