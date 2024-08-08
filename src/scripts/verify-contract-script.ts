@@ -51,6 +51,9 @@ const verifyContract = async (
 
   // Run foundry verification command
   let command;
+
+   // TODO : Add check here for if already in MODULE_ROOT 
+
   cd(MODULE_ROOT_PATH); // cd to contracts directory
   try {
     command = await $`forge verify-contract ${args} 2>&1 | tee verify-out.txt`; // command = await $`cd ${MODULE_ROOT_PATH} && forge verify-contract ${
