@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { AccountRegistry, connectProviderAccounts } from "./evm/account";
+import { AccountRegistry, connectProviderAccounts, isParsedMultiSigWallet } from "./evm/schemas/account";
 import { Chain } from "./evm/chain";
 import { TxItem, TxRegistry, loadTxRegistry } from "./evm/schemas/tx";
 import { Logger } from "./utils/cli";
@@ -42,16 +42,18 @@ export const sendTx = async (
       deployedContractAbi = deployedContract.abi;
     }
 
-    const deployer = accountRegistry.mustGet(
+    const account = accountRegistry.mustGet(
       tx.deployer ? tx.deployer : DEFAULT_DEPLOYER
     );
+
+    const deployer = isParsedMultiSigWallet(account) ? account.wallet : account; 
 
     const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 
     const ethersContract = new ethers.Contract(
       deployedContractAddress,
       deployedContractAbi,
-      deployer
+     deployer 
     );
     const args = renderArgs(tx.args, tx.init, env);
     logger.info(

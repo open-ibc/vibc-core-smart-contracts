@@ -1,7 +1,7 @@
 import { sendTx } from "./tx";
 import { deployContract } from "./deploy";
 import { Chain } from "./evm/chain";
-import { AccountRegistry, connectProviderAccounts } from "./evm/account";
+import { AccountRegistry, connectProviderAccounts } from "./evm/schemas/account";
 import { ContractItemSchema, ContractRegistry } from "./evm/schemas/contract";
 import {
   UpdateContractRegistry,

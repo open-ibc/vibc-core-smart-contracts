@@ -24,7 +24,7 @@ import {
 } from "./constants";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
-import { AccountRegistry } from "../evm/account";
+import { AccountRegistry } from "../evm/schemas/account";
 import { ethers } from "ethers";
 
 export interface StringToStringMap {
