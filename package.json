@@ -7,11 +7,15 @@
     "deploy-vibc-core-smart-contracts": "./dist/scripts/deploy-script.js",
     "update-vibc-core-smart-contracts": "./dist/scripts/update-contracts-script.js",
     "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
-    "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js"
+    "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js",
+    "vibc-core-deploy-multisig": "./dist/scripts/deploy-multisig.js"
   },
   "license": "MIT",
   "dependencies": {
     "@commander-js/extra-typings": "^12.1.0",
+    "@safe-global/api-kit": "^2.4.3",
+    "@safe-global/protocol-kit": "^4.0.3",
+    "@safe-global/safe-core-sdk-types": "^5.0.3",
     "@typechain/ethers-v6": "^0.5.1",
     "ethers": "^6.13.1",
     "nunjucks": "^3.2.4",
@@ -24,6 +28,7 @@
     "zx": "^8.1.4"
   },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.14.12",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.32",
