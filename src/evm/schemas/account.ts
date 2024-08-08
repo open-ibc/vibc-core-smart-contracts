@@ -26,12 +26,14 @@ const mnemonic = z
 const singleSigAccount = z.union([privateKey, mnemonic]);
 
 // Uninitialized User input type
-const multisigConfig = z.object({
-  name: z.string().min(1),
-  privateKey: z.string().min(1),
-  multisigAddress: z.string().min(1),
-  chainId: z.bigint(),
-});
+const multisigConfig = z
+  .object({
+    name: z.string().min(1),
+    privateKey: z.string().min(1),
+    safeAddress: z.string().min(1),
+    chainId: z.bigint(),
+  })
+  .strict();
 
 // Type that loadEvmAccounts will return for multisig types
 const multisigAccount = z
@@ -44,12 +46,24 @@ const multisigAccount = z
   })
   .strict();
 
+// geth compatible keystore
+const keyStore = z.object({
+  dir: z.string().min(1),
+  password: z.optional(z.string()),
+});
+
 type Privatekey = z.infer<typeof privateKey>;
 type Mnemonic = z.infer<typeof mnemonic>;
 type SingleSigAccount = z.infer<typeof singleSigAccount>;
 type MultiSigConfig = z.infer<typeof multisigConfig>;
 type ParsedMultiSigWallet = z.infer<typeof multisigAccount>;
 export type SendingAccount = Wallet | ParsedMultiSigWallet;
+export type KeyStore = z.infer<typeof keyStore>;
+
+const evmAccounts = z.array(z.union([singleSigAccount, multisigConfig]));
+export type EvmAccounts = z.infer<typeof evmAccounts>;
+export const EvmAccountsConfig = z.union([evmAccounts, keyStore]);
+export type EvmAccountConfig = z.infer<typeof EvmAccountsConfig>;
 
 export const isPrivateKey = (account: any): account is Privatekey => {
   return privateKey.safeParse(account).success;
@@ -69,23 +83,25 @@ export const isMultiSigConfig = (account: any): account is MultiSigConfig => {
   return multisigConfig.safeParse(account).success;
 };
 
+export const isKeyStore = (account: any): account is KeyStore => {
+  return keyStore.safeParse(account).success;
+};
+
+export const isEvmAccount = (account: any): account is EvmAccounts => {
+  return evmAccounts.safeParse(account).success;
+};
+export const isEvmAccountsConfig = (
+  account: any
+): account is EvmAccountConfig => {
+  return EvmAccountsConfig.safeParse(account).success;
+};
+
 // Note: only use this for already declared accounts.
 export const isParsedMultiSigWallet = (
   account: any
 ): account is ParsedMultiSigWallet => {
   return multisigAccount.safeParse(account).success;
 };
-
-// geth compatible keystore
-const keyStore = z.object({
-  dir: z.string().min(1),
-  password: z.optional(z.string()),
-});
-
-export const EvmAccountsSchema = z.union([
-  z.array(z.union([privateKey, mnemonic, multisigAccount])),
-  keyStore,
-]);
 
 // ethers wallet with encryption
 export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
@@ -132,45 +148,48 @@ export class AccountRegistry extends Registry<SendingAccount> {
       };
     });
   }
+
+  public getSinglePrivateKeyFromAccount = (accountName: string) => {
+    const account = this.mustGet(accountName);
+    if (isParsedMultiSigWallet(account)) {
+      return account.privateKey.privateKey;
+    }
+    return account.privateKey;
+  };
 }
 
 // load a Map of { [name: string]: Wallet } from EvmAccountsSchema object
 export function loadEvmAccounts(config: any): Registry<SendingAccount> {
-  const accountsConfig = config.map((c: any) => {
-    const parsed = EvmAccountsSchema.safeParse(c);
-    if (!parsed.success) {
-      throw new Error(`Invalid account config: ${parsed.error.errors}`);
-    }
-    return parsed.data;
-  });
+  // const accountsConfig = EvmAccountsSchema.safeParse(config); // config.map((c: any) => {
+  if (!isEvmAccountsConfig(config)) {
+    throw new Error(`Error parsing schema: ${config}`);
+  }
 
   const walletMap = new Registry<SendingAccount>([]);
-  if (Array.isArray(accountsConfig)) {
-    for (const account of accountsConfig) {
+
+  if (isEvmAccount(config)) {
+    for (const account of config) {
       if (isSingleSigAccount(account)) {
         walletMap.set(account.name, createWallet(account));
-      } else if (isMultiSigConfig(account)) {
+      }
+      if (isMultiSigConfig(account)) {
         walletMap.set(
           account.name,
           createWallet({ privateKey: account.privateKey, name: account.name })
         );
       }
     }
-  } else if ("dir" in accountsConfig) {
-    const files = fs.readdirSync(accountsConfig.dir);
+  } else if (isKeyStore(config)) {
+    const files = fs.readdirSync(config.dir);
     for (const file of files) {
-      const filePath = path.join(accountsConfig.dir, file);
+      const filePath = path.join(config.dir, file);
       const json = fs.readFileSync(filePath, "utf8");
       const wallet = ethers.Wallet.fromEncryptedJsonSync(
         json,
-        accountsConfig.password ?? ""
+        config.password ?? ""
       );
       walletMap.set(wallet.address, wallet);
     }
-  } else {
-    throw new Error(
-      `invalid accounts config: ${JSON.stringify(accountsConfig)}`
-    );
   }
   return walletMap;
 }
