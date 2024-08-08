@@ -26,6 +26,7 @@ import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import { AccountRegistry } from "../evm/schemas/account";
 import { ethers } from "ethers";
+import { BigNumberish } from "ethers";
 
 export interface StringToStringMap {
   [key: string]: string | null | undefined;
@@ -56,6 +57,12 @@ export type DeployedContractObject = {
 export function readYamlFile(file: string): any {
   return yaml.parse(fs.readFileSync(file, "utf-8"));
 }
+
+
+const writeYamlFile = (filePath: string, data: any) => {
+  const yamlStr = yaml.stringify(data);
+  fs.writeFileSync(filePath, yamlStr);
+};
 
 export function contractNameToDeployFile(
   contractName: string,
@@ -345,8 +352,7 @@ export async function parseArgsFromCLI() {
   const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
   const upgradeSpecs =
     (argv1.UPGRADE_SPECS_PATH as string) || UPGRADE_SPECS_PATH;
-  const updateSpecs=
-    (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
+  const updateSpecs = (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
   const anvilPort = (argv1.ANVIL_PORT as string) || ANVIL_PORT;
 
   const chainParse = ChainConfigSchema.safeParse({
@@ -379,6 +385,26 @@ export async function parseArgsFromCLI() {
     anvilPort,
   };
 }
+
+export const parseMultiSigInitArgsFromCLI = async () => {
+  const argv1 = await yargs(hideBin(process.argv)).argv;
+  const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
+  const owners = argv1.OWNERS as string[];
+  const threshold = argv1.THRESHOLD as number;
+  const initiator = argv1.INITIATOR as string;
+  const accountsSpecPath =
+    (argv1.ACCOUNTS_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+
+  // TODO: validate args
+
+  return {
+    rpcUrl,
+    owners,
+    initiator,
+    accountsSpecPath,
+    threshold,
+  };
+};
 
 export const parseVerifyArgsFromCLI = async () => {
   // Load args from command line. CLI args take priority. Then env vars. Then default values if none are specified
@@ -419,4 +445,25 @@ export const parseVerifyArgsFromCLI = async () => {
     updateSpecs,
     args: argv1,
   };
+};
+
+// Convert from a single sig address to a multisig address, called after a safe has been initialized
+export const saveMultisigAddressToAccountsSpec = async (
+  newSafeAddress: string,
+  accountsSpecPath: string,
+  ownerName: string, // Used to find which owner to write to
+  chainId: BigNumberish
+) => {
+  // TODO: Currently this yaml lib doesn't include comments - we need to figure out a way to preserve comments / whitespaces, etc 
+  const yamlFile = readYamlFile(accountsSpecPath);
+  const newYamlFile = yamlFile.map((account: any) => {
+    return account.name === ownerName
+      ? {
+          ...account,
+          safeAddress: newSafeAddress,
+          chainId: chainId,
+        }
+      : account;
+  });
+  await writeYamlFile(accountsSpecPath, newYamlFile);
 };
