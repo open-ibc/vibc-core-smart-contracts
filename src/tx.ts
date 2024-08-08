@@ -51,6 +51,8 @@ export async function sendTx(
       tx.deployer ? tx.deployer : DEFAULT_DEPLOYER
     );
 
+    const deployer = isParsedMultiSigWallet(account) ? account.wallet : account; 
+
     const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 
     const args = renderArgs(tx.args, tx.init, env);
