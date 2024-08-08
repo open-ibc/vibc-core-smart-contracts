@@ -18,6 +18,7 @@ export default defineConfig({
     "src/scripts/verify-contract-script.ts",
     "src/scripts/fork-deployment-test.ts",
     "src/scripts/setup-dispatcher-script.ts",
+    "src/scripts/deploy-multisig.ts",
   ],
   format: ["cjs", "esm"], // Build for commonJS and ESmodules
   dts: true, // Generate declaration file (.d.ts)
