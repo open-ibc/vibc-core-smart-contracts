@@ -12,7 +12,7 @@ import {
   AccountRegistry,
   connectProviderAccounts,
   Wallet,
-} from "./evm/account";
+} from "./evm/schemas/account";
 import {
   ContractRegistry,
   ContractRegistryLoader,
@@ -22,6 +22,7 @@ import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { Chain } from "./evm/chain";
 import * as vibcContractFactories from "./evm/contracts/index";
+import { isParsedMultiSigWallet} from "./evm/schemas/account";
 
 export const updateNoncesForSender = async (
   nonces: Record<string, number>,
@@ -120,6 +121,9 @@ export const deployContract = async (
       contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
     );
 
+    if(isParsedMultiSigWallet(deployer)){
+      throw new Error(`Contract Deployments not supported for multisig wallets!`);
+    }
     const updatedNonces = await updateNoncesForSender(nonces, deployer);
     const nonce = updatedNonces[deployer.address];
     if (!dryRun) {
