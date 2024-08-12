@@ -386,7 +386,12 @@ export async function parseArgsFromCLI() {
 }
 
 export const parseMultiSigInitArgsFromCLI = async () => {
-  const argv1 = await yargs(hideBin(process.argv)).argv;
+  const argv1 = await yargs(hideBin(process.argv)).option("OWNERS", {
+    alias: "o",
+    description: "Owners to init multisig safe with",
+    type: "array",
+    string: true,
+  }).argv;
   const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
   const owners = argv1.OWNERS as string[];
   const threshold = argv1.THRESHOLD as number;
@@ -404,6 +409,26 @@ export const parseMultiSigInitArgsFromCLI = async () => {
     threshold,
   };
 };
+
+export async function parseExecuteMultisigTxArgsFromCLI() {
+  const argv1 = await yargs(hideBin(process.argv)).argv;
+  const executor = argv1.EXECUTOR as string;
+  const TX_INDEX = argv1.TX_INDEX as number;
+  const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
+  const accountsSpecPath =
+    (argv1.ACCOUNTS_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+
+  if (!executor || !TX_INDEX) {
+    throw new Error(`executor and txIndex must be provided`);
+  }
+
+  return {
+    executor,
+    txIndex: TX_INDEX,
+    rpcUrl,
+    accountsSpecPath,
+  };
+}
 
 export const parseVerifyArgsFromCLI = async () => {
   // Load args from command line. CLI args take priority. Then env vars. Then default values if none are specified
