@@ -8,7 +8,8 @@
     "update-vibc-core-smart-contracts": "./dist/scripts/update-contracts-script.js",
     "setup-vibc-core-dispatcher": "./dist/scripts/setup-dispatcher-script.js",
     "vibc-core-deploy-test": "./dist/scripts/fork-deployment-test.js",
-    "vibc-core-deploy-multisig": "./dist/scripts/deploy-multisig.js"
+    "vibc-core-deploy-multisig": "./dist/scripts/deploy-multisig.js",
+    "vibc-core-execute-multisig-tx": "./dist/scripts/execute-multisig-tx.js"
   },
   "license": "MIT",
   "dependencies": {
