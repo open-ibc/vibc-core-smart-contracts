@@ -11,7 +11,7 @@ import {
   loadContractUpdateRegistry,
 } from "./evm/schemas/contractUpdate";
 import { Logger } from "winston";
-import { readDeploymentFilesIntoEnv } from "./utils/io";
+import { readAccountsIntoEnv, readDeploymentFilesIntoEnv } from "./utils/io";
 import { TxItemSchema } from "./evm/schemas/tx";
 
 // Combination of sendTxToChain and deployContracts. Can do both from a single deploy file, and uses zod to parse the schema.
@@ -44,6 +44,7 @@ export async function updateContractsForChain(
 
   //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
+  env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc. 
   env = { ...process.env, chain, ...existingContractAddresses, ...env };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
@@ -75,7 +76,7 @@ export async function updateContractsForChain(
       continue;
     }
 
-      // If not a valid contract schema, then it should be a valid tx schema
+    // If not a valid contract schema, then it should be a valid tx schema
     const parsedTxItem = TxItemSchema.safeParse(updateContract);
     if (parsedTxItem.success) {
       await sendTx(
