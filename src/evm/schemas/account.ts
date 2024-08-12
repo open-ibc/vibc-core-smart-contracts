@@ -139,7 +139,6 @@ export class AccountRegistry extends Registry<SendingAccount> {
   // return the same config obj that was used to load the accounts, but filtered by current account names
   public serialize() {
     const wallets = this.toList();
-
     return this.config.map((item, index) => {
       return {
         name: item.name,
