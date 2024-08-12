@@ -1,5 +1,9 @@
 import { ethers } from "ethers";
-import { AccountRegistry, connectProviderAccounts, isParsedMultiSigWallet } from "./evm/schemas/account";
+import {
+  AccountRegistry,
+  connectProviderAccounts,
+  isParsedMultiSigWallet,
+} from "./evm/schemas/account";
 import { Chain } from "./evm/chain";
 import { TxItem, TxRegistry, loadTxRegistry } from "./evm/schemas/tx";
 import { Logger } from "./utils/cli";
@@ -12,8 +16,9 @@ import {
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
+import { proposeTransaction } from "./multisig/safe";
 
-export const sendTx = async (
+export async function sendTx(
   chain: Chain,
   accountRegistry: AccountRegistry,
   existingContracts: ContractRegistry,
@@ -22,7 +27,7 @@ export const sendTx = async (
   dryRun: boolean = false,
   nonces: Record<string, number>,
   env: StringToStringMap
-) => {
+) {
   try {
     const factoryName = tx.factoryName ? tx.factoryName : tx.name;
     let deployedContractAbi: any;
@@ -46,35 +51,55 @@ export const sendTx = async (
       tx.deployer ? tx.deployer : DEFAULT_DEPLOYER
     );
 
-    const deployer = isParsedMultiSigWallet(account) ? account.wallet : account; 
-
     const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 
-    const ethersContract = new ethers.Contract(
-      deployedContractAddress,
-      deployedContractAbi,
-     deployer 
-    );
     const args = renderArgs(tx.args, tx.init, env);
-    logger.info(
-      `calling ${tx.signature} on ${tx.name} @:${deployedContractAddress} with args: \n [${args}]`
-    );
-    if (!dryRun) {
-      const updatedNonces = await updateNoncesForSender(nonces, deployer);
-      const overrides = {
-        nonce: updatedNonces[deployer.address],
-      };
-      const sentTx = await ethersContract.getFunction(tx.signature!)(
-        ...args,
-        overrides
+    if (isParsedMultiSigWallet(account)) {
+      // If multisig, we don't directly send the tx, but instead propose it to the safe tx service 
+      const deployer = account.wallet;
+      const contractInterface = new ethers.Interface(deployedContractAbi);
+      const callData = contractInterface.encodeFunctionData(
+        tx.signature!,
+        args
       );
-      try {
-        await sentTx.wait();
-      } catch (err) {
-        logger.error(
-          `[${chain.chainName}-${chain.deploymentEnvironment}] sendTx ${tx.name} failed: ${err}`
+
+      proposeTransaction(
+        account.safeAddress,
+        deployedContractAddress,
+        callData,
+        deployer.privateKey,
+        BigInt(chain.chainId),
+        chain.rpc
+      );
+    } else {
+      // Send from single acount
+      const deployer = account;
+      const ethersContract = new ethers.Contract(
+        deployedContractAddress,
+        deployedContractAbi,
+        deployer
+      );
+
+      logger.info(
+        `calling ${tx.signature} on ${tx.name} @:${deployedContractAddress} with args: \n [${args}]`
+      );
+      if (!dryRun) {
+        const updatedNonces = await updateNoncesForSender(nonces, deployer);
+        const overrides = {
+          nonce: updatedNonces[deployer.address],
+        };
+        const sentTx = await ethersContract.getFunction(tx.signature!)(
+          ...args,
+          overrides
         );
-        throw err;
+        try {
+          await sentTx.wait();
+        } catch (err) {
+          logger.error(
+            `[${chain.chainName}-${chain.deploymentEnvironment}] sendTx ${tx.name} failed: ${err}`
+          );
+          throw err;
+        }
       }
     }
   } catch (err) {
@@ -83,7 +108,7 @@ export const sendTx = async (
     );
     throw err;
   }
-};
+}
 
 /**
  * Send a tx to an existing contract. Reads contract from the _existingContracts args. Can be used for upgrading proxy to new implementation contracts as well

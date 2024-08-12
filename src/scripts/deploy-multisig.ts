@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { ethers } from "ethers";
 import { AccountRegistry, parseObjFromFile } from "..";
-import { newSafeFromOwner } from "../multisig/init";
+import { newSafeFromOwner } from "../multisig/safe";
 
 import {
   parseMultiSigInitArgsFromCLI,

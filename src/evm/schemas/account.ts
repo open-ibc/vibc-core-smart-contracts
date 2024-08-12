@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { Registry } from "../../utils/registry";
 import { parseZodSchema, renderString } from "../../utils/io";
+// ethers wallet with encryption
+export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
 
 const privateKey = z
   .object({
@@ -31,7 +33,7 @@ const multisigConfig = z
     name: z.string().min(1),
     privateKey: z.string().min(1),
     safeAddress: z.string().min(1),
-    chainId: z.bigint(),
+    chainId: z.number(),
   })
   .strict();
 
@@ -39,11 +41,15 @@ const multisigConfig = z
 const multisigAccount = z
   .object({
     name: z.string().min(1),
-    privateKey: privateKey,
-    multisigAddress: z.string().min(1),
-    chainId: z.bigint(),
-    wallet: z.instanceof(ethers.Wallet),
+    privateKey: z.string().min(1),
+    safeAddress: z.string().min(1),
+    chainId: z.number(),
+    wallet: z.union([
+      z.instanceof(ethers.Wallet),
+      z.instanceof(ethers.HDNodeWallet),
+    ]),
   })
+
   .strict();
 
 // geth compatible keystore
@@ -102,9 +108,6 @@ export const isParsedMultiSigWallet = (
   return multisigAccount.safeParse(account).success;
 };
 
-// ethers wallet with encryption
-export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
-
 export class AccountRegistry extends Registry<SendingAccount> {
   static load(config: any[], name: string): AccountRegistry {
     return new AccountRegistry(loadEvmAccounts(config), config, name);
@@ -136,6 +139,7 @@ export class AccountRegistry extends Registry<SendingAccount> {
   // return the same config obj that was used to load the accounts, but filtered by current account names
   public serialize() {
     const wallets = this.toList();
+
     return this.config.map((item, index) => {
       return {
         name: item.name,
@@ -151,7 +155,7 @@ export class AccountRegistry extends Registry<SendingAccount> {
   public getSinglePrivateKeyFromAccount = (accountName: string) => {
     const account = this.mustGet(accountName);
     if (isParsedMultiSigWallet(account)) {
-      return account.privateKey.privateKey;
+      return account.privateKey;
     }
     return account.privateKey;
   };
@@ -168,14 +172,21 @@ export function loadEvmAccounts(config: any): Registry<SendingAccount> {
 
   if (isEvmAccount(config)) {
     for (const account of config) {
-      if (isSingleSigAccount(account)) {
-        walletMap.set(account.name, createWallet(account));
-      }
       if (isMultiSigConfig(account)) {
-        walletMap.set(
-          account.name,
-          createWallet({ privateKey: account.privateKey, name: account.name })
-        );
+        console.log("inc create wallet accounts", account);
+        const wallet = createWallet({
+          privateKey: account.privateKey,
+          name: account.name,
+        });
+        console.log("created wallet", wallet);
+        const multisigAccount = {
+          ...account,
+          wallet,
+        };
+        console.log("setting multisig account", multisigAccount);
+        walletMap.set(account.name, multisigAccount);
+      } else if (isSingleSigAccount(account)) {
+        walletMap.set(account.name, createWallet(account));
       }
     }
   } else if (isKeyStore(config)) {
@@ -202,7 +213,11 @@ export const connectProviderAccounts = (
   const newAccounts = accountRegistry.subset([]);
   for (const [name, account] of accountRegistry.entries()) {
     if (isParsedMultiSigWallet(account)) {
-      newAccounts.set(name, account.wallet.connect(provider));
+      const newMultisigWallet = {
+        ...account,
+        wallet: account.wallet.connect(provider),
+      };
+      newAccounts.set(name, newMultisigWallet);
     } else {
       newAccounts.set(name, account.connect(provider));
     }
