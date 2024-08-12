@@ -173,17 +173,14 @@ export function loadEvmAccounts(config: any): Registry<SendingAccount> {
   if (isEvmAccount(config)) {
     for (const account of config) {
       if (isMultiSigConfig(account)) {
-        console.log("inc create wallet accounts", account);
         const wallet = createWallet({
           privateKey: account.privateKey,
           name: account.name,
         });
-        console.log("created wallet", wallet);
         const multisigAccount = {
           ...account,
           wallet,
         };
-        console.log("setting multisig account", multisigAccount);
         walletMap.set(account.name, multisigAccount);
       } else if (isSingleSigAccount(account)) {
         walletMap.set(account.name, createWallet(account));
