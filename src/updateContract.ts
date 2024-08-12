@@ -1,7 +1,10 @@
 import { sendTx } from "./tx";
 import { deployContract } from "./deploy";
 import { Chain } from "./evm/chain";
-import { AccountRegistry, connectProviderAccounts } from "./evm/schemas/account";
+import {
+  AccountRegistry,
+  connectProviderAccounts,
+} from "./evm/schemas/account";
 import { ContractItemSchema, ContractRegistry } from "./evm/schemas/contract";
 import {
   UpdateContractRegistry,
@@ -41,7 +44,7 @@ export async function updateContractsForChain(
 
   //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
-  env = {...process.env, chain, ...existingContractAddresses, ...env };
+  env = { ...process.env, chain, ...existingContractAddresses, ...env };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
     await readDeploymentFilesIntoEnv(env, chain);
@@ -72,7 +75,7 @@ export async function updateContractsForChain(
       continue;
     }
 
-    // If not a valid contract schema, then it should be a valid tx schema
+      // If not a valid contract schema, then it should be a valid tx schema
     const parsedTxItem = TxItemSchema.safeParse(updateContract);
     if (parsedTxItem.success) {
       await sendTx(
