@@ -155,7 +155,7 @@ export class AccountRegistry extends Registry<SendingAccount> {
   public getSinglePrivateKeyFromAccount = (accountName: string) => {
     const account = this.mustGet(accountName);
     if (isParsedMultiSigWallet(account)) {
-      return account.privateKey;
+      return account.wallet.privateKey;
     }
     return account.privateKey;
   };
@@ -163,7 +163,6 @@ export class AccountRegistry extends Registry<SendingAccount> {
 
 // load a Map of { [name: string]: Wallet } from EvmAccountsSchema object
 export function loadEvmAccounts(config: any): Registry<SendingAccount> {
-  // const accountsConfig = EvmAccountsSchema.safeParse(config); // config.map((c: any) => {
   if (!isEvmAccountsConfig(config)) {
     throw new Error(`Error parsing schema: ${config}`);
   }
