@@ -16,7 +16,7 @@ import {
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
-import { proposeTransaction } from "./multisig/safe";
+import { fetchNonceFromSafeAddress, proposeTransaction } from "./multisig/safe";
 
 export async function sendTx(
   chain: Chain,
@@ -57,7 +57,12 @@ export async function sendTx(
 
     const args = renderArgs(tx.args, tx.init, env);
     if (isParsedMultiSigWallet(account)) {
-      // If multisig, we don't directly send the tx, but instead propose it to the safe tx service 
+      const updatedNonces = await updateNoncesForSender(
+        nonces,
+        account.safeAddress,
+        () => fetchNonceFromSafeAddress(chain.rpc, account.safeAddress)
+      );
+      // If multisig, we don't directly send the tx, but instead propose it to the safe tx service
       const deployer = account.wallet;
       const contractInterface = new ethers.Interface(deployedContractAbi);
       const callData = contractInterface.encodeFunctionData(
@@ -71,7 +76,8 @@ export async function sendTx(
         callData,
         deployer.privateKey,
         BigInt(chain.chainId),
-        chain.rpc
+        chain.rpc,
+        updatedNonces[account.safeAddress]
       );
     } else {
       // Send from single acount
@@ -86,7 +92,11 @@ export async function sendTx(
         `calling ${tx.signature} on ${tx.name} @:${deployedContractAddress} with args: \n [${args}]`
       );
       if (!dryRun) {
-        const updatedNonces = await updateNoncesForSender(nonces, deployer);
+        const updatedNonces = await updateNoncesForSender(
+          nonces,
+          deployer.address,
+          () => deployer.getNonce()
+        );
         const overrides = {
           nonce: updatedNonces[deployer.address],
         };
