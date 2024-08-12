@@ -29,12 +29,14 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.14.12",
+    "@types/node": "^20.14.14",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
     "solidity-coverage": "^0.8.12",
-    "tsup": "^8.2.3"
+    "tslib": "^2.6.3",
+    "tsup": "^8.2.3",
+    "typescript": "^5.5.4"
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
@@ -54,7 +56,6 @@
     "solidity"
   ],
   "author": "Polymer Labs",
-  "type": "module",
   "exports": {
     ".": {
       "require": "./dist/index.js",
