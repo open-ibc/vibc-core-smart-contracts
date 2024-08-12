@@ -19,6 +19,7 @@ export default defineConfig({
     "src/scripts/fork-deployment-test.ts",
     "src/scripts/setup-dispatcher-script.ts",
     "src/scripts/deploy-multisig.ts",
+    "src/scripts/execute-multisig-tx.ts",
   ],
   format: ["cjs", "esm"], // Build for commonJS and ESmodules
   dts: true, // Generate declaration file (.d.ts)

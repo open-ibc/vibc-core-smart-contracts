@@ -30,7 +30,7 @@ async function main() {
     rpcUrl,
     senderPrivateKey,
     owners,
-    threshold,
+    threshold
   );
 
   const provider = new ethers.JsonRpcProvider(rpcUrl);

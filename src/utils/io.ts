@@ -490,7 +490,7 @@ export const saveMultisigAddressToAccountsSpec = async (
     ...owner,
     safeAddress: newSafeAddress,
     chainId: chainId,
-    name: `${ownerName}-MULTISIG`,
+    name: `${ownerName}_MULTISIG`,
   });
 
   await writeYamlFile(accountsSpecPath, yamlFile);

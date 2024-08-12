@@ -15,7 +15,7 @@ export const newSafeFromOwner = async (
   owners: string[],
   threshold: number
 ) => {
-  // TODO: check owners is indeed an array and not a string
+  // TODO: check owners is indeed an array and not a string (for edge case of one address)
 
   const safeFactory = await SafeFactory.init({
     provider: RPC_URL,
@@ -90,12 +90,15 @@ export async function proposeTransaction(
   return await apiKit.getTransaction(safeTxHash);
 }
 
-export const executeTransaction = async (
+/**
+ * Execute a multisig tx from an account generated from proposeTransaction
+ */
+export const executeMultisigTx = async (
   safeAddress: string,
   executorPrivateKey: string,
   chainId: bigint,
   rpcUrl: string,
-  pendingtransactionIndex: number
+  pendingTransactionIndex: number
 ) => {
   const apiKit = new SafeApiKit({
     chainId,
@@ -107,13 +110,15 @@ export const executeTransaction = async (
     safeAddress,
   });
 
+
   const transactions = await apiKit.getPendingTransactions(safeAddress);
-  if (transactions.results.length <= pendingtransactionIndex) {
+
+  if (transactions.results.length <= pendingTransactionIndex) {
     throw new Error(
-      `Invalid transaction index - trying to access index ${pendingtransactionIndex} but only ${transactions.results.length} pending txs in safe`
+      `Invalid transaction index - trying to access index ${pendingTransactionIndex} but only ${transactions.results.length} pending txs in safe`
     );
   }
 
-  const tx = transactions.results[pendingtransactionIndex];
+  const tx = transactions.results[pendingTransactionIndex];
   return await executor.executeTransaction(tx);
 };
