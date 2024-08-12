@@ -22,17 +22,18 @@ import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { Chain } from "./evm/chain";
 import * as vibcContractFactories from "./evm/contracts/index";
-import { isParsedMultiSigWallet} from "./evm/schemas/account";
+import { isParsedMultiSigWallet } from "./evm/schemas/account";
 
 export const updateNoncesForSender = async (
   nonces: Record<string, number>,
-  sender: Wallet
+  address: string,
+  nonceUpdate: () => Promise<number>,
 ) => {
   // To avoid nonce too low bug, we manually increment nonces for each account
-  if (!(sender.address in nonces)) {
-    nonces[sender.address] = await sender.getNonce();
+  if (!(address in nonces)) {
+    nonces[address] = await nonceUpdate();
   } else {
-    nonces[sender.address] += 1;
+    nonces[address] += 1;
   }
   return nonces;
 };
@@ -121,10 +122,16 @@ export const deployContract = async (
       contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
     );
 
-    if(isParsedMultiSigWallet(deployer)){
-      throw new Error(`Contract Deployments not supported for multisig wallets!`);
+    if (isParsedMultiSigWallet(deployer)) {
+      throw new Error(
+        `Contract Deployments not supported for multisig wallets!`
+      );
     }
-    const updatedNonces = await updateNoncesForSender(nonces, deployer);
+    const updatedNonces = await updateNoncesForSender(
+      nonces,
+      deployer.address,
+      deployer.getNonce
+    );
     const nonce = updatedNonces[deployer.address];
     if (!dryRun) {
       const overrides = {
@@ -191,7 +198,7 @@ export async function deployToChain(
   }
 
   //  @ts-ignore
-  const env: StringToStringMap = {...process.env , chain , };
+  const env: StringToStringMap = { ...process.env, chain };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
     await readDeploymentFilesIntoEnv(env, chain);

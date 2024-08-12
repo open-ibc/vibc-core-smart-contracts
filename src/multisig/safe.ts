@@ -1,9 +1,10 @@
 import SafeApiKit from "@safe-global/api-kit";
 import Safe, { SafeFactory } from "@safe-global/protocol-kit";
 import {
-  MetaTransactionData,
   OperationType,
+  SafeTransactionDataPartial,
 } from "@safe-global/safe-core-sdk-types";
+import { ethers } from "ethers";
 
 /*
  * Init a safe owner from a given private key to a give RPC's network
@@ -43,6 +44,7 @@ export async function proposeTransaction(
   proposerPrivateKey: string,
   chainId: bigint,
   rpcUrl: string,
+  nonce: number,
   value = "0",
   operation = OperationType.Call
 ) {
@@ -55,16 +57,17 @@ export async function proposeTransaction(
   });
 
   console.log(
-    `proposing transaction from ${txProposer} @safe ${safeAddress} to ${toAddress} with value: ${value} and data: ${txData}`
+    `proposing transaction from ${txProposer} @safe ${safeAddress} to ${toAddress} with value: ${value} and data: ${txData}, and nonce : ${nonce}`
   );
 
-  const txProposerAddress = await txProposer.getAddress();
+  const txProposerAddress = new ethers.Wallet(proposerPrivateKey).address;
 
-  const safeTransactionData: MetaTransactionData = {
+  const safeTransactionData: SafeTransactionDataPartial = {
     to: toAddress,
     value,
     data: txData,
     operation: operation,
+    nonce,
   };
 
   const safeTransaction = await txProposer.createTransaction({
@@ -80,7 +83,7 @@ export async function proposeTransaction(
     safeAddress,
     safeTransactionData: safeTransaction.data,
     safeTxHash,
-    senderAddress: await txProposerAddress,
+    senderAddress: txProposerAddress,
     senderSignature: proposerSignature.data,
   });
 
@@ -110,7 +113,6 @@ export const executeMultisigTx = async (
     safeAddress,
   });
 
-
   const transactions = await apiKit.getPendingTransactions(safeAddress);
 
   if (transactions.results.length <= pendingTransactionIndex) {
@@ -122,3 +124,15 @@ export const executeMultisigTx = async (
   const tx = transactions.results[pendingTransactionIndex];
   return await executor.executeTransaction(tx);
 };
+
+export async function fetchNonceFromSafeAddress(
+  rpcUrl: string,
+  safeAddress: string
+) {
+  const safe = await Safe.init({
+    provider: rpcUrl,
+    safeAddress,
+  });
+
+  return safe.getNonce();
+}
