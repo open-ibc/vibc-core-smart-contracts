@@ -16,7 +16,7 @@ import {
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
-import { proposeTransaction } from "./multisig/init";
+import { proposeTransaction } from "./multisig/safe";
 
 export async function sendTx(
   chain: Chain,
