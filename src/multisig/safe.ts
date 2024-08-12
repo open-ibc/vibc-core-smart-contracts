@@ -13,8 +13,10 @@ export const newSafeFromOwner = async (
   RPC_URL: string,
   ownerKey: string,
   owners: string[],
-  threshold: number,
+  threshold: number
 ) => {
+  // TODO: check owners is indeed an array and not a string
+
   const safeFactory = await SafeFactory.init({
     provider: RPC_URL,
     signer: ownerKey,
@@ -26,16 +28,15 @@ export const newSafeFromOwner = async (
   const safeAddress = await safe.getAddress();
 
   console.log(`Safe has been deployed to: ${safeAddress}`);
+
   return safeAddress;
-
-
 };
 
 /**
  *
  * @param data Propose a transaction from a signer account
  */
-export const proposeTransaction = async (
+export async function proposeTransaction(
   safeAddress: string,
   toAddress: string,
   txData: string,
@@ -44,10 +45,8 @@ export const proposeTransaction = async (
   rpcUrl: string,
   value = "0",
   operation = OperationType.Call
-) => {
-  const apiKit = new SafeApiKit({
-    chainId,
-  });
+) {
+  const apiKit = new SafeApiKit({ chainId });
 
   const txProposer = await Safe.init({
     provider: rpcUrl,
@@ -89,7 +88,7 @@ export const proposeTransaction = async (
     `Transaction has been proposed with hash: ${safeTxHash} from address ${txProposerAddress}`
   );
   return await apiKit.getTransaction(safeTxHash);
-};
+}
 
 export const executeTransaction = async (
   safeAddress: string,

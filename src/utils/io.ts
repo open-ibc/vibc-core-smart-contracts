@@ -58,7 +58,6 @@ export function readYamlFile(file: string): any {
   return yaml.parse(fs.readFileSync(file, "utf-8"));
 }
 
-
 const writeYamlFile = (filePath: string, data: any) => {
   const yamlStr = yaml.stringify(data);
   fs.writeFileSync(filePath, yamlStr);
@@ -454,16 +453,20 @@ export const saveMultisigAddressToAccountsSpec = async (
   ownerName: string, // Used to find which owner to write to
   chainId: BigNumberish
 ) => {
-  // TODO: Currently this yaml lib doesn't include comments - we need to figure out a way to preserve comments / whitespaces, etc 
+  // TODO: Currently this yaml lib doesn't include comments - we need to figure out a way to preserve comments / whitespaces, etc
   const yamlFile = readYamlFile(accountsSpecPath);
-  const newYamlFile = yamlFile.map((account: any) => {
-    return account.name === ownerName
-      ? {
-          ...account,
-          safeAddress: newSafeAddress,
-          chainId: chainId,
-        }
-      : account;
+
+  const owner = yamlFile.find((account: any) => account.name === ownerName);
+  if (!owner) {
+    throw new Error(`Could not find owner ${ownerName} in accounts spec`);
+  }
+
+  yamlFile.push({
+    ...owner,
+    safeAddress: newSafeAddress,
+    chainId: chainId,
+    name: `${ownerName}-MULTISIG`,
   });
-  await writeYamlFile(accountsSpecPath, newYamlFile);
+
+  await writeYamlFile(accountsSpecPath, yamlFile);
 };
