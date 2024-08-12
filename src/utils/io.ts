@@ -239,6 +239,20 @@ export async function writeDeployedContractToFile(
   });
 }
 
+// Read existing accounts into env
+export async function readAccountsIntoEnv(
+  env: any,
+  accountRegistry: AccountRegistry
+) {
+  console.log(env, accountRegistry.keys());
+  accountRegistry.keys().forEach((accountName) => {
+    env[accountName] = accountRegistry.mustGet(accountName);
+  });
+  // env[account]={}
+
+  return env;
+}
+
 // Read existing deployment files into env, so that we can use them in the deployment scripts
 export async function readDeploymentFilesIntoEnv(env: any, chain: Chain) {
   const deploymentFolder = getDeployFolderForChain(chain);
