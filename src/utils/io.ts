@@ -244,11 +244,9 @@ export async function readAccountsIntoEnv(
   env: any,
   accountRegistry: AccountRegistry
 ) {
-  console.log(env, accountRegistry.keys());
   accountRegistry.keys().forEach((accountName) => {
     env[accountName] = accountRegistry.mustGet(accountName);
   });
-  // env[account]={}
 
   return env;
 }
