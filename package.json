@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.14.14",
+    "@types/node": "^22.2.0",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
