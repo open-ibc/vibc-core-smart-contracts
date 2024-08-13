@@ -24,7 +24,7 @@
     "zx": "^8.1.4"
   },
   "devDependencies": {
-    "@types/node": "^20.14.12",
+    "@types/node": "^22.2.0",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.32",
     "chai": "^5.1.1",
