@@ -23,7 +23,6 @@ import {IbcReceiver, IbcChannelReceiver} from "../../contracts/interfaces/IbcRec
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
 import {IProofVerifier} from "../../contracts/core/OptimisticProofVerifier.sol";
-import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
@@ -39,7 +38,6 @@ import "forge-std/Test.sol";
 struct ChainAddresses {
     IDispatcher dispatcherProxy;
     IUniversalChannelHandler uch;
-    ILightClient dummyLightClient;
     ILightClient optimisticLightClient;
     address owner; // Owner Address of dispatcher
 }
@@ -54,7 +52,6 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         ChainAddresses memory addresses = ChainAddresses(
             IDispatcher(vm.envAddress("DispatcherProxy")),
             IUniversalChannelHandler(vm.envAddress("UCProxy")),
-            ILightClient(vm.envAddress("DummyLightClient")),
             ILightClient(vm.envAddress("OptimisticLightClient")),
             vm.envAddress("OwnerAddress")
         );

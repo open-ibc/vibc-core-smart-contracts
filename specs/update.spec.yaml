@@ -138,15 +138,6 @@
   args:   
     - '{{Dispatcher}}'
 
-- name: DispatcherUpgrade 
-  description: 'UUPS Upgrade for dispatcher contract implementation' 
-  deployer: 'KEY_DEPLOYER' 
-  signature: "upgradeTo(address)" 
-  address: '{{DispatcherProxy}}' 
-  factoryName: "Dispatcher" 
-  args:   
-    - '{{Dispatcher}}'
-
 - name: UCH Upgrade 
   description: 'Upgrade for uch contract'
   deployer: 'KEY_DEPLOYER' 
