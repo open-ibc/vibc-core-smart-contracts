@@ -78,7 +78,8 @@
       "import": "./dist/evm/index.js",
       "types": "./dist/evm/index.d.ts"
     },
-    "./evm/account": "./dist/evm/account.js",
+    "./schemas": "./dist/evm/schemas/*.js",
+    "./evm/account": "./dist/evm/schemas/account.js",
     "./evm/chain": "./dist/evm/chain.js",
     "./evm/schemas/contract": "./dist/evm/schemas/contract.js",
     "./evm/schemas/tx": "./dist/evm/schemas/tx.js",
