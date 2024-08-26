@@ -231,12 +231,12 @@ export async function writeDeployedContractToFile(
     libraries: deployedContract.libraries,
   });
 
-  fs.writeFile(fullPath, outData, (err) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-  });
+  try {
+    await fsAsync.writeFile(fullPath, outData);
+  } catch (e) {
+    console.error(e);
+    return;
+  }
 }
 
 // Read existing accounts into env
