@@ -31,7 +31,10 @@ export class Registry<T, S = T> {
     const { nameFunc = (t: any) => t["name"], toObj = (t: any) => t } = options
       ? options
       : {};
-    this.registry = new Map(src.map((item) => [nameFunc(item), item]));
+    this.registry = new Map<string, T>();
+    src.forEach((item) => {
+      this.set(nameFunc(item), item);
+    });
     this.itemToObj = toObj;
     this.nameFunc = nameFunc;
     this.nameInParent = options?.nameInParent;
