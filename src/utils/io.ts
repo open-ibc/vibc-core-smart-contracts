@@ -180,11 +180,11 @@ export function toEnvVarName(e: string) {
 
 /** Reads a foundry build file given */
 export async function readArtifactFile(artifactName: string) {
-  const filePath = path.join(
+  const filePath = path.resolve(path.join(
     ARTIFACTS_PATH,
     `${artifactName}.sol`,
     `${artifactName}.json`
-  );
+  ));
 
   try {
     return await fsAsync.readFile(filePath, "utf8");
