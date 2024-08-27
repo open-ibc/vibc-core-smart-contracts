@@ -144,8 +144,8 @@ export class AccountRegistry extends Registry<SendingAccount> {
         name: item.name,
         privateKey: wallets[index].privateKey,
         address: isParsedMultiSigWallet(wallets[index])
-          ? wallets[index].wallet
-          : wallets[index],
+          ? wallets[index].wallet.address
+          : wallets[index].address,
         ...item,
       };
     });
