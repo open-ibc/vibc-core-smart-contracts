@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "main": "dist/index.js",
   "bin": {
     "verify-vibc-core-smart-contracts": "./dist/scripts/verify-contract-script.js",
@@ -76,11 +76,12 @@
       "import": "./dist/evm/index.js",
       "types": "./dist/evm/index.d.ts"
     },
-    "./schemas": "./dist/evm/schemas/*.js",
-    "./evm/account": "./dist/evm/schemas/account.js",
     "./evm/chain": "./dist/evm/chain.js",
-    "./evm/schemas/contract": "./dist/evm/schemas/contract.js",
-    "./evm/schemas/tx": "./dist/evm/schemas/tx.js",
+    "./schemas": "./dist/evm/schemas/index.js",
+    "./schemas/contract": "./dist/evm/schemas/contract.js",
+    "./schemas/tx": "./dist/evm/schemas/tx.js",
+    "./schemas/contractUpdate": "./dist/evm/schemas/contractUpdate.js",
+    "./schemas/account": "./dist/evm/schemas/account.js",
     "./utils": {
       "require": "./dist/utils/index.js",
       "import": "./dist/utils/index.js",
