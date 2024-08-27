@@ -10,6 +10,7 @@ import { Logger } from "./utils/cli";
 import {
   StringToStringMap,
   readDeploymentFilesIntoEnv,
+  readFactoryAbi,
   readFromDeploymentFile,
   renderArgs,
 } from "./utils/io";
@@ -21,7 +22,7 @@ import { fetchNonceFromSafeAddress, proposeTransaction } from "./multisig/safe";
 export async function sendTx(
   chain: Chain,
   accountRegistry: AccountRegistry,
-  existingContracts: ContractRegistry,
+  existingContractOverrides: ContractRegistry,
   tx: TxItem,
   logger: Logger,
   dryRun: boolean = false,
@@ -32,26 +33,26 @@ export async function sendTx(
     const factoryName = tx.factoryName ? tx.factoryName : tx.name;
     let deployedContractAbi: any;
 
-    const existingContract = existingContracts.get(factoryName);
+    const existingContractOverride = existingContractOverrides.get(factoryName);
     // Fetch the ABI from the existing contract if it exists; otherwise read from deployment files
-    if (existingContract && existingContract.abi) {
-      deployedContractAbi = existingContract.abi;
+    if (existingContractOverride && existingContractOverride.abi) {
+      deployedContractAbi = existingContractOverride.abi;
     } else {
       const deployedContract: any = await readFromDeploymentFile(
         factoryName,
         chain
       );
-      if (!deployedContract) {
-        throw new Error(`Contract deployment for ${factoryName} not found!`);
-      }
-      deployedContractAbi = deployedContract.abi;
+      deployedContractAbi = (deployedContract && deployedContract.abi) ?? await readFactoryAbi(factoryName) ;
+    }
+
+    if(!deployedContractAbi) {
+      throw new Error(`Could not find ABI for contract ${factoryName}`);
+      
     }
 
     const account = accountRegistry.mustGet(
       tx.deployer ? tx.deployer : DEFAULT_DEPLOYER
     );
-
-    const deployer = isParsedMultiSigWallet(account) ? account.wallet : account; 
 
     const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 

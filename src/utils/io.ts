@@ -200,6 +200,11 @@ export async function readMetadata(factoryName: string) {
   return JSON.stringify(JSON.parse(data).metadata);
 }
 
+export async function readFactoryAbi(factoryName: string) {
+  const data = await readArtifactFile(factoryName);
+  return JSON.parse(data).abi;
+}
+
 // Given a chain object, return the folder in which deployments for this chain will be
 export const getDeployFolderForChain = (chain: ChainFolder) => {
   return path.join(
