@@ -5,6 +5,7 @@ export default defineConfig({
     "src/index.ts",
     "src/utils/index.ts",
     "src/evm/index.ts",
+    "src/evm/schemas/index.ts",
     "src/utils/cli.ts",
     "src/utils/io.ts",
     "src/utils/constants.ts",
