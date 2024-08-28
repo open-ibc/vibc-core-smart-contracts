@@ -19,6 +19,20 @@ import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
 import { fetchNonceFromSafeAddress, proposeTransaction } from "./multisig/safe";
 
+export async function readAbiFromDeployedContract(
+  existingContractOverrides: ContractRegistry,
+  factoryName: string
+) {
+  const existingContractOverride = existingContractOverrides.get(factoryName);
+
+  // Read from overrides first
+  if (existingContractOverride && existingContractOverride.abi) {
+    return existingContractOverride.abi;
+  }
+
+  return readFactoryAbi(factoryName)
+}
+
 export async function sendTx(
   chain: Chain,
   accountRegistry: AccountRegistry,
@@ -31,23 +45,10 @@ export async function sendTx(
 ) {
   try {
     const factoryName = tx.factoryName ? tx.factoryName : tx.name;
-    let deployedContractAbi: any;
 
-    const existingContractOverride = existingContractOverrides.get(factoryName);
-    // Fetch the ABI from the existing contract if it exists; otherwise read from deployment files
-    if (existingContractOverride && existingContractOverride.abi) {
-      deployedContractAbi = existingContractOverride.abi;
-    } else {
-      const deployedContract: any = await readFromDeploymentFile(
-        factoryName,
-        chain
-      );
-      deployedContractAbi = (deployedContract && deployedContract.abi) ?? await readFactoryAbi(factoryName) ;
-    }
-
-    if(!deployedContractAbi) {
+    const deployedContractAbi = await readAbiFromDeployedContract(existingContractOverrides, factoryName)
+    if (!deployedContractAbi) {
       throw new Error(`Could not find ABI for contract ${factoryName}`);
-      
     }
 
     const account = accountRegistry.mustGet(
