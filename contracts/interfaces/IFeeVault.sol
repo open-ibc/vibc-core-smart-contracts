@@ -43,7 +43,7 @@ interface IFeeVault {
     );
 
     error SenderNotDispatcher();
-    error NoFeeSent();
+    error FeeThresholdNotMet();
     error IncorrectFeeSent(uint256 expected, uint256 sent);
 
     function depositSendPacketFee(

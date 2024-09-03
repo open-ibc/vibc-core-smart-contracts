@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {ChannelOpenTestBaseSetup} from "./Dispatcher/Dispatcher.t.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IFeeVault} from "../contracts/interfaces/IFeeVault.sol";
 import "forge-std/Test.sol";
 
 contract FeeVaultTest is ChannelOpenTestBaseSetup {
@@ -27,7 +28,7 @@ contract FeeVaultTest is ChannelOpenTestBaseSetup {
         bool shouldRevert,
         uint56 fuzz
     ) public {
-        gasFee1 = uint104(bound(gasFee1, 1, 2 ** 104 - 1));
+        gasFee1 = uint104(bound(gasFee1, 1 gwei, 2 ** 104 - 1));
         gasLimit1 = uint104(bound(gasLimit1, 1, 2 ** 104 - 1));
         fuzz = uint56(bound(fuzz, 1, 2 ** 56 - 1));
         fuzz = uint56(bound(fuzz, 1, gasFee1));
@@ -61,6 +62,13 @@ contract FeeVaultTest is ChannelOpenTestBaseSetup {
         feeVault.withdrawFeesToOwner();
         assertEq(address(feeVault).balance, 0);
         assertEq(address(this).balance, startingBalance + (feePerGreet * 2));
+    }
+
+    function testRevert_BelowFeeThreshold() public {
+        vm.deal(address(this), 20);
+
+        vm.expectRevert(IFeeVault.FeeThresholdNotMet.selector);
+        feeVault.depositSendPacketFee{value: 2}(channelId, 1, [uint256(1), uint256(1)], [uint256(1), uint256(1)]);
     }
 
     function greetMarsWithFee() internal {
