@@ -24,6 +24,17 @@ import {ChannelOrder} from "../libs/Ibc.sol";
 
 contract FeeVault is Ownable2Step, ReentrancyGuard, IFeeVault {
     /**
+     * Check that a tx to this contract was sent wiht a minimum fee amount, equal to 1 gwei. This is to prevent
+     * against indexer spamming
+     */
+    modifier minimumFeeThreshold() {
+        if (msg.value < 1 gwei) {
+            revert FeeThresholdNotMet();
+        }
+        _;
+    }
+
+    /**
      * @notice Deposits the send packet fee for a given channel and sequence that is used for relaying recieve and
      * acknowledge steps of a packet handhsake after a dapp has called the sendPacket on dispatcher.
      * @notice If you are relaying your own packets, you should not call this method.
@@ -44,13 +55,14 @@ contract FeeVault is Ownable2Step, ReentrancyGuard, IFeeVault {
      * gasLimits[1] * gasPrices[1]. The transaction will revert if a higher or lower value is sent
      * @dev Note: if you're having trouble with your packet data being mysteriously lost, try passing in the gasLimits
      * and gasPrices as memory, solidity sometimes misbehaves when trying to pass in too much calldata.
+     * @notice Must send at least 1 gwei to prevent against indexer spamming
      */
     function depositSendPacketFee(
         bytes32 channelId,
         uint64 sequence,
         uint256[2] calldata gasLimits,
         uint256[2] calldata gasPrices
-    ) external payable nonReentrant {
+    ) external payable nonReentrant minimumFeeThreshold {
         uint256 fee = gasLimits[0] * gasPrices[0] + gasLimits[1] * gasPrices[1];
         if ((fee) != msg.value) {
             revert IncorrectFeeSent(fee, msg.value);
@@ -73,6 +85,7 @@ contract FeeVault is Ownable2Step, ReentrancyGuard, IFeeVault {
      * dispatcher.channelOpenInit call
      * @param counterpartyPortId The counterparty port identifier, the same argument as that sent in the
      * dispatcher.channelOpenInit call
+     * @notice Must send at least 1 gwei to prevent against indexer spamming
      */
     function depositOpenChannelFee(
         address src,
@@ -80,10 +93,7 @@ contract FeeVault is Ownable2Step, ReentrancyGuard, IFeeVault {
         ChannelOrder ordering,
         string[] calldata connectionHops,
         string calldata counterpartyPortId
-    ) external payable nonReentrant {
-        if (msg.value == 0) {
-            revert NoFeeSent();
-        }
+    ) external payable nonReentrant minimumFeeThreshold {
         emit OpenChannelFeeDeposited(src, version, ordering, connectionHops, counterpartyPortId, msg.value);
     }
 

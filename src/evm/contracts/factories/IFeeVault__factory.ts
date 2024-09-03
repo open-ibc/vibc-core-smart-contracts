@@ -150,6 +150,11 @@ const _abi = [
   },
   {
     type: "error",
+    name: "FeeThresholdNotMet",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "IncorrectFeeSent",
     inputs: [
       {
@@ -163,11 +168,6 @@ const _abi = [
         internalType: "uint256",
       },
     ],
-  },
-  {
-    type: "error",
-    name: "NoFeeSent",
-    inputs: [],
   },
   {
     type: "error",
