@@ -392,6 +392,11 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
         // a faulty callback cannot close a channel (as is done on channelCloseConfirm)
         delete _portChannelMap[msg.sender][channelId];
+
+        // Note: We also delete the channelId to connection mapping to brick any proof-dependent calls for this channel.
+        // This is to keep this dispatcher's view of the channel consistent across local and proof-dependent logic. This
+        // is useful in ensuring this channel end behaves consistently even if there are no events relayed to peptide
+        delete _channelIdToConnection[channelId];
         emit ChannelCloseInit(msg.sender, channelId);
     }
 
@@ -448,6 +453,10 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         // Note: We delete the portChannelMap here even on Dapp revert to avoid having a case where a dapp deployed with
         // a faulty callback cannot close a channel (as is done on channelCloseInit)
         delete _portChannelMap[portAddress][channelId];
+        // Note: We also delete the channelId to connection mapping to brick any proof-dependent calls for this channel.
+        // This is to keep this dispatcher's view of the channel consistent across local and proof-dependent logic. This
+        // is useful in ensuring this channel end behaves consistently even if there are no events relayed to peptide
+        delete _channelIdToConnection[channelId];
         if (success) {
             emit ChannelCloseConfirm(portAddress, channelId);
         } else {
