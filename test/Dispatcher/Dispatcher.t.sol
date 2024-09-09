@@ -176,6 +176,19 @@ abstract contract ChannelHandshakeTestSuite is ChannelHandshakeUtils {
             }
         }
     }
+
+    function test_chanOpenInit_fail_invalidVersion() public {
+        // When localEnd initiates, counterparty version is only available in channelOpenAck
+        ChannelHandshakeSetting[8] memory settings = createSettings2(true);
+        for (uint256 i = 0; i < settings.length; i++) {
+            LocalEnd memory le = _local;
+            ChannelEnd memory re = _remote;
+            // no remote version applied in openChannel
+            le.versionCall = "";
+            vm.expectRevert(abi.encodeWithSelector(IBCErrors.invalidVersion.selector));
+            channelOpenInit(le, re, settings[i], false);
+        }
+    }
 }
 
 contract ChannelHandshakeTest is ChannelHandshakeTestSuite {

@@ -45,13 +45,13 @@ jobs:
           fi
       - name: Upload ts bindings artifact on error
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ts-bindings 
           path: ./src/evm/contracts/
       - name: Upload go bindings artifact on error
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: go-bindings 
           path: ./bindings/
