@@ -178,6 +178,9 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         if (connectionHops.length < 2 || bytes(counterpartyPortId).length == 0) {
             revert IBCErrors.invalidCounterParty();
         }
+        if (bytes(version).length == 0) {
+            revert IBCErrors.invalidVersion();
+        }
 
         emit ChannelOpenInit(msg.sender, version, ordering, feeEnabled, connectionHops, counterpartyPortId);
     }
