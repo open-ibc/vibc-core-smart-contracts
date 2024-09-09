@@ -74,6 +74,29 @@ contract DispatcherCloseChannelTest is PacketSenderTestBase {
         vm.stopPrank();
     }
 
+    function test_recvPacket_afterChannelCloseInit() public {
+        // For the case where a channel close init is not relayed to polymer, we should still ensure the dispatcher
+        // contract's
+        // view of a closed channel is consistent both in send and recv packets after a chanCloseInit.
+
+        // Dapp on local chain contract triggers channel close
+        vm.startPrank(mars.owner());
+        mars.triggerChannelClose(channelId);
+
+        // If the above channelCloseInit wasn't relayed to peptide, the dapp on remote chain could still trigger a send
+        // packet.
+        // Even if the remote chain's dapp sends a packet a relayer's recv call on the local chain should revert. We
+        // don't have to mock anything for the remote send packet here since this unit test is using sim client.
+
+        uint64 packetSeq = 1;
+
+        // Now relayer's call to relay the remote sendPacket should revert due to the local dapp having already called
+        // chanCloseInit.
+        vm.expectRevert(abi.encodeWithSelector(IBCErrors.channelIdNotFound.selector, channelId));
+        dispatcherProxy.recvPacket(IbcPacket(dest, src, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof); // Note:
+            // Src and dest are reversed since for this test case, packet is sent from dest to src.
+    }
+
     function test_sendPacket_afterChannelCloseConfirm() public {
         dispatcherProxy.channelCloseConfirm(address(mars), channelId, validProof);
         sentPacket = genPacket(nextSendSeq);
