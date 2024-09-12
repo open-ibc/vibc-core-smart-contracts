@@ -174,8 +174,9 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         string calldata counterpartyPortId
     ) external nonReentrant {
         // We need to validate connectionHops & counterpartyPortId since they aren't validated in an internal
-        // function like all other instances of these arguments
-        if (connectionHops.length < 2 || bytes(counterpartyPortId).length == 0) {
+        // function like all other instances of these arguments. ConnectionHops can only be of length 2 for now since we
+        // don't yet support multihop, but this will be updated in the future
+        if (connectionHops.length != 2 || bytes(counterpartyPortId).length == 0) {
             revert IBCErrors.invalidCounterParty();
         }
         if (bytes(version).length == 0) {
@@ -212,7 +213,9 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         ChannelEnd calldata counterparty,
         Ics23Proof calldata proof
     ) external nonReentrant {
-        if (connectionHops.length < 2) {
+        // Note: ConnectionHops can only be of length 2 for now since we don't yet support multihop, but this will be
+        // updated in the future
+        if (connectionHops.length != 2) {
             revert IBCErrors.invalidConnectionHops();
         }
         _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
