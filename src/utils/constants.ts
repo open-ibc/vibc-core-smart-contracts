@@ -9,10 +9,13 @@ export const DEFAULT_CHAIN_ID = "31337";
 export const DEFAULT_CHAIN_NAME = "local";
 export const DEFAULT_VERIFIER = "blockscout";
 export const MODULE_ROOT_PATH =
-  process.env.MODULE_ROOT_PATH ||
-  path.resolve(__dirname, '../'); // Note: this is impacted by the tsup config since that can potential change where this file ends up being built to 
+  process.env.MODULE_ROOT_PATH || path.resolve(__dirname, "..", ".."); // Note: this is impacted by the tsup config since that can potential change where this file ends up being built to
+export const PARENT_MODULE_ROOT_PATH = path.dirname(path.resolve("package.json")); // Path of module using this package; path.resolve uses cwd so this should typically be the root of the module that's running the bin
 const DEFAULT_ARTIFACTS_PATH = path.resolve(MODULE_ROOT_PATH, "out");
-const DEFAULT_DEPLOYMENTS_PATH = path.resolve(MODULE_ROOT_PATH, "./deployments");
+const DEFAULT_DEPLOYMENTS_PATH = path.resolve(
+  PARENT_MODULE_ROOT_PATH,
+  "deployments"
+);
 const DEFAULT_SPECS_PATH = path.resolve(MODULE_ROOT_PATH, "./specs");
 const DEFAULT_DEPLOYMENT_ENVIRONMENT = "local"; // Deployment Environment disambiguates between deployment environments on the same chains (e.g. staging testnet vs prod testnet) This should be one of the following: local, staging, prod, mainnet
 
@@ -37,14 +40,6 @@ const SPECS_BASE_PATH = process.env.SPECS_BASE_PATH
   ? process.env.SPECS_BASE_PATH
   : DEFAULT_SPECS_PATH;
 
-export const DEPLOY_SPECS_PATH = process.env.DEPLOY_SPECS_PATH
-  ? process.env.DEPLOY_SPECS_PATH
-  : path.resolve(SPECS_BASE_PATH, "contracts.spec.yaml");
-
-export const UPGRADE_SPECS_PATH = process.env.UPGRADE_SPECS_PATH
-  ? process.env.UPGRADE_SPECS_PATH
-  : path.resolve(SPECS_BASE_PATH, "upgrade.spec.yaml");
-
 export const UPDATE_SPECS_PATH = process.env.UPDATE_SPECS_PATH
   ? process.env.UPDATE_SPECS_PATH
   : path.resolve(SPECS_BASE_PATH, "update.spec.yaml");
@@ -52,8 +47,3 @@ export const UPDATE_SPECS_PATH = process.env.UPDATE_SPECS_PATH
 export const ACCOUNTS_SPECS_PATH = process.env.ACCOUNTS_SPECS_PATH
   ? process.env.ACCOUNTS_SPECS_PATH
   : path.resolve(SPECS_BASE_PATH, "evm.accounts.yaml");
-
-export const DISPATCHER_SETUP_SPECS_PATH = process.env
-  .DISPATCHER_SETUP_SPECS_PATH
-  ? process.env.DISPATCHER_SETUP_SPECS_PATH
-  : path.resolve(SPECS_BASE_PATH, "contracts.setup.spec.yaml");

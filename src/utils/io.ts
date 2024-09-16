@@ -15,11 +15,9 @@ import {
   CHAIN_NAME,
   CHAIN_ID,
   RPC_URL,
-  DEPLOY_SPECS_PATH,
   PACKAGE_VERSION,
   DEPLOYMENT_ENVIRONMENT,
   ANVIL_PORT,
-  UPGRADE_SPECS_PATH,
   UPDATE_SPECS_PATH,
 } from "./constants";
 import yargs from "yargs/yargs";
@@ -365,9 +363,6 @@ export async function parseArgsFromCLI() {
   const accountSpecs =
     (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
 
-  const deploySpecs = (argv1.DEPLOY_SPECS_PATH as string) || DEPLOY_SPECS_PATH;
-  const upgradeSpecs =
-    (argv1.UPGRADE_SPECS_PATH as string) || UPGRADE_SPECS_PATH;
   const updateSpecs = (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
   const anvilPort = (argv1.ANVIL_PORT as string) || ANVIL_PORT;
 
@@ -394,9 +389,7 @@ export async function parseArgsFromCLI() {
     chain: chainParse.data,
     accounts,
     accountSpecs,
-    upgradeSpecs,
     updateSpecs,
-    deploySpecs,
     args: argv1,
     anvilPort,
   };
