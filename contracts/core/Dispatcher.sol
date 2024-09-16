@@ -218,7 +218,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         if (connectionHops.length != 2) {
             revert IBCErrors.invalidConnectionHops();
         }
-        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
+        _checkInvalidChannelEnds(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -293,7 +293,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
             revert IBCErrors.invalidConnectionHops();
         }
 
-        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
+        _checkInvalidChannelEnds(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -358,7 +358,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         if (connectionHops.length < 2) {
             revert IBCErrors.invalidConnectionHops();
         }
-        _checkInvalidCounterParty(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
+        _checkInvalidChannelEnds(local.portId, local.channelId, counterparty.portId, counterparty.channelId);
         _getLightClientFromConnection(connectionHops[0]).verifyMembership(
             proof,
             Ibc.channelProofKey(local.portId, local.channelId),
@@ -845,7 +845,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         }
     }
 
-    function _checkInvalidCounterParty(
+    function _checkInvalidChannelEnds(
         string calldata localPortId,
         bytes32 localChannelId,
         string calldata counterPartyPortId,
