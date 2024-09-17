@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {Ics23Proof, L1Header, OpL2StateProof} from "./IProofVerifier.sol";
+import {Ics23Proof, L1Header} from "./IProofVerifier.sol";
 
 /**
  * @title ILightClient
@@ -31,20 +31,17 @@ interface ILightClient {
      * the fraud proof window has passed according to the block's time stamp.
      * @param l1header  RLP "encoded" version of the L1 header that matches with the trusted hash and number
      * @param proof l2 state proof. It includes the keys, hashes and storage proofs required to verify the app hash
-     * @param appHash l2 app hash (state root) to be verified
+     * @param appHash Peptide app hash (state root) to be verified
      * @return fraudProofEndTime The fraud proof end time.
      * @return ended A boolean indicating if the fraud proof window has passed.
      */
-    function updateClient(
-        L1Header calldata l1header,
-        bytes calldata proof,
-        uint256 height,
-        uint256 appHash
-    ) external returns (uint256 fraudProofEndTime, bool ended);
+    function updateClient(L1Header calldata l1header, bytes calldata proof, uint256 height, uint256 appHash)
+        external
+        returns (uint256 fraudProofEndTime, bool ended);
 
     /**
-     * @dev Returns the fraud proof end time at a giben block
-     * 0 is returned if there isn't an appHash with the given height.
+     * @dev Returns the fraud proof end time at a given block
+     * 0 is returned if there isn't an appHash with the given l2 height.
      */
     function getFraudProofEndtime(uint256 height) external returns (uint256 endTime);
 
