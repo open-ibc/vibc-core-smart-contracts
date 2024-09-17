@@ -123,7 +123,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      */
     function updateClientWithOptimisticConsensusState(
         L1Header calldata l1header,
-        OpL2StateProof calldata proof,
+        bytes calldata proof,
         uint256 height,
         uint256 appHash,
         string calldata connection
