@@ -17,65 +17,50 @@
 
 pragma solidity 0.8.15;
 
-import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {L1Header, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {ISignatureVerifier} from "../interfaces/ISignatureVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
-import {L1Block} from "optimism/L2/L1Block.sol";
 
 /**
- * @title OptimisticLightClient
+ * @title SubfinalityLightClient
  * @author Polymer Labs
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
-contract OptimisticLightClient is ILightClient {
+contract SequencerSoloClient is ILightClient {
     // consensusStates maps from the height to the appHash.
     mapping(uint256 => uint256) public consensusStates;
 
-    // fraudProofEndtime maps from the appHash to the fraud proof end time.
-    mapping(uint256 => uint256) public fraudProofEndtime;
-    uint256 public fraudProofWindowSeconds;
-    IProofVerifier public verifier;
-    L1Block public l1BlockProvider;
+    ISignatureVerifier public immutable verifier;
 
     error CannotUpdatePendingOptimisticConsensusState();
     error AppHashHasNotPassedFraudProofWindow();
+    error NonMemberShipProofsNotYetImplemented();
+    error NoConsensusStateAtHeight(uint256 height);
 
-    constructor(uint32 fraudProofWindowSeconds_, IProofVerifier verifier_, L1Block _l1BlockProvider) {
-        fraudProofWindowSeconds = fraudProofWindowSeconds_;
+    constructor(ISignatureVerifier verifier_) {
         verifier = verifier_;
-        l1BlockProvider = _l1BlockProvider;
     }
 
     /**
      * @inheritdoc ILightClient
+     * @param signature The signature of the sequencer that the client verifies the signing of
      */
-    function updateClient(
-        L1Header calldata l1header,
-        bytes calldata encodedProof,
-        uint256 height,
-        uint256 appHash
-    ) external override returns (uint256 fraudProofEndTime, bool ended) {
-        OpL2StateProof memory proof = abi.decode(encodedProof, (OpL2StateProof));
+    function updateClient(L1Header calldata l1header, bytes calldata signature, uint256 height, uint256 appHash)
+        external
+        override
+        returns (uint256 fraudProofEndTime, bool ended)
+    {
         uint256 hash = consensusStates[height];
-        if (hash == 0) {
-            // if this is a new apphash we need to verify the provided proof. This method will revert in case
-            // of invalid proof.
-            verifier.verifyStateUpdate(
-                l1header, proof, bytes32(appHash), l1BlockProvider.hash(), l1BlockProvider.number()
-            );
-
-            // a new appHash
-            consensusStates[height] = appHash;
-            uint256 endTime = block.timestamp + fraudProofWindowSeconds;
-            fraudProofEndtime[appHash] = endTime;
-            return (endTime, false);
+        if (hash != appHash) {
+            revert CannotUpdatePendingOptimisticConsensusState();
         }
 
-        if (hash == appHash) {
-            uint256 endTime = fraudProofEndtime[hash];
-            return (endTime, block.timestamp >= endTime);
-        }
+        verifier.verifyStateUpdate(l1header, bytes32(appHash), height, signature);
 
-        revert CannotUpdatePendingOptimisticConsensusState();
+        consensusStates[height] = appHash;
+
+        ended = true;
+        fraudProofEndTime = 0; // No fraud proof window for sequencer client so we're always past fraud proof time
     }
 
     /**
@@ -95,26 +80,27 @@ contract OptimisticLightClient is ILightClient {
         // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
         // this means the relayer must have updated the contract with the app hash from the previous block and
         // that is why we use proof.height - 1 here.
-        (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
-        if (!ended) revert AppHashHasNotPassedFraudProofWindow();
+        (uint256 appHash,,) = getInternalState(proof.height - 1);
         verifier.verifyMembership(bytes32(appHash), key, expectedValue, proof);
     }
 
     /**
      * @inheritdoc ILightClient
      */
-    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
-        (uint256 appHash,, bool ended) = getInternalState(proof.height - 1);
-        if (!ended) revert AppHashHasNotPassedFraudProofWindow();
-        verifier.verifyNonMembership(bytes32(appHash), key, proof);
+    function getFraudProofEndtime(uint256 height) external view returns (uint256 fraudProofendTime) {
+        if (consensusStates[height] == 0) {
+            revert NoConsensusStateAtHeight(height);
+        }
+
+        fraudProofendTime = 0;
+        // Always return 0 since no end time for proofs
     }
 
     /**
      * @inheritdoc ILightClient
      */
-    function getFraudProofEndtime(uint256 height) external view returns (uint256 fraudProofEndTime) {
-        uint256 hash = consensusStates[height];
-        return fraudProofEndtime[hash];
+    function verifyNonMembership(Ics23Proof calldata, bytes calldata) external pure {
+        revert NonMemberShipProofsNotYetImplemented();
     }
 
     /**
@@ -125,7 +111,6 @@ contract OptimisticLightClient is ILightClient {
         view
         returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
     {
-        uint256 hash = consensusStates[height];
-        return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
+        return (consensusStates[height], 0, true);
     }
 }

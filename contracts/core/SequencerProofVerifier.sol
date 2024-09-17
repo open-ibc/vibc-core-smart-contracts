@@ -17,120 +17,37 @@
 
 pragma solidity 0.8.15;
 
-import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
-import {IProofVerifier, L1Header, OpL2StateProof, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
+import {L1Header, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
+import {ISignatureVerifier} from "../interfaces/ISignatureVerifier.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title OptimisticProofVerifier
  * @notice Verifies proofs related to Optimistic Rollup state updates
  * @author Polymer Labs
  */
-contract OptimisticProofVerifier is IProofVerifier {
+contract SequencerSignatureVerifier is ISignatureVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
-    // @notice index of the l1 state root in the "l1 header"
-    uint256 internal constant _L1_STATE_ROOT_INDEX = 3;
-
-    // @notice index of the l1 number in the "l1 header"
-    uint256 internal constant _L1_NUMBER_INDEX = 8;
-
     // @notice known L2 Output Oracle contract address to verify state update proofs against
-    address public l2OutputOracleAddress;
+    address public immutable sequencer;
 
-    constructor(address _l2OutputOracleAddress) {
-        l2OutputOracleAddress = _l2OutputOracleAddress;
+    error InvalidSequencerSignature();
+
+    constructor(address sequencer_) {
+        sequencer = sequencer_;
     }
 
-    /**
-     * @dev Prove that the provided app hash (L2 state root) is valid. Done so by proving that the L2OutputOracle
-     * contains an output proposal within its state that we can derive from the given app hash. The high level
-     * approach is:
-     *
-     * A. Prove the given L1 state root.
-     * B. Prove the prescence of an output proposal in the L2OutputOracle contract.
-     * C. Derive the output proposal from the apphash.
-     *
-     * A more detailed explanation of the process goes as follows. All steps must be valid in order for the
-     * app hash to be accepted. Otherwise, the function will revert.
-     *
-     * 1. Provided L1 header hash and number match that of the trusted ones. The trusted attributes must come
-     *    from Optimism's L1Block contract. Given that this contract only holds the latest L1 attributes, there's
-     *    a good chance for a race-condition to happen, so check them first.
-     *
-     * 2. Provided L1 header data includes the L1 state root. Compute the header hash and check it against the
-     *    trusted one. In case of a match, the state root must be valid.
-     *
-     * 3. Based on the L1 state root and using the provided account proof and L2OutputOracle address, get the
-     *    value stored in the MerkleTrie leaf. This is the state account.
-     *
-     * 4. With the state account root and using the provided storage proof and output proposal key, get the
-     *    vlue stored in the MerkleTrie leaf. This is the output proposal root.
-     *
-     * 5. With the provided apphash and L2 Blockc hash, try to compute a new output root and match it against
-     *    the one we just proved to be valid.
-     */
-    function verifyStateUpdate(
-        L1Header calldata l1header,
-        OpL2StateProof calldata proof,
-        bytes32 appHash,
-        bytes32 trustedL1BlockHash,
-        uint64 trustedL1BlockNumber
-    ) external view {
-        if (trustedL1BlockNumber != l1header.number) {
-            revert InvalidL1BlockNumber();
-        }
-
-        // This computes the L1 header hash
-        if (trustedL1BlockHash != keccak256(RLPWriter.writeList(l1header.header))) {
-            revert InvalidL1BlockHash();
-        }
-
-        // These two checks are here to verify that the "plain" (i.e. not RLP encoded) values in the l1header are
-        // the same ones found in l1header.header (i.e. RLP encoded). This is because it is cheaper to RLP
-        // encode that decode
-        if (keccak256(RLPWriter.writeUint(l1header.number)) != keccak256(l1header.header[_L1_NUMBER_INDEX])) {
-            revert InvalidRLPEncodedL1BlockNumber();
-        }
-        if (
-            keccak256(RLPWriter.writeBytes(abi.encode(l1header.stateRoot)))
-                != keccak256(l1header.header[_L1_STATE_ROOT_INDEX])
-        ) {
-            revert InvalidRLPEncodedL1StateRoot();
-        }
-
-        //  stateAccount looks like this struct. We are interested in the Root field which is the one at index 2
-        //  type StateAccount struct {
-        //     Nonce    uint64       // index 0
-        //     Balance  *big.Int     // index 1
-        //     Root     common.Hash  // index 2
-        //     CodeHash []byte       // index 3
-        //  }
-        RLPReader.RLPItem[] memory stateAccount = SecureMerkleTrie.get(
-            abi.encodePacked(l2OutputOracleAddress), proof.accountProof, l1header.stateRoot
-        ).toRLPItem().readList();
-
-        bytes memory outputRoot = SecureMerkleTrie.get(
-            abi.encode(proof.l2OutputProposalKey), proof.outputRootProof, bytes32(bytes(stateAccount[2].readBytes()))
+    function verifyStateUpdate(L1Header calldata l1header, bytes32 appHash, uint256 l2Height, bytes calldata signature)
+        external
+        view
+    {
+        _verifySequencerSignature(
+            l2Height, appHash, keccak256(RLPWriter.writeList(l1header.header)), l1header.stateRoot, signature
         );
-
-        // Now that the output root is verified, we need to verify the app hash. To do so we try to derive the
-        // the output root the same way the proposer did.
-        // See https://github.com/polymerdao/optimism/blob/polymer/v1.2.0/op-service/eth/output.go#L44
-        if (
-            keccak256(
-                abi.encodePacked(
-                    bytes32(0), // version
-                    appHash,
-                    bytes32(0), // message passer storage root.
-                    proof.l2BlockHash
-                )
-            ) != bytes32(bytes(outputRoot.toRLPItem().readBytes()))
-        ) {
-            revert InvalidAppHash();
-        }
     }
 
     /**
@@ -142,7 +59,7 @@ contract OptimisticProofVerifier is IProofVerifier {
     }
 
     /**
-     * @inheritdoc IProofVerifier
+     * @inheritdoc ISignatureVerifier
      * @dev verifies a chain of ICS23 proofs
      * Each computed subroot starting from index 0 must match the value of the next proof (hence chained proofs).
      * The cosmos SDK and ics23 support chained proofs to switch between different proof specs.
@@ -162,6 +79,22 @@ contract OptimisticProofVerifier is IProofVerifier {
         // we can check the second that corresponds to the ibc proof, that is checked against the app hash (app root)
         if (bytes32(proofs.proof[1].value) != _verify(proofs.proof[0])) revert InvalidPacketProof();
         if (appHash != _verify(proofs.proof[1])) revert InvalidIbcStateProof();
+    }
+
+    function _verifySequencerSignature(
+        uint256 L2BlockNumber,
+        bytes32 AppHash,
+        bytes32 L1BlockHash,
+        bytes32 L1StateRoot,
+        bytes calldata signature
+    ) internal view {
+        // TODO: check that erecover should indeed ensure that the signature signs over the hash
+        if (
+            ECDSA.recover(keccak256(bytes.concat(bytes32(L2BlockNumber), AppHash, L1BlockHash, L1StateRoot)), signature)
+                != sequencer
+        ) {
+            revert InvalidSequencerSignature();
+        }
     }
 
     /**
