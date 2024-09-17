@@ -37,7 +37,7 @@ interface ILightClient {
      */
     function addOpConsensusState(
         L1Header calldata l1header,
-        OpL2StateProof calldata proof,
+        bytes calldata proof,
         uint256 height,
         uint256 appHash
     ) external returns (uint256 fraudProofEndTime, bool ended);
