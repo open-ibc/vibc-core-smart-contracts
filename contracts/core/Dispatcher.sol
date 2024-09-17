@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import {L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {L1Header, Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -117,7 +117,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
     /**
      * @notice Updates the client with optimistic consensus state. The optimistic consensus is accepted and will be open
      * for verification in the fraud proof window
-     * @dev Calls lightClient.addOpConsensusState; See Lightclient natspec for params information
+     * @dev Calls lightClient.updateClient; See Lightclient natspec for params information
      * @dev This function updates the client with optimistic consensus state.
      *      It should be called after verifying the optimistic consensus state on the main chain.
      */
@@ -128,7 +128,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         uint256 appHash,
         string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        return _getLightClientFromConnection(connection).addOpConsensusState(l1header, proof, height, appHash);
+        return _getLightClientFromConnection(connection).updateClient(l1header, proof, height, appHash);
     }
 
     /**
