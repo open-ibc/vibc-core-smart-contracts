@@ -69,7 +69,7 @@ contract OptimisticProofVerifier is IProofVerifier {
      * 4. With the state account root and using the provided storage proof and output proposal key, get the
      *    vlue stored in the MerkleTrie leaf. This is the output proposal root.
      *
-     * 5. With the provided apphash and L2 Blockc hash, try to compute a new output root and match it against
+     * 5. With the provided apphash and L2 Block hash, try to compute a new output root and match it against
      *    the one we just proved to be valid.
      */
     function verifyStateUpdate(
@@ -90,7 +90,7 @@ contract OptimisticProofVerifier is IProofVerifier {
 
         // These two checks are here to verify that the "plain" (i.e. not RLP encoded) values in the l1header are
         // the same ones found in l1header.header (i.e. RLP encoded). This is because it is cheaper to RLP
-        // encode that decode
+        // encode than decode
         if (keccak256(RLPWriter.writeUint(l1header.number)) != keccak256(l1header.header[_L1_NUMBER_INDEX])) {
             revert InvalidRLPEncodedL1BlockNumber();
         }

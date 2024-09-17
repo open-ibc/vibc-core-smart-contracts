@@ -18,7 +18,7 @@ pragma solidity ^0.8.0;
 
 import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
-import {L1Header, OpL2StateProof, Ics23Proof} from "./IProofVerifier.sol";
+import {L1Header, Ics23Proof} from "./IProofVerifier.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket} from "../libs/Ibc.sol";
 import {ILightClient} from "./ILightClient.sol";
 import {IFeeVault} from "./IFeeVault.sol";

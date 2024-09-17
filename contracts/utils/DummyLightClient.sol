@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {ILightClient, L1Header, OpL2StateProof, Ics23Proof} from "../interfaces/ILightClient.sol";
+import {ILightClient, L1Header, Ics23Proof} from "../interfaces/ILightClient.sol";
 
 /**
  * @title DummyLightClient
