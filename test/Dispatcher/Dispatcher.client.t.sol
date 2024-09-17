@@ -16,7 +16,7 @@ abstract contract DispatcherUpdateClientTestSuite is Base {
         // trick the L1Block contract into thinking it is updated with the right l1 header
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
         dispatcherProxy.updateClientWithOptimisticConsensusState(
-            l1header, validStateProof, 1, uint256(apphash), "connection-0"
+            l1header, abi.encode(validStateProof), 1, uint256(apphash), "connection-0"
         );
     }
 
@@ -24,7 +24,7 @@ abstract contract DispatcherUpdateClientTestSuite is Base {
         setL1BlockAttributes(keccak256(RLPWriter.writeList(l1header.header)), l1header.number);
         vm.expectRevert("MerkleTrie: ran out of proof elements");
         dispatcherProxy.updateClientWithOptimisticConsensusState(
-            l1header, invalidStateProof, 1, uint256(apphash), "connection-0"
+            l1header, abi.encode(invalidStateProof), 1, uint256(apphash), "connection-0"
         );
     }
 }

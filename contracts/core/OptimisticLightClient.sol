@@ -50,7 +50,7 @@ contract OptimisticLightClient is ILightClient {
      */
     function addOpConsensusState(
         L1Header calldata l1header,
-        OpL2StateProof calldata proof,
+        bytes calldata proof,
         uint256 height,
         uint256 appHash
     ) external override returns (uint256 fraudProofEndTime, bool ended) {
@@ -59,7 +59,7 @@ contract OptimisticLightClient is ILightClient {
             // if this is a new apphash we need to verify the provided proof. This method will revert in case
             // of invalid proof.
             verifier.verifyStateUpdate(
-                l1header, proof, bytes32(appHash), l1BlockProvider.hash(), l1BlockProvider.number()
+                l1header, abi.decode(proof, (OpL2StateProof)), bytes32(appHash), l1BlockProvider.hash(), l1BlockProvider.number()
             );
 
             // a new appHash
