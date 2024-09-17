@@ -48,7 +48,7 @@ contract OptimisticLightClient is ILightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function addOpConsensusState(
+    function updateClient(
         L1Header calldata l1header,
         bytes calldata proof,
         uint256 height,

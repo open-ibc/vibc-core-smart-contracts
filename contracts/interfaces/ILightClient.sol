@@ -35,7 +35,7 @@ interface ILightClient {
      * @return fraudProofEndTime The fraud proof end time.
      * @return ended A boolean indicating if the fraud proof window has passed.
      */
-    function addOpConsensusState(
+    function updateClient(
         L1Header calldata l1header,
         bytes calldata proof,
         uint256 height,
