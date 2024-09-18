@@ -83,7 +83,9 @@ contract DappHandlerRevertTests is Base {
         // Test Revert empty
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingEmptyMars))));
         vm.expectEmit(true, true, true, true);
-        emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(AckStatus.FAILURE, ""));
+        emit WriteAckPacket(
+            address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(AckStatus.FAILURE, "")
+        );
         dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Panic
