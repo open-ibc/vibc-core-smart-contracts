@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
-import {L1Header, OpL2StateProof} from "../interfaces/IProofVerifier.sol";
+import {L1Header, OpL2StateProof, IProofVerifier} from "../interfaces/IProofVerifier.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
 
 /**
@@ -28,7 +28,7 @@ import {AppStateVerifier} from "../base/AppStateVerifier.sol";
  * @notice Verifies proofs related to Optimistic Rollup state updates
  * @author Polymer Labs
  */
-contract OptimisticProofVerifier is AppStateVerifier {
+contract OptimisticProofVerifier is AppStateVerifier, IProofVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 

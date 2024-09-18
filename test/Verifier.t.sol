@@ -28,19 +28,19 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
     }
 
     function test_verify_state_update_invalid_l1_number() public {
-        vm.expectRevert(IProofVerifier.InvalidL1BlockNumber.selector);
+        vm.expectRevert(IAppStateVerifier.InvalidL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 42);
     }
 
     function test_verify_state_update_invalid_l1_hash() public {
-        vm.expectRevert(IProofVerifier.InvalidL1BlockHash.selector);
+        vm.expectRevert(IAppStateVerifier.InvalidL1BlockHash.selector);
         opProofVerifier.verifyStateUpdate(emptyl1header, invalidStateProof, bytes32(0), bytes32(0), 0);
     }
 
     function test_verify_state_update_invalid_rlp_computed_hash() public {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
-        vm.expectRevert(IProofVerifier.InvalidRLPEncodedL1BlockNumber.selector);
+        vm.expectRevert(IAppStateVerifier.InvalidRLPEncodedL1BlockNumber.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -50,7 +50,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
         // just so the verifier can reach item at index 8
         emptyl1header.header = new bytes[](9);
         emptyl1header.header[8] = RLPWriter.writeUint(0);
-        vm.expectRevert(IProofVerifier.InvalidRLPEncodedL1StateRoot.selector);
+        vm.expectRevert(IAppStateVerifier.InvalidRLPEncodedL1StateRoot.selector);
         opProofVerifier.verifyStateUpdate(
             emptyl1header, invalidStateProof, bytes32(0), keccak256(RLPWriter.writeList(emptyl1header.header)), 0
         );
@@ -67,7 +67,7 @@ contract OpProofVerifierStateUpdateTest is ProofBase {
     }
 
     function test_verify_state_update_invalid_apphash() public {
-        vm.expectRevert(IProofVerifier.InvalidAppHash.selector);
+        vm.expectRevert(IAppStateVerifier.InvalidAppHash.selector);
         opProofVerifier.verifyStateUpdate(
             l1header, validStateProof, bytes32(0), keccak256(RLPWriter.writeList(l1header.header)), l1header.number
         );

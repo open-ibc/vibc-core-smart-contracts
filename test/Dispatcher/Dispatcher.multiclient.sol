@@ -42,7 +42,7 @@ contract DispatcherRealProofMultiClient is Base {
         dispatcherProxy.channelOpenTry(ch0, ChannelOrder.NONE, false, connectionHops0, ch1, dummyProof);
 
         // Having a dummy light client shouldn't impact opLightClient's ability to reject invalid proofs
-        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAppStateVerifier.InvalidProofValue.selector));
         dispatcherProxy.channelOpenTry(ch1, ChannelOrder.NONE, false, connectionHops1, ch0, dummyProof);
     }
 
@@ -63,7 +63,7 @@ contract DispatcherRealProofMultiClient is Base {
         bytes memory ackData = bytes.concat(keccak256(hex"22726573756c7422"));
 
         // OpProofverifier will cause acknowledgement to fail
-        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofKey.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAppStateVerifier.InvalidProofKey.selector));
         dispatcherProxy.acknowledgement(packet, ackData, invalidProof);
 
         // Now we change the client to the dummy client and the packet should go through since it circumvents the proof

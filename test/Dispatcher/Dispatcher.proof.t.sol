@@ -148,7 +148,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
         packet.src.channelId = ch1.channelId;
         packet.sequence = 1;
 
-        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.MethodNotImplemented.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAppStateVerifier.MethodNotImplemented.selector));
         dispatcherProxy.timeout(packet, proof);
     }
 }

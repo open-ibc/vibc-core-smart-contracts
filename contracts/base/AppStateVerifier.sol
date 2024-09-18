@@ -18,14 +18,14 @@
 pragma solidity 0.8.15;
 
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
-import {IProofVerifier, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
+import {IProofVerifier,IAppStateVerifier,  Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title OptimisticProofVerifier
  * @notice Verifies proofs related to Optimistic Rollup state updates
  * @author Polymer Labs
  */
-abstract contract AppStateVerifier is IProofVerifier {
+abstract contract AppStateVerifier is IAppStateVerifier{
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
@@ -38,7 +38,7 @@ abstract contract AppStateVerifier is IProofVerifier {
     }
 
     /**
-     * @inheritdoc IProofVerifier
+     * @inheritdoc IAppStateVerifier
      * @dev verifies a chain of ICS23 proofs
      * Each computed subroot starting from index 0 must match the value of the next proof (hence chained proofs).
      * The cosmos SDK and ics23 support chained proofs to switch between different proof specs.

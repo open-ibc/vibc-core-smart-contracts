@@ -17,9 +17,10 @@
 
 pragma solidity 0.8.15;
 
-import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
-import {ILightClient} from "../interfaces/ILightClient.sol";
+import {L1Header, IProofVerifier, IAppStateVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {ILightClient } from "../interfaces/ILightClient.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
+
 
 /**
  * @title OptimisticLightClient
