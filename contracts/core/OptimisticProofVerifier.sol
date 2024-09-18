@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
-import {IProofVerifier, L1Header, OpL2StateProof, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
+import {L1Header, OpL2StateProof} from "../interfaces/IProofVerifier.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
 
 /**

@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import {L1Header, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import { Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -122,13 +122,12 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      *      It should be called after verifying the optimistic consensus state on the main chain.
      */
     function updateClientWithOptimisticConsensusState(
-        bytes calldata l1header,
         bytes calldata proof,
         uint256 height,
         uint256 appHash,
         string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        return _getLightClientFromConnection(connection).updateClient(l1header, proof, height, appHash);
+        return _getLightClientFromConnection(connection).updateClient(proof, height, appHash);
     }
 
     /**

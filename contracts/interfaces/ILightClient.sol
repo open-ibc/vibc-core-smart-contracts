@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {Ics23Proof, L1Header} from "./IProofVerifier.sol";
+import {Ics23Proof} from "./IProofVerifier.sol";
 
 /**
  * @title ILightClient
@@ -29,13 +29,14 @@ interface ILightClient {
     /**
      * @dev Adds an appHash to the internal store and returns the fraud proof end time, and a bool flag indicating if
      * the fraud proof window has passed according to the block's time stamp.
-     * @param l1header  Generic byte array that contains info on the header. It's up to the implementation to define the format of this header, and the trust assumptions on where this l1header comes from. E.g. this can be an abi encoded L1Header struct from the IProofVerifier interface.
-     * @param proof A generic byte array that contains proof data to prove the apphash client update. This can differ depending on the light client type. E.g. this can be an abi.encoded OpL2StateProof struct from the IProofVerifier interface.
+     * @param proof A generic byte array that contains proof data to prove the apphash client update. This can differ
+     * depending on the light client type. E.g. this can be an abi.encoded OpL2StateProof struct from the IProofVerifier
+     * interface.
      * @param appHash Peptide app hash (state root) to be verified
      * @return fraudProofEndTime The fraud proof end time.
      * @return ended A boolean indicating if the fraud proof window has passed.
      */
-    function updateClient(bytes calldata l1header, bytes calldata proof, uint256 height, uint256 appHash)
+    function updateClient(bytes calldata proof, uint256 height, uint256 appHash)
         external
         returns (uint256 fraudProofEndTime, bool ended);
 

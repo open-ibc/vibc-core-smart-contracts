@@ -18,7 +18,7 @@ pragma solidity ^0.8.0;
 
 import {IbcDispatcher, IbcEventsEmitter} from "./IbcDispatcher.sol";
 
-import {L1Header, Ics23Proof} from "./IProofVerifier.sol";
+import {Ics23Proof} from "./IProofVerifier.sol";
 import {Channel, ChannelEnd, ChannelOrder, IbcPacket} from "../libs/Ibc.sol";
 import {ILightClient} from "./ILightClient.sol";
 import {IFeeVault} from "./IFeeVault.sol";
@@ -27,7 +27,6 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
 
     function updateClientWithOptimisticConsensusState(
-        bytes calldata l1header,
         bytes calldata proof,
         uint256 height,
         uint256 appHash,
