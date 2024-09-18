@@ -8,84 +8,6 @@ import type { ILightClient, ILightClientInterface } from "../ILightClient";
 const _abi = [
   {
     type: "function",
-    name: "addOpConsensusState",
-    inputs: [
-      {
-        name: "l1header",
-        type: "tuple",
-        internalType: "struct L1Header",
-        components: [
-          {
-            name: "header",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "stateRoot",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-          {
-            name: "number",
-            type: "uint64",
-            internalType: "uint64",
-          },
-        ],
-      },
-      {
-        name: "proof",
-        type: "tuple",
-        internalType: "struct OpL2StateProof",
-        components: [
-          {
-            name: "accountProof",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "outputRootProof",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "l2OutputProposalKey",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-          {
-            name: "l2BlockHash",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-        ],
-      },
-      {
-        name: "height",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "appHash",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
-    outputs: [
-      {
-        name: "fraudProofEndTime",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "ended",
-        type: "bool",
-        internalType: "bool",
-      },
-    ],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "getFraudProofEndtime",
     inputs: [
       {
@@ -131,6 +53,45 @@ const _abi = [
       },
     ],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "updateClient",
+    inputs: [
+      {
+        name: "l1header",
+        type: "bytes",
+        internalType: "bytes",
+      },
+      {
+        name: "proof",
+        type: "bytes",
+        internalType: "bytes",
+      },
+      {
+        name: "height",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "appHash",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "fraudProofEndTime",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "ended",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
   },
   {
     type: "function",

@@ -141,37 +141,6 @@ export type ChannelStructOutput = [
   portId: string;
 };
 
-export type L1HeaderStruct = {
-  header: BytesLike[];
-  stateRoot: BytesLike;
-  number: BigNumberish;
-};
-
-export type L1HeaderStructOutput = [
-  header: string[],
-  stateRoot: string,
-  number: bigint
-] & { header: string[]; stateRoot: string; number: bigint };
-
-export type OpL2StateProofStruct = {
-  accountProof: BytesLike[];
-  outputRootProof: BytesLike[];
-  l2OutputProposalKey: BytesLike;
-  l2BlockHash: BytesLike;
-};
-
-export type OpL2StateProofStructOutput = [
-  accountProof: string[],
-  outputRootProof: string[],
-  l2OutputProposalKey: string,
-  l2BlockHash: string
-] & {
-  accountProof: string[];
-  outputRootProof: string[];
-  l2OutputProposalKey: string;
-  l2BlockHash: string;
-};
-
 export type AckPacketStruct = { success: boolean; data: BytesLike };
 
 export type AckPacketStructOutput = [success: boolean, data: string] & {
@@ -360,13 +329,7 @@ export interface DispatcherInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "updateClientWithOptimisticConsensusState",
-    values: [
-      L1HeaderStruct,
-      OpL2StateProofStruct,
-      BigNumberish,
-      BigNumberish,
-      string
-    ]
+    values: [BytesLike, BytesLike, BigNumberish, BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "upgradeTo",
@@ -1111,8 +1074,8 @@ export interface Dispatcher extends BaseContract {
 
   updateClientWithOptimisticConsensusState: TypedContractMethod<
     [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
+      l1header: BytesLike,
+      proof: BytesLike,
       height: BigNumberish,
       appHash: BigNumberish,
       connection: string
@@ -1307,8 +1270,8 @@ export interface Dispatcher extends BaseContract {
     nameOrSignature: "updateClientWithOptimisticConsensusState"
   ): TypedContractMethod<
     [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
+      l1header: BytesLike,
+      proof: BytesLike,
       height: BigNumberish,
       appHash: BigNumberish,
       connection: string

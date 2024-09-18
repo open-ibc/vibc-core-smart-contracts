@@ -1076,52 +1076,13 @@ const _abi = [
     inputs: [
       {
         name: "l1header",
-        type: "tuple",
-        internalType: "struct L1Header",
-        components: [
-          {
-            name: "header",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "stateRoot",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-          {
-            name: "number",
-            type: "uint64",
-            internalType: "uint64",
-          },
-        ],
+        type: "bytes",
+        internalType: "bytes",
       },
       {
         name: "proof",
-        type: "tuple",
-        internalType: "struct OpL2StateProof",
-        components: [
-          {
-            name: "accountProof",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "outputRootProof",
-            type: "bytes[]",
-            internalType: "bytes[]",
-          },
-          {
-            name: "l2OutputProposalKey",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-          {
-            name: "l2BlockHash",
-            type: "bytes32",
-            internalType: "bytes32",
-          },
-        ],
+        type: "bytes",
+        internalType: "bytes",
       },
       {
         name: "height",

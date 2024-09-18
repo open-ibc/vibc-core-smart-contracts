@@ -35,13 +35,6 @@ type Ics23Proof struct {
 	Height *big.Int
 }
 
-// L1Header is an auto generated low-level Go binding around an user-defined struct.
-type L1Header struct {
-	Header    [][]byte
-	StateRoot [32]byte
-	Number    uint64
-}
-
 // OpIcs23Proof is an auto generated low-level Go binding around an user-defined struct.
 type OpIcs23Proof struct {
 	Path   []OpIcs23ProofPath
@@ -56,17 +49,9 @@ type OpIcs23ProofPath struct {
 	Suffix []byte
 }
 
-// OpL2StateProof is an auto generated low-level Go binding around an user-defined struct.
-type OpL2StateProof struct {
-	AccountProof        [][]byte
-	OutputRootProof     [][]byte
-	L2OutputProposalKey [32]byte
-	L2BlockHash         [32]byte
-}
-
 // ILightClientMetaData contains all meta data concerning the ILightClient contract.
 var ILightClientMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"addOpConsensusState\",\"inputs\":[{\"name\":\"l1header\",\"type\":\"tuple\",\"internalType\":\"structL1Header\",\"components\":[{\"name\":\"header\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"stateRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"number\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structOpL2StateProof\",\"components\":[{\"name\":\"accountProof\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"outputRootProof\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"l2OutputProposalKey\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"l2BlockHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"endTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"endTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"l1header\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"}]",
 }
 
 // ILightClientABI is the input ABI used to generate the binding from.
@@ -265,27 +250,6 @@ func (_ILightClient *ILightClientCallerSession) GetState(height *big.Int) (struc
 	return _ILightClient.Contract.GetState(&_ILightClient.CallOpts, height)
 }
 
-// AddOpConsensusState is a paid mutator transaction binding the contract method 0x5922f420.
-//
-// Solidity: function addOpConsensusState((bytes[],bytes32,uint64) l1header, (bytes[],bytes[],bytes32,bytes32) proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientTransactor) AddOpConsensusState(opts *bind.TransactOpts, l1header L1Header, proof OpL2StateProof, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.contract.Transact(opts, "addOpConsensusState", l1header, proof, height, appHash)
-}
-
-// AddOpConsensusState is a paid mutator transaction binding the contract method 0x5922f420.
-//
-// Solidity: function addOpConsensusState((bytes[],bytes32,uint64) l1header, (bytes[],bytes[],bytes32,bytes32) proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientSession) AddOpConsensusState(l1header L1Header, proof OpL2StateProof, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.AddOpConsensusState(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
-}
-
-// AddOpConsensusState is a paid mutator transaction binding the contract method 0x5922f420.
-//
-// Solidity: function addOpConsensusState((bytes[],bytes32,uint64) l1header, (bytes[],bytes[],bytes32,bytes32) proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientTransactorSession) AddOpConsensusState(l1header L1Header, proof OpL2StateProof, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.AddOpConsensusState(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
-}
-
 // GetFraudProofEndtime is a paid mutator transaction binding the contract method 0xd56ff842.
 //
 // Solidity: function getFraudProofEndtime(uint256 height) returns(uint256 endTime)
@@ -305,6 +269,27 @@ func (_ILightClient *ILightClientSession) GetFraudProofEndtime(height *big.Int) 
 // Solidity: function getFraudProofEndtime(uint256 height) returns(uint256 endTime)
 func (_ILightClient *ILightClientTransactorSession) GetFraudProofEndtime(height *big.Int) (*types.Transaction, error) {
 	return _ILightClient.Contract.GetFraudProofEndtime(&_ILightClient.TransactOpts, height)
+}
+
+// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+//
+// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
+func (_ILightClient *ILightClientTransactor) UpdateClient(opts *bind.TransactOpts, l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.contract.Transact(opts, "updateClient", l1header, proof, height, appHash)
+}
+
+// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+//
+// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
+func (_ILightClient *ILightClientSession) UpdateClient(l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
+}
+
+// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+//
+// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
+func (_ILightClient *ILightClientTransactorSession) UpdateClient(l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
 }
 
 // VerifyMembership is a paid mutator transaction binding the contract method 0xcb535ab5.

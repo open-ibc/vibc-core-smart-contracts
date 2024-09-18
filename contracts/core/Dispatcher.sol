@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import {L1Header, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import { Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -122,13 +122,12 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      *      It should be called after verifying the optimistic consensus state on the main chain.
      */
     function updateClientWithOptimisticConsensusState(
-        L1Header calldata l1header,
         bytes calldata proof,
         uint256 height,
         uint256 appHash,
         string calldata connection
     ) external returns (uint256 fraudProofEndTime, bool ended) {
-        return _getLightClientFromConnection(connection).updateClient(l1header, proof, height, appHash);
+        return _getLightClientFromConnection(connection).updateClient(proof, height, appHash);
     }
 
     /**
@@ -681,10 +680,10 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
     }
 
     /**
-     * @notice Retrieves the optimistic consensus state for the specified height and client ID.
-     * @param height The height of the consensus state.
+     * @notice Retrieves the optimistic consensus state for a specified height and client ID.
+     * @param height The height of the apphash to query 
      * @param connection The connection the client corresponds to; used to find the light client.
-     * @return appHash The application hash of the consensus state.
+     * @return appHash The apphash at the given height 
      * @return fraudProofEndTime The end time of the fraud proof.
      * @return ended A boolean indicating whether the consensus state has ended.
      */

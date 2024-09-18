@@ -20,37 +20,6 @@ import type {
   TypedContractMethod,
 } from "./common";
 
-export type L1HeaderStruct = {
-  header: BytesLike[];
-  stateRoot: BytesLike;
-  number: BigNumberish;
-};
-
-export type L1HeaderStructOutput = [
-  header: string[],
-  stateRoot: string,
-  number: bigint
-] & { header: string[]; stateRoot: string; number: bigint };
-
-export type OpL2StateProofStruct = {
-  accountProof: BytesLike[];
-  outputRootProof: BytesLike[];
-  l2OutputProposalKey: BytesLike;
-  l2BlockHash: BytesLike;
-};
-
-export type OpL2StateProofStructOutput = [
-  accountProof: string[],
-  outputRootProof: string[],
-  l2OutputProposalKey: string,
-  l2BlockHash: string
-] & {
-  accountProof: string[];
-  outputRootProof: string[];
-  l2OutputProposalKey: string;
-  l2BlockHash: string;
-};
-
 export type OpIcs23ProofPathStruct = { prefix: BytesLike; suffix: BytesLike };
 
 export type OpIcs23ProofPathStructOutput = [prefix: string, suffix: string] & {
@@ -90,17 +59,13 @@ export type Ics23ProofStructOutput = [
 export interface ILightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "addOpConsensusState"
       | "getFraudProofEndtime"
       | "getState"
+      | "updateClient"
       | "verifyMembership"
       | "verifyNonMembership"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "addOpConsensusState",
-    values: [L1HeaderStruct, OpL2StateProofStruct, BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "getFraudProofEndtime",
     values: [BigNumberish]
@@ -108,6 +73,10 @@ export interface ILightClientInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateClient",
+    values: [BytesLike, BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "verifyMembership",
@@ -119,14 +88,14 @@ export interface ILightClientInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "addOpConsensusState",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "getFraudProofEndtime",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "updateClient",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "verifyMembership",
     data: BytesLike
@@ -180,17 +149,6 @@ export interface ILightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  addOpConsensusState: TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
-    "nonpayable"
-  >;
-
   getFraudProofEndtime: TypedContractMethod<
     [height: BigNumberish],
     [bigint],
@@ -207,6 +165,17 @@ export interface ILightClient extends BaseContract {
       }
     ],
     "view"
+  >;
+
+  updateClient: TypedContractMethod<
+    [
+      l1header: BytesLike,
+      proof: BytesLike,
+      height: BigNumberish,
+      appHash: BigNumberish
+    ],
+    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    "nonpayable"
   >;
 
   verifyMembership: TypedContractMethod<
@@ -226,18 +195,6 @@ export interface ILightClient extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "addOpConsensusState"
-  ): TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "getFraudProofEndtime"
   ): TypedContractMethod<[height: BigNumberish], [bigint], "nonpayable">;
   getFunction(
@@ -252,6 +209,18 @@ export interface ILightClient extends BaseContract {
       }
     ],
     "view"
+  >;
+  getFunction(
+    nameOrSignature: "updateClient"
+  ): TypedContractMethod<
+    [
+      l1header: BytesLike,
+      proof: BytesLike,
+      height: BigNumberish,
+      appHash: BigNumberish
+    ],
+    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "verifyMembership"
