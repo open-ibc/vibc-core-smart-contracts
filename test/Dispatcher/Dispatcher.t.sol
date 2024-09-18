@@ -396,9 +396,9 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
                 Ibc.packetCommitmentProofKey(spoofedPacket),
                 abi.encode(Ibc.packetCommitmentProofValue(spoofedPacket))
             ),
-            abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector)
+            abi.encodeWithSelector(IAppStateVerifier.InvalidProofValue.selector)
         );
-        vm.expectRevert(abi.encodeWithSelector(IProofVerifier.InvalidProofValue.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAppStateVerifier.InvalidProofValue.selector));
         dispatcherProxy.writeTimeoutPacket(spoofedPacket, validProof);
     }
 
