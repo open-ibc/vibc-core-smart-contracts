@@ -20,9 +20,11 @@ contract DispatcherAckPacketTestSuite is PacketSenderTestBase {
             emit Acknowledgement(address(mars), channelId, sentPacket.sequence);
             dispatcherProxy.acknowledgement(sentPacket, ackPacket, validProof);
             // confirm dapp recieved the ack
-            (bool success, bytes memory data) = mars.ackPackets(sentPacket.sequence - 1);
+            (AckStatus status, bytes memory data) = mars.ackPackets(sentPacket.sequence - 1);
             AckPacket memory parsed = Ibc.parseAckData(ackPacket);
-            assertEq(success, parsed.success);
+            uint8 statusInt = uint8(status);
+            uint8 parsedStatusInt = uint8(parsed.status);
+            assertEq(statusInt, parsedStatusInt);
             assertEq(data, parsed.data);
         }
     }

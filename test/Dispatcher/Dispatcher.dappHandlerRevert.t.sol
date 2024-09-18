@@ -65,7 +65,7 @@ contract DappHandlerRevertTests is Base {
             address(revertingBytesMars),
             packet.dest.channelId,
             packet.sequence,
-            AckPacket(false, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
+            AckPacket(AckStatus.FAILURE, abi.encodeWithSelector(RevertingBytesMars.OnRecvPacketRevert.selector))
         );
         dispatcherProxy.recvPacket(packet, validProof);
 
@@ -76,14 +76,14 @@ contract DappHandlerRevertTests is Base {
             address(revertingStringMars),
             packet.dest.channelId,
             packet.sequence,
-            AckPacket(false, abi.encodeWithSignature("Error(string)", "on recv packet is reverting"))
+            AckPacket(AckStatus.FAILURE, abi.encodeWithSignature("Error(string)", "on recv packet is reverting"))
         );
         dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Revert empty
         packet.dest.portId = string(abi.encodePacked(portPrefix, IbcUtils.toHexStr(address(revertingEmptyMars))));
         vm.expectEmit(true, true, true, true);
-        emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(false, ""));
+        emit WriteAckPacket(address(revertingEmptyMars), packet.dest.channelId, packet.sequence, AckPacket(AckStatus.FAILURE, ""));
         dispatcherProxy.recvPacket(packet, validProof);
 
         // Test Panic
@@ -93,7 +93,7 @@ contract DappHandlerRevertTests is Base {
             address(panickingMars),
             packet.dest.channelId,
             packet.sequence,
-            AckPacket(false, abi.encodeWithSignature("Panic(uint256)", uint256(1)))
+            AckPacket(AckStatus.FAILURE, abi.encodeWithSignature("Panic(uint256)", uint256(1)))
         );
         dispatcherProxy.recvPacket(packet, validProof);
     }

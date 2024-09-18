@@ -128,7 +128,7 @@ abstract contract DispatcherIbcWithRealProofsSuite is IbcEventsEmitter, Base {
             address(mars),
             packet.dest.channelId,
             packet.sequence,
-            AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
+            AckPacket(AckStatus.SUCCESS, abi.encodePacked('{ "account": "account", "reply": "got the message" }'))
         );
         dispatcherProxy.recvPacket(packet, proof);
     }

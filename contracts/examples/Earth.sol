@@ -17,7 +17,7 @@
 
 pragma solidity ^0.8.9;
 
-import {UniversalPacket, AckPacket} from "../libs/Ibc.sol";
+import {UniversalPacket, AckPacket, AckStatus} from "../libs/Ibc.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
 import {IbcUniversalPacketReceiverBase, IbcUniversalPacketSender} from "../interfaces/IbcMiddleware.sol";
 import {IUniversalChannelHandler} from "../interfaces/IUniversalChannelHandler.sol";
@@ -166,6 +166,6 @@ contract Earth is IbcUniversalPacketReceiverBase {
         view
         returns (AckPacket memory ackPacket)
     {
-        return AckPacket(true, abi.encodePacked(this, srcPortAddr, "ack-", appData));
+        return AckPacket(AckStatus.SUCCESS, abi.encodePacked(this, srcPortAddr, "ack-", appData));
     }
 }

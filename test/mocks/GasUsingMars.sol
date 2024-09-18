@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";
 import {Mars} from "../../contracts/examples/Mars.sol";
-import {IbcPacket, AckPacket} from "../../contracts/libs/Ibc.sol";
+import {IbcPacket, AckPacket, AckStatus} from "../../contracts/libs/Ibc.sol";
 import "forge-std/Test.sol";
 
 /**
@@ -36,7 +36,7 @@ contract GasUsingMars is Mars {
 
         _useGas();
         // solhint-disable-next-line quotes
-        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
+        return AckPacket(AckStatus.SUCCESS, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
     function _useGas() internal view {

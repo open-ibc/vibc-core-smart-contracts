@@ -52,12 +52,16 @@ contract IbcTest is Test {
             bytes('{"result":"eyAiYWNjb3VudCI6ICJhY2NvdW50IiwgInJlcGx5IjogImdvdCB0aGUgbWVzc2FnZSIgfQ=="}');
 
         AckPacket memory parsed = Ibc.parseAckData(ack);
-        assertTrue(parsed.success);
+        uint8 statusInt = uint8(AckStatus.SUCCESS);
+        uint8 parsedStatusInt = uint8(parsed.status);
+        assertEq(statusInt, parsedStatusInt);
         assertEq(bytes('{ "account": "account", "reply": "got the message" }'), parsed.data);
 
         bytes memory error = bytes('{"error":"this is an error message"}');
         AckPacket memory parsederr = Ibc.parseAckData(error);
-        assertFalse(parsederr.success);
+        uint8 statusIntErr = uint8(AckStatus.FAILURE);
+        uint8 parsedStatusIntErr = uint8(parsederr.status);
+        assertEq(statusIntErr, parsedStatusIntErr);
         assertEq(bytes("this is an error message"), parsederr.data);
     }
 

@@ -25,7 +25,7 @@ import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/security/ReentrancyGuardUpgradeable.sol";
-import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, Ibc} from "../libs/Ibc.sol";
+import {Channel, ChannelEnd, ChannelOrder, IbcPacket, ChannelState, AckPacket, AckStatus, Ibc} from "../libs/Ibc.sol";
 import {IBCErrors} from "../libs/IbcErrors.sol";
 import {IbcUtils} from "../libs/IbcUtils.sol";
 import {IFeeVault} from "../interfaces/IFeeVault.sol";
@@ -623,8 +623,11 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
             _callIfContract(receiver, abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, packet));
         if (success) {
             (ack) = abi.decode(data, (AckPacket));
+            if (ack.status == AckStatus.SKIP) {
+                return;
+            }
         } else {
-            ack = AckPacket(false, data);
+            ack = AckPacket(AckStatus.FAILURE, data);
         }
         bool hasAckPacketCommitment = _ackPacketCommitment[receiver][packet.dest.channelId][packet.sequence];
         // check is not necessary for sync-acks

@@ -65,10 +65,16 @@ struct Height {
     uint64 revision_height;
 }
 
+enum AckStatus {
+    FAILURE,
+    SUCCESS,
+    SKIP
+}
+
 struct AckPacket {
     // success indicates the dApp-level logic. Even when a dApp fails to process a packet per its dApp logic, the
     // delivery of packet and ack packet are still considered successful.
-    bool success;
+    AckStatus status;
     bytes data;
 }
 
@@ -245,8 +251,8 @@ library Ibc {
     function parseAckData(bytes calldata ack) external pure returns (AckPacket memory ackData) {
         // this hex value is '"result"'
         ackData = (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
-            ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
-            : AckPacket(false, ack[10:ack.length - 2]); // this is an error
+            ? AckPacket(AckStatus.SUCCESS, Base64.decode(string(ack[11:ack.length - 2]))) // result success
+            : AckPacket(AckStatus.FAILURE, ack[10:ack.length - 2]); // this is an error
     }
 
     function toStr(bytes32 b) public pure returns (string memory outStr) {

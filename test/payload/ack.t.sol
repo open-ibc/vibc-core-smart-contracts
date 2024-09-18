@@ -8,7 +8,7 @@ import "../../contracts/libs/Ibc.sol";
 contract AckContract {
     // getAckPacketBytes returns the bytes representation of the AckPacket
     function getAckPacketBytes(AckPacket calldata ack) external pure returns (bytes memory) {
-        return abi.encodePacked(ack.success, ack.data);
+        return abi.encodePacked(AckStatus.SUCCESS, ack.data);
     }
 
     // getIncentivizedAckPacketBytes returns the bytes representation of the IncentivizedAckPacket
@@ -22,7 +22,7 @@ contract AckTest is Test {
     AckContract ackContract = new AckContract();
 
     bytes ackPayload1 = hex"0161636b2d64617461";
-    AckPacket ackPacket1 = AckPacket({success: true, data: bytes("ack-data")});
+    AckPacket ackPacket1 = AckPacket(AckStatus.SUCCESS, bytes("ack-data"));
     bytes32 ackPacket1Hash = hex"863b46bf0508a780d8954b8f22b37e91a76c6427a2dcdff98076f977adda55b7";
 
     bytes ackPayload2 = hex"00000000147e5f4552091a69125d5dfcb7b8c2659029395bdf61636b2d64617461";

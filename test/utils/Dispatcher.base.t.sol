@@ -250,14 +250,14 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     }
 
     function ackToBytes(AckPacket memory ack) public pure returns (bytes memory) {
-        return ack.success
+        return ack.status == AckStatus.SUCCESS
             ? abi.encodePacked('{"result":"', Base64.encode(ack.data), '"}')
             : abi.encodePacked('{"error":"', ack.data, '"}');
     }
 
     // genAckPacket generates an ack packet for the given packet sequence
     function genAckPacket(string memory packetSeq) internal pure returns (bytes memory) {
-        return ackToBytes(AckPacket(true, bytes(packetSeq)));
+        return ackToBytes(AckPacket(AckStatus.SUCCESS, bytes(packetSeq)));
     }
 
     // Store connection in channelid to connection mapping using store

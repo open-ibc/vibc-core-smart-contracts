@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Ibc, ChannelEnd, IbcEndpoint, Height} from "../../contracts/libs/Ibc.sol";
+import {Ibc, ChannelEnd, IbcEndpoint, Height, AckStatus} from "../../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 import {IBCErrors} from "../../contracts/libs/IbcErrors.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
@@ -10,6 +10,7 @@ import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {Base} from "../utils/Dispatcher.base.t.sol";
 import "../../contracts/examples/Mars.sol";
+import "../../contracts/examples/Pluto.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import {LocalEnd, ChannelHandshakeSetting, Base} from "../utils/Dispatcher.base.t.sol";
 import {Earth} from "../../contracts/examples/Earth.sol";
@@ -350,9 +351,20 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
             vm.expectEmit(true, true, true, true, address(dispatcherProxy));
             emit RecvPacket(address(mars), channelId, packetSeq);
             vm.expectEmit(true, true, false, true, address(dispatcherProxy));
-            emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
+            emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(AckStatus.SUCCESS, appAck));
             dispatcherProxy.recvPacket(IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof);
         }
+    }
+
+    // check that for pluto, recvPacket does not trigger an ack
+    function test_pluto_noAck() public {
+        uint64 packetSeq = 1;
+        Pluto pluto = new Pluto(dispatcherProxy);
+        string memory plutoPort = string(abi.encodePacked(portPrefix, getHexBytes(address(pluto))));
+        IbcEndpoint memory plutoDest = IbcEndpoint(plutoPort, channelId);
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
+        emit RecvPacket(address(pluto), channelId, packetSeq);
+        dispatcherProxy.recvPacket(IbcPacket(src, plutoDest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof);
     }
 
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time

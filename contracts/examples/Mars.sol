@@ -17,7 +17,7 @@
 
 pragma solidity ^0.8.9;
 
-import {AckPacket, ChannelOrder} from "../libs/Ibc.sol";
+import {AckPacket, AckStatus, ChannelOrder} from "../libs/Ibc.sol";
 import {IbcReceiverBase, IbcReceiver, IbcPacket} from "../interfaces/IbcReceiver.sol";
 import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
 import {FeeSender} from "../implementation_templates/FeeSender.sol";
@@ -87,7 +87,7 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
         recvedPackets.push(packet);
 
         // solhint-disable-next-line quotes
-        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
+        return AckPacket(AckStatus.SUCCESS, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
     }
 
     /**
@@ -246,7 +246,7 @@ contract RevertingStringMars is Mars {
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         // solhint-disable-next-line
         require(false, "on recv packet is reverting");
-        ack = AckPacket(false, "");
+        ack = AckPacket(AckStatus.FAILURE, "");
     }
 
     // solhint-disable-next-line
@@ -281,7 +281,7 @@ contract RevertingBytesMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
-        ack = AckPacket(false, "");
+        ack = AckPacket(AckStatus.FAILURE, "");
         revert OnRecvPacketRevert();
     }
 
@@ -297,7 +297,7 @@ contract RevertingEmptyMars is Mars {
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         // solhint-disable-next-line
         require(false);
-        ack = AckPacket(false, "");
+        ack = AckPacket(AckStatus.FAILURE, "");
     }
 }
 
@@ -306,6 +306,6 @@ contract PanickingMars is Mars {
 
     function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
         assert(false);
-        ack = AckPacket(false, "");
+        ack = AckPacket(AckStatus.FAILURE, "");
     }
 }
