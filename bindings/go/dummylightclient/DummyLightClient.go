@@ -51,7 +51,7 @@ type OpIcs23ProofPath struct {
 
 // DummyLightClientMetaData contains all meta data concerning the DummyLightClient contract.
 var DummyLightClientMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"endTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndtime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"endTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"InvalidDummyMembershipProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidDummyNonMembershipProof\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"InvalidDummyMembershipProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidDummyNonMembershipProof\",\"inputs\":[]}]",
 }
 
 // DummyLightClientABI is the input ABI used to generate the binding from.
@@ -200,12 +200,12 @@ func (_DummyLightClient *DummyLightClientTransactorRaw) Transact(opts *bind.Tran
 	return _DummyLightClient.Contract.contract.Transact(opts, method, params...)
 }
 
-// GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
+// GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getFraudProofEndtime(uint256 ) pure returns(uint256 endTime)
-func (_DummyLightClient *DummyLightClientCaller) GetFraudProofEndtime(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
+// Solidity: function getState(uint256 ) pure returns(uint256 appHash)
+func (_DummyLightClient *DummyLightClientCaller) GetState(opts *bind.CallOpts, arg0 *big.Int) (*big.Int, error) {
 	var out []interface{}
-	err := _DummyLightClient.contract.Call(opts, &out, "getFraudProofEndtime", arg0)
+	err := _DummyLightClient.contract.Call(opts, &out, "getState", arg0)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -217,113 +217,47 @@ func (_DummyLightClient *DummyLightClientCaller) GetFraudProofEndtime(opts *bind
 
 }
 
-// GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
-//
-// Solidity: function getFraudProofEndtime(uint256 ) pure returns(uint256 endTime)
-func (_DummyLightClient *DummyLightClientSession) GetFraudProofEndtime(arg0 *big.Int) (*big.Int, error) {
-	return _DummyLightClient.Contract.GetFraudProofEndtime(&_DummyLightClient.CallOpts, arg0)
-}
-
-// GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
-//
-// Solidity: function getFraudProofEndtime(uint256 ) pure returns(uint256 endTime)
-func (_DummyLightClient *DummyLightClientCallerSession) GetFraudProofEndtime(arg0 *big.Int) (*big.Int, error) {
-	return _DummyLightClient.Contract.GetFraudProofEndtime(&_DummyLightClient.CallOpts, arg0)
-}
-
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getState(uint256 ) pure returns(uint256 appHash, uint256 fraudProofEndtime, bool ended)
-func (_DummyLightClient *DummyLightClientCaller) GetState(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndtime *big.Int
-	Ended             bool
-}, error) {
-	var out []interface{}
-	err := _DummyLightClient.contract.Call(opts, &out, "getState", arg0)
-
-	outstruct := new(struct {
-		AppHash           *big.Int
-		FraudProofEndtime *big.Int
-		Ended             bool
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.AppHash = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.FraudProofEndtime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.Ended = *abi.ConvertType(out[2], new(bool)).(*bool)
-
-	return *outstruct, err
-
-}
-
-// GetState is a free data retrieval call binding the contract method 0x44c9af28.
-//
-// Solidity: function getState(uint256 ) pure returns(uint256 appHash, uint256 fraudProofEndtime, bool ended)
-func (_DummyLightClient *DummyLightClientSession) GetState(arg0 *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndtime *big.Int
-	Ended             bool
-}, error) {
+// Solidity: function getState(uint256 ) pure returns(uint256 appHash)
+func (_DummyLightClient *DummyLightClientSession) GetState(arg0 *big.Int) (*big.Int, error) {
 	return _DummyLightClient.Contract.GetState(&_DummyLightClient.CallOpts, arg0)
 }
 
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getState(uint256 ) pure returns(uint256 appHash, uint256 fraudProofEndtime, bool ended)
-func (_DummyLightClient *DummyLightClientCallerSession) GetState(arg0 *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndtime *big.Int
-	Ended             bool
-}, error) {
+// Solidity: function getState(uint256 ) pure returns(uint256 appHash)
+func (_DummyLightClient *DummyLightClientCallerSession) GetState(arg0 *big.Int) (*big.Int, error) {
 	return _DummyLightClient.Contract.GetState(&_DummyLightClient.CallOpts, arg0)
 }
 
-// UpdateClient is a free data retrieval call binding the contract method 0xd4af812d.
+// UpdateClient is a free data retrieval call binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes , bytes , uint256 , uint256 ) pure returns(uint256 endTime, bool ended)
-func (_DummyLightClient *DummyLightClientCaller) UpdateClient(opts *bind.CallOpts, arg0 []byte, arg1 []byte, arg2 *big.Int, arg3 *big.Int) (struct {
-	EndTime *big.Int
-	Ended   bool
-}, error) {
+// Solidity: function updateClient(bytes , uint256 , uint256 ) pure returns()
+func (_DummyLightClient *DummyLightClientCaller) UpdateClient(opts *bind.CallOpts, arg0 []byte, arg1 *big.Int, arg2 *big.Int) error {
 	var out []interface{}
-	err := _DummyLightClient.contract.Call(opts, &out, "updateClient", arg0, arg1, arg2, arg3)
+	err := _DummyLightClient.contract.Call(opts, &out, "updateClient", arg0, arg1, arg2)
 
-	outstruct := new(struct {
-		EndTime *big.Int
-		Ended   bool
-	})
 	if err != nil {
-		return *outstruct, err
+		return err
 	}
 
-	outstruct.EndTime = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.Ended = *abi.ConvertType(out[1], new(bool)).(*bool)
-
-	return *outstruct, err
+	return err
 
 }
 
-// UpdateClient is a free data retrieval call binding the contract method 0xd4af812d.
+// UpdateClient is a free data retrieval call binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes , bytes , uint256 , uint256 ) pure returns(uint256 endTime, bool ended)
-func (_DummyLightClient *DummyLightClientSession) UpdateClient(arg0 []byte, arg1 []byte, arg2 *big.Int, arg3 *big.Int) (struct {
-	EndTime *big.Int
-	Ended   bool
-}, error) {
-	return _DummyLightClient.Contract.UpdateClient(&_DummyLightClient.CallOpts, arg0, arg1, arg2, arg3)
+// Solidity: function updateClient(bytes , uint256 , uint256 ) pure returns()
+func (_DummyLightClient *DummyLightClientSession) UpdateClient(arg0 []byte, arg1 *big.Int, arg2 *big.Int) error {
+	return _DummyLightClient.Contract.UpdateClient(&_DummyLightClient.CallOpts, arg0, arg1, arg2)
 }
 
-// UpdateClient is a free data retrieval call binding the contract method 0xd4af812d.
+// UpdateClient is a free data retrieval call binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes , bytes , uint256 , uint256 ) pure returns(uint256 endTime, bool ended)
-func (_DummyLightClient *DummyLightClientCallerSession) UpdateClient(arg0 []byte, arg1 []byte, arg2 *big.Int, arg3 *big.Int) (struct {
-	EndTime *big.Int
-	Ended   bool
-}, error) {
-	return _DummyLightClient.Contract.UpdateClient(&_DummyLightClient.CallOpts, arg0, arg1, arg2, arg3)
+// Solidity: function updateClient(bytes , uint256 , uint256 ) pure returns()
+func (_DummyLightClient *DummyLightClientCallerSession) UpdateClient(arg0 []byte, arg1 *big.Int, arg2 *big.Int) error {
+	return _DummyLightClient.Contract.UpdateClient(&_DummyLightClient.CallOpts, arg0, arg1, arg2)
 }
 
 // VerifyMembership is a free data retrieval call binding the contract method 0xcb535ab5.

@@ -59,7 +59,6 @@ export type Ics23ProofStructOutput = [
 export interface ILightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "getFraudProofEndtime"
       | "getState"
       | "updateClient"
       | "verifyMembership"
@@ -67,16 +66,12 @@ export interface ILightClientInterface extends Interface {
   ): FunctionFragment;
 
   encodeFunctionData(
-    functionFragment: "getFraudProofEndtime",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "updateClient",
-    values: [BytesLike, BytesLike, BigNumberish, BigNumberish]
+    values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "verifyMembership",
@@ -87,10 +82,6 @@ export interface ILightClientInterface extends Interface {
     values: [Ics23ProofStruct, BytesLike]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "getFraudProofEndtime",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateClient",
@@ -149,32 +140,11 @@ export interface ILightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  getFraudProofEndtime: TypedContractMethod<
-    [height: BigNumberish],
-    [bigint],
-    "nonpayable"
-  >;
-
-  getState: TypedContractMethod<
-    [height: BigNumberish],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
-    "view"
-  >;
+  getState: TypedContractMethod<[height: BigNumberish], [bigint], "view">;
 
   updateClient: TypedContractMethod<
-    [
-      l1header: BytesLike,
-      proof: BytesLike,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [proof: BytesLike, height: BigNumberish, appHash: BigNumberish],
+    [void],
     "nonpayable"
   >;
 
@@ -195,31 +165,13 @@ export interface ILightClient extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "getFraudProofEndtime"
-  ): TypedContractMethod<[height: BigNumberish], [bigint], "nonpayable">;
-  getFunction(
     nameOrSignature: "getState"
-  ): TypedContractMethod<
-    [height: BigNumberish],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
-    "view"
-  >;
+  ): TypedContractMethod<[height: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "updateClient"
   ): TypedContractMethod<
-    [
-      l1header: BytesLike,
-      proof: BytesLike,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [proof: BytesLike, height: BigNumberish, appHash: BigNumberish],
+    [void],
     "nonpayable"
   >;
   getFunction(

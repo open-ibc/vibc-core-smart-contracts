@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {IbcChannelReceiver, IbcPacketReceiver} from "../interfaces/IbcReceiver.sol";
-import { Ics23Proof} from "../interfaces/IProofVerifier.sol";
+import {Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ILightClient} from "../interfaces/ILightClient.sol";
 import {IDispatcher} from "../interfaces/IDispatcher.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -126,7 +126,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         uint256 height,
         uint256 appHash,
         string calldata connection
-    ) external returns (uint256 fraudProofEndTime, bool ended) {
+    ) external {
         return _getLightClientFromConnection(connection).updateClient(proof, height, appHash);
     }
 
@@ -681,16 +681,14 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
 
     /**
      * @notice Retrieves the optimistic consensus state for a specified height and client ID.
-     * @param height The height of the apphash to query 
+     * @param height The height of the apphash to query
      * @param connection The connection the client corresponds to; used to find the light client.
-     * @return appHash The apphash at the given height 
-     * @return fraudProofEndTime The end time of the fraud proof.
-     * @return ended A boolean indicating whether the consensus state has ended.
+     * @return appHash The apphash at the given height
      */
     function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended)
+        returns (uint256 appHash)
     {
         return _getLightClientFromConnection(connection).getState(height);
     }

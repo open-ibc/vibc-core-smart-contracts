@@ -51,7 +51,7 @@ type OpIcs23ProofPath struct {
 
 // OptimisticLightClientMetaData contains all meta data concerning the OptimisticLightClient contract.
 var OptimisticLightClientMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"fraudProofWindowSeconds_\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractIProofVerifier\"},{\"name\":\"_l1BlockProvider\",\"type\":\"address\",\"internalType\":\"contractL1Block\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"consensusStates\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"fraudProofEndtime\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"fraudProofWindowSeconds\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getInternalState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"l1BlockProvider\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractL1Block\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"l1headerbytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIProofVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"view\"},{\"type\":\"error\",\"name\":\"AppHashHasNotPassedFraudProofWindow\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"CannotUpdatePendingOptimisticConsensusState\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"fraudProofWindowSeconds_\",\"type\":\"uint32\",\"internalType\":\"uint32\"},{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractIProofVerifier\"},{\"name\":\"_l1BlockProvider\",\"type\":\"address\",\"internalType\":\"contractL1Block\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"consensusStates\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"fraudProofEndtime\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"fraudProofWindowSeconds\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getStateAndEndTime\",\"inputs\":[{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"l1BlockProvider\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractL1Block\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractIProofVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"view\"},{\"type\":\"error\",\"name\":\"AppHashHasNotPassedFraudProofWindow\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"CannotUpdatePendingOptimisticConsensusState\",\"inputs\":[]}]",
 }
 
 // OptimisticLightClientABI is the input ABI used to generate the binding from.
@@ -295,10 +295,10 @@ func (_OptimisticLightClient *OptimisticLightClientCallerSession) FraudProofWind
 
 // GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) view returns(uint256 fraudProofEndTime)
-func (_OptimisticLightClient *OptimisticLightClientCaller) GetFraudProofEndtime(opts *bind.CallOpts, height *big.Int) (*big.Int, error) {
+// Solidity: function getFraudProofEndtime(uint256 peptideHeight) view returns(uint256 fraudProofEndTime)
+func (_OptimisticLightClient *OptimisticLightClientCaller) GetFraudProofEndtime(opts *bind.CallOpts, peptideHeight *big.Int) (*big.Int, error) {
 	var out []interface{}
-	err := _OptimisticLightClient.contract.Call(opts, &out, "getFraudProofEndtime", height)
+	err := _OptimisticLightClient.contract.Call(opts, &out, "getFraudProofEndtime", peptideHeight)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -312,31 +312,62 @@ func (_OptimisticLightClient *OptimisticLightClientCaller) GetFraudProofEndtime(
 
 // GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) view returns(uint256 fraudProofEndTime)
-func (_OptimisticLightClient *OptimisticLightClientSession) GetFraudProofEndtime(height *big.Int) (*big.Int, error) {
-	return _OptimisticLightClient.Contract.GetFraudProofEndtime(&_OptimisticLightClient.CallOpts, height)
+// Solidity: function getFraudProofEndtime(uint256 peptideHeight) view returns(uint256 fraudProofEndTime)
+func (_OptimisticLightClient *OptimisticLightClientSession) GetFraudProofEndtime(peptideHeight *big.Int) (*big.Int, error) {
+	return _OptimisticLightClient.Contract.GetFraudProofEndtime(&_OptimisticLightClient.CallOpts, peptideHeight)
 }
 
 // GetFraudProofEndtime is a free data retrieval call binding the contract method 0xd56ff842.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) view returns(uint256 fraudProofEndTime)
-func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetFraudProofEndtime(height *big.Int) (*big.Int, error) {
-	return _OptimisticLightClient.Contract.GetFraudProofEndtime(&_OptimisticLightClient.CallOpts, height)
+// Solidity: function getFraudProofEndtime(uint256 peptideHeight) view returns(uint256 fraudProofEndTime)
+func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetFraudProofEndtime(peptideHeight *big.Int) (*big.Int, error) {
+	return _OptimisticLightClient.Contract.GetFraudProofEndtime(&_OptimisticLightClient.CallOpts, peptideHeight)
 }
 
-// GetInternalState is a free data retrieval call binding the contract method 0x1bc97a78.
+// GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getInternalState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientCaller) GetInternalState(opts *bind.CallOpts, height *big.Int) (struct {
-	AppHash           *big.Int
+// Solidity: function getState(uint256 peptideHeight) view returns(uint256 peptideAppHash)
+func (_OptimisticLightClient *OptimisticLightClientCaller) GetState(opts *bind.CallOpts, peptideHeight *big.Int) (*big.Int, error) {
+	var out []interface{}
+	err := _OptimisticLightClient.contract.Call(opts, &out, "getState", peptideHeight)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// GetState is a free data retrieval call binding the contract method 0x44c9af28.
+//
+// Solidity: function getState(uint256 peptideHeight) view returns(uint256 peptideAppHash)
+func (_OptimisticLightClient *OptimisticLightClientSession) GetState(peptideHeight *big.Int) (*big.Int, error) {
+	return _OptimisticLightClient.Contract.GetState(&_OptimisticLightClient.CallOpts, peptideHeight)
+}
+
+// GetState is a free data retrieval call binding the contract method 0x44c9af28.
+//
+// Solidity: function getState(uint256 peptideHeight) view returns(uint256 peptideAppHash)
+func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetState(peptideHeight *big.Int) (*big.Int, error) {
+	return _OptimisticLightClient.Contract.GetState(&_OptimisticLightClient.CallOpts, peptideHeight)
+}
+
+// GetStateAndEndTime is a free data retrieval call binding the contract method 0xb9a1e87b.
+//
+// Solidity: function getStateAndEndTime(uint256 peptideHeight) view returns(uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+func (_OptimisticLightClient *OptimisticLightClientCaller) GetStateAndEndTime(opts *bind.CallOpts, peptideHeight *big.Int) (struct {
+	PeptideAppHash    *big.Int
 	FraudProofEndTime *big.Int
 	Ended             bool
 }, error) {
 	var out []interface{}
-	err := _OptimisticLightClient.contract.Call(opts, &out, "getInternalState", height)
+	err := _OptimisticLightClient.contract.Call(opts, &out, "getStateAndEndTime", peptideHeight)
 
 	outstruct := new(struct {
-		AppHash           *big.Int
+		PeptideAppHash    *big.Int
 		FraudProofEndTime *big.Int
 		Ended             bool
 	})
@@ -344,7 +375,7 @@ func (_OptimisticLightClient *OptimisticLightClientCaller) GetInternalState(opts
 		return *outstruct, err
 	}
 
-	outstruct.AppHash = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.PeptideAppHash = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 	outstruct.FraudProofEndTime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
 	outstruct.Ended = *abi.ConvertType(out[2], new(bool)).(*bool)
 
@@ -352,76 +383,26 @@ func (_OptimisticLightClient *OptimisticLightClientCaller) GetInternalState(opts
 
 }
 
-// GetInternalState is a free data retrieval call binding the contract method 0x1bc97a78.
+// GetStateAndEndTime is a free data retrieval call binding the contract method 0xb9a1e87b.
 //
-// Solidity: function getInternalState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientSession) GetInternalState(height *big.Int) (struct {
-	AppHash           *big.Int
+// Solidity: function getStateAndEndTime(uint256 peptideHeight) view returns(uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+func (_OptimisticLightClient *OptimisticLightClientSession) GetStateAndEndTime(peptideHeight *big.Int) (struct {
+	PeptideAppHash    *big.Int
 	FraudProofEndTime *big.Int
 	Ended             bool
 }, error) {
-	return _OptimisticLightClient.Contract.GetInternalState(&_OptimisticLightClient.CallOpts, height)
+	return _OptimisticLightClient.Contract.GetStateAndEndTime(&_OptimisticLightClient.CallOpts, peptideHeight)
 }
 
-// GetInternalState is a free data retrieval call binding the contract method 0x1bc97a78.
+// GetStateAndEndTime is a free data retrieval call binding the contract method 0xb9a1e87b.
 //
-// Solidity: function getInternalState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetInternalState(height *big.Int) (struct {
-	AppHash           *big.Int
+// Solidity: function getStateAndEndTime(uint256 peptideHeight) view returns(uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetStateAndEndTime(peptideHeight *big.Int) (struct {
+	PeptideAppHash    *big.Int
 	FraudProofEndTime *big.Int
 	Ended             bool
 }, error) {
-	return _OptimisticLightClient.Contract.GetInternalState(&_OptimisticLightClient.CallOpts, height)
-}
-
-// GetState is a free data retrieval call binding the contract method 0x44c9af28.
-//
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientCaller) GetState(opts *bind.CallOpts, height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
-	var out []interface{}
-	err := _OptimisticLightClient.contract.Call(opts, &out, "getState", height)
-
-	outstruct := new(struct {
-		AppHash           *big.Int
-		FraudProofEndTime *big.Int
-		Ended             bool
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.AppHash = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.FraudProofEndTime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.Ended = *abi.ConvertType(out[2], new(bool)).(*bool)
-
-	return *outstruct, err
-
-}
-
-// GetState is a free data retrieval call binding the contract method 0x44c9af28.
-//
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientSession) GetState(height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
-	return _OptimisticLightClient.Contract.GetState(&_OptimisticLightClient.CallOpts, height)
-}
-
-// GetState is a free data retrieval call binding the contract method 0x44c9af28.
-//
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientCallerSession) GetState(height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
-	return _OptimisticLightClient.Contract.GetState(&_OptimisticLightClient.CallOpts, height)
+	return _OptimisticLightClient.Contract.GetStateAndEndTime(&_OptimisticLightClient.CallOpts, peptideHeight)
 }
 
 // L1BlockProvider is a free data retrieval call binding the contract method 0xeb772058.
@@ -544,23 +525,23 @@ func (_OptimisticLightClient *OptimisticLightClientCallerSession) VerifyNonMembe
 	return _OptimisticLightClient.Contract.VerifyNonMembership(&_OptimisticLightClient.CallOpts, proof, key)
 }
 
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes l1headerbytes, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientTransactor) UpdateClient(opts *bind.TransactOpts, l1headerbytes []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _OptimisticLightClient.contract.Transact(opts, "updateClient", l1headerbytes, proof, height, appHash)
+// Solidity: function updateClient(bytes proof, uint256 peptideHeight, uint256 peptideAppHash) returns()
+func (_OptimisticLightClient *OptimisticLightClientTransactor) UpdateClient(opts *bind.TransactOpts, proof []byte, peptideHeight *big.Int, peptideAppHash *big.Int) (*types.Transaction, error) {
+	return _OptimisticLightClient.contract.Transact(opts, "updateClient", proof, peptideHeight, peptideAppHash)
 }
 
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes l1headerbytes, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientSession) UpdateClient(l1headerbytes []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _OptimisticLightClient.Contract.UpdateClient(&_OptimisticLightClient.TransactOpts, l1headerbytes, proof, height, appHash)
+// Solidity: function updateClient(bytes proof, uint256 peptideHeight, uint256 peptideAppHash) returns()
+func (_OptimisticLightClient *OptimisticLightClientSession) UpdateClient(proof []byte, peptideHeight *big.Int, peptideAppHash *big.Int) (*types.Transaction, error) {
+	return _OptimisticLightClient.Contract.UpdateClient(&_OptimisticLightClient.TransactOpts, proof, peptideHeight, peptideAppHash)
 }
 
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function updateClient(bytes l1headerbytes, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_OptimisticLightClient *OptimisticLightClientTransactorSession) UpdateClient(l1headerbytes []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _OptimisticLightClient.Contract.UpdateClient(&_OptimisticLightClient.TransactOpts, l1headerbytes, proof, height, appHash)
+// Solidity: function updateClient(bytes proof, uint256 peptideHeight, uint256 peptideAppHash) returns()
+func (_OptimisticLightClient *OptimisticLightClientTransactorSession) UpdateClient(proof []byte, peptideHeight *big.Int, peptideAppHash *big.Int) (*types.Transaction, error) {
+	return _OptimisticLightClient.Contract.UpdateClient(&_OptimisticLightClient.TransactOpts, proof, peptideHeight, peptideAppHash)
 }

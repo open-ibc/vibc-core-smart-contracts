@@ -63,8 +63,8 @@ export interface OptimisticLightClientInterface extends Interface {
       | "fraudProofEndtime"
       | "fraudProofWindowSeconds"
       | "getFraudProofEndtime"
-      | "getInternalState"
       | "getState"
+      | "getStateAndEndTime"
       | "l1BlockProvider"
       | "updateClient"
       | "verifier"
@@ -89,11 +89,11 @@ export interface OptimisticLightClientInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getInternalState",
+    functionFragment: "getState",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getState",
+    functionFragment: "getStateAndEndTime",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -102,7 +102,7 @@ export interface OptimisticLightClientInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "updateClient",
-    values: [BytesLike, BytesLike, BigNumberish, BigNumberish]
+    values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
   encodeFunctionData(
@@ -130,11 +130,11 @@ export interface OptimisticLightClientInterface extends Interface {
     functionFragment: "getFraudProofEndtime",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "getInternalState",
+    functionFragment: "getStateAndEndTime",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "l1BlockProvider",
     data: BytesLike
@@ -208,28 +208,22 @@ export interface OptimisticLightClient extends BaseContract {
   fraudProofWindowSeconds: TypedContractMethod<[], [bigint], "view">;
 
   getFraudProofEndtime: TypedContractMethod<
-    [height: BigNumberish],
+    [peptideHeight: BigNumberish],
     [bigint],
     "view"
   >;
 
-  getInternalState: TypedContractMethod<
-    [height: BigNumberish],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
+  getState: TypedContractMethod<
+    [peptideHeight: BigNumberish],
+    [bigint],
     "view"
   >;
 
-  getState: TypedContractMethod<
-    [height: BigNumberish],
+  getStateAndEndTime: TypedContractMethod<
+    [peptideHeight: BigNumberish],
     [
       [bigint, bigint, boolean] & {
-        appHash: bigint;
+        peptideAppHash: bigint;
         fraudProofEndTime: bigint;
         ended: boolean;
       }
@@ -241,12 +235,11 @@ export interface OptimisticLightClient extends BaseContract {
 
   updateClient: TypedContractMethod<
     [
-      l1headerbytes: BytesLike,
       proof: BytesLike,
-      height: BigNumberish,
-      appHash: BigNumberish
+      peptideHeight: BigNumberish,
+      peptideAppHash: BigNumberish
     ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [void],
     "nonpayable"
   >;
 
@@ -279,27 +272,17 @@ export interface OptimisticLightClient extends BaseContract {
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getFraudProofEndtime"
-  ): TypedContractMethod<[height: BigNumberish], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "getInternalState"
-  ): TypedContractMethod<
-    [height: BigNumberish],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
-    "view"
-  >;
+  ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
+  ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getStateAndEndTime"
   ): TypedContractMethod<
-    [height: BigNumberish],
+    [peptideHeight: BigNumberish],
     [
       [bigint, bigint, boolean] & {
-        appHash: bigint;
+        peptideAppHash: bigint;
         fraudProofEndTime: bigint;
         ended: boolean;
       }
@@ -313,12 +296,11 @@ export interface OptimisticLightClient extends BaseContract {
     nameOrSignature: "updateClient"
   ): TypedContractMethod<
     [
-      l1headerbytes: BytesLike,
       proof: BytesLike,
-      height: BigNumberish,
-      appHash: BigNumberish
+      peptideHeight: BigNumberish,
+      peptideAppHash: BigNumberish
     ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [void],
     "nonpayable"
   >;
   getFunction(

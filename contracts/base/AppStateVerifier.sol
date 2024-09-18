@@ -18,14 +18,14 @@
 pragma solidity 0.8.15;
 
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
-import {IProofVerifier, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
+import {IAppStateVerifier, Ics23Proof, OpIcs23Proof} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title OptimisticProofVerifier
  * @notice Verifies proofs related to Optimistic Rollup state updates
  * @author Polymer Labs
  */
-abstract contract AppStateVerifier is IAppStateVerifier{
+abstract contract AppStateVerifier is IAppStateVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
