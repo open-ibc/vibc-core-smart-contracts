@@ -203,7 +203,7 @@ export interface OptimisticProofVerifier extends BaseContract {
     [
       l1header: L1HeaderStruct,
       proof: OpL2StateProofStruct,
-      appHash: BytesLike,
+      peptideAppHash: BytesLike,
       trustedL1BlockHash: BytesLike,
       trustedL1BlockNumber: BigNumberish
     ],
@@ -243,7 +243,7 @@ export interface OptimisticProofVerifier extends BaseContract {
     [
       l1header: L1HeaderStruct,
       proof: OpL2StateProofStruct,
-      appHash: BytesLike,
+      peptideAppHash: BytesLike,
       trustedL1BlockHash: BytesLike,
       trustedL1BlockNumber: BigNumberish
     ],

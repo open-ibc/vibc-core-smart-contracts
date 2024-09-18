@@ -284,7 +284,7 @@ export interface IDispatcherInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "updateClientWithOptimisticConsensusState",
-    values: [BytesLike, BytesLike, BigNumberish, BigNumberish, string]
+    values: [BytesLike, BigNumberish, BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "writeTimeoutPacket",
@@ -841,13 +841,7 @@ export interface IDispatcher extends BaseContract {
 
   getOptimisticConsensusState: TypedContractMethod<
     [height: BigNumberish, connection: string],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
+    [bigint],
     "view"
   >;
 
@@ -891,13 +885,12 @@ export interface IDispatcher extends BaseContract {
 
   updateClientWithOptimisticConsensusState: TypedContractMethod<
     [
-      l1header: BytesLike,
       proof: BytesLike,
       height: BigNumberish,
       appHash: BigNumberish,
       connection: string
     ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [void],
     "nonpayable"
   >;
 
@@ -997,13 +990,7 @@ export interface IDispatcher extends BaseContract {
     nameOrSignature: "getOptimisticConsensusState"
   ): TypedContractMethod<
     [height: BigNumberish, connection: string],
-    [
-      [bigint, bigint, boolean] & {
-        appHash: bigint;
-        fraudProofEndTime: bigint;
-        ended: boolean;
-      }
-    ],
+    [bigint],
     "view"
   >;
   getFunction(
@@ -1047,13 +1034,12 @@ export interface IDispatcher extends BaseContract {
     nameOrSignature: "updateClientWithOptimisticConsensusState"
   ): TypedContractMethod<
     [
-      l1header: BytesLike,
       proof: BytesLike,
       height: BigNumberish,
       appHash: BigNumberish,
       connection: string
     ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    [void],
     "nonpayable"
   >;
   getFunction(

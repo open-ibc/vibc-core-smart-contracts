@@ -36,7 +36,6 @@ contract DummyLightClient is ILightClient {
         return (0);
     }
 
-
     function verifyMembership(Ics23Proof calldata proof, bytes memory, bytes memory) external pure override {
         if (proof.height == 0) revert InvalidDummyMembershipProof();
     }

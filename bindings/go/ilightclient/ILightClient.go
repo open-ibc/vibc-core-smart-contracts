@@ -51,7 +51,7 @@ type OpIcs23ProofPath struct {
 
 // ILightClientMetaData contains all meta data concerning the ILightClient contract.
 var ILightClientMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"getFraudProofEndtime\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"endTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"l1header\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"fraudProofEndTime\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"ended\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedValue\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"proof\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"}]",
 }
 
 // ILightClientABI is the input ABI used to generate the binding from.
@@ -202,94 +202,54 @@ func (_ILightClient *ILightClientTransactorRaw) Transact(opts *bind.TransactOpts
 
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientCaller) GetState(opts *bind.CallOpts, height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
+// Solidity: function getState(uint256 height) view returns(uint256)
+func (_ILightClient *ILightClientCaller) GetState(opts *bind.CallOpts, height *big.Int) (*big.Int, error) {
 	var out []interface{}
 	err := _ILightClient.contract.Call(opts, &out, "getState", height)
 
-	outstruct := new(struct {
-		AppHash           *big.Int
-		FraudProofEndTime *big.Int
-		Ended             bool
-	})
 	if err != nil {
-		return *outstruct, err
+		return *new(*big.Int), err
 	}
 
-	outstruct.AppHash = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-	outstruct.FraudProofEndTime = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.Ended = *abi.ConvertType(out[2], new(bool)).(*bool)
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
 
-	return *outstruct, err
+	return out0, err
 
 }
 
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientSession) GetState(height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
+// Solidity: function getState(uint256 height) view returns(uint256)
+func (_ILightClient *ILightClientSession) GetState(height *big.Int) (*big.Int, error) {
 	return _ILightClient.Contract.GetState(&_ILightClient.CallOpts, height)
 }
 
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
-// Solidity: function getState(uint256 height) view returns(uint256 appHash, uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientCallerSession) GetState(height *big.Int) (struct {
-	AppHash           *big.Int
-	FraudProofEndTime *big.Int
-	Ended             bool
-}, error) {
+// Solidity: function getState(uint256 height) view returns(uint256)
+func (_ILightClient *ILightClientCallerSession) GetState(height *big.Int) (*big.Int, error) {
 	return _ILightClient.Contract.GetState(&_ILightClient.CallOpts, height)
 }
 
-// GetFraudProofEndtime is a paid mutator transaction binding the contract method 0xd56ff842.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) returns(uint256 endTime)
-func (_ILightClient *ILightClientTransactor) GetFraudProofEndtime(opts *bind.TransactOpts, height *big.Int) (*types.Transaction, error) {
-	return _ILightClient.contract.Transact(opts, "getFraudProofEndtime", height)
+// Solidity: function updateClient(bytes proof, uint256 height, uint256 appHash) returns()
+func (_ILightClient *ILightClientTransactor) UpdateClient(opts *bind.TransactOpts, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.contract.Transact(opts, "updateClient", proof, height, appHash)
 }
 
-// GetFraudProofEndtime is a paid mutator transaction binding the contract method 0xd56ff842.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) returns(uint256 endTime)
-func (_ILightClient *ILightClientSession) GetFraudProofEndtime(height *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.GetFraudProofEndtime(&_ILightClient.TransactOpts, height)
+// Solidity: function updateClient(bytes proof, uint256 height, uint256 appHash) returns()
+func (_ILightClient *ILightClientSession) UpdateClient(proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, proof, height, appHash)
 }
 
-// GetFraudProofEndtime is a paid mutator transaction binding the contract method 0xd56ff842.
+// UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
-// Solidity: function getFraudProofEndtime(uint256 height) returns(uint256 endTime)
-func (_ILightClient *ILightClientTransactorSession) GetFraudProofEndtime(height *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.GetFraudProofEndtime(&_ILightClient.TransactOpts, height)
-}
-
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
-//
-// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientTransactor) UpdateClient(opts *bind.TransactOpts, l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.contract.Transact(opts, "updateClient", l1header, proof, height, appHash)
-}
-
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
-//
-// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientSession) UpdateClient(l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
-}
-
-// UpdateClient is a paid mutator transaction binding the contract method 0xd4af812d.
-//
-// Solidity: function updateClient(bytes l1header, bytes proof, uint256 height, uint256 appHash) returns(uint256 fraudProofEndTime, bool ended)
-func (_ILightClient *ILightClientTransactorSession) UpdateClient(l1header []byte, proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
-	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, l1header, proof, height, appHash)
+// Solidity: function updateClient(bytes proof, uint256 height, uint256 appHash) returns()
+func (_ILightClient *ILightClientTransactorSession) UpdateClient(proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
+	return _ILightClient.Contract.UpdateClient(&_ILightClient.TransactOpts, proof, height, appHash)
 }
 
 // VerifyMembership is a paid mutator transaction binding the contract method 0xcb535ab5.

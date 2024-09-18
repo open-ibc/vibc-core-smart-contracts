@@ -3,55 +3,31 @@
 /* eslint-disable */
 
 import { Contract, Interface, type ContractRunner } from "ethers";
-import type { ILightClient, ILightClientInterface } from "../ILightClient";
+import type {
+  IAppStateVerifier,
+  IAppStateVerifierInterface,
+} from "../../IProofVerifier.sol/IAppStateVerifier";
 
 const _abi = [
   {
     type: "function",
-    name: "getState",
+    name: "verifyMembership",
     inputs: [
       {
-        name: "height",
-        type: "uint256",
-        internalType: "uint256",
+        name: "appHash",
+        type: "bytes32",
+        internalType: "bytes32",
       },
-    ],
-    outputs: [
       {
-        name: "",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "updateClient",
-    inputs: [
-      {
-        name: "proof",
+        name: "key",
         type: "bytes",
         internalType: "bytes",
       },
       {
-        name: "height",
-        type: "uint256",
-        internalType: "uint256",
+        name: "value",
+        type: "bytes",
+        internalType: "bytes",
       },
-      {
-        name: "appHash",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
-    name: "verifyMembership",
-    inputs: [
       {
         name: "proof",
         type: "tuple",
@@ -103,25 +79,25 @@ const _abi = [
           },
         ],
       },
-      {
-        name: "key",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
-        name: "expectedValue",
-        type: "bytes",
-        internalType: "bytes",
-      },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "pure",
   },
   {
     type: "function",
     name: "verifyNonMembership",
     inputs: [
       {
+        name: "appHash",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+      {
+        name: "key",
+        type: "bytes",
+        internalType: "bytes",
+      },
+      {
         name: "proof",
         type: "tuple",
         internalType: "struct Ics23Proof",
@@ -172,26 +148,71 @@ const _abi = [
           },
         ],
       },
-      {
-        name: "key",
-        type: "bytes",
-        internalType: "bytes",
-      },
     ],
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "pure",
+  },
+  {
+    type: "error",
+    name: "InvalidAppHash",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidIbcStateProof",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidL1BlockHash",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidL1BlockNumber",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidPacketProof",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidProofKey",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidProofValue",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidRLPEncodedL1BlockNumber",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidRLPEncodedL1StateRoot",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "MethodNotImplemented",
+    inputs: [],
   },
 ] as const;
 
-export class ILightClient__factory {
+export class IAppStateVerifier__factory {
   static readonly abi = _abi;
-  static createInterface(): ILightClientInterface {
-    return new Interface(_abi) as ILightClientInterface;
+  static createInterface(): IAppStateVerifierInterface {
+    return new Interface(_abi) as IAppStateVerifierInterface;
   }
   static connect(
     address: string,
     runner?: ContractRunner | null
-  ): ILightClient {
-    return new Contract(address, _abi, runner) as unknown as ILightClient;
+  ): IAppStateVerifier {
+    return new Contract(address, _abi, runner) as unknown as IAppStateVerifier;
   }
 }
