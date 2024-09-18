@@ -103,7 +103,7 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 
         channelOpenInit(localEnd, remoteEnd, setting, true);
 
-        setting.proof = load_proof("/test/payload/channel_ack_pending_proof.hex");
+        setting.proof = load_proof("/test/payload/channel_ack_pending_proof.hex", address(opLightClient));
         channelOpenAck(localEnd, remoteEnd, setting, true);
     }
 
@@ -119,10 +119,10 @@ contract ChannelHandShakeUpgradeUtil is ChannelHandshakeUtils {
 
         ChannelHandshakeSetting memory setting = ChannelHandshakeSetting(ChannelOrder.NONE, false, true, validProof);
 
-        setting.proof = load_proof("/test/payload/channel_try_pending_proof.hex");
+        setting.proof = load_proof("/test/payload/channel_try_pending_proof.hex", address(opLightClient));
         channelOpenTry(le, remoteEnd, setting, true);
 
-        setting.proof = load_proof("/test/payload/channel_confirm_pending_proof.hex");
+        setting.proof = load_proof("/test/payload/channel_confirm_pending_proof.hex", address(opLightClient));
         channelOpenConfirm(le, remoteEnd, setting, true);
     }
 

@@ -127,7 +127,7 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         // Recv a packet as if it had been acked on dest chain. Note: the src chain is oblivious to the actual state of
         // dest chain, aside from what is proved from the light client. So we can get away with only mocking the
         // recvpacket proofs for testing dest chain
-        Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex");
+        Ics23Proof memory proof = load_proof("/test/payload/packet_ack_proof.hex", address(opLightClient));
         IbcPacket memory packet;
         packet.data = bytes("packet-1");
         packet.timeoutTimestamp = 15_566_401_733_896_437_760;
