@@ -53,12 +53,8 @@ struct L1Header {
     uint64 number;
 }
 
-/**
- * @title IProofVerifier
- * @author Polymer Labs
- * @notice An interface that abstracts away proof verification logic for light clients
- */
-interface IProofVerifier {
+
+interface IAppStateVerifier {
     error InvalidL1BlockNumber();
     error InvalidL1BlockHash();
     error InvalidRLPEncodedL1BlockNumber();
@@ -70,23 +66,6 @@ interface IProofVerifier {
     error InvalidIbcStateProof();
     error MethodNotImplemented();
 
-    /**
-     * @dev verifies if a state update (apphash) is valid, given the provided proofs.
-     *      Reverts in case of failure.
-     *
-     * @param l1header RLP "encoded" version of the L1 header that matches with the trusted hash and number
-     * @param proof l2 state proof. It includes the keys, hashes and storage proofs required to verify the app hash
-     * @param appHash  l2 app hash (state root) to be verified
-     * @param trustedL1BlockHash trusted L1 block hash. Provided L1 header must match with it.
-     * @param trustedL1BlockNumber trusted L1 block number. Provided L1 header must match with it.
-     */
-    function verifyStateUpdate(
-        L1Header calldata l1header,
-        OpL2StateProof calldata proof,
-        bytes32 appHash,
-        bytes32 trustedL1BlockHash,
-        uint64 trustedL1BlockNumber
-    ) external view;
 
     /**
      * @dev verifies the provided ICS23 proof given the trusted app hash. Reverts in case of failure.
@@ -108,4 +87,32 @@ interface IProofVerifier {
      * @param proof ICS23 non-membership proof
      */
     function verifyNonMembership(bytes32 appHash, bytes calldata key, Ics23Proof calldata proof) external pure;
+
+}
+
+/**
+ * @title IProofVerifier
+ * @author Polymer Labs
+ * @notice An interface that abstracts away proof verification logic for light clients
+ */
+interface IProofVerifier is IAppStateVerifier {
+    /**
+     * @dev verifies if a state update (apphash) is valid, given the provided proofs.
+     *      Reverts in case of failure.
+     *
+     * @param l1header RLP "encoded" version of the L1 header that matches with the trusted hash and number
+     * @param proof l2 state proof. It includes the keys, hashes and storage proofs required to verify the app hash
+     * @param appHash  l2 app hash (state root) to be verified
+     * @param trustedL1BlockHash trusted L1 block hash. Provided L1 header must match with it.
+     * @param trustedL1BlockNumber trusted L1 block number. Provided L1 header must match with it.
+     */
+    function verifyStateUpdate(
+        L1Header calldata l1header,
+        OpL2StateProof calldata proof,
+        bytes32 appHash,
+        bytes32 trustedL1BlockHash,
+        uint64 trustedL1BlockNumber
+    ) external view;
+
+
 }
