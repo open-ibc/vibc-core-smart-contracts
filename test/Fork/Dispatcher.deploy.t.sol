@@ -22,7 +22,7 @@ import {IbcUtils} from "../../contracts/libs/IbcUtils.sol";
 import {IbcReceiver, IbcChannelReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {OptimisticLightClient} from "../../contracts/core/OptimisticLightClient.sol";
-import {IProofVerifier} from "../../contracts/core/OptimisticProofVerifier.sol";
+import {IProofVerifier} from "../../contracts/interfaces/IProofVerifier.sol";
 import {Dispatcher} from "../../contracts/core/Dispatcher.sol";
 
 import {IDispatcher} from "../../contracts/interfaces/IDispatcher.sol";

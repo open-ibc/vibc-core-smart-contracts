@@ -680,10 +680,10 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
     }
 
     /**
-     * @notice Retrieves the optimistic consensus state for the specified height and client ID.
-     * @param height The height of the consensus state.
+     * @notice Retrieves the optimistic consensus state for a specified height and client ID.
+     * @param height The height of the apphash to query 
      * @param connection The connection the client corresponds to; used to find the light client.
-     * @return appHash The application hash of the consensus state.
+     * @return appHash The apphash at the given height 
      * @return fraudProofEndTime The end time of the fraud proof.
      * @return ended A boolean indicating whether the consensus state has ended.
      */
