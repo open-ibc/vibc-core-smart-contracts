@@ -18,7 +18,7 @@ import type {
   TypedEventLog,
   TypedListener,
   TypedContractMethod,
-} from "./common";
+} from "../common";
 
 export type OpIcs23ProofPathStruct = { prefix: BytesLike; suffix: BytesLike };
 
@@ -56,52 +56,83 @@ export type Ics23ProofStructOutput = [
   height: bigint
 ] & { proof: OpIcs23ProofStructOutput[]; height: bigint };
 
-export interface DummyLightClientInterface extends Interface {
+export type L1HeaderStruct = {
+  header: BytesLike[];
+  stateRoot: BytesLike;
+  number: BigNumberish;
+};
+
+export type L1HeaderStructOutput = [
+  header: string[],
+  stateRoot: string,
+  number: bigint
+] & { header: string[]; stateRoot: string; number: bigint };
+
+export type OpL2StateProofStruct = {
+  accountProof: BytesLike[];
+  outputRootProof: BytesLike[];
+  l2OutputProposalKey: BytesLike;
+  l2BlockHash: BytesLike;
+};
+
+export type OpL2StateProofStructOutput = [
+  accountProof: string[],
+  outputRootProof: string[],
+  l2OutputProposalKey: string,
+  l2BlockHash: string
+] & {
+  accountProof: string[];
+  outputRootProof: string[];
+  l2OutputProposalKey: string;
+  l2BlockHash: string;
+};
+
+export interface IProofVerifierInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "getState"
-      | "updateClient"
       | "verifyMembership"
       | "verifyNonMembership"
+      | "verifyStateUpdate"
   ): FunctionFragment;
 
   encodeFunctionData(
-    functionFragment: "getState",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "updateClient",
-    values: [BytesLike, BigNumberish, BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "verifyMembership",
-    values: [Ics23ProofStruct, BytesLike, BytesLike]
+    values: [BytesLike, BytesLike, BytesLike, Ics23ProofStruct]
   ): string;
   encodeFunctionData(
     functionFragment: "verifyNonMembership",
-    values: [Ics23ProofStruct, BytesLike]
+    values: [BytesLike, BytesLike, Ics23ProofStruct]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "verifyStateUpdate",
+    values: [
+      L1HeaderStruct,
+      OpL2StateProofStruct,
+      BytesLike,
+      BytesLike,
+      BigNumberish
+    ]
   ): string;
 
-  decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "updateClient",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "verifyMembership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "verifyNonMembership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "verifyStateUpdate",
     data: BytesLike
   ): Result;
 }
 
-export interface DummyLightClient extends BaseContract {
-  connect(runner?: ContractRunner | null): DummyLightClient;
+export interface IProofVerifier extends BaseContract {
+  connect(runner?: ContractRunner | null): IProofVerifier;
   waitForDeployment(): Promise<this>;
 
-  interface: DummyLightClientInterface;
+  interface: IProofVerifierInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -140,22 +171,31 @@ export interface DummyLightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  getState: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
-
-  updateClient: TypedContractMethod<
-    [arg0: BytesLike, arg1: BigNumberish, arg2: BigNumberish],
-    [void],
-    "view"
-  >;
-
   verifyMembership: TypedContractMethod<
-    [proof: Ics23ProofStruct, arg1: BytesLike, arg2: BytesLike],
+    [
+      appHash: BytesLike,
+      key: BytesLike,
+      value: BytesLike,
+      proof: Ics23ProofStruct
+    ],
     [void],
     "view"
   >;
 
   verifyNonMembership: TypedContractMethod<
-    [proof: Ics23ProofStruct, arg1: BytesLike],
+    [appHash: BytesLike, key: BytesLike, proof: Ics23ProofStruct],
+    [void],
+    "view"
+  >;
+
+  verifyStateUpdate: TypedContractMethod<
+    [
+      l1header: L1HeaderStruct,
+      proof: OpL2StateProofStruct,
+      appHash: BytesLike,
+      trustedL1BlockHash: BytesLike,
+      trustedL1BlockNumber: BigNumberish
+    ],
     [void],
     "view"
   >;
@@ -165,26 +205,34 @@ export interface DummyLightClient extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "getState"
-  ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "updateClient"
-  ): TypedContractMethod<
-    [arg0: BytesLike, arg1: BigNumberish, arg2: BigNumberish],
-    [void],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "verifyMembership"
   ): TypedContractMethod<
-    [proof: Ics23ProofStruct, arg1: BytesLike, arg2: BytesLike],
+    [
+      appHash: BytesLike,
+      key: BytesLike,
+      value: BytesLike,
+      proof: Ics23ProofStruct
+    ],
     [void],
     "view"
   >;
   getFunction(
     nameOrSignature: "verifyNonMembership"
   ): TypedContractMethod<
-    [proof: Ics23ProofStruct, arg1: BytesLike],
+    [appHash: BytesLike, key: BytesLike, proof: Ics23ProofStruct],
+    [void],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "verifyStateUpdate"
+  ): TypedContractMethod<
+    [
+      l1header: L1HeaderStruct,
+      proof: OpL2StateProofStruct,
+      appHash: BytesLike,
+      trustedL1BlockHash: BytesLike,
+      trustedL1BlockNumber: BigNumberish
+    ],
     [void],
     "view"
   >;

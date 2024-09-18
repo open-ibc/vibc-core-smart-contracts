@@ -6,7 +6,7 @@ import { Contract, Interface, type ContractRunner } from "ethers";
 import type {
   IProofVerifier,
   IProofVerifierInterface,
-} from "../IProofVerifier";
+} from "../../IProofVerifier.sol/IProofVerifier";
 
 const _abi = [
   {

@@ -13,6 +13,7 @@ import "../../contracts/examples/Mars.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import {LocalEnd, ChannelHandshakeSetting, Base} from "../utils/Dispatcher.base.t.sol";
 import {Earth} from "../../contracts/examples/Earth.sol";
+import {IAppStateVerifier} from "../../contracts/interfaces/IProofVerifier.sol";
 
 abstract contract ChannelHandshakeUtils is Base {
     string portId;

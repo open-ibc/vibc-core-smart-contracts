@@ -707,16 +707,6 @@ const _abi = [
         type: "uint256",
         internalType: "uint256",
       },
-      {
-        name: "fraudProofEndTime",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "ended",
-        type: "bool",
-        internalType: "bool",
-      },
     ],
     stateMutability: "view",
   },
@@ -1075,11 +1065,6 @@ const _abi = [
     name: "updateClientWithOptimisticConsensusState",
     inputs: [
       {
-        name: "l1header",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
         name: "proof",
         type: "bytes",
         internalType: "bytes",
@@ -1100,18 +1085,7 @@ const _abi = [
         internalType: "string",
       },
     ],
-    outputs: [
-      {
-        name: "fraudProofEndTime",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "ended",
-        type: "bool",
-        internalType: "bool",
-      },
-    ],
+    outputs: [],
     stateMutability: "nonpayable",
   },
   {

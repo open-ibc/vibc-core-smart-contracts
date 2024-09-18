@@ -53,7 +53,6 @@ struct L1Header {
     uint64 number;
 }
 
-
 interface IAppStateVerifier {
     error InvalidL1BlockNumber();
     error InvalidL1BlockHash();
@@ -65,7 +64,6 @@ interface IAppStateVerifier {
     error InvalidPacketProof();
     error InvalidIbcStateProof();
     error MethodNotImplemented();
-
 
     /**
      * @dev verifies the provided ICS23 proof given the trusted app hash. Reverts in case of failure.
@@ -87,7 +85,6 @@ interface IAppStateVerifier {
      * @param proof ICS23 non-membership proof
      */
     function verifyNonMembership(bytes32 appHash, bytes calldata key, Ics23Proof calldata proof) external pure;
-
 }
 
 /**
@@ -113,6 +110,4 @@ interface IProofVerifier is IAppStateVerifier {
         bytes32 trustedL1BlockHash,
         uint64 trustedL1BlockNumber
     ) external view;
-
-
 }

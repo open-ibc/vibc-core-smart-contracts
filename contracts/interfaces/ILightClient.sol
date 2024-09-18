@@ -27,24 +27,15 @@ import {Ics23Proof} from "./IProofVerifier.sol";
  */
 interface ILightClient {
     /**
-     * @dev Adds an appHash to the internal store and returns the fraud proof end time, and a bool flag indicating if
-     * the fraud proof window has passed according to the block's time stamp.
+     * @dev Adds an appHash to the internal store, after verifying the client update proof associated with the light
+     * client implementation.
      * @param proof A generic byte array that contains proof data to prove the apphash client update. This can differ
-     * depending on the light client type. E.g. this can be an abi.encoded OpL2StateProof struct from the IProofVerifier
+     * depending on the light client type. E.g. this can be an abi.encoded struct which contains an OpL2StateProof and
+     * L1Block from the IProofVerifier
      * interface.
-     * @param appHash Peptide app hash (state root) to be verified
-     * @return fraudProofEndTime The fraud proof end time.
-     * @return ended A boolean indicating if the fraud proof window has passed.
+     * @param appHash App hash (state root) to be verified
      */
-    function updateClient(bytes calldata proof, uint256 height, uint256 appHash)
-        external
-        returns (uint256 fraudProofEndTime, bool ended);
-
-    /**
-     * @dev Returns the fraud proof end time at a given block
-     * 0 is returned if there isn't an appHash with the given l2 height.
-     */
-    function getFraudProofEndtime(uint256 height) external returns (uint256 endTime);
+    function updateClient(bytes calldata proof, uint256 height, uint256 appHash) external;
 
     /**
      * @dev Checks if the current trusted optimistic consensus state
@@ -59,7 +50,7 @@ interface ILightClient {
     function verifyNonMembership(Ics23Proof calldata proof, bytes memory key) external;
 
     /**
-     * @dev Returns the apphash at a given block height
+     * Returns the apphash at a given height
      */
-    function getState(uint256 height) external view returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);
+    function getState(uint256 height) external view returns (uint256);
 }

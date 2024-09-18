@@ -18,7 +18,7 @@ import type {
   TypedEventLog,
   TypedListener,
   TypedContractMethod,
-} from "./common";
+} from "../common";
 
 export type OpIcs23ProofPathStruct = { prefix: BytesLike; suffix: BytesLike };
 
@@ -56,43 +56,9 @@ export type Ics23ProofStructOutput = [
   height: bigint
 ] & { proof: OpIcs23ProofStructOutput[]; height: bigint };
 
-export type L1HeaderStruct = {
-  header: BytesLike[];
-  stateRoot: BytesLike;
-  number: BigNumberish;
-};
-
-export type L1HeaderStructOutput = [
-  header: string[],
-  stateRoot: string,
-  number: bigint
-] & { header: string[]; stateRoot: string; number: bigint };
-
-export type OpL2StateProofStruct = {
-  accountProof: BytesLike[];
-  outputRootProof: BytesLike[];
-  l2OutputProposalKey: BytesLike;
-  l2BlockHash: BytesLike;
-};
-
-export type OpL2StateProofStructOutput = [
-  accountProof: string[],
-  outputRootProof: string[],
-  l2OutputProposalKey: string,
-  l2BlockHash: string
-] & {
-  accountProof: string[];
-  outputRootProof: string[];
-  l2OutputProposalKey: string;
-  l2BlockHash: string;
-};
-
-export interface IProofVerifierInterface extends Interface {
+export interface IAppStateVerifierInterface extends Interface {
   getFunction(
-    nameOrSignature:
-      | "verifyMembership"
-      | "verifyNonMembership"
-      | "verifyStateUpdate"
+    nameOrSignature: "verifyMembership" | "verifyNonMembership"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -103,16 +69,6 @@ export interface IProofVerifierInterface extends Interface {
     functionFragment: "verifyNonMembership",
     values: [BytesLike, BytesLike, Ics23ProofStruct]
   ): string;
-  encodeFunctionData(
-    functionFragment: "verifyStateUpdate",
-    values: [
-      L1HeaderStruct,
-      OpL2StateProofStruct,
-      BytesLike,
-      BytesLike,
-      BigNumberish
-    ]
-  ): string;
 
   decodeFunctionResult(
     functionFragment: "verifyMembership",
@@ -122,17 +78,13 @@ export interface IProofVerifierInterface extends Interface {
     functionFragment: "verifyNonMembership",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "verifyStateUpdate",
-    data: BytesLike
-  ): Result;
 }
 
-export interface IProofVerifier extends BaseContract {
-  connect(runner?: ContractRunner | null): IProofVerifier;
+export interface IAppStateVerifier extends BaseContract {
+  connect(runner?: ContractRunner | null): IAppStateVerifier;
   waitForDeployment(): Promise<this>;
 
-  interface: IProofVerifierInterface;
+  interface: IAppStateVerifierInterface;
 
   queryFilter<TCEvent extends TypedContractEvent>(
     event: TCEvent,
@@ -188,18 +140,6 @@ export interface IProofVerifier extends BaseContract {
     "view"
   >;
 
-  verifyStateUpdate: TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      appHash: BytesLike,
-      trustedL1BlockHash: BytesLike,
-      trustedL1BlockNumber: BigNumberish
-    ],
-    [void],
-    "view"
-  >;
-
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -220,19 +160,6 @@ export interface IProofVerifier extends BaseContract {
     nameOrSignature: "verifyNonMembership"
   ): TypedContractMethod<
     [appHash: BytesLike, key: BytesLike, proof: Ics23ProofStruct],
-    [void],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "verifyStateUpdate"
-  ): TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      appHash: BytesLike,
-      trustedL1BlockHash: BytesLike,
-      trustedL1BlockNumber: BigNumberish
-    ],
     [void],
     "view"
   >;

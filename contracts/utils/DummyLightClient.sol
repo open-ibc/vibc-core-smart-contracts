@@ -30,26 +30,10 @@ contract DummyLightClient is ILightClient {
 
     constructor() {}
 
-    function updateClient(bytes calldata, uint256, uint256)
-        external
-        pure
-        override
-        returns (uint256 endTime, bool ended)
-    {
-        return (0, false);
-    }
+    function updateClient(bytes calldata, uint256, uint256) external pure override {}
 
-    function getState(uint256)
-        external
-        pure
-        override
-        returns (uint256 appHash, uint256 fraudProofEndtime, bool ended)
-    {
-        return (0, 0, false);
-    }
-
-    function getFraudProofEndtime(uint256) external pure override returns (uint256 endTime) {
-        return 0;
+    function getState(uint256) external pure override returns (uint256 appHash) {
+        return (0);
     }
 
     function verifyMembership(Ics23Proof calldata proof, bytes memory, bytes memory) external pure override {
