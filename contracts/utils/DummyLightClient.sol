@@ -26,6 +26,10 @@ import {ILightClient, Ics23Proof, LightClientType} from "../interfaces/ILightCli
  */
 contract DummyLightClient is ILightClient {
     uint8 private _LightClientType = uint8(LIGHT_CLIENT_TYPE); // Also redundantly stored as a private mutable type in
+
+    // we still need this array thoguh it is unused for storage mocks
+    mapping(uint256 => uint256) public consensusStates;
+
     // cheap on-chain use case it needs to be accessed in any proofs
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SimTestLightClient; // Stored as a constant for
 
@@ -46,5 +50,9 @@ contract DummyLightClient is ILightClient {
 
     function verifyNonMembership(Ics23Proof calldata proof, bytes memory) external pure override {
         if (proof.height == 0) revert InvalidDummyNonMembershipProof();
+    }
+
+    function getLightClientType() external pure returns (LightClientType) {
+        return LightClientType.SimTestLightClient;
     }
 }

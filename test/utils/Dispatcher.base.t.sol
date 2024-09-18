@@ -15,6 +15,9 @@ import "../../contracts/core/OptimisticProofVerifier.sol";
 import {TestUtilsTest} from "./TestUtils.t.sol";
 import {stdStorage, StdStorage} from "forge-std/Test.sol";
 import {FeeVault} from "../../contracts/core/FeeVault.sol";
+import {SequencerSoloClient} from "../../contracts/core/SequencerSoloClient.sol";
+import {ISignatureVerifier} from "../../contracts/interfaces/ISignatureVerifier.sol";
+import {SequencerSignatureVerifier} from "../../contracts/core/SequencerSignatureVerifier.sol";
 import {IFeeVault} from "../../contracts/interfaces/IFeeVault.sol";
 
 struct LocalEnd {
@@ -53,11 +56,15 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 259;
     uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 255;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
+    bytes32 PEPTIDE_CHAIN_ID = bytes32(uint256(444));
 
     Height ZERO_HEIGHT = Height(0, 0);
     uint64 maxTimeout = UINT64_MAX;
 
     ILightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
+
+    ISignatureVerifier sequencerSignatureVerifier = new SequencerSignatureVerifier(sequencer, PEPTIDE_CHAIN_ID);
+    ILightClient sequencerLightClient = new SequencerSoloClient(sequencerSignatureVerifier);
     ILightClient dummyLightClient = new DummyLightClient();
     IFeeVault feeVault = new FeeVault();
 
@@ -284,15 +291,13 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         clientId = uint256(vm.load(address(dispatcherProxy), clientIdSlot));
     }
 
-    function load_proof(string memory filepath) internal returns (Ics23Proof memory) {
+    function load_proof(string memory filepath, address lightClient) internal returns (Ics23Proof memory) {
         (bytes32 apphash, Ics23Proof memory proof) =
             abi.decode(vm.parseBytes(vm.readFile(string.concat(rootDir, filepath))), (bytes32, Ics23Proof));
 
         // this loads the app hash we got from the testing data into the consensus state manager internals
         // at the height it's supposed to go. That is, a block less than where the proof was generated from.
-        stdstore.target(address(opLightClient)).sig("consensusStates(uint256)").with_key(proof.height - 1).checked_write(
-            apphash
-        );
+        stdstore.target(lightClient).sig("consensusStates(uint256)").with_key(proof.height - 1).checked_write(apphash);
         // trick the fraud time window check
         vm.warp(block.timestamp + 1);
 

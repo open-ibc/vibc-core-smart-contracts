@@ -26,6 +26,9 @@ contract ProofBase is Test {
     bytes32 apphash;
 
     L1Block l1BlockProvider = new L1Block();
+    address public sequencer;
+    uint256 public sequencerPkey;
+
     OptimisticProofVerifier opProofVerifier =
         new OptimisticProofVerifier(address(0x5cA3f8919DF7d82Bf51a672B7D73Ec13a2705dDb));
 
@@ -80,5 +83,7 @@ contract ProofBase is Test {
     function setUp() public virtual {
         delete emptyl1header;
         delete invalidStateProof;
+
+        (sequencer, sequencerPkey) = makeAddrAndKey("sequencer");
     }
 }

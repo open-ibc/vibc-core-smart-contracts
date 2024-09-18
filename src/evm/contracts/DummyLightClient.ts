@@ -60,6 +60,8 @@ export interface DummyLightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "LIGHT_CLIENT_TYPE"
+      | "consensusStates"
+      | "getLightClientType"
       | "getState"
       | "updateClient"
       | "verifyMembership"
@@ -68,6 +70,14 @@ export interface DummyLightClientInterface extends Interface {
 
   encodeFunctionData(
     functionFragment: "LIGHT_CLIENT_TYPE",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "consensusStates",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getLightClientType",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -89,6 +99,14 @@ export interface DummyLightClientInterface extends Interface {
 
   decodeFunctionResult(
     functionFragment: "LIGHT_CLIENT_TYPE",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "consensusStates",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getLightClientType",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
@@ -151,6 +169,10 @@ export interface DummyLightClient extends BaseContract {
 
   LIGHT_CLIENT_TYPE: TypedContractMethod<[], [bigint], "view">;
 
+  consensusStates: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+
+  getLightClientType: TypedContractMethod<[], [bigint], "view">;
+
   getState: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
   updateClient: TypedContractMethod<
@@ -177,6 +199,12 @@ export interface DummyLightClient extends BaseContract {
 
   getFunction(
     nameOrSignature: "LIGHT_CLIENT_TYPE"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "consensusStates"
+  ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getLightClientType"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
