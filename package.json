@@ -27,15 +27,22 @@
     "zx": "^8.1.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@types/eslint__js": "^8.42.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.5.5",
     "@types/nunjucks": "^3.2.6",
     "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.11.0",
     "chai": "^5.1.1",
+    "eslint": "^8.57.1",
+    "globals": "^15.9.0",
     "solidity-coverage": "^0.8.12",
     "tslib": "^2.7.0",
     "tsup": "^8.2.4",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^7.18.0"
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
@@ -44,7 +51,9 @@
     "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",
     "deploy-simple": "node dist/deploy.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "lint-write": "eslint --fix .",
+    "lint-check": "eslint ."
   },
   "keywords": [
     "evm",
@@ -94,5 +103,6 @@
       "import": "./dist/utils/constants.js",
       "types": "./dist/utils/constants.d.ts"
     }
-  }
+  },
+  "type": "module"
 }
