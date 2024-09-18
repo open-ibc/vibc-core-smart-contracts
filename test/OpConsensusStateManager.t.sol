@@ -20,7 +20,9 @@ contract OptimisticLightClientTest is ProofBase {
     }
 
     function test_addOpConsensusState_newOpConsensusStateCreatedWithPendingStatus() public {
-        (, bool ended) = manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
+        manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
+        (,, bool ended) = manager.getStateAndEndTime(1);
+
         assertEq(false, ended);
     }
 
@@ -33,7 +35,7 @@ contract OptimisticLightClientTest is ProofBase {
         // the fraud proof window has passed.
         manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
 
-        (,, bool ended) = manager.getState(1);
+        (,, bool ended) = manager.getStateAndEndTime(1);
         assertEq(true, ended);
     }
 
@@ -47,27 +49,29 @@ contract OptimisticLightClientTest is ProofBase {
     function test_addOpConsensusState_addingSameOpConsensusStateIsNoop() public {
         manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
 
-        (, uint256 originalFraudProofEndTime,) = manager.getState(1);
+        (, uint256 originalFraudProofEndTime,) = manager.getStateAndEndTime(1);
 
         vm.warp(block.timestamp + 1);
 
         // adding the same appHash later doesn't update the fraud
         // proof end time.
         manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
-        (, uint256 newFraudProofEndTime,) = manager.getState(1);
+        (, uint256 newFraudProofEndTime,) = manager.getStateAndEndTime(1);
         assertEq(originalFraudProofEndTime, newFraudProofEndTime);
     }
 
     function test_zero_proof_window() public {
         manager = new OptimisticLightClient(0, verifier, l1BlockProvider);
         manager.updateClient(abi.encode(emptyl1header, invalidStateProof), 1, 1);
-        (,, bool ended) = manager.getState(1);
+        (,, bool ended) = manager.getStateAndEndTime(1);
         assertEq(true, ended);
     }
 
     function test_getState_nonExist() public {
-        (uint256 appHash,, bool ended) = manager.getState(1);
+        (uint256 appHash,, bool ended) = manager.getStateAndEndTime(1);
+        (uint256 appHash1) = manager.getState(1);
         assertEq(0, appHash);
+        assertEq(0, appHash1);
         assertEq(false, ended);
     }
 }

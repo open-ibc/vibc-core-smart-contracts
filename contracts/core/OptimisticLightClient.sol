@@ -17,17 +17,18 @@
 
 pragma solidity 0.8.15;
 
-import {L1Header, IProofVerifier, IAppStateVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
-import {ILightClient } from "../interfaces/ILightClient.sol";
+import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interfaces/IProofVerifier.sol";
+// solhint-disable-next-line
+import {ILightClient} from "../interfaces/ILightClient.sol"; // we need this import to generate docs
 import {L1Block} from "optimism/L2/L1Block.sol";
-
+import {IOptimisticLightClient} from "../interfaces/IOptimisticLightClient.sol";
 
 /**
  * @title OptimisticLightClient
  * @author Polymer Labs
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
-contract OptimisticLightClient is ILightClient {
+contract OptimisticLightClient is IOptimisticLightClient {
     // consensusStates maps from the peptideHeight to the peptideAppHash.
     mapping(uint256 => uint256) public consensusStates;
 
@@ -49,11 +50,7 @@ contract OptimisticLightClient is ILightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash)
-        external
-        override
-        returns (uint256 fraudProofEndTime, bool ended)
-    {
+    function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external override {
         (L1Header memory l1header, OpL2StateProof memory stateProof) = abi.decode(proof, (L1Header, OpL2StateProof));
         uint256 hash = consensusStates[peptideHeight];
         if (hash == 0) {
@@ -65,29 +62,33 @@ contract OptimisticLightClient is ILightClient {
 
             // a new peptideAppHash
             consensusStates[peptideHeight] = peptideAppHash;
-            uint256 endTime = block.timestamp + fraudProofWindowSeconds;
-            fraudProofEndtime[peptideAppHash] = endTime;
-            return (endTime, false);
+            fraudProofEndtime[peptideAppHash] = block.timestamp + fraudProofWindowSeconds;
+        } else if (hash != peptideAppHash) {
+            revert CannotUpdatePendingOptimisticConsensusState();
         }
-
-        if (hash == peptideAppHash) {
-            uint256 endTime = fraudProofEndtime[hash];
-            return (endTime, block.timestamp >= endTime);
-        }
-
-        revert CannotUpdatePendingOptimisticConsensusState();
     }
 
     /**
      * @inheritdoc ILightClient
      */
-    function getState(uint256 peptideHeight) external view returns (uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended) {
-        return getInternalState(peptideHeight);
+    function getState(uint256 peptideHeight) external view returns (uint256 peptideAppHash) {
+        return _getState(peptideHeight);
     }
+
+    /**
+     * @inheritdoc IOptimisticLightClient
+     */
+    function getStateAndEndTime(uint256 peptideHeight)
+        external
+        view
+        returns (uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+    {
+        return _getStateAndEndTime(peptideHeight);
+    }
+
     /**
      * @inheritdoc ILightClient
      */
-
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
         view
@@ -95,7 +96,7 @@ contract OptimisticLightClient is ILightClient {
         // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
         // this means the relayer must have updated the contract with the app hash from the previous block and
         // that is why we use proof.height - 1 here.
-        (uint256 peptideAppHash,, bool ended) = getInternalState(proof.height - 1);
+        (uint256 peptideAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
         if (!ended) revert AppHashHasNotPassedFraudProofWindow();
         verifier.verifyMembership(bytes32(peptideAppHash), key, expectedValue, proof);
     }
@@ -104,24 +105,28 @@ contract OptimisticLightClient is ILightClient {
      * @inheritdoc ILightClient
      */
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
-        (uint256 peptideAppHash,, bool ended) = getInternalState(proof.height - 1);
+        (uint256 peptideAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
         if (!ended) revert AppHashHasNotPassedFraudProofWindow();
         verifier.verifyNonMembership(bytes32(peptideAppHash), key, proof);
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @inheritdoc IOptimisticLightClient
      */
     function getFraudProofEndtime(uint256 peptideHeight) external view returns (uint256 fraudProofEndTime) {
         uint256 hash = consensusStates[peptideHeight];
         return fraudProofEndtime[hash];
     }
 
+    function _getState(uint256 height) internal view returns (uint256 peptideAppHash) {
+        peptideAppHash = consensusStates[height];
+    }
+
     /**
      * @dev Returns the internal state of the light client at a given peptideHeight.
      */
-    function getInternalState(uint256 peptideHeight)
-        public
+    function _getStateAndEndTime(uint256 peptideHeight)
+        internal
         view
         returns (uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
     {

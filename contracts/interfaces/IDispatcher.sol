@@ -31,7 +31,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
         uint256 height,
         uint256 appHash,
         string calldata connection
-    ) external returns (uint256 fraudProofEndTime, bool ended);
+    ) external;
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp.
@@ -108,7 +108,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function getOptimisticConsensusState(uint256 height, string calldata connection)
         external
         view
-        returns (uint256 appHash, uint256 fraudProofEndTime, bool ended);
+        returns (uint256 appHash);
 
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel);
 }
