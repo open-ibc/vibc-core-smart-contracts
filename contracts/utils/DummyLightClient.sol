@@ -30,7 +30,7 @@ contract DummyLightClient is ILightClient {
 
     constructor() {}
 
-    function updateClient(L1Header calldata, bytes calldata, uint256, uint256)
+    function updateClient(bytes calldata, bytes calldata, uint256, uint256)
         external
         pure
         override

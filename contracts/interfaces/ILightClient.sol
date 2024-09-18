@@ -29,13 +29,13 @@ interface ILightClient {
     /**
      * @dev Adds an appHash to the internal store and returns the fraud proof end time, and a bool flag indicating if
      * the fraud proof window has passed according to the block's time stamp.
-     * @param l1header  RLP "encoded" version of the L1 header that matches with the trusted hash and number
-     * @param proof l2 state proof. It includes the keys, hashes and storage proofs required to verify the app hash
+     * @param l1header  Generic byte array that contains info on the header. It's up to the implementation to define the format of this header, and the trust assumptions on where this l1header comes from. E.g. this can be an abi encoded L1Header struct from the IProofVerifier interface.
+     * @param proof A generic byte array that contains proof data to prove the apphash client update. This can differ depending on the light client type. E.g. this can be an abi.encoded OpL2StateProof struct from the IProofVerifier interface.
      * @param appHash Peptide app hash (state root) to be verified
      * @return fraudProofEndTime The fraud proof end time.
      * @return ended A boolean indicating if the fraud proof window has passed.
      */
-    function updateClient(L1Header calldata l1header, bytes calldata proof, uint256 height, uint256 appHash)
+    function updateClient(bytes calldata l1header, bytes calldata proof, uint256 height, uint256 appHash)
         external
         returns (uint256 fraudProofEndTime, bool ended);
 

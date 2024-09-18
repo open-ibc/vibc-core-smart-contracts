@@ -122,7 +122,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      *      It should be called after verifying the optimistic consensus state on the main chain.
      */
     function updateClientWithOptimisticConsensusState(
-        L1Header calldata l1header,
+        bytes calldata l1header,
         bytes calldata proof,
         uint256 height,
         uint256 appHash,

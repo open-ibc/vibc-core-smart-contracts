@@ -20,37 +20,6 @@ import type {
   TypedContractMethod,
 } from "./common";
 
-export type L1HeaderStruct = {
-  header: BytesLike[];
-  stateRoot: BytesLike;
-  number: BigNumberish;
-};
-
-export type L1HeaderStructOutput = [
-  header: string[],
-  stateRoot: string,
-  number: bigint
-] & { header: string[]; stateRoot: string; number: bigint };
-
-export type OpL2StateProofStruct = {
-  accountProof: BytesLike[];
-  outputRootProof: BytesLike[];
-  l2OutputProposalKey: BytesLike;
-  l2BlockHash: BytesLike;
-};
-
-export type OpL2StateProofStructOutput = [
-  accountProof: string[],
-  outputRootProof: string[],
-  l2OutputProposalKey: string,
-  l2BlockHash: string
-] & {
-  accountProof: string[];
-  outputRootProof: string[];
-  l2OutputProposalKey: string;
-  l2BlockHash: string;
-};
-
 export type OpIcs23ProofPathStruct = { prefix: BytesLike; suffix: BytesLike };
 
 export type OpIcs23ProofPathStructOutput = [prefix: string, suffix: string] & {
@@ -90,7 +59,6 @@ export type Ics23ProofStructOutput = [
 export interface OptimisticLightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "addOpConsensusState"
       | "consensusStates"
       | "fraudProofEndtime"
       | "fraudProofWindowSeconds"
@@ -98,15 +66,12 @@ export interface OptimisticLightClientInterface extends Interface {
       | "getInternalState"
       | "getState"
       | "l1BlockProvider"
+      | "updateClient"
       | "verifier"
       | "verifyMembership"
       | "verifyNonMembership"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "addOpConsensusState",
-    values: [L1HeaderStruct, OpL2StateProofStruct, BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "consensusStates",
     values: [BigNumberish]
@@ -135,6 +100,10 @@ export interface OptimisticLightClientInterface extends Interface {
     functionFragment: "l1BlockProvider",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "updateClient",
+    values: [BytesLike, BytesLike, BigNumberish, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "verifyMembership",
@@ -145,10 +114,6 @@ export interface OptimisticLightClientInterface extends Interface {
     values: [Ics23ProofStruct, BytesLike]
   ): string;
 
-  decodeFunctionResult(
-    functionFragment: "addOpConsensusState",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "consensusStates",
     data: BytesLike
@@ -172,6 +137,10 @@ export interface OptimisticLightClientInterface extends Interface {
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "l1BlockProvider",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateClient",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "verifier", data: BytesLike): Result;
@@ -228,17 +197,6 @@ export interface OptimisticLightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  addOpConsensusState: TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
-    "nonpayable"
-  >;
-
   consensusStates: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
   fraudProofEndtime: TypedContractMethod<
@@ -281,6 +239,17 @@ export interface OptimisticLightClient extends BaseContract {
 
   l1BlockProvider: TypedContractMethod<[], [string], "view">;
 
+  updateClient: TypedContractMethod<
+    [
+      l1headerbytes: BytesLike,
+      proof: BytesLike,
+      height: BigNumberish,
+      appHash: BigNumberish
+    ],
+    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    "nonpayable"
+  >;
+
   verifier: TypedContractMethod<[], [string], "view">;
 
   verifyMembership: TypedContractMethod<
@@ -299,18 +268,6 @@ export interface OptimisticLightClient extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
-  getFunction(
-    nameOrSignature: "addOpConsensusState"
-  ): TypedContractMethod<
-    [
-      l1header: L1HeaderStruct,
-      proof: OpL2StateProofStruct,
-      height: BigNumberish,
-      appHash: BigNumberish
-    ],
-    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
-    "nonpayable"
-  >;
   getFunction(
     nameOrSignature: "consensusStates"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
@@ -352,6 +309,18 @@ export interface OptimisticLightClient extends BaseContract {
   getFunction(
     nameOrSignature: "l1BlockProvider"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "updateClient"
+  ): TypedContractMethod<
+    [
+      l1headerbytes: BytesLike,
+      proof: BytesLike,
+      height: BigNumberish,
+      appHash: BigNumberish
+    ],
+    [[bigint, boolean] & { fraudProofEndTime: bigint; ended: boolean }],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "verifier"
   ): TypedContractMethod<[], [string], "view">;

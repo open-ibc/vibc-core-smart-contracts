@@ -27,7 +27,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
 
     function updateClientWithOptimisticConsensusState(
-        L1Header calldata l1header,
+        bytes calldata l1header,
         bytes calldata proof,
         uint256 height,
         uint256 appHash,

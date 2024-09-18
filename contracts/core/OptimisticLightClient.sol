@@ -48,11 +48,12 @@ contract OptimisticLightClient is ILightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function updateClient(L1Header calldata l1header, bytes calldata proof, uint256 height, uint256 appHash)
+    function updateClient(bytes calldata l1headerbytes, bytes calldata proof, uint256 height, uint256 appHash)
         external
         override
         returns (uint256 fraudProofEndTime, bool ended)
     {
+        L1Header memory l1header = abi.decode(l1headerbytes, (L1Header));
         uint256 hash = consensusStates[height];
         if (hash == 0) {
             // if this is a new apphash we need to verify the provided proof. This method will revert in case
