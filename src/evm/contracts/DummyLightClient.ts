@@ -20,37 +20,6 @@ import type {
   TypedContractMethod,
 } from "./common";
 
-export type L1HeaderStruct = {
-  header: BytesLike[];
-  stateRoot: BytesLike;
-  number: BigNumberish;
-};
-
-export type L1HeaderStructOutput = [
-  header: string[],
-  stateRoot: string,
-  number: bigint
-] & { header: string[]; stateRoot: string; number: bigint };
-
-export type OpL2StateProofStruct = {
-  accountProof: BytesLike[];
-  outputRootProof: BytesLike[];
-  l2OutputProposalKey: BytesLike;
-  l2BlockHash: BytesLike;
-};
-
-export type OpL2StateProofStructOutput = [
-  accountProof: string[],
-  outputRootProof: string[],
-  l2OutputProposalKey: string,
-  l2BlockHash: string
-] & {
-  accountProof: string[];
-  outputRootProof: string[];
-  l2OutputProposalKey: string;
-  l2BlockHash: string;
-};
-
 export type OpIcs23ProofPathStruct = { prefix: BytesLike; suffix: BytesLike };
 
 export type OpIcs23ProofPathStructOutput = [prefix: string, suffix: string] & {
@@ -90,17 +59,13 @@ export type Ics23ProofStructOutput = [
 export interface DummyLightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
-      | "addOpConsensusState"
       | "getFraudProofEndtime"
       | "getState"
+      | "updateClient"
       | "verifyMembership"
       | "verifyNonMembership"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "addOpConsensusState",
-    values: [L1HeaderStruct, OpL2StateProofStruct, BigNumberish, BigNumberish]
-  ): string;
   encodeFunctionData(
     functionFragment: "getFraudProofEndtime",
     values: [BigNumberish]
@@ -108,6 +73,10 @@ export interface DummyLightClientInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateClient",
+    values: [BytesLike, BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "verifyMembership",
@@ -119,14 +88,14 @@ export interface DummyLightClientInterface extends Interface {
   ): string;
 
   decodeFunctionResult(
-    functionFragment: "addOpConsensusState",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "getFraudProofEndtime",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "updateClient",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "verifyMembership",
     data: BytesLike
@@ -180,17 +149,6 @@ export interface DummyLightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  addOpConsensusState: TypedContractMethod<
-    [
-      arg0: L1HeaderStruct,
-      arg1: OpL2StateProofStruct,
-      arg2: BigNumberish,
-      arg3: BigNumberish
-    ],
-    [[bigint, boolean] & { endTime: bigint; ended: boolean }],
-    "view"
-  >;
-
   getFraudProofEndtime: TypedContractMethod<
     [arg0: BigNumberish],
     [bigint],
@@ -206,6 +164,12 @@ export interface DummyLightClient extends BaseContract {
         ended: boolean;
       }
     ],
+    "view"
+  >;
+
+  updateClient: TypedContractMethod<
+    [arg0: BytesLike, arg1: BytesLike, arg2: BigNumberish, arg3: BigNumberish],
+    [[bigint, boolean] & { endTime: bigint; ended: boolean }],
     "view"
   >;
 
@@ -226,18 +190,6 @@ export interface DummyLightClient extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "addOpConsensusState"
-  ): TypedContractMethod<
-    [
-      arg0: L1HeaderStruct,
-      arg1: OpL2StateProofStruct,
-      arg2: BigNumberish,
-      arg3: BigNumberish
-    ],
-    [[bigint, boolean] & { endTime: bigint; ended: boolean }],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "getFraudProofEndtime"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
   getFunction(
@@ -251,6 +203,13 @@ export interface DummyLightClient extends BaseContract {
         ended: boolean;
       }
     ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "updateClient"
+  ): TypedContractMethod<
+    [arg0: BytesLike, arg1: BytesLike, arg2: BigNumberish, arg3: BigNumberish],
+    [[bigint, boolean] & { endTime: bigint; ended: boolean }],
     "view"
   >;
   getFunction(

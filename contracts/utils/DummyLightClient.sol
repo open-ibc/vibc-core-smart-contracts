@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {ILightClient, L1Header, Ics23Proof} from "../interfaces/ILightClient.sol";
+import {ILightClient, Ics23Proof} from "../interfaces/ILightClient.sol";
 
 /**
  * @title DummyLightClient
@@ -30,7 +30,7 @@ contract DummyLightClient is ILightClient {
 
     constructor() {}
 
-    function updateClient(L1Header calldata, bytes calldata, uint256, uint256)
+    function updateClient(bytes calldata, uint256, uint256)
         external
         pure
         override

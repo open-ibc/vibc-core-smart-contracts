@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
 import {SecureMerkleTrie} from "optimism/libraries/trie/SecureMerkleTrie.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
-import {L1Header, OpL2StateProof, IProofVerifier} from "../interfaces/IProofVerifier.sol";
+import {L1Header, OpL2StateProof} from "../interfaces/IProofVerifier.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
 
 /**
@@ -52,7 +52,7 @@ contract OptimisticProofVerifier is AppStateVerifier, IProofVerifier {
      *
      * A. Prove the given L1 state root.
      * B. Prove the prescence of an output proposal in the L2OutputOracle contract.
-     * C. Derive the output proposal from the apphash.
+     * C. Derive the peptide apphash from the output propsal.
      *
      * A more detailed explanation of the process goes as follows. All steps must be valid in order for the
      * app hash to be accepted. Otherwise, the function will revert.
@@ -70,13 +70,13 @@ contract OptimisticProofVerifier is AppStateVerifier, IProofVerifier {
      * 4. With the state account root and using the provided storage proof and output proposal key, get the
      *    vlue stored in the MerkleTrie leaf. This is the output proposal root.
      *
-     * 5. With the provided apphash and L2 Block hash, try to compute a new output root and match it against
+     * 5. With the provided peptide apphash and L2 Block hash, try to compute a new output root and match it against
      *    the one we just proved to be valid.
      */
     function verifyStateUpdate(
         L1Header calldata l1header,
         OpL2StateProof calldata proof,
-        bytes32 appHash,
+        bytes32 peptideAppHash,
         bytes32 trustedL1BlockHash,
         uint64 trustedL1BlockNumber
     ) external view {
@@ -124,7 +124,7 @@ contract OptimisticProofVerifier is AppStateVerifier, IProofVerifier {
             keccak256(
                 abi.encodePacked(
                     bytes32(0), // version
-                    appHash,
+                    peptideAppHash,
                     bytes32(0), // message passer storage root.
                     proof.l2BlockHash
                 )

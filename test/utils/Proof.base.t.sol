@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "../../contracts/libs/Ibc.sol";
 import "../../contracts/core/OptimisticProofVerifier.sol";
+import "../../contracts/interfaces/IProofVerifier.sol";
 import {L1Block} from "optimism/L2/L1Block.sol";
 
 contract ProofBase is Test {
