@@ -160,7 +160,7 @@ export interface IDispatcherInterface extends Interface {
       | "channelOpenTry"
       | "feeVault"
       | "getChannel"
-      | "getOptimisticConsensusState"
+      | "getState"
       | "portPrefix"
       | "recvPacket"
       | "removeConnection"
@@ -168,7 +168,7 @@ export interface IDispatcherInterface extends Interface {
       | "setClientForConnection"
       | "setPortPrefix"
       | "timeout"
-      | "updateClientWithOptimisticConsensusState"
+      | "updateClient"
       | "writeTimeoutPacket"
   ): FunctionFragment;
 
@@ -251,7 +251,7 @@ export interface IDispatcherInterface extends Interface {
     values: [AddressLike, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "getOptimisticConsensusState",
+    functionFragment: "getState",
     values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
@@ -283,7 +283,7 @@ export interface IDispatcherInterface extends Interface {
     values: [IbcPacketStruct, Ics23ProofStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "updateClientWithOptimisticConsensusState",
+    functionFragment: "updateClient",
     values: [BytesLike, BigNumberish, BigNumberish, string]
   ): string;
   encodeFunctionData(
@@ -321,10 +321,7 @@ export interface IDispatcherInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "feeVault", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getChannel", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "getOptimisticConsensusState",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "portPrefix", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "recvPacket", data: BytesLike): Result;
   decodeFunctionResult(
@@ -342,7 +339,7 @@ export interface IDispatcherInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "timeout", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "updateClientWithOptimisticConsensusState",
+    functionFragment: "updateClient",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -839,7 +836,7 @@ export interface IDispatcher extends BaseContract {
     "view"
   >;
 
-  getOptimisticConsensusState: TypedContractMethod<
+  getState: TypedContractMethod<
     [height: BigNumberish, connection: string],
     [bigint],
     "view"
@@ -883,7 +880,7 @@ export interface IDispatcher extends BaseContract {
     "nonpayable"
   >;
 
-  updateClientWithOptimisticConsensusState: TypedContractMethod<
+  updateClient: TypedContractMethod<
     [
       proof: BytesLike,
       height: BigNumberish,
@@ -987,7 +984,7 @@ export interface IDispatcher extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "getOptimisticConsensusState"
+    nameOrSignature: "getState"
   ): TypedContractMethod<
     [height: BigNumberish, connection: string],
     [bigint],
@@ -1031,7 +1028,7 @@ export interface IDispatcher extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "updateClientWithOptimisticConsensusState"
+    nameOrSignature: "updateClient"
   ): TypedContractMethod<
     [
       proof: BytesLike,

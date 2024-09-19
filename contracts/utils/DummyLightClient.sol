@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {ILightClient, Ics23Proof} from "../interfaces/ILightClient.sol";
+import {ILightClient, Ics23Proof, LightClientType} from "../interfaces/ILightClient.sol";
 
 /**
  * @title DummyLightClient
@@ -25,6 +25,10 @@ import {ILightClient, Ics23Proof} from "../interfaces/ILightClient.sol";
  *      The logic for checking if the proof length is greater than zero is naive.
  */
 contract DummyLightClient is ILightClient {
+    uint8 private _LightClientType = uint8(LIGHT_CLIENT_TYPE); // Also redundantly stored as a private mutable type in
+    // cheap on-chain use case it needs to be accessed in any proofs
+    LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SimTestLightClient; // Stored as a constant for
+
     error InvalidDummyMembershipProof();
     error InvalidDummyNonMembershipProof();
 

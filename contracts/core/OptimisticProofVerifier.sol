@@ -22,6 +22,7 @@ import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
 import {L1Header, OpL2StateProof} from "../interfaces/IProofVerifier.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
+import {IProofVerifier} from "../interfaces/IProofVerifier.sol";
 
 /**
  * @title OptimisticProofVerifier
