@@ -110,7 +110,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         portPrefixLen = uint32(bytes(_portPrefix).length);
     }
 
-    // updateClientWithOptimisticConsensusState updates the client
+    // updateClient updates the client
     // with the optimistic consensus state. The optimistic consensus
     // is accepted and will be open for verify in the fraud proof
     // window.
@@ -121,12 +121,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      * @dev This function updates the client with optimistic consensus state.
      *      It should be called after verifying the optimistic consensus state on the main chain.
      */
-    function updateClientWithOptimisticConsensusState(
-        bytes calldata proof,
-        uint256 height,
-        uint256 appHash,
-        string calldata connection
-    ) external {
+    function updateClient(bytes calldata proof, uint256 height, uint256 appHash, string calldata connection) external {
         return _getLightClientFromConnection(connection).updateClient(proof, height, appHash);
     }
 
@@ -685,11 +680,7 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
      * @param connection The connection the client corresponds to; used to find the light client.
      * @return appHash The apphash at the given height
      */
-    function getOptimisticConsensusState(uint256 height, string calldata connection)
-        external
-        view
-        returns (uint256 appHash)
-    {
+    function getState(uint256 height, string calldata connection) external view returns (uint256 appHash) {
         return _getLightClientFromConnection(connection).getState(height);
     }
 

@@ -59,6 +59,7 @@ export type Ics23ProofStructOutput = [
 export interface OptimisticLightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "LIGHT_CLIENT_TYPE"
       | "consensusStates"
       | "fraudProofEndtime"
       | "fraudProofWindowSeconds"
@@ -72,6 +73,10 @@ export interface OptimisticLightClientInterface extends Interface {
       | "verifyNonMembership"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "LIGHT_CLIENT_TYPE",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "consensusStates",
     values: [BigNumberish]
@@ -114,6 +119,10 @@ export interface OptimisticLightClientInterface extends Interface {
     values: [Ics23ProofStruct, BytesLike]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "LIGHT_CLIENT_TYPE",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "consensusStates",
     data: BytesLike
@@ -197,6 +206,8 @@ export interface OptimisticLightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  LIGHT_CLIENT_TYPE: TypedContractMethod<[], [bigint], "view">;
+
   consensusStates: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
   fraudProofEndtime: TypedContractMethod<
@@ -208,22 +219,22 @@ export interface OptimisticLightClient extends BaseContract {
   fraudProofWindowSeconds: TypedContractMethod<[], [bigint], "view">;
 
   getFraudProofEndtime: TypedContractMethod<
-    [peptideHeight: BigNumberish],
+    [polymerHeight: BigNumberish],
     [bigint],
     "view"
   >;
 
   getState: TypedContractMethod<
-    [peptideHeight: BigNumberish],
+    [polymerHeight: BigNumberish],
     [bigint],
     "view"
   >;
 
   getStateAndEndTime: TypedContractMethod<
-    [peptideHeight: BigNumberish],
+    [polymerHeight: BigNumberish],
     [
       [bigint, bigint, boolean] & {
-        peptideAppHash: bigint;
+        polymerAppHash: bigint;
         fraudProofEndTime: bigint;
         ended: boolean;
       }
@@ -236,8 +247,8 @@ export interface OptimisticLightClient extends BaseContract {
   updateClient: TypedContractMethod<
     [
       proof: BytesLike,
-      peptideHeight: BigNumberish,
-      peptideAppHash: BigNumberish
+      polymerHeight: BigNumberish,
+      polymerAppHash: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -262,6 +273,9 @@ export interface OptimisticLightClient extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "LIGHT_CLIENT_TYPE"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "consensusStates"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
   getFunction(
@@ -272,17 +286,17 @@ export interface OptimisticLightClient extends BaseContract {
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getFraudProofEndtime"
-  ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;
+  ): TypedContractMethod<[polymerHeight: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
-  ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;
+  ): TypedContractMethod<[polymerHeight: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "getStateAndEndTime"
   ): TypedContractMethod<
-    [peptideHeight: BigNumberish],
+    [polymerHeight: BigNumberish],
     [
       [bigint, bigint, boolean] & {
-        peptideAppHash: bigint;
+        polymerAppHash: bigint;
         fraudProofEndTime: bigint;
         ended: boolean;
       }
@@ -297,8 +311,8 @@ export interface OptimisticLightClient extends BaseContract {
   ): TypedContractMethod<
     [
       proof: BytesLike,
-      peptideHeight: BigNumberish,
-      peptideAppHash: BigNumberish
+      polymerHeight: BigNumberish,
+      polymerAppHash: BigNumberish
     ],
     [void],
     "nonpayable"

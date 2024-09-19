@@ -688,7 +688,7 @@ const _abi = [
   },
   {
     type: "function",
-    name: "getOptimisticConsensusState",
+    name: "getState",
     inputs: [
       {
         name: "height",
@@ -1062,7 +1062,7 @@ const _abi = [
   },
   {
     type: "function",
-    name: "updateClientWithOptimisticConsensusState",
+    name: "updateClient",
     inputs: [
       {
         name: "proof",

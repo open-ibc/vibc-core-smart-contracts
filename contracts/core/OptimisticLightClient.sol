@@ -22,6 +22,7 @@ import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interface
 import {ILightClient} from "../interfaces/ILightClient.sol"; // we need this import to generate docs
 import {L1Block} from "optimism/L2/L1Block.sol";
 import {IOptimisticLightClient} from "../interfaces/IOptimisticLightClient.sol";
+import {LightClientType} from "../interfaces/ILightClient.sol";
 
 /**
  * @title OptimisticLightClient
@@ -29,10 +30,16 @@ import {IOptimisticLightClient} from "../interfaces/IOptimisticLightClient.sol";
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
 contract OptimisticLightClient is IOptimisticLightClient {
-    // consensusStates maps from the peptideHeight to the peptideAppHash.
+    LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.OptimisticLightClient; // Stored as a constant
+        // for
+        // cheap on-chain use
+    uint8 private _LightClientType = uint8(LIGHT_CLIENT_TYPE); // Also redundantly stored as a private mutable type in
+        // case it needs to be accessed in any proofs
+
+    // consensusStates maps from the polymerHeight to the polymerAppHash.
     mapping(uint256 => uint256) public consensusStates;
 
-    // fraudProofEndtime maps from the peptideAppHash to the fraud proof end time.
+    // fraudProofEndtime maps from the polymerAppHash to the fraud proof end time.
     mapping(uint256 => uint256) public fraudProofEndtime;
     uint256 public fraudProofWindowSeconds;
     IProofVerifier public verifier;
@@ -50,20 +57,20 @@ contract OptimisticLightClient is IOptimisticLightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external override {
+    function updateClient(bytes calldata proof, uint256 polymerHeight, uint256 polymerAppHash) external override {
         (L1Header memory l1header, OpL2StateProof memory stateProof) = abi.decode(proof, (L1Header, OpL2StateProof));
-        uint256 hash = consensusStates[peptideHeight];
+        uint256 hash = consensusStates[polymerHeight];
         if (hash == 0) {
-            // if this is a new peptideAppHash we need to verify the provided proof. This method will revert in case
+            // if this is a new polymerAppHash we need to verify the provided proof. This method will revert in case
             // of invalid proof.
             verifier.verifyStateUpdate(
-                l1header, stateProof, bytes32(peptideAppHash), l1BlockProvider.hash(), l1BlockProvider.number()
+                l1header, stateProof, bytes32(polymerAppHash), l1BlockProvider.hash(), l1BlockProvider.number()
             );
 
-            // a new peptideAppHash
-            consensusStates[peptideHeight] = peptideAppHash;
-            fraudProofEndtime[peptideAppHash] = block.timestamp + fraudProofWindowSeconds;
-        } else if (hash != peptideAppHash) {
+            // a new polymerAppHash
+            consensusStates[polymerHeight] = polymerAppHash;
+            fraudProofEndtime[polymerAppHash] = block.timestamp + fraudProofWindowSeconds;
+        } else if (hash != polymerAppHash) {
             revert CannotUpdatePendingOptimisticConsensusState();
         }
     }
@@ -71,19 +78,19 @@ contract OptimisticLightClient is IOptimisticLightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function getState(uint256 peptideHeight) external view returns (uint256 peptideAppHash) {
-        return _getState(peptideHeight);
+    function getState(uint256 polymerHeight) external view returns (uint256 polymerAppHash) {
+        return _getState(polymerHeight);
     }
 
     /**
      * @inheritdoc IOptimisticLightClient
      */
-    function getStateAndEndTime(uint256 peptideHeight)
+    function getStateAndEndTime(uint256 polymerHeight)
         external
         view
-        returns (uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+        returns (uint256 polymerAppHash, uint256 fraudProofEndTime, bool ended)
     {
-        return _getStateAndEndTime(peptideHeight);
+        return _getStateAndEndTime(polymerHeight);
     }
 
     /**
@@ -96,41 +103,41 @@ contract OptimisticLightClient is IOptimisticLightClient {
         // a proof generated at height H can only be verified against state root (app hash) from block H - 1.
         // this means the relayer must have updated the contract with the app hash from the previous block and
         // that is why we use proof.height - 1 here.
-        (uint256 peptideAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
+        (uint256 polymerAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
         if (!ended) revert AppHashHasNotPassedFraudProofWindow();
-        verifier.verifyMembership(bytes32(peptideAppHash), key, expectedValue, proof);
+        verifier.verifyMembership(bytes32(polymerAppHash), key, expectedValue, proof);
     }
 
     /**
      * @inheritdoc ILightClient
      */
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
-        (uint256 peptideAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
+        (uint256 polymerAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);
         if (!ended) revert AppHashHasNotPassedFraudProofWindow();
-        verifier.verifyNonMembership(bytes32(peptideAppHash), key, proof);
+        verifier.verifyNonMembership(bytes32(polymerAppHash), key, proof);
     }
 
     /**
      * @inheritdoc IOptimisticLightClient
      */
-    function getFraudProofEndtime(uint256 peptideHeight) external view returns (uint256 fraudProofEndTime) {
-        uint256 hash = consensusStates[peptideHeight];
+    function getFraudProofEndtime(uint256 polymerHeight) external view returns (uint256 fraudProofEndTime) {
+        uint256 hash = consensusStates[polymerHeight];
         return fraudProofEndtime[hash];
     }
 
-    function _getState(uint256 height) internal view returns (uint256 peptideAppHash) {
-        peptideAppHash = consensusStates[height];
+    function _getState(uint256 height) internal view returns (uint256 polymerAppHash) {
+        polymerAppHash = consensusStates[height];
     }
 
     /**
-     * @dev Returns the internal state of the light client at a given peptideHeight.
+     * @dev Returns the internal state of the light client at a given polymerHeight.
      */
-    function _getStateAndEndTime(uint256 peptideHeight)
+    function _getStateAndEndTime(uint256 polymerHeight)
         internal
         view
-        returns (uint256 peptideAppHash, uint256 fraudProofEndTime, bool ended)
+        returns (uint256 polymerAppHash, uint256 fraudProofEndTime, bool ended)
     {
-        uint256 hash = consensusStates[peptideHeight];
+        uint256 hash = consensusStates[polymerHeight];
         return (hash, fraudProofEndtime[hash], hash != 0 && block.timestamp >= fraudProofEndtime[hash]);
     }
 }

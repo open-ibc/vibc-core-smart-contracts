@@ -59,12 +59,17 @@ export type Ics23ProofStructOutput = [
 export interface ILightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "LIGHT_CLIENT_TYPE"
       | "getState"
       | "updateClient"
       | "verifyMembership"
       | "verifyNonMembership"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "LIGHT_CLIENT_TYPE",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
@@ -82,6 +87,10 @@ export interface ILightClientInterface extends Interface {
     values: [Ics23ProofStruct, BytesLike]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "LIGHT_CLIENT_TYPE",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateClient",
@@ -140,6 +149,8 @@ export interface ILightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  LIGHT_CLIENT_TYPE: TypedContractMethod<[], [bigint], "view">;
+
   getState: TypedContractMethod<[height: BigNumberish], [bigint], "view">;
 
   updateClient: TypedContractMethod<
@@ -164,6 +175,9 @@ export interface ILightClient extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "LIGHT_CLIENT_TYPE"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
   ): TypedContractMethod<[height: BigNumberish], [bigint], "view">;

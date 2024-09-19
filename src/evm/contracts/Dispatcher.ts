@@ -161,7 +161,7 @@ export interface DispatcherInterface extends Interface {
       | "channelOpenTry"
       | "feeVault"
       | "getChannel"
-      | "getOptimisticConsensusState"
+      | "getState"
       | "initialize"
       | "owner"
       | "pendingOwner"
@@ -176,7 +176,7 @@ export interface DispatcherInterface extends Interface {
       | "setPortPrefix"
       | "timeout"
       | "transferOwnership"
-      | "updateClientWithOptimisticConsensusState"
+      | "updateClient"
       | "upgradeTo"
       | "upgradeToAndCall"
       | "writeTimeoutPacket"
@@ -271,7 +271,7 @@ export interface DispatcherInterface extends Interface {
     values: [AddressLike, BytesLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "getOptimisticConsensusState",
+    functionFragment: "getState",
     values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
@@ -328,7 +328,7 @@ export interface DispatcherInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "updateClientWithOptimisticConsensusState",
+    functionFragment: "updateClient",
     values: [BytesLike, BigNumberish, BigNumberish, string]
   ): string;
   encodeFunctionData(
@@ -378,10 +378,7 @@ export interface DispatcherInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "feeVault", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getChannel", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "getOptimisticConsensusState",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
@@ -421,7 +418,7 @@ export interface DispatcherInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "updateClientWithOptimisticConsensusState",
+    functionFragment: "updateClient",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
@@ -1000,7 +997,7 @@ export interface Dispatcher extends BaseContract {
     "view"
   >;
 
-  getOptimisticConsensusState: TypedContractMethod<
+  getState: TypedContractMethod<
     [height: BigNumberish, connection: string],
     [bigint],
     "view"
@@ -1066,7 +1063,7 @@ export interface Dispatcher extends BaseContract {
     "nonpayable"
   >;
 
-  updateClientWithOptimisticConsensusState: TypedContractMethod<
+  updateClient: TypedContractMethod<
     [
       proof: BytesLike,
       height: BigNumberish,
@@ -1185,7 +1182,7 @@ export interface Dispatcher extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "getOptimisticConsensusState"
+    nameOrSignature: "getState"
   ): TypedContractMethod<
     [height: BigNumberish, connection: string],
     [bigint],
@@ -1254,7 +1251,7 @@ export interface Dispatcher extends BaseContract {
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "updateClientWithOptimisticConsensusState"
+    nameOrSignature: "updateClient"
   ): TypedContractMethod<
     [
       proof: BytesLike,

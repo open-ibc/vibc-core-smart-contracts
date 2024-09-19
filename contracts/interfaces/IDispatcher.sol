@@ -26,12 +26,7 @@ import {IFeeVault} from "./IFeeVault.sol";
 interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function setPortPrefix(string calldata _portPrefix) external;
 
-    function updateClientWithOptimisticConsensusState(
-        bytes calldata proof,
-        uint256 height,
-        uint256 appHash,
-        string calldata connection
-    ) external;
+    function updateClient(bytes calldata proof, uint256 height, uint256 appHash, string calldata connection) external;
 
     /**
      * This function is called by a 'relayer' on behalf of a dApp.
@@ -105,10 +100,7 @@ interface IDispatcher is IbcDispatcher, IbcEventsEmitter {
     function recvPacket(IbcPacket calldata packet, Ics23Proof calldata proof) external;
     function feeVault() external returns (IFeeVault feeVault);
 
-    function getOptimisticConsensusState(uint256 height, string calldata connection)
-        external
-        view
-        returns (uint256 appHash);
+    function getState(uint256 height, string calldata connection) external view returns (uint256 appHash);
 
     function getChannel(address portAddress, bytes32 channelId) external view returns (Channel memory channel);
 }
