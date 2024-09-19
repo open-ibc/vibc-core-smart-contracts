@@ -59,12 +59,17 @@ export type Ics23ProofStructOutput = [
 export interface DummyLightClientInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "getLightClientType"
       | "getState"
       | "updateClient"
       | "verifyMembership"
       | "verifyNonMembership"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "getLightClientType",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
@@ -82,6 +87,10 @@ export interface DummyLightClientInterface extends Interface {
     values: [Ics23ProofStruct, BytesLike]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "getLightClientType",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "updateClient",
@@ -140,6 +149,8 @@ export interface DummyLightClient extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  getLightClientType: TypedContractMethod<[], [bigint], "view">;
+
   getState: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
 
   updateClient: TypedContractMethod<
@@ -164,6 +175,9 @@ export interface DummyLightClient extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "getLightClientType"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;

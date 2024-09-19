@@ -8,6 +8,19 @@ import type { ILightClient, ILightClientInterface } from "../ILightClient";
 const _abi = [
   {
     type: "function",
+    name: "getLightClientType",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "uint8",
+        internalType: "enum LightClientType",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getState",
     inputs: [
       {

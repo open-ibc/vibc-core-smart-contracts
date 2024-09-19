@@ -16,7 +16,7 @@
  */
 pragma solidity ^0.8.0;
 
-import {ILightClient, Ics23Proof} from "../interfaces/ILightClient.sol";
+import {ILightClient, Ics23Proof, LightClientType} from "../interfaces/ILightClient.sol";
 
 /**
  * @title DummyLightClient
@@ -42,5 +42,9 @@ contract DummyLightClient is ILightClient {
 
     function verifyNonMembership(Ics23Proof calldata proof, bytes memory) external pure override {
         if (proof.height == 0) revert InvalidDummyNonMembershipProof();
+    }
+
+    function getLightClientType() external pure returns (LightClientType) {
+        return LightClientType.DummyLightClient;
     }
 }

@@ -63,6 +63,7 @@ export interface OptimisticLightClientInterface extends Interface {
       | "fraudProofEndtime"
       | "fraudProofWindowSeconds"
       | "getFraudProofEndtime"
+      | "getLightClientType"
       | "getState"
       | "getStateAndEndTime"
       | "l1BlockProvider"
@@ -87,6 +88,10 @@ export interface OptimisticLightClientInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getFraudProofEndtime",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getLightClientType",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getState",
@@ -128,6 +133,10 @@ export interface OptimisticLightClientInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getFraudProofEndtime",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getLightClientType",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
@@ -213,6 +222,8 @@ export interface OptimisticLightClient extends BaseContract {
     "view"
   >;
 
+  getLightClientType: TypedContractMethod<[], [bigint], "view">;
+
   getState: TypedContractMethod<
     [peptideHeight: BigNumberish],
     [bigint],
@@ -273,6 +284,9 @@ export interface OptimisticLightClient extends BaseContract {
   getFunction(
     nameOrSignature: "getFraudProofEndtime"
   ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getLightClientType"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getState"
   ): TypedContractMethod<[peptideHeight: BigNumberish], [bigint], "view">;

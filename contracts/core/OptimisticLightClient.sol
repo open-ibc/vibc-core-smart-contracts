@@ -22,6 +22,7 @@ import {L1Header, IProofVerifier, OpL2StateProof, Ics23Proof} from "../interface
 import {ILightClient} from "../interfaces/ILightClient.sol"; // we need this import to generate docs
 import {L1Block} from "optimism/L2/L1Block.sol";
 import {IOptimisticLightClient} from "../interfaces/IOptimisticLightClient.sol";
+import {LightClientType} from "../interfaces/ILightClient.sol";
 
 /**
  * @title OptimisticLightClient
@@ -116,6 +117,13 @@ contract OptimisticLightClient is IOptimisticLightClient {
     function getFraudProofEndtime(uint256 peptideHeight) external view returns (uint256 fraudProofEndTime) {
         uint256 hash = consensusStates[peptideHeight];
         return fraudProofEndtime[hash];
+    }
+
+    /**
+     * @inheritdoc ILightClient
+     */
+    function getLightClientType() external pure returns (LightClientType) {
+        return LightClientType.OptimisticLightClient;
     }
 
     function _getState(uint256 height) internal view returns (uint256 peptideAppHash) {

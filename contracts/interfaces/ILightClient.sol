@@ -18,6 +18,13 @@ pragma solidity ^0.8.0;
 
 import {Ics23Proof} from "./IProofVerifier.sol";
 
+enum LightClientType {
+    DummyLightClient, // Note: not deployed on any mainnets
+    OptimisticLightClient, // Our native opstack light client
+    SequencerLightClient // Our native sequencer light client
+
+}
+
 /**
  * @title ILightClient
  * @author Polymer Labs
@@ -53,4 +60,10 @@ interface ILightClient {
      * Returns the apphash at a given height
      */
     function getState(uint256 height) external view returns (uint256);
+
+    /*
+    * Returns the type of the light client, useful for relayers to know which light client implementation is at which
+    address. 
+    */
+    function getLightClientType() external view returns (LightClientType);
 }
