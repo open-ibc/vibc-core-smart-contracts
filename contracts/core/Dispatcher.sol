@@ -612,11 +612,15 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         }
 
         AckPacket memory ack;
+        bool skipAck;
         // Not timeout yet, then do normal handling
         (bool success, bytes memory data) =
             _callIfContract(receiver, abi.encodeWithSelector(IbcPacketReceiver.onRecvPacket.selector, packet));
         if (success) {
-            (ack) = abi.decode(data, (AckPacket));
+            (ack, skipAck) = abi.decode(data, (AckPacket, bool));
+            if (skipAck) {
+                return;
+            }
         } else {
             ack = AckPacket(false, data);
         }

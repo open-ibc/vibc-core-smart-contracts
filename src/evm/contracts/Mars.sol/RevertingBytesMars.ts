@@ -404,7 +404,12 @@ export interface RevertingBytesMars extends BaseContract {
 
   onRecvPacket: TypedContractMethod<
     [arg0: IbcPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ack: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "view"
   >;
 
@@ -586,7 +591,12 @@ export interface RevertingBytesMars extends BaseContract {
     nameOrSignature: "onRecvPacket"
   ): TypedContractMethod<
     [arg0: IbcPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ack: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "view"
   >;
   getFunction(

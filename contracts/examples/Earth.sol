@@ -101,6 +101,7 @@ contract Earth is IbcUniversalPacketReceiverBase {
      * @param channelId The channel ID.
      * @param packet The universal packet.
      * @return ackPacket The acknowledgement packet.
+     * @return skipAck Whether to skip the writeAck event.
      * @dev It's recommended to always validate the authorized channel of any packet or channel using the
      * onlyAuthorizedChannel modifier.
      */
@@ -108,10 +109,10 @@ contract Earth is IbcUniversalPacketReceiverBase {
         external
         onlyUCH
         onlyAuthorizedChannel(channelId)
-        returns (AckPacket memory ackPacket)
+        returns (AckPacket memory ackPacket, bool skipAck)
     {
         recvedPackets.push(UcPacketWithChannel(channelId, packet));
-        return this.generateAckPacket(channelId, IbcUtils.toAddress(packet.srcPortAddr), packet.appData);
+        return (this.generateAckPacket(channelId, IbcUtils.toAddress(packet.srcPortAddr), packet.appData), false);
     }
 
     /**

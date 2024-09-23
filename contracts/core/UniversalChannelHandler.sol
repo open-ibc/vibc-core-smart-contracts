@@ -136,7 +136,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
         external
         override
         onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
+        returns (AckPacket memory ackPacket, bool skipAck)
     {
         UniversalPacket memory ucPacket = IbcUtils.fromUniversalPacketBytes(packet.data);
         // no other middleware stack registered for this packet. Deliver packet to dApp directly.

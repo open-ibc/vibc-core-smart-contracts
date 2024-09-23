@@ -326,7 +326,12 @@ export interface IUniversalChannelHandler extends BaseContract {
 
   onRecvPacket: TypedContractMethod<
     [packet: IbcPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ackPacket: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "nonpayable"
   >;
 
@@ -450,7 +455,12 @@ export interface IUniversalChannelHandler extends BaseContract {
     nameOrSignature: "onRecvPacket"
   ): TypedContractMethod<
     [packet: IbcPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ackPacket: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "nonpayable"
   >;
   getFunction(

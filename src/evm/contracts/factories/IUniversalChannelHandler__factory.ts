@@ -364,6 +364,11 @@ const _abi = [
           },
         ],
       },
+      {
+        name: "skipAck",
+        type: "bool",
+        internalType: "bool",
+      },
     ],
     stateMutability: "nonpayable",
   },
