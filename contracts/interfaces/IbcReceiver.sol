@@ -81,9 +81,10 @@ interface IbcPacketReceiver {
      * @notice Callback for receiving a packet; triggered when a counterparty sends an an IBC packet
      * @param packet The IBC packet received
      * @return ackPacket The acknowledgement packet generated in response
+     * @return skipAck Whether to skip sending an acknowledgement packet
      * @dev Make sure to validate packet's source and destiation channels and ports.
      */
-    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket);
+    function onRecvPacket(IbcPacket calldata packet) external returns (AckPacket memory ackPacket, bool skipAck);
 
     /**
      * @notice Callback for acknowledging a packet; triggered on reciept of an IBC packet by the counterparty

@@ -98,7 +98,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         uint256 mwIndex,
         // bytes calldata appData,
         address[] calldata mwAddrs
-    ) external onlyIbcMw returns (AckPacket memory ackPacket) {
+    ) external onlyIbcMw returns (AckPacket memory ackPacket, bool skipAck) {
         // extra MW custom logic here to process packet, eg. emit MW events, mutate state, etc.
         // implementer can emit custom data fields suitable for their use cases.
         // Here we use MW_ID as the custom MW data field.
@@ -180,7 +180,7 @@ contract GeneralMiddleware is IbcMwUser, IbcMiddleware, IbcMwEventsEmitter, IbcM
         external
         override
         onlyIbcMw
-        returns (AckPacket memory ackPacket)
+        returns (AckPacket memory ackPacket, bool skipAck)
     {}
 
     function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)

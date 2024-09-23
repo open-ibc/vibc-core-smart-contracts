@@ -301,7 +301,12 @@ export interface Earth extends BaseContract {
 
   onRecvUniversalPacket: TypedContractMethod<
     [channelId: BytesLike, packet: UniversalPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ackPacket: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "nonpayable"
   >;
 
@@ -413,7 +418,12 @@ export interface Earth extends BaseContract {
     nameOrSignature: "onRecvUniversalPacket"
   ): TypedContractMethod<
     [channelId: BytesLike, packet: UniversalPacketStruct],
-    [AckPacketStructOutput],
+    [
+      [AckPacketStructOutput, boolean] & {
+        ackPacket: AckPacketStructOutput;
+        skipAck: boolean;
+      }
+    ],
     "nonpayable"
   >;
   getFunction(

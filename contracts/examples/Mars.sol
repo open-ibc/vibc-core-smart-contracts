@@ -76,18 +76,19 @@ contract Mars is IbcReceiverBase, IbcReceiver, FeeSender {
      * @notice Callback for receiving a packet; triggered when a counterparty sends an an IBC packet
      * @param packet The IBC packet received
      * @return ackPacket The acknowledgement packet generated in response
+     * @return skipAck Whether to skip the writeAck event.
      * @dev Make sure to validate packet's source and destiation channels and ports.
      */
     function onRecvPacket(IbcPacket memory packet)
         external
         virtual
         onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
+        returns (AckPacket memory ackPacket, bool skipAck)
     {
         recvedPackets.push(packet);
 
         // solhint-disable-next-line quotes
-        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
+        return (AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }')), false);
     }
 
     /**
@@ -243,10 +244,17 @@ contract RevertingStringMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
     // solhint-disable-next-line
-    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
+    function onRecvPacket(IbcPacket memory)
+        external
+        view
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ack, bool skipAck)
+    {
         // solhint-disable-next-line
         require(false, "on recv packet is reverting");
         ack = AckPacket(false, "");
+        skipAck = false;
     }
 
     // solhint-disable-next-line
@@ -280,8 +288,15 @@ contract RevertingBytesMars is Mars {
 
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
+    function onRecvPacket(IbcPacket memory)
+        external
+        view
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ack, bool skipAck)
+    {
         ack = AckPacket(false, "");
+        skipAck = false;
         revert OnRecvPacketRevert();
     }
 
@@ -294,18 +309,33 @@ contract RevertingBytesMars is Mars {
 contract RevertingEmptyMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
+    function onRecvPacket(IbcPacket memory)
+        external
+        view
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ack, bool skipAck)
+    {
         // solhint-disable-next-line
         require(false);
+        // Set values to avoid compiler warning
         ack = AckPacket(false, "");
+        skipAck = false;
     }
 }
 
 contract PanickingMars is Mars {
     constructor(IbcDispatcher _dispatcher) Mars(_dispatcher) {}
 
-    function onRecvPacket(IbcPacket memory) external view override onlyIbcDispatcher returns (AckPacket memory ack) {
+    function onRecvPacket(IbcPacket memory)
+        external
+        view
+        override
+        onlyIbcDispatcher
+        returns (AckPacket memory ack, bool skipAck)
+    {
         assert(false);
         ack = AckPacket(false, "");
+        skipAck = false;
     }
 }

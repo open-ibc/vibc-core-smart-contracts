@@ -30,13 +30,13 @@ contract GasUsingMars is Mars {
         virtual
         override
         onlyIbcDispatcher
-        returns (AckPacket memory ackPacket)
+        returns (AckPacket memory ackPacket, bool skipAck)
     {
         recvedPackets.push(packet);
 
         _useGas();
         // solhint-disable-next-line quotes
-        return AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }'));
+        return (AckPacket(true, abi.encodePacked('{ "account": "account", "reply": "got the message" }')), false);
     }
 
     function _useGas() internal view {

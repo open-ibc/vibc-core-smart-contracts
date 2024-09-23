@@ -73,7 +73,7 @@ interface IbcMwPacketReceiver {
         // Each mw in the stack must increment mwIndex by 1 before calling the next MW.
         uint256 mwIndex,
         address[] calldata mwAddrs
-    ) external returns (AckPacket memory ackPacket);
+    ) external returns (AckPacket memory ackPacket, bool skipAck);
 
     function onRecvMWAck(
         bytes32 channelId,
@@ -103,7 +103,7 @@ interface IbcUniversalPacketReceiver {
 
     function onRecvUniversalPacket(bytes32 channelId, UniversalPacket calldata ucPacket)
         external
-        returns (AckPacket memory ackPacket);
+        returns (AckPacket memory ackPacket, bool skipAck);
 
     function onUniversalAcknowledgement(bytes32 channelId, UniversalPacket memory packet, AckPacket calldata ack)
         external;

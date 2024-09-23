@@ -10,6 +10,7 @@ import {IbcReceiver} from "../../contracts/interfaces/IbcReceiver.sol";
 import {DummyLightClient} from "../../contracts/utils/DummyLightClient.sol";
 import {Base} from "../utils/Dispatcher.base.t.sol";
 import "../../contracts/examples/Mars.sol";
+import "../../contracts/examples/Pluto.sol";
 import "../../contracts/core/OptimisticLightClient.sol";
 import {LocalEnd, ChannelHandshakeSetting, Base} from "../utils/Dispatcher.base.t.sol";
 import {Earth} from "../../contracts/examples/Earth.sol";
@@ -339,6 +340,8 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
     bytes payload = bytes("msgPayload");
     bytes appAck = abi.encodePacked('{ "account": "account", "reply": "got the message" }');
 
+    event DummyEvent(uint32 id, string message);
+
     function setUp() public override {
         super.setUp();
         string memory marsPort = string(abi.encodePacked(portPrefix, getHexBytes(address(mars))));
@@ -354,6 +357,27 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
             emit WriteAckPacket(address(mars), channelId, packetSeq, AckPacket(true, appAck));
             dispatcherProxy.recvPacket(IbcPacket(src, dest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof);
         }
+    }
+
+    function test_skip_ack() public {
+        uint64 packetSeq = 1;
+        Pluto pluto = new Pluto(dispatcherProxy);
+        string memory plutoPort = string(abi.encodePacked(portPrefix, getHexBytes(address(pluto))));
+        IbcEndpoint memory plutoDest = IbcEndpoint(plutoPort, channelId);
+
+        // test that dummy event, not writeAckPacket, occurs immediately after RecvPacket
+        vm.expectEmit(true, true, true, true, address(dispatcherProxy));
+        emit RecvPacket(address(pluto), channelId, packetSeq);
+        vm.expectEmit(true, true, true, true, address(this));
+        emit DummyEvent(1, "dummy event");
+        this.batch_expected_events(packetSeq, plutoDest);
+
+        // test _ackPacketCommitment is not set to true
+        uint32 ackPacketCommitmentSlot = 257;
+        bytes32 slot1 = keccak256(abi.encode(address(pluto), ackPacketCommitmentSlot));
+        bytes32 slot2 = keccak256(abi.encode(channelId, slot1));
+        bytes32 slot = keccak256(abi.encode(packetSeq, slot2));
+        assert(vm.load(address(dispatcherProxy), slot) == 0);
     }
 
     // recvPacket emits a WriteTimeoutPacket if timestamp passes chain B's block time
@@ -383,6 +407,12 @@ contract DispatcherRecvPacketTestSuite is ChannelOpenTestBaseSetup {
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 1, payload, ZERO_HEIGHT, maxTimeout), validProof);
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.unexpectedPacketSequence.selector));
         dispatcherProxy.recvPacket(IbcPacket(src, dest, 3, payload, ZERO_HEIGHT, maxTimeout), validProof);
+    }
+
+    // put events into a function to batch expected events into one transaction for testing order
+    function batch_expected_events(uint64 packetSeq, IbcEndpoint memory plutoDest) external {
+        dispatcherProxy.recvPacket(IbcPacket(src, plutoDest, packetSeq, payload, ZERO_HEIGHT, maxTimeout), validProof);
+        emit DummyEvent(1, "dummy event");
     }
 
     // Can't spoof a timeed out packet
