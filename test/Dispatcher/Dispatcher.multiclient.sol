@@ -89,6 +89,8 @@ contract DispatcherRealProofMultiClient is Base {
     }
 
     function test_Dispatcher_removeConnection() public {
+        // Make sure that the connection exists before we delete it
+        assertEq(_getConnectiontoClientIdMapping(connectionHops1[0]), address(opLightClient));
         Ics23Proof memory openChannelProof = load_proof("/test/payload/channel_confirm_pending_proof.hex");
 
         // Set up valid connection from channel 1
@@ -99,7 +101,7 @@ contract DispatcherRealProofMultiClient is Base {
 
         // Remove connection to ensure packet can't be acked after removing light client
         dispatcherProxy.removeConnection(connectionHops1[0]);
-        assertEq(_getConnectiontoClientIdMapping(connectionHops1[0]), 0);
+        assertEq(_getConnectiontoClientIdMapping(connectionHops1[0]), address(0));
 
         vm.expectRevert(abi.encodeWithSelector(IBCErrors.lightClientNotFound.selector, connectionHops1[0]));
         dispatcherProxy.acknowledgement(packet, bytes("ack"), openChannelProof);
