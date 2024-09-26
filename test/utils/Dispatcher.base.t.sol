@@ -53,7 +53,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
         uint256 fees
     );
 
-    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 259;
+    uint32 CONNECTION_TO_CLIENT_ID_STARTING_SLOT = 260;
     uint32 SEND_PACKET_COMMITMENT_STARTING_SLOT = 255;
     uint64 UINT64_MAX = 18_446_744_073_709_551_615;
     bytes32 PEPTIDE_CHAIN_ID = bytes32(uint256(444));
@@ -286,9 +286,10 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     }
 
     // Store connection in channelid to connection mapping using store
-    function _getConnectiontoClientIdMapping(string memory connection) internal view returns (uint256 clientId) {
-        bytes32 clientIdSlot = keccak256(abi.encode(connection, CONNECTION_TO_CLIENT_ID_STARTING_SLOT));
-        clientId = uint256(vm.load(address(dispatcherProxy), clientIdSlot));
+    function _getConnectiontoClientIdMapping(string memory connection) internal view returns (address clientId) {
+        bytes32 clientIdSlot =
+            keccak256(abi.encodePacked(bytes(connection), uint256(CONNECTION_TO_CLIENT_ID_STARTING_SLOT)));
+        clientId = address(uint160(uint256(vm.load(address(dispatcherProxy), clientIdSlot))));
     }
 
     function load_proof(string memory filepath, address lightClient) internal returns (Ics23Proof memory) {
