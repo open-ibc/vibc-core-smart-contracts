@@ -106,11 +106,11 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
 
-      # Ensure /v3 is updated as the major version changes
+      # Ensure /v4 is updated as the major version changes
       - name: Update Go Registry
         run: |
           GOPROXY=proxy.golang.org go list \
-          -m github.com/open-ibc/vibc-core-smart-contracts/v3@${{ steps.version.outputs.release }}
+          -m github.com/open-ibc/vibc-core-smart-contracts/v4@${{ steps.version.outputs.release }}
 
       - name: Update NPM Registry
         run: |

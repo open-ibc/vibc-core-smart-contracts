@@ -1,4 +1,4 @@
-module github.com/open-ibc/vibc-core-smart-contracts/v3
+module github.com/open-ibc/vibc-core-smart-contracts/v4
 
 go 1.21
 
