@@ -54,13 +54,10 @@ contract SequencerSoloClient is ILightClient {
      * for that l1BlockHash
      */
     function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external override {
-        uint256 hash = consensusStates[peptideHeight];
-        if (hash != peptideAppHash) {
-            revert CannotUpdatePendingOptimisticConsensusState();
+        if (consensusStates[peptideHeight] != 0) {
+            return;
         }
-
         verifier.verifyStateUpdate(peptideHeight, bytes32(peptideAppHash), bytes32(proof[:32]), proof[32:]);
-
         consensusStates[peptideHeight] = peptideAppHash;
     }
 
