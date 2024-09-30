@@ -50,6 +50,21 @@
     - 0
     - '{{OptimisticProofVerifier}}'
     - '{{L1BlockAddress}}'
+  
+- name: SequencerSigVerifier
+  description: 'SequencerSignatureVerifier'
+  factoryName: 'SequencerSignatureVerifier'
+  deployer: 'KEY_DEPLOYER'
+  deployArgs:
+    - '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+    - '0x4440000000000000000000000000000000000000000000000000000000000000'
+
+- name: SequencerSoloClient 
+  description: 'SequencerSoloClient'
+  factoryName: 'SequencerSoloClient'
+  deployer: 'KEY_DEPLOYER'
+  deployArgs:
+    - '{{SequencerSigVerifier}}'
 
 - name: DummyLightClient
   description: 'DummyLightClient'

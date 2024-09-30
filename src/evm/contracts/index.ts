@@ -22,6 +22,8 @@ export type { IbcUtils } from "./IbcUtils";
 export type { Moon } from "./Moon";
 export type { OptimisticLightClient } from "./OptimisticLightClient";
 export type { OptimisticProofVerifier } from "./OptimisticProofVerifier";
+export type { SequencerSignatureVerifier } from "./SequencerSignatureVerifier";
+export type { SequencerSoloClient } from "./SequencerSoloClient";
 export type { UniversalChannelHandler } from "./UniversalChannelHandler";
 export * as factories from "./factories";
 export { Dispatcher__factory } from "./factories/Dispatcher__factory";
@@ -61,4 +63,6 @@ export { RevertingStringMars__factory } from "./factories/Mars.sol/RevertingStri
 export { Moon__factory } from "./factories/Moon__factory";
 export { OptimisticLightClient__factory } from "./factories/OptimisticLightClient__factory";
 export { OptimisticProofVerifier__factory } from "./factories/OptimisticProofVerifier__factory";
+export { SequencerSoloClient__factory } from "./factories/SequencerSoloClient__factory";
+export { SequencerSignatureVerifier__factory } from "./factories/SequencerSignatureVerifier__factory";
 export { UniversalChannelHandler__factory } from "./factories/UniversalChannelHandler__factory";
