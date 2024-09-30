@@ -20,6 +20,8 @@ CONTRACT_NAMES = channel \
 				 Moon \
 				 OptimisticLightClient \
 				 OptimisticProofVerifier \
+				 SequencerSoloClient \
+				 SequencerSignatureVerifier \
 				 UniversalChannelHandler
 
 # Create the pattern for each contract
