@@ -27,7 +27,7 @@ import {L1Block} from "optimism/L2/L1Block.sol";
  * @author Polymer Labs
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
-contract SequencerSoloClient is ILightClient {
+contract SequencerSoloClientCheckpoint is ILightClient {
     error InvalidL1Origin();
 
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
@@ -37,10 +37,20 @@ contract SequencerSoloClient is ILightClient {
 
     // consensusStates maps from the height to the appHash.
     mapping(uint256 => uint256) public consensusStates;
+    mapping(bytes32 => bool) public checkpoints;
 
     ISignatureVerifier public immutable verifier;
-    L1Block public immutable l1BlockProvider;
+    L1Block public l1BlockProvider;
 
+    /// Optimization: for the l1 block hash, we can use a ring buffer. reading from this can be done off chain,, so
+    /// relayer provides the l1 index
+    // SO we need a getter for that option.
+    // And then we just look at the block index at this poitn. and then we can remove this/overwrite blockhashes for it.
+    // to avoi
+    // Always autoincrement the ring buffer, so that you can always auto-increment the prev hash.
+    // Note; we need to think about the case where we have a griefer for the ring buffer.
+    // Doing this in a hash map is probably nicer here.
+    //
     error CannotUpdatePendingOptimisticConsensusState();
     error AppHashHasNotPassedFraudProofWindow();
     error NonMembershipProofsNotYetImplemented();
@@ -65,6 +75,16 @@ contract SequencerSoloClient is ILightClient {
         _updateClient(proof, peptideHeight, peptideAppHash);
     }
 
+    /* Use if you don't need to use a checkpointed block, to save a SLOAD and 5k gas */
+    function updateClientFromCheckpoint(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external {
+        if (!checkpoints[bytes32(proof[:32])]) {
+            revert InvalidL1Origin();
+        }
+        _updateClient(proof, peptideHeight, peptideAppHash);
+
+        delete checkpoints[bytes32(proof[:32])];
+    }
+
     function _updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) internal {
         if (consensusStates[peptideHeight] != 0) {
             return;
@@ -79,10 +99,17 @@ contract SequencerSoloClient is ILightClient {
     function getState(uint256 height) external view returns (uint256 appHash) {
         return _getState(height);
     }
+
+    /**
+     * @dev store l1 block hash so that it can be used in a later transaction
+     */
+    function checkPoint() external {
+        checkpoints[l1BlockProvider.hash()] = true;
+    }
+
     /**
      * @inheritdoc ILightClient
      */
-
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
         view
