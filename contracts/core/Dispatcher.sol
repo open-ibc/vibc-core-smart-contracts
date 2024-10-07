@@ -60,8 +60,6 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _sendPacketCommitment;
     // keep track of received packets to prevent replay attack
     mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _recvPacketReceipt;
-    // keep track of outbound ack packets to prevent replay attack
-    mapping(address => mapping(bytes32 => mapping(uint64 => bool))) private _ackPacketCommitment;
 
     ILightClient _UNUSED; // From previous dispatcher version
     mapping(bytes32 => string) private _channelIdToConnection;
@@ -624,13 +622,6 @@ contract Dispatcher is Ownable2StepUpgradeable, UUPSUpgradeable, ReentrancyGuard
         } else {
             ack = AckPacket(false, data);
         }
-        bool hasAckPacketCommitment = _ackPacketCommitment[receiver][packet.dest.channelId][packet.sequence];
-        // check is not necessary for sync-acks
-        if (hasAckPacketCommitment) {
-            revert IBCErrors.ackPacketCommitmentAlreadyExists();
-        }
-
-        _ackPacketCommitment[receiver][packet.dest.channelId][packet.sequence] = true;
 
         emit WriteAckPacket(receiver, packet.dest.channelId, packet.sequence, ack);
     }
