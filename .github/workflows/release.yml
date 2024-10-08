@@ -114,7 +114,7 @@ jobs:
 
       - name: Update NPM Registry
         run: |
-          bun install --frozen-lockfile
+          bun install
           bun run build
           npm publish
         env:

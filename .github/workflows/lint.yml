@@ -35,7 +35,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          bun install --frozen-lockfile
+          bun install
           bun run lint
 
       - name: Check formatting
