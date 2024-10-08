@@ -33,7 +33,7 @@ jobs:
 
       - name: Generate Bindings
         run: |
-          bun install --frozen-lockfile
+          bun install
           bun run build
 
       - name: Check for Bindings Changes
