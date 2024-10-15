@@ -67,6 +67,14 @@
     - '{{SequencerSigVerifier}}'
     - '{{L1BlockAddress}}'
 
+- name: ProofApiLightClient 
+  description: 'ProofApiCrossL2Inbox'
+  factoryName: 'CrossL2Prover'
+  deployer: 'KEY_DEPLOYER'
+  deployArgs:
+    - '{{SequencerSigVerifier}}'
+    - 'peptide-clientId' 
+
 - name: DummyLightClient
   description: 'DummyLightClient'
   factoryName: 'DummyLightClient'

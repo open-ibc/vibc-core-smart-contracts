@@ -2,6 +2,7 @@
 
 # Hardcoded for simplicity
 CONTRACT_NAMES = channel \
+				 CrossL2Prover \
 				 Dispatcher \
 				 DummyLightClient \
 				 DummyProofVerifier \
@@ -11,6 +12,7 @@ CONTRACT_NAMES = channel \
 				 Ibc \
 				 IbcDispatcher \
 				 IbcUtils \
+				 ICrossL2Prover \
 				 IDispatcher \
 				 IFeeVault \
 				 ILightClient \
@@ -40,7 +42,7 @@ build-contracts:
 	rm -frd ./out; \
 	forge install; \
 	forge build --skip test script -C contracts \
-		-R $$(cat remappings.txt) --lib-paths lib \
+		--lib-paths lib \
 		--extra-output-files abi --force
 
 # Libraries do not generate the correct ABI code (ChannelState enum causes errors)

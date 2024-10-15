@@ -54,7 +54,9 @@ contract SequencerSoloClient is ILightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Adds an appHash to the internal store, after verifying the client update proof associated with the light
+     * client implementation.
+     * @param peptideAppHash App hash (state root) to be verified
      * @param proof An array of bytes that contain the l1blockhash and the sequencer's signature. The first 32 bytes of
      * this argument should be the l1BlockHash, and the remaining bytes should be the sequencer signature which attests
      * to the peptide AppHash
@@ -75,7 +77,9 @@ contract SequencerSoloClient is ILightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Checks if the current trusted optimistic consensus state
+     * can be used to perform the membership test and if so, verifies the proof
+     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
      */
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
@@ -88,7 +92,7 @@ contract SequencerSoloClient is ILightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Verifies that the given key is not included in the proof
      */
     function verifyNonMembership(Ics23Proof calldata, bytes calldata) external pure {
         revert NonMembershipProofsNotYetImplemented();
