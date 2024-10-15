@@ -21,18 +21,14 @@ import {Ics23Proof} from "./IProofVerifier.sol";
 enum LightClientType {
     SimTestLightClient, // Note: not deployed on any mainnets
     OptimisticLightClient, // Our native opstack light client
-    SequencerLightClient // Our native sequencer light client
+    SequencerLightClient, // Our native sequencer light client, which does not check l1 origin check to cut down on
+        // latency
+    ReOrgResistantSequencerLightClient // Our native sequencer light client, which checks for l1 origin checks to be
+        // re-org resistant
 
 }
 
-/**
- * @title ILightClient
- * @author Polymer Labs
- * @notice A contract that manages the merkle root(appHash) at different block heights of a chain and tracks the fraud
- * proof end time for them.
- * @notice This is used for state inclusion proofs
- */
-interface ILightClient {
+interface IClientUpdates {
     /**
      * @dev Adds an appHash to the internal store, after verifying the client update proof associated with the light
      * client implementation.
@@ -44,26 +40,39 @@ interface ILightClient {
      */
     function updateClient(bytes calldata proof, uint256 height, uint256 appHash) external;
 
-    /**
-     * @dev Checks if the current trusted optimistic consensus state
-     * can be used to perform the membership test and if so, verifies the proof
-     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
-     */
-    function verifyMembership(Ics23Proof calldata proof, bytes memory key, bytes memory expectedValue) external;
-
-    /**
-     * @dev Verifies that the given key is not included in the proof
-     */
-    function verifyNonMembership(Ics23Proof calldata proof, bytes memory key) external;
-
-    /**
-     * Returns the apphash at a given height
-     */
-    function getState(uint256 height) external view returns (uint256);
-
     /*
     * Returns the type of the light client, useful for relayers to know which light client implementation is at which
     address. 
     */
     function LIGHT_CLIENT_TYPE() external view returns (LightClientType);
+}
+
+interface IMembershipVerifier {
+    /**
+     * @dev Checks if the current trusted optimistic consensus state
+     * can be used to perform the membership test and if so, verifies the proof
+     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
+     */
+    function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes memory expectedValue) external;
+}
+
+interface INonMembershipVerifier {
+    /**
+     * @dev Verifies that the given key is not included in the proof
+     */
+    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external;
+}
+
+/**
+ * @title ILightClient
+ * @author Polymer Labs
+ * @notice A contract that manages the merkle root(appHash) at different block heights of a chain and tracks the fraud
+ * proof end time for them.
+ * @notice This is used for state inclusion proofs
+ */
+interface ILightClient is IClientUpdates, IMembershipVerifier, INonMembershipVerifier {
+    /**
+     * Returns the apphash at a given height
+     */
+    function getState(uint256 height) external view returns (uint256);
 }

@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {SequencerSoloClient} from "../contracts/core/SequencerSoloClient.sol";
 import {SequencerSignatureVerifier, ISignatureVerifier} from "../contracts/core/SequencerSignatureVerifier.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {SigningBase} from "./utils/SigningClient.base.t.sol";
+import {SigningBase} from "./utils/Signing.base.t.sol";
 
 contract OptimisticLightClientWithRealVerifierTest is SigningBase {
     SequencerSoloClient sequencerClient;

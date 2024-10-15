@@ -55,7 +55,13 @@ contract OptimisticLightClient is IOptimisticLightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Adds an appHash to the internal store, after verifying the client update proof associated with the light
+     * client implementation.
+     * @param proof A generic byte array that contains proof data to prove the apphash client update. This can differ
+     * depending on the light client type. E.g. this can be an abi.encoded struct which contains an OpL2StateProof and
+     * L1Block from the IProofVerifier
+     * interface.
+     * @param polymerAppHash App hash (state root) to be verified
      */
     function updateClient(bytes calldata proof, uint256 polymerHeight, uint256 polymerAppHash) external override {
         (L1Header memory l1header, OpL2StateProof memory stateProof) = abi.decode(proof, (L1Header, OpL2StateProof));
@@ -94,7 +100,9 @@ contract OptimisticLightClient is IOptimisticLightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Checks if the current trusted optimistic consensus state
+     * can be used to perform the membership test and if so, verifies the proof
+     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
      */
     function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
@@ -109,7 +117,7 @@ contract OptimisticLightClient is IOptimisticLightClient {
     }
 
     /**
-     * @inheritdoc ILightClient
+     * @dev Verifies that the given key is not included in the proof
      */
     function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external view {
         (uint256 polymerAppHash,, bool ended) = _getStateAndEndTime(proof.height - 1);

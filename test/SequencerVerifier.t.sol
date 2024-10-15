@@ -5,7 +5,7 @@ import "../contracts/core/OptimisticProofVerifier.sol";
 import "../contracts/libs/Ibc.sol";
 import {IbcUtils} from "../contracts/libs/IbcUtils.sol";
 import "forge-std/Test.sol";
-import "./utils/SigningClient.base.t.sol";
+import "./utils/Signing.base.t.sol";
 
 contract SequencerProofVerifierStateUpdate is SigningBase {
     function test_verify_signature_state_update_sucess() public view {
