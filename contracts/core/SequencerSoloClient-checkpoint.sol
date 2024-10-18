@@ -27,7 +27,7 @@ import {L1Block} from "optimism/L2/L1Block.sol";
  * @author Polymer Labs
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
-contract SequencerSoloClientCheckpoint is ILightClient {
+contract SequencerSoloClient is ILightClient {
     error InvalidL1Origin();
 
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
@@ -37,10 +37,11 @@ contract SequencerSoloClientCheckpoint is ILightClient {
 
     // consensusStates maps from the height to the appHash.
     mapping(uint256 => uint256) public consensusStates;
-    mapping(bytes32 => bool) public checkpoints;
+    mapping(bytes32 => bool) public checkpoints; // Mapping of all. Setting this mapping is both permissionless and
+        // trustless because the only way to modify this mapping is to read directly from the l1BlockInfo contract
 
     ISignatureVerifier public immutable verifier;
-    L1Block public l1BlockProvider;
+    L1Block public immutable l1BlockProvider;
 
     /// Optimization: for the l1 block hash, we can use a ring buffer. reading from this can be done off chain,, so
     /// relayer provides the l1 index
@@ -110,7 +111,7 @@ contract SequencerSoloClientCheckpoint is ILightClient {
     /**
      * @inheritdoc ILightClient
      */
-    function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
+function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes calldata expectedValue)
         external
         view
     {

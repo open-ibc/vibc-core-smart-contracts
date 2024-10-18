@@ -70,9 +70,8 @@ contract SequencerSoloClientAncestorProof is ILightClient {
      * for that l1BlockHash
      */
     function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external override {
-
-        // Here proof will contain the signed header like in the previous one. Then we will need to pass in the  
-        // the length of block heights from 1 to others. 
+        // Here proof will contain the signed header like in the previous one. Then we will need to pass in the
+        // the length of block heights from 1 to others.
 
         console2.log("length");
         console2.log(proof.length);
@@ -101,13 +100,12 @@ contract SequencerSoloClientAncestorProof is ILightClient {
         consensusStates[peptideHeight] = peptideAppHash;
     }
 
-
     ///
-   /// l1 bock info is at origin h1 .Peptide l1 origin is at blcok h0. 
-   /// We want to prove that h0 is an ancestor of h1.  
-   /// We get the h0 hash from the signed payload. 
-   /// Now we need the blockdata from h0+1 to h1, such that we can concat each one
-   // 
+    /// l1 bock info is at origin h1 .Peptide l1 origin is at blcok h0.
+    /// We want to prove that h0 is an ancestor of h1.
+    /// We get the h0 hash from the signed payload.
+    /// Now we need the blockdata from h0+1 to h1, such that we can concat each one
+    //
     ///
 
     /**
