@@ -8,12 +8,24 @@ import { UPDATE_SPECS_PATH } from "../utils/constants";
 import { parseArgsFromCLI } from "../utils/io";
 
 async function main() {
-  const { chain, accounts, args } = await parseArgsFromCLI();
+  const { chain, accounts, args, extraBindingsPath, extraArtifactsPath } =
+    await parseArgsFromCLI();
   const updateSpecs = (args.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
 
   const contractUpdates = loadContractUpdateRegistry(
     parseObjFromFile(updateSpecs)
   );
+
+  let extraContractFactories: Record<string, object> | null = null;
+  if (extraBindingsPath) {
+    try {
+      extraContractFactories = await import(extraBindingsPath);
+    } catch (e) {
+      throw new Error(
+        `Failed to import extra contract factories from ${extraBindingsPath}: ${e}`
+      );
+    }
+  }
 
   updateContractsForChain(
     chain,
@@ -21,7 +33,12 @@ async function main() {
     ContractRegistryLoader.emptySingle(),
     contractUpdates,
     getOutputLogger(),
-    false
+    {
+      dryRun: false,
+      forceDeployNewContracts: false,
+      writeContracts: true,
+      extraContractFactories: extraContractFactories ?? {},
+    }
   );
 }
 main();

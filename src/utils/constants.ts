@@ -47,3 +47,9 @@ export const UPDATE_SPECS_PATH = process.env.UPDATE_SPECS_PATH
 export const ACCOUNTS_SPECS_PATH = process.env.ACCOUNTS_SPECS_PATH
   ? process.env.ACCOUNTS_SPECS_PATH
   : path.resolve(SPECS_BASE_PATH, "evm.accounts.yaml");
+
+export const EXTRA_BINDINGS_PATH = process.env.EXTRA_BINDINGS_PATH;
+
+// The path where we access external artifacts for already deployed contracts
+export const EXTRA_ARTIFACTS_PATH = process.env.EXTRA_ARTIFACTS_PATH;
+

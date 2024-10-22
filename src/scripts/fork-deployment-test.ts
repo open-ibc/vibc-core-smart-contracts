@@ -35,9 +35,11 @@ const main = async () => {
     ContractRegistryLoader.emptySingle(),
     contractUpdates,
     getOutputLogger(),
-    false,
-    false,
-    true
+    {
+      dryRun: false,
+      forceDeployNewContracts: false,
+      writeContracts: true,
+    }
   );
 
   let env = {};
