@@ -14,6 +14,13 @@ import { Logger } from "winston";
 import { readAccountsIntoEnv, readDeploymentFilesIntoEnv } from "./utils/io";
 import { TxItemSchema } from "./evm/schemas/tx";
 
+type UpdateContractsOpts = {
+  dryRun?: boolean;
+  forceDeployNewContracts?: boolean;
+  writeContracts?: boolean;
+  extraContractFactories?: Record<string, object>;
+}
+
 // Combination of sendTxToChain and deployContracts. Can do both from a single deploy file, and uses zod to parse the schema.
 export async function updateContractsForChain(
   chain: Chain,
@@ -21,11 +28,20 @@ export async function updateContractsForChain(
   existingContracts: ContractRegistry,
   updateSpec: UpdateContractRegistry,
   logger: Logger,
-  dryRun = false,
-  forceDeployNewContracts = false, // True if you want to use existing deployments when possible
-  writeContracts: boolean = true, // True if you want to save persisted artifact files.
-  extraContractFactories: Record<string, any> = {}
+  options: UpdateContractsOpts = {
+    dryRun: false,
+    forceDeployNewContracts: false, // True if you want to use existing deployments when possible
+    writeContracts: true, // True if you want to save persisted artifact files.
+    extraContractFactories: {},
+  }
 ) {
+  const {
+    dryRun,
+    forceDeployNewContracts,
+    writeContracts,
+    extraContractFactories,
+  } = options;
+
   logger.info(
     `updating ${updateSpec.size} contract(s) for chain ${chain.chainName}-${
       chain.deploymentEnvironment
@@ -44,7 +60,7 @@ export async function updateContractsForChain(
 
   //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
-  env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc. 
+  env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc.
   env = { ...process.env, chain, ...existingContractAddresses, ...env };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
@@ -87,7 +103,8 @@ export async function updateContractsForChain(
         logger,
         dryRun,
         nonces,
-        env
+        env,
+        extraContractFactories
       );
       continue;
     }
