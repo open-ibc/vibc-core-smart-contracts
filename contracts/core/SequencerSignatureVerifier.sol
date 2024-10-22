@@ -23,16 +23,17 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
 
 /**
- * @title OptimisticProofVerifier
- * @notice Verifies proofs related to Optimistic Rollup state updates
+ * @title SequencerSignatureVerifier
+ * @notice Verifies ECDSA signatures from a sequencer for client updates. Is used by the SequencerSoloClient to verify
+ * signatures on client updates.
  * @author Polymer Labs
  */
 contract SequencerSignatureVerifier is AppStateVerifier, ISignatureVerifier {
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
 
-    // @notice known L2 Output Oracle contract address to verify state update proofs against
-    address public immutable SEQUENCER;
+    address public immutable SEQUENCER; // The trusted sequencer address that polymer p2p signer holds the private key
+        // to
     bytes32 public immutable CHAIN_ID; // Chain ID of the L2 chain for which the sequencer signs over
 
     constructor(address sequencer_, bytes32 chainId_) {
@@ -40,6 +41,14 @@ contract SequencerSignatureVerifier is AppStateVerifier, ISignatureVerifier {
         CHAIN_ID = chainId_;
     }
 
+    /**
+     * @notice Verifies that the sequencer signature is valid for a given l1 origin. This is used by the
+     * SequencerSoloClient update client method.
+     * @param l2BlockNumber The block number of the L2 block that the state update is for
+     * @param appHash The app hash of the state update to be saved in the parent soloClient contract
+     * @param l1BlockHash The hash of the L1 origin that the peptide height corresponds to
+     * @param signature The sequencer's ECDSA over the state update
+     */
     function verifyStateUpdate(uint256 l2BlockNumber, bytes32 appHash, bytes32 l1BlockHash, bytes calldata signature)
         external
         view
@@ -47,6 +56,10 @@ contract SequencerSignatureVerifier is AppStateVerifier, ISignatureVerifier {
         _verifySequencerSignature(l2BlockNumber, appHash, l1BlockHash, signature);
     }
 
+    /**
+     * @notice Verify the ECDSA signature of the sequencer over the given l2BLockNumber, peptideAppHash, and origin
+     * l1BlockHash
+     */
     function _verifySequencerSignature(
         uint256 l2BlockNumber,
         bytes32 appHash,
