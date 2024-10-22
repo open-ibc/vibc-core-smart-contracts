@@ -20,6 +20,7 @@ pragma solidity 0.8.15;
 import {Ics23Proof} from "../interfaces/IProofVerifier.sol";
 import {ISignatureVerifier} from "../interfaces/ISignatureVerifier.sol";
 import {ILightClient, LightClientType} from "../interfaces/ILightClient.sol";
+import {L1Block} from "optimism/L2/L1Block.sol";
 
 /**
  * @title SubfinalityLightClient
@@ -27,6 +28,8 @@ import {ILightClient, LightClientType} from "../interfaces/ILightClient.sol";
  * @dev This specific light client implementation uses the same client that is used in the op-stack
  */
 contract SequencerSoloClient is ILightClient {
+    error InvalidL1Origin();
+
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
         // for cheap on-chain use
     uint8 private _LightClientType = uint8(LIGHT_CLIENT_TYPE); // Also redundantly stored as a private mutable type in
@@ -36,14 +39,16 @@ contract SequencerSoloClient is ILightClient {
     mapping(uint256 => uint256) public consensusStates;
 
     ISignatureVerifier public immutable verifier;
+    L1Block public immutable l1BlockProvider;
 
     error CannotUpdatePendingOptimisticConsensusState();
     error AppHashHasNotPassedFraudProofWindow();
     error NonMembershipProofsNotYetImplemented();
     error NoConsensusStateAtHeight(uint256 height);
 
-    constructor(ISignatureVerifier verifier_) {
+    constructor(ISignatureVerifier verifier_, L1Block _l1BlockProvider) {
         verifier = verifier_;
+        l1BlockProvider = _l1BlockProvider;
     }
 
     /**
@@ -54,6 +59,13 @@ contract SequencerSoloClient is ILightClient {
      * for that l1BlockHash
      */
     function updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) external override {
+        if (l1BlockProvider.hash() != bytes32(proof[:32])) {
+            revert InvalidL1Origin();
+        }
+        _updateClient(proof, peptideHeight, peptideAppHash);
+    }
+
+    function _updateClient(bytes calldata proof, uint256 peptideHeight, uint256 peptideAppHash) internal {
         if (consensusStates[peptideHeight] != 0) {
             return;
         }

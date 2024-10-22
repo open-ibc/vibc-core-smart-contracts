@@ -23,8 +23,8 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {AppStateVerifier} from "../base/AppStateVerifier.sol";
 
 /**
- * @title OptimisticProofVerifier
- * @notice Verifies proofs related to Optimistic Rollup state updates
+ * @title SequencerSignatureVerifier
+ * @notice Verifies ECDSA signatures from a sequencer for client updates
  * @author Polymer Labs
  */
 contract SequencerSignatureVerifier is AppStateVerifier, ISignatureVerifier {

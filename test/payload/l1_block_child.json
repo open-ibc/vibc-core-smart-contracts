@@ -1,0 +1,29 @@
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+    "result":{
+      "hash": "0xb4ebc467e644b0d3b855a71305bdeb1fef88e761976f2a6ea2f75b4c82b0acd5",
+      "parentHash": "0xabbe2e82802e00a1caa3996470825a4ce61d7137d359cb5e8f36261b8f2fdd38",
+      "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+      "miner": "0x95222290dd7278aa3ddd389cc1e1d165cc4bafe5",
+      "stateRoot": "0x4e96a5c64d8866f8dab8ec7acca71ca9594336670573d1de1cd7a9c419272f15",
+      "transactionsRoot": "0x53cbb89954c8ee1623d139c5848cfab350ca5c5687497f7d3b9e813634bc20fb",
+      "receiptsRoot": "0xa072f434d74313444e47d269c1530cdda9694178cc4281d9e683efd7d9b730d4",
+      "logsBloom": "0x3dabf73f7f454f7655aeec519bbf9a83fdeb1b70d67b76c2726b414d77a6288ff3f37f2fbf71a597ff1d7fd9feb7df91d73fcb6dfff37db557ed7fdef4bf4bf3bcf69cafd10caa7beaf77fbef96eebefdd1646f9bff54f9df7bf0debf2f5bef74eaef7f7aa7afae784dfd7f77949ff672f6d6b5b1f7ff67b90cef0b6591f9df3aef7fb587b33f6699a4d256aefee9ee7e653ff77fdb1d87dcc3c2d57ef785dfcebb7f772ed9bfadf1f0671d6c987bfcafdf756d9dffdf6ef4d6fcbf3ecbfe9f5cd977a7ab55ffffb7dcb8935c6eaff454fdff77245ff2df744dbf5efe94af49729fbbd51f99c347757fdf78eb2f917479f7fd94d6d3ab6fb3d0ca1787ff8fccf",
+      "difficulty": "0x0",
+      "number": "0x1403e80",
+      "gasLimit": "0x1c9c380",
+      "gasUsed": "0x1842e76",
+      "timestamp": "0x67116c2f",
+      "totalDifficulty": "0xc70d815d562d3cfa955",
+      "extraData": "0x6265617665726275696c642e6f7267",
+      "mixHash": "0x1dd88cf475dd30d18ca90277a91458626d76f2debcb280e6fd13eaf923d12437",
+      "nonce": "0x0000000000000000",
+      "baseFeePerGas": "0x3a5b90cbb",
+      "withdrawalsRoot": "0xf2fa7fc5d5c8045c5174e53c774e0a4e5b78019670d069f715b75caada2e7a34",
+      "blobGasUsed": "0x80000",
+      "excessBlobGas": "0x40000",
+      "parentBeaconBlockRoot": "0x0a1ccf62294537ea20b53fe2a3df1b5a11fc29d8105d42b9517d0857cdafbc58",
+      "uncles": []
+  }
+}
