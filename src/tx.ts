@@ -18,10 +18,12 @@ import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
 import { fetchNonceFromSafeAddress, proposeTransaction } from "./multisig/safe";
+import * as vibcContractFactories from "./evm/contracts/index";
 
 export async function readAbiFromDeployedContract(
   existingContractOverrides: ContractRegistry,
-  factoryName: string
+  factoryName: string,
+  factories: Record<string, any> = {}
 ) {
   const existingContractOverride = existingContractOverrides.get(factoryName);
 
@@ -30,7 +32,7 @@ export async function readAbiFromDeployedContract(
     return existingContractOverride.abi;
   }
 
-  return readFactoryAbi(factoryName)
+  return readFactoryAbi(factoryName, factories)
 }
 
 export async function sendTx(
@@ -41,12 +43,18 @@ export async function sendTx(
   logger: Logger,
   dryRun: boolean = false,
   nonces: Record<string, number>,
-  env: StringToStringMap
+  env: StringToStringMap,
+  extraContractFactories: Record<string, any> = {},
 ) {
   try {
     const factoryName = tx.factoryName ? tx.factoryName : tx.name;
+    const contractFactories = {
+      ...vibcContractFactories,
+      ...extraContractFactories,
+    };
+  
 
-    const deployedContractAbi = await readAbiFromDeployedContract(existingContractOverrides, factoryName)
+    const deployedContractAbi = await readAbiFromDeployedContract(existingContractOverrides, factoryName, contractFactories)
     if (!deployedContractAbi) {
       throw new Error(`Could not find ABI for contract ${factoryName}`);
     }
