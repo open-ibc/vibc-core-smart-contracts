@@ -3,6 +3,7 @@ import Safe, { SafeFactory } from "@safe-global/protocol-kit";
 import {
   OperationType,
   SafeTransactionDataPartial,
+  TransactionResult,
 } from "@safe-global/safe-core-sdk-types";
 import { ethers } from "ethers";
 
@@ -102,7 +103,7 @@ export const executeMultisigTx = async (
   chainId: bigint,
   rpcUrl: string,
   pendingTransactionIndex: number
-) => {
+):Promise<TransactionResult> => {
   const apiKit = new SafeApiKit({
     chainId,
   });
