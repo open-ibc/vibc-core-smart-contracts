@@ -6,7 +6,15 @@ import "./utils/CrossL2Inbox.base.t.sol";
 
 contract CrossL2InboxTest is CrossL2InboxBase {
     function test_validate_message_success() public {
-        bool valid = cross.validateMessageWithProof(receiptProof, rawLog);
+        bool valid = cross.validateMessageWithProof(
+            root,
+            key,
+            value,
+            receiptProof, 
+            logHash,
+            logIdx
+        );
         require(valid, "validate message should return successful");
     }
 }
+

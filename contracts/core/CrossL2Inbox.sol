@@ -18,7 +18,8 @@
 pragma solidity 0.8.15;
 
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
-//import {RLPWriter} from "optimism/libraries/rlp/RLPWriter.sol";
+import {MerkleTrie} from "optimism/libraries/trie/MerkleTrie.sol";
+import {Bytes} from "optimism/libraries/Bytes.sol";
 
 /**
  * @title CrossL2Inbox
@@ -33,63 +34,45 @@ contract CrossL2Inbox {
     ///         and emits an ExecutingMessage event. This function is useful
     ///         for applications that understand the schema of the _message payload and want to
     ///         process it in a custom way.
-    /// @param _receiptProof      receipt proof.
-    /// @param _rawLog Raw log or message payload to call target with.
-    function validateMessageWithProof(bytes[] calldata _receiptProof, bytes calldata _rawLog) external returns (bool) {
-        if (!containsBytes(_receiptProof[_receiptProof.length-1], _rawLog)) {
-            return false;
+    /// @param _root receipt root.
+    /// @param _key receipt index.
+    /// @param _value raw receipt.
+    /// @param _receiptProof receipt proof.
+    /// @param _logHash Hash of the raw log.
+    /// @param _logIdx raw log index.
+    function validateMessageWithProof(
+        bytes32 _root, 
+        bytes calldata _key, 
+        bytes calldata _value, 
+        bytes[] calldata _receiptProof, 
+        bytes32 _logHash,
+        uint256 _logIdx
+    ) external returns (bool) {
+        bool valid = MerkleTrie.verifyInclusionProof(
+            _key,
+            _value,
+            _receiptProof,
+            _root
+        );
+
+        if (!valid) {
+            return valid;
         }
 
-        bytes32 currentHash = keccak256(_receiptProof[_receiptProof.length-1]);
-        // Check leaf -> root relationship
-        for (int idx = int256(_receiptProof.length)-2; idx >= 0; idx--) {
-            uint256 i = uint256(idx);
-            if (containsBytes32(_receiptProof[i], currentHash)) {
-                currentHash = keccak256(_receiptProof[i]);
-                continue;
+        // The first byte is a RLP encoded receipt type so slice it off.
+        RLPReader.RLPItem[] memory items = RLPReader.readList(Bytes.slice(_value, 1, _value.length-1));
+        /*
+            // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
+            type ReceiptRLP struct {
+                    PostStateOrStatus []byte
+                    CumulativeGasUsed uint64
+                    Bloom             Bloom
+                    Logs              []*Log
             }
-            return false;
-        }
+        */ 
+        RLPReader.RLPItem[] memory logs = RLPReader.readList(items[3]);
 
-        return true;
-    }
-
-    // Contains function for `bytes` arrays
-    function containsBytes32(bytes calldata left, bytes32 right) internal pure returns (bool) {
-        if (right.length > left.length) {
-            return false;
-        }
-        for (uint i = 0; i <= left.length - right.length; i++) {
-            bool found = true;
-            for (uint j = 0; j < right.length; j++) {
-                if (left[i + j] != right[j]) {
-                    found = false;
-                    break;
-                }
-            }
-            if (found) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function containsBytes(bytes calldata left, bytes calldata right) internal pure returns (bool) {
-        if (right.length > left.length) {
-            return false;
-        }
-        for (uint i = 0; i <= left.length - right.length; i++) {
-            bool found = true;
-            for (uint j = 0; j < right.length; j++) {
-                if (left[i + j] != right[j]) {
-                    found = false;
-                    break;
-                }
-            }
-            if (found) {
-                return true;
-            }
-        }
-        return false;
+        // Raw log bytes shoul
+        return keccak256(RLPReader.readRawBytes(logs[_logIdx])) == _logHash;
     }
 }
