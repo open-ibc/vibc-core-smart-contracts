@@ -65,6 +65,7 @@
   deployer: 'KEY_DEPLOYER'
   deployArgs:
     - '{{SequencerSigVerifier}}'
+    - '{{L1BlockAddress}}'
 
 - name: DummyLightClient
   description: 'DummyLightClient'

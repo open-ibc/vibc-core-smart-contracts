@@ -62,6 +62,7 @@ export interface SequencerSoloClientInterface extends Interface {
       | "LIGHT_CLIENT_TYPE"
       | "consensusStates"
       | "getState"
+      | "l1BlockProvider"
       | "updateClient"
       | "verifier"
       | "verifyMembership"
@@ -79,6 +80,10 @@ export interface SequencerSoloClientInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "l1BlockProvider",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "updateClient",
@@ -103,6 +108,10 @@ export interface SequencerSoloClientInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "l1BlockProvider",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "updateClient",
     data: BytesLike
@@ -167,6 +176,8 @@ export interface SequencerSoloClient extends BaseContract {
 
   getState: TypedContractMethod<[height: BigNumberish], [bigint], "view">;
 
+  l1BlockProvider: TypedContractMethod<[], [string], "view">;
+
   updateClient: TypedContractMethod<
     [
       proof: BytesLike,
@@ -204,6 +215,9 @@ export interface SequencerSoloClient extends BaseContract {
   getFunction(
     nameOrSignature: "getState"
   ): TypedContractMethod<[height: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "l1BlockProvider"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "updateClient"
   ): TypedContractMethod<

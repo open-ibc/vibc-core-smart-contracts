@@ -64,7 +64,7 @@ contract Base is IbcEventsEmitter, ProofBase, TestUtilsTest {
     ILightClient opLightClient = new OptimisticLightClient(1800, opProofVerifier, l1BlockProvider);
 
     ISignatureVerifier sequencerSignatureVerifier = new SequencerSignatureVerifier(sequencer, PEPTIDE_CHAIN_ID);
-    ILightClient sequencerLightClient = new SequencerSoloClient(sequencerSignatureVerifier);
+    ILightClient sequencerLightClient = new SequencerSoloClient(sequencerSignatureVerifier, l1BlockProvider);
     ILightClient dummyLightClient = new DummyLightClient();
     IFeeVault feeVault = new FeeVault();
 
