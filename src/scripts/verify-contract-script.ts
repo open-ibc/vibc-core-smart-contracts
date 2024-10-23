@@ -10,19 +10,19 @@ import { $, cd } from "zx";
 import { MODULE_ROOT_PATH } from "../utils/constants";
 import { Logger } from "winston";
 import { getMainLogger } from "../utils/cli";
-import { ContractItemSchema } from "../evm/schemas/contract";
+import { ContractItem, ContractItemSchema } from "../evm/schemas/contract";
 import { loadContractUpdateRegistry } from "../evm/schemas/contractUpdate";
 
 const verifyContract = async (
-  deploymentName: string,
+  deployedContract: ContractItem,
   chainFolder: ChainFolder,
   etherscanApiKey: string,
   verifierUrl: string,
   logger: Logger
 ) => {
   // Read deployment file, so that we can find path to artifact
-  const deployment = await readFromDeploymentFile(deploymentName, chainFolder);
-  const metadata = await readMetadata(deployment.factory);
+  const deployment = await readFromDeploymentFile(deployedContract.name, chainFolder);
+  const metadata = await readMetadata(deployment.factory, deployedContract.solcVersion);
   const compilationTarget = JSON.parse(metadata).settings.compilationTarget;
   const contractFile = Object.keys(compilationTarget)[0];
   const contractPath = `${contractFile}:${compilationTarget[contractFile]}`;
@@ -44,7 +44,7 @@ const verifyContract = async (
   }
 
   logger.info(
-    `verifying ${deploymentName}'s deployment with ${deployment.factory} ${
+    `verifying ${deployedContract.name}'s deployment with ${deployment.factory} ${
       libraries ? `and libraries ${libraries}` : ``
     }`
   );
@@ -83,7 +83,7 @@ async function main() {
       // Only try to verify contractName if it matches the deploymentName
       try {
         await verifyContract(
-          parsed.data.name,
+          parsed.data,
           chainFolder,
           etherscanApiKey,
           verifierUrl,
