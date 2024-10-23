@@ -21,6 +21,7 @@ import {
   UPDATE_SPECS_PATH,
   EXTRA_BINDINGS_PATH,
   EXTRA_ARTIFACTS_PATH,
+  EXTERNAL_CONTRACTS_PATH,
 } from './constants';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
@@ -51,6 +52,7 @@ export type DeployedContractObject = {
   metadata?: string;
   name: string;
   libraries: LibraryMetadata[];
+  solcVersion: string | undefined;
 };
 
 // readYamlFile reads a yaml file and returns the parsed object.
@@ -137,10 +139,10 @@ export function parseZodSchema<T>(
         `parsing ${className} failed. ${zErr.issues
           .map((i) => i.path)
           .join(', ')}: ${zErr.message}\nconfig obj:\n${JSON.stringify(
-          config,
-          null,
-          2
-        )}`
+            config,
+            null,
+            2
+          )}`
       );
     } else {
       throw e;
@@ -179,38 +181,49 @@ export function toEnvVarName(e: string) {
 }
 
 /** Reads a foundry build file given */
-export async function readArtifactFile(artifactName: string) {
+export async function readArtifactFile(
+  artifactName: string,
+  solcVersion: string | undefined
+) {
   const basePaths = [ARTIFACTS_PATH];
   if (EXTRA_ARTIFACTS_PATH) {
     basePaths.push(EXTRA_ARTIFACTS_PATH);
   }
-
-  const paths = basePaths.map((basePath) =>
-    path.join(basePath, `${artifactName}.sol`, `${artifactName}.json`)
-  );
+  const paths = basePaths.map((basePath) => {
+    return path.join(
+      basePath,
+      `${artifactName}.sol`,
+      `${artifactName}${solcVersion ? `.${solcVersion}` : ''}.json`
+    );
+  });
   for (const path of paths) {
     try {
       return await fsAsync.readFile(path, 'utf8');
     } catch (e) {
-      console.error(`error reading from file in extra file ${path}: \n`, e);
+  console.log(`no file found in ${path}: \n`, e);
     }
   }
+
+  console.error(`error reading from file in extra file ${path}: \n`, e);
   return '';
 }
 
-
 /** Reads a deployment metadata rom a foundry build file. used to generate bytecode for deployment files*/
-export async function readMetadata(factoryName: string) {
-  const data = await readArtifactFile(factoryName);
+export async function readMetadata(
+  factoryName: string,
+  solcVersion: string | undefined
+) {
+  const data = await readArtifactFile(factoryName, solcVersion);
   return JSON.stringify(JSON.parse(data).metadata);
 }
 
-
-export async function readFactoryAbi(factoryName: string, contractFactories: Record<string, any>) {
+export async function readFactoryAbi(
+  factoryName: string,
+  contractFactories: Record<string, any>
+) {
   const contractFactoryConstructor =
-    contractFactories[`${factoryName}__factory`]
+    contractFactories[`${factoryName}__factory`];
 
-  // const data = await readArtifactFile(factoryName);
   return contractFactoryConstructor.abi;
 }
 
@@ -237,7 +250,10 @@ export async function writeDeployedContractToFile(
   ensureDir(deploymentFolder);
 
   // get metadata from contract from forge build output
-  const metadata = await readMetadata(deployedContract.factory);
+  const metadata = await readMetadata(
+    deployedContract.factory,
+    deployedContract.solcVersion
+  );
   const outData = JSON.stringify({
     ...deployedContract,
     metadata,
@@ -381,6 +397,8 @@ export async function parseArgsFromCLI() {
     (argv1.EXTRA_BINDINGS_PATH as string) || EXTRA_BINDINGS_PATH; // Any directory of extra typechain bindings.
   const extraArtifactsPath =
     (argv1.EXTRA_ARTIFACTS_PATH as string) || EXTRA_ARTIFACTS_PATH; // Any directory of extra foundry artifacts
+  const externalContractsPath =
+    (argv1.EXTERNAL_CONTRACTS_PATH as string) || EXTERNAL_CONTRACTS_PATH;
 
   const chainParse = ChainConfigSchema.safeParse({
     rpc: rpcUrl,
@@ -410,6 +428,7 @@ export async function parseArgsFromCLI() {
     anvilPort,
     extraBindingsPath,
     extraArtifactsPath,
+    externalContractsPath,
   };
 }
 

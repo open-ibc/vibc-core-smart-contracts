@@ -38,6 +38,21 @@ export async function updateNoncesForSender(
   return nonces;
 }
 
+// Converts a factory to a name. If a solc version is specified (which needs to happen for multiple solc versions in a foundry/hardhat project, then it will return the file with the constructed name)
+export const getFactoryFileName = (
+  factoryName: string,
+  solcVersion: string | undefined
+) => {
+  if (!solcVersion) return `${factoryName}__factory`;
+
+  // Filter version string to remove periods e.g. 0.8.15 -> 0815
+  const versionStr = solcVersion
+    .split("")
+    .filter((c) => c !== "." && c !== "v")
+    .join("");
+  return `${factoryName}${versionStr}__factory`;
+};
+
 /**
  * Return deployment libraries, factory, factory constructor,
  * and rendered arguments for a contract deployment
@@ -48,11 +63,12 @@ const getDeployData = (
   env: StringToStringMap,
   libraries: any[] = [],
   init: { args: any[]; signature: string } | undefined,
-  contractFactories: Record<string, any>
+  contractFactories: Record<string, any>,
+  solcVersion: string | undefined
 ) => {
+  const contractFactoryFileName = getFactoryFileName(factoryName, solcVersion);
   // @ts-ignore
-  const contractFactoryConstructor =
-    contractFactories[`${factoryName}__factory`];
+  const contractFactoryConstructor = contractFactories[contractFactoryFileName];
   assert(
     contractFactoryConstructor,
     `cannot find contract factory constructor for contract: ${factoryName}`
@@ -67,7 +83,7 @@ const getDeployData = (
   const factory = new contractFactoryConstructor(...libs);
   if (!factory) {
     throw new Error(
-      `cannot load contract factory for contract: ${factoryName} with factory name: ${factoryName}__factory`
+      `cannot load contract factory for contract: ${factoryName} from factory file: ${contractFactoryFileName}`
     );
   }
 
@@ -107,7 +123,8 @@ export const deployContract = async (
       env,
       contract.libraries,
       contract.init,
-      contractFactories
+      contractFactories,
+      contract.solcVersion
     );
 
     logger.info(
@@ -115,7 +132,7 @@ export const deployContract = async (
         contract.name
       } with args: [${constructorData.args}] with libraries: ${JSON.stringify(
         constructorData.libraries
-      )}`
+      )} `
     );
     let deployedAddr = `new.${contract.name}.address`;
     const deployer = accountRegistry.mustGet(
@@ -164,6 +181,7 @@ export const deployContract = async (
         name: contract.name,
         args: constructorData.args,
         libraries: constructorData.libraries,
+        solcVersion: contract.solcVersion,
       };
       writeDeployedContractToFile(chain, contractObject);
     }
