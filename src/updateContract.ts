@@ -44,7 +44,7 @@ export async function updateContractsForChain(
 
   //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
-  env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc. 
+  env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc.
   env = { ...process.env, chain, ...existingContractAddresses, ...env };
   if (!forceDeployNewContracts) {
     // Only read from existing contract files if we want to deploy new ones
@@ -87,7 +87,8 @@ export async function updateContractsForChain(
         logger,
         dryRun,
         nonces,
-        env
+        env,
+        extraContractFactories
       );
       continue;
     }

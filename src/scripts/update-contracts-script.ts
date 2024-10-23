@@ -8,20 +8,34 @@ import { UPDATE_SPECS_PATH } from "../utils/constants";
 import { parseArgsFromCLI } from "../utils/io";
 
 async function main() {
-  const { chain, accounts, args } = await parseArgsFromCLI();
+  const { chain, accounts, args, extraBindingsPath, extraArtifactsPath } =
+    await parseArgsFromCLI();
   const updateSpecs = (args.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
 
   const contractUpdates = loadContractUpdateRegistry(
     parseObjFromFile(updateSpecs)
   );
 
+  const extraContractFactories = extraBindingsPath
+    ? await import(extraBindingsPath)
+    : null;
+
+  console.log("extra contracts", extraContractFactories);
+  console.log(
+    "extra contracts",
+    extraContractFactories[`GnosisSafe0815__factory`]
+  );
   updateContractsForChain(
     chain,
     accounts.mustGet(chain.chainName),
     ContractRegistryLoader.emptySingle(),
     contractUpdates,
     getOutputLogger(),
-    false
+    false,
+    false,
+    true,
+    extraContractFactories,
+    extraArtifactsPath,
   );
 }
 main();
