@@ -84,11 +84,11 @@ export interface IUniversalChannelHandlerInterface extends Interface {
       | "onChanOpenTry"
       | "onRecvPacket"
       | "onTimeoutPacket"
-      | "openChannel"
       | "registerMwStack"
       | "sendUniversalPacket"
       | "sendUniversalPacketWithFee"
       | "setDispatcher"
+      | "triggerChannelInit"
   ): FunctionFragment;
 
   encodeFunctionData(functionFragment: "MW_ID", values?: undefined): string;
@@ -133,10 +133,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
     values: [IbcPacketStruct]
   ): string;
   encodeFunctionData(
-    functionFragment: "openChannel",
-    values: [string, BigNumberish, boolean, string[], string]
-  ): string;
-  encodeFunctionData(
     functionFragment: "registerMwStack",
     values: [BigNumberish, AddressLike[]]
   ): string;
@@ -158,6 +154,10 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setDispatcher",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "triggerChannelInit",
+    values: [string, BigNumberish, boolean, string[], string]
   ): string;
 
   decodeFunctionResult(functionFragment: "MW_ID", data: BytesLike): Result;
@@ -199,10 +199,6 @@ export interface IUniversalChannelHandlerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "openChannel",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "registerMwStack",
     data: BytesLike
   ): Result;
@@ -216,6 +212,10 @@ export interface IUniversalChannelHandlerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setDispatcher",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "triggerChannelInit",
     data: BytesLike
   ): Result;
 }
@@ -341,18 +341,6 @@ export interface IUniversalChannelHandler extends BaseContract {
     "nonpayable"
   >;
 
-  openChannel: TypedContractMethod<
-    [
-      version: string,
-      ordering: BigNumberish,
-      feeEnabled: boolean,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string
-    ],
-    [void],
-    "nonpayable"
-  >;
-
   registerMwStack: TypedContractMethod<
     [mwBitmap: BigNumberish, mwAddrs: AddressLike[]],
     [void],
@@ -385,6 +373,18 @@ export interface IUniversalChannelHandler extends BaseContract {
 
   setDispatcher: TypedContractMethod<
     [dispatcher: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  triggerChannelInit: TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortIdentifier: string
+    ],
     [void],
     "nonpayable"
   >;
@@ -467,19 +467,6 @@ export interface IUniversalChannelHandler extends BaseContract {
     nameOrSignature: "onTimeoutPacket"
   ): TypedContractMethod<[packet: IbcPacketStruct], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "openChannel"
-  ): TypedContractMethod<
-    [
-      version: string,
-      ordering: BigNumberish,
-      feeEnabled: boolean,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string
-    ],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "registerMwStack"
   ): TypedContractMethod<
     [mwBitmap: BigNumberish, mwAddrs: AddressLike[]],
@@ -515,6 +502,19 @@ export interface IUniversalChannelHandler extends BaseContract {
   getFunction(
     nameOrSignature: "setDispatcher"
   ): TypedContractMethod<[dispatcher: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "triggerChannelInit"
+  ): TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortIdentifier: string
+    ],
+    [void],
+    "nonpayable"
+  >;
 
   filters: {};
 }

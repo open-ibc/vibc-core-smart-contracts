@@ -455,39 +455,6 @@ const _abi = [
   },
   {
     type: "function",
-    name: "openChannel",
-    inputs: [
-      {
-        name: "version",
-        type: "string",
-        internalType: "string",
-      },
-      {
-        name: "ordering",
-        type: "uint8",
-        internalType: "enum ChannelOrder",
-      },
-      {
-        name: "feeEnabled",
-        type: "bool",
-        internalType: "bool",
-      },
-      {
-        name: "connectionHops",
-        type: "string[]",
-        internalType: "string[]",
-      },
-      {
-        name: "counterpartyPortIdentifier",
-        type: "string",
-        internalType: "string",
-      },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "registerMwStack",
     inputs: [
       {
@@ -590,6 +557,39 @@ const _abi = [
         name: "dispatcher",
         type: "address",
         internalType: "contract IbcDispatcher",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "triggerChannelInit",
+    inputs: [
+      {
+        name: "version",
+        type: "string",
+        internalType: "string",
+      },
+      {
+        name: "ordering",
+        type: "uint8",
+        internalType: "enum ChannelOrder",
+      },
+      {
+        name: "feeEnabled",
+        type: "bool",
+        internalType: "bool",
+      },
+      {
+        name: "connectionHops",
+        type: "string[]",
+        internalType: "string[]",
+      },
+      {
+        name: "counterpartyPortIdentifier",
+        type: "string",
+        internalType: "string",
       },
     ],
     outputs: [],
