@@ -23,7 +23,7 @@ import {ChannelOrder} from "../libs/Ibc.sol";
 
 interface IUniversalChannelHandler is IbcUniversalChannelMW {
     function registerMwStack(uint256 mwBitmap, address[] calldata mwAddrs) external;
-    function openChannel(
+    function triggerChannelInit(
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,

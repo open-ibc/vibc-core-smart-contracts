@@ -89,7 +89,6 @@ export interface UniversalChannelHandlerInterface extends Interface {
       | "onChanOpenTry"
       | "onRecvPacket"
       | "onTimeoutPacket"
-      | "openChannel"
       | "owner"
       | "pendingOwner"
       | "proxiableUUID"
@@ -98,6 +97,7 @@ export interface UniversalChannelHandlerInterface extends Interface {
       | "sendUniversalPacketWithFee"
       | "setDispatcher"
       | "transferOwnership"
+      | "triggerChannelInit"
       | "upgradeTo"
       | "upgradeToAndCall"
   ): FunctionFragment;
@@ -163,10 +163,6 @@ export interface UniversalChannelHandlerInterface extends Interface {
     functionFragment: "onTimeoutPacket",
     values: [IbcPacketStruct]
   ): string;
-  encodeFunctionData(
-    functionFragment: "openChannel",
-    values: [string, BigNumberish, boolean, string[], string]
-  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "pendingOwner",
@@ -202,6 +198,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "triggerChannelInit",
+    values: [string, BigNumberish, boolean, string[], string]
   ): string;
   encodeFunctionData(
     functionFragment: "upgradeTo",
@@ -256,10 +256,6 @@ export interface UniversalChannelHandlerInterface extends Interface {
     functionFragment: "onTimeoutPacket",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(
-    functionFragment: "openChannel",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "pendingOwner",
@@ -287,6 +283,10 @@ export interface UniversalChannelHandlerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "triggerChannelInit",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
@@ -507,18 +507,6 @@ export interface UniversalChannelHandler extends BaseContract {
     "nonpayable"
   >;
 
-  openChannel: TypedContractMethod<
-    [
-      version: string,
-      ordering: BigNumberish,
-      feeEnabled: boolean,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string
-    ],
-    [void],
-    "nonpayable"
-  >;
-
   owner: TypedContractMethod<[], [string], "view">;
 
   pendingOwner: TypedContractMethod<[], [string], "view">;
@@ -559,6 +547,18 @@ export interface UniversalChannelHandler extends BaseContract {
 
   transferOwnership: TypedContractMethod<
     [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  triggerChannelInit: TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortIdentifier: string
+    ],
     [void],
     "nonpayable"
   >;
@@ -658,19 +658,6 @@ export interface UniversalChannelHandler extends BaseContract {
     nameOrSignature: "onTimeoutPacket"
   ): TypedContractMethod<[packet: IbcPacketStruct], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "openChannel"
-  ): TypedContractMethod<
-    [
-      version: string,
-      ordering: BigNumberish,
-      feeEnabled: boolean,
-      connectionHops: string[],
-      counterpartyPortIdentifier: string
-    ],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -714,6 +701,19 @@ export interface UniversalChannelHandler extends BaseContract {
   getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "triggerChannelInit"
+  ): TypedContractMethod<
+    [
+      version: string,
+      ordering: BigNumberish,
+      feeEnabled: boolean,
+      connectionHops: string[],
+      counterpartyPortIdentifier: string
+    ],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "upgradeTo"
   ): TypedContractMethod<

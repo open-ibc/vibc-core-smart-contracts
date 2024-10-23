@@ -59,7 +59,7 @@ contract UniversalChannelHandler is IbcReceiverBaseUpgradeable, FeeSender, UUPSU
 
     function onChanCloseConfirm(bytes32 channelId, string calldata, bytes32) external onlyIbcDispatcher {}
 
-    function openChannel(
+    function triggerChannelInit(
         string calldata version,
         ChannelOrder ordering,
         bool feeEnabled,
