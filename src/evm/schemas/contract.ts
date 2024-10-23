@@ -27,6 +27,7 @@ export const ContractItemSchema = z
       })
     ),
     abi: z.optional(z.any()),
+    solcVersion: z.optional(z.string()),
   })
   .strict();
 
