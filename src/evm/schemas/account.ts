@@ -5,58 +5,30 @@ import path from "path";
 import { Registry } from "../../utils/registry";
 import { renderString } from "../../utils/io";
 import { initializedMultisig } from "./multisig";
+import {
+  isMnemonic,
+  isPrivateKey,
+  isSingleSigAccount,
+  SingleSigAccount,
+  singleSigAccount,
+  Wallet,
+} from "./wallet";
+
 // ethers wallet with encryption
-export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
-
-const privateKey = z
-  .object({
-    name: z.string().min(1),
-    // privateKey should be a hex string prefixed with 0x
-    privateKey: z.string().min(1),
-  })
-  .strict();
-
-const mnemonic = z
-  .object({
-    name: z.string().min(1),
-    // a 12-word mnemonic; or more words per BIP-39 spec
-    mnemonic: z.string().min(1),
-    path: z.optional(z.string().min(1)),
-    index: z.optional(z.number().int().min(0)),
-  })
-  .strict();
-
-const singleSigAccount = z.union([privateKey, mnemonic]);
-
 // geth compatible keystore
 const keyStore = z.object({
   dir: z.string().min(1),
   password: z.optional(z.string()),
 });
 
-type Privatekey = z.infer<typeof privateKey>;
-type Mnemonic = z.infer<typeof mnemonic>;
-type SingleSigAccount = z.infer<typeof singleSigAccount>;
 export type KeyStore = z.infer<typeof keyStore>;
 
-const evmAccounts = z.array(z.union([singleSigAccount, initializedMultisig]));
+export const evmAccounts = z.array(
+  z.union([singleSigAccount, initializedMultisig])
+); // Type of account that one can send transactions from
 export type EvmAccounts = z.infer<typeof evmAccounts>;
 export const EvmAccountsConfig = z.union([evmAccounts, keyStore]);
 export type EvmAccountConfig = z.infer<typeof EvmAccountsConfig>;
-
-export const isPrivateKey = (account: unknown): account is Privatekey => {
-  return privateKey.safeParse(account).success;
-};
-
-export const isMnemonic = (account: unknown): account is Mnemonic => {
-  return mnemonic.safeParse(account).success;
-};
-
-export const isSingleSigAccount = (
-  account: unknown
-): account is SingleSigAccount => {
-  return singleSigAccount.safeParse(account).success;
-};
 
 export const isKeyStore = (account: unknown): account is KeyStore => {
   return keyStore.safeParse(account).success;
@@ -119,6 +91,14 @@ export class SingleSigAccountRegistry extends Registry<Wallet> {
     }
     return account.mnemonic;
   };
+  // Connect all accounts to the provider
+  public connectProviderAccounts = (rpc: string) => {
+    const provider = ethers.getDefaultProvider(rpc);
+    for (const [name, account] of this.entries()) {
+      this.set(name, account.connect(provider), true);
+    }
+    return this;
+  };
 }
 
 // load a Map of { [name: string]: Wallet } from EvmAccountsSchema object
@@ -148,19 +128,6 @@ export function loadEvmAccounts(config: unknown): Registry<Wallet> {
   }
   return walletMap;
 }
-
-// Connect all accounts to the provider
-export const connectProviderAccounts = (
-  accountRegistry: SingleSigAccountRegistry,
-  rpc: string
-) => {
-  const provider = ethers.getDefaultProvider(rpc);
-  const newAccounts = accountRegistry.subset([]);
-  for (const [name, account] of accountRegistry.entries()) {
-    newAccounts.set(name, account.connect(provider));
-  }
-  return newAccounts;
-};
 
 export function createWallet(opt: SingleSigAccount): Wallet {
   if (isPrivateKey(opt)) {
