@@ -4,7 +4,12 @@ import fs from "fs";
 import path from "path";
 import { Registry } from "../../utils/registry";
 import { renderString } from "../../utils/io";
-import { initializedMultisig } from "./multisig";
+import {
+  initializedMultisig,
+  isInitializedMultisig,
+  isMultisig,
+} from "./multisig";
+import { SendingAccountRegistry } from "./sendingAccount";
 // ethers wallet with encryption
 export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
 
@@ -26,7 +31,7 @@ const mnemonic = z
   })
   .strict();
 
-const singleSigAccount = z.union([privateKey, mnemonic]);
+export const singleSigAccount = z.union([privateKey, mnemonic]);
 
 // geth compatible keystore
 const keyStore = z.object({
@@ -39,7 +44,13 @@ type Mnemonic = z.infer<typeof mnemonic>;
 type SingleSigAccount = z.infer<typeof singleSigAccount>;
 export type KeyStore = z.infer<typeof keyStore>;
 
-const evmAccounts = z.array(z.union([singleSigAccount, initializedMultisig]));
+export const wallet = z.union([
+  z.instanceof(ethers.Wallet),
+  z.instanceof(ethers.HDNodeWallet),
+]);
+export const evmAccounts = z.array(
+  z.union([singleSigAccount, initializedMultisig])
+); // Type of account that one can send transactions from
 export type EvmAccounts = z.infer<typeof evmAccounts>;
 export const EvmAccountsConfig = z.union([evmAccounts, keyStore]);
 export type EvmAccountConfig = z.infer<typeof EvmAccountsConfig>;
@@ -157,13 +168,17 @@ export function loadEvmAccounts(config: unknown): Registry<Wallet> {
 
 // Connect all accounts to the provider
 export const connectProviderAccounts = (
-  accountRegistry: SingleSigAccountRegistry,
+  accountRegistry: SingleSigAccountRegistry | SendingAccountRegistry,
   rpc: string
 ) => {
   const provider = ethers.getDefaultProvider(rpc);
   const newAccounts = accountRegistry.subset([]);
   for (const [name, account] of accountRegistry.entries()) {
-    newAccounts.set(name, account.connect(provider));
+    if (account instanceof ethers.Wallet) {
+      newAccounts.set(name, account.connect(provider));
+    } else if (isMultisig(account)) {
+      newAccounts.set(name, account.wallet.connect(provider));
+    }
   }
   return newAccounts;
 };
