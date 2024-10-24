@@ -28,6 +28,7 @@ import { hideBin } from 'yargs/helpers';
 import { SingleSigAccountRegistry } from '../evm/schemas/account';
 import { ethers } from 'ethers';
 import { BigNumberish } from 'ethers';
+import { SendingAccountRegistry } from '../evm/schemas/sendingAccount';
 
 export interface StringToStringMap {
   [key: string]: string | null | undefined;
@@ -272,7 +273,7 @@ export async function writeDeployedContractToFile(
 // Read existing accounts into env
 export async function readAccountsIntoEnv(
   env: any,
-  accountRegistry: SingleSigAccountRegistry
+  accountRegistry: SingleSigAccountRegistry| SendingAccountRegistry
 ) {
   accountRegistry.keys().forEach((accountName) => {
     env[accountName] = accountRegistry.mustGet(accountName);
@@ -417,7 +418,7 @@ export async function parseArgsFromCLI() {
     registry: parseObjFromFile(accountSpecs),
   };
 
-  const accounts = SingleSigAccountRegistry.loadMultiple([accountConfigFromYaml]);
+  const accounts = SendingAccountRegistry.loadMultiple([accountConfigFromYaml]);
 
   return {
     chain: chainParse.data,

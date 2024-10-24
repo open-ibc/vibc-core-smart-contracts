@@ -1,10 +1,7 @@
 import { sendTx } from "./tx";
 import { deployContract } from "./deploy";
 import { Chain } from "./evm/chain";
-import {
-  AccountRegistry,
-  connectProviderAccounts,
-} from "./evm/schemas/account";
+import { SingleSigAccountRegistry } from "./evm/schemas/account";
 import { ContractItemSchema, ContractRegistry } from "./evm/schemas/contract";
 import {
   UpdateContractRegistry,
@@ -13,18 +10,19 @@ import {
 import { Logger } from "winston";
 import { readAccountsIntoEnv, readDeploymentFilesIntoEnv } from "./utils/io";
 import { TxItemSchema } from "./evm/schemas/tx";
+import { SendingAccountRegistry } from "./evm/schemas/sendingAccount";
 
 // Combination of sendTxToChain and deployContracts. Can do both from a single deploy file, and uses zod to parse the schema.
 export async function updateContractsForChain(
   chain: Chain,
-  accountRegistry: AccountRegistry,
+  accountRegistry: SingleSigAccountRegistry | SendingAccountRegistry,
   existingContracts: ContractRegistry,
   updateSpec: UpdateContractRegistry,
   logger: Logger,
   dryRun = false,
   forceDeployNewContracts = false, // True if you want to use existing deployments when possible
   writeContracts: boolean = true, // True if you want to save persisted artifact files.
-  extraContractFactories: Record<string, any> = {}
+  extraContractFactories: Record<string, object> = {}
 ) {
   logger.info(
     `updating ${updateSpec.size} contract(s) for chain ${chain.chainName}-${
@@ -32,9 +30,10 @@ export async function updateContractsForChain(
     } with contractNames: [${updateSpec.keys()}]`
   );
 
-  let nonces: Record<string, number> = {}; // Maps addresses to nonces. Used to avoid nonce too low errors.
+  const nonces: Record<string, number> = {}; // Maps addresses to nonces. Used to avoid nonce too low errors.
+
   if (!dryRun) {
-    accountRegistry = connectProviderAccounts(accountRegistry, chain.rpc);
+    accountRegistry.connectProviderAccounts(chain.rpc);
   }
 
   const existingContractAddresses: Record<string, string> = {};
@@ -42,7 +41,6 @@ export async function updateContractsForChain(
     existingContractAddresses[item.name] = item.address ? item.address : "0x";
   });
 
-  //  @ts-ignore
   let env = await readDeploymentFilesIntoEnv({}, chain); // Read from existing deployment files first, then overwrite with explicitly given contract addresses
   env = await readAccountsIntoEnv(env, accountRegistry); // Read from rendered accounts, useful for accessing things like multisig address from a signer, etc.
   env = { ...process.env, chain, ...existingContractAddresses, ...env };
