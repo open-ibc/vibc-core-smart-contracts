@@ -44,8 +44,8 @@ export const UPDATE_SPECS_PATH = process.env.UPDATE_SPECS_PATH
   ? process.env.UPDATE_SPECS_PATH
   : path.resolve(SPECS_BASE_PATH, "update.spec.yaml");
 
-export const ACCOUNTS_SPECS_PATH = process.env.ACCOUNTS_SPECS_PATH
-  ? process.env.ACCOUNTS_SPECS_PATH
+export const ACCOUNT_SPECS_PATH = process.env.ACCOUNT_SPECS_PATH
+  ? process.env.ACCOUNT_SPECS_PATH
   : path.resolve(SPECS_BASE_PATH, "evm.accounts.yaml");
 
 export const EXTRA_BINDINGS_PATH = process.env.EXTRA_BINDINGS_PATH;

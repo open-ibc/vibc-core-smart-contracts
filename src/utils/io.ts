@@ -11,7 +11,7 @@ import { Chain, ChainConfigSchema, ChainFolderSchema } from '../evm/chain';
 import {
   DEPLOYMENTS_PATH,
   ARTIFACTS_PATH,
-  ACCOUNTS_SPECS_PATH,
+  ACCOUNT_SPECS_PATH,
   CHAIN_NAME,
   CHAIN_ID,
   RPC_URL,
@@ -140,10 +140,10 @@ export function parseZodSchema<T>(
         `parsing ${className} failed. ${zErr.issues
           .map((i) => i.path)
           .join(', ')}: ${zErr.message}\nconfig obj:\n${JSON.stringify(
-            config,
-            null,
-            2
-          )}`
+          config,
+          null,
+          2
+        )}`
       );
     } else {
       throw e;
@@ -273,7 +273,7 @@ export async function writeDeployedContractToFile(
 // Read existing accounts into env
 export async function readAccountsIntoEnv(
   env: any,
-  accountRegistry: SingleSigAccountRegistry| SendingAccountRegistry
+  accountRegistry: SingleSigAccountRegistry | SendingAccountRegistry
 ) {
   accountRegistry.keys().forEach((accountName) => {
     env[accountName] = accountRegistry.mustGet(accountName);
@@ -389,7 +389,7 @@ export async function parseArgsFromCLI() {
   const deploymentEnvironment =
     argv1.DEPLOYMENT_ENVIRONMENT || DEPLOYMENT_ENVIRONMENT;
   const accountSpecs =
-    (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+    (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNT_SPECS_PATH;
 
   const updateSpecs = (argv1.UPDATE_SPECS_PATH as string) || UPDATE_SPECS_PATH;
   const anvilPort = (argv1.ANVIL_PORT as string) || ANVIL_PORT;
@@ -434,27 +434,16 @@ export async function parseArgsFromCLI() {
 }
 
 export const parseMultisigInitArgsFromCLI = async () => {
-  const argv1 = await yargs(hideBin(process.argv)).option('OWNERS', {
-    alias: 'o',
-    description: 'Owners to init multisig safe with',
-    type: 'array',
-    string: true,
-  }).argv;
+  const argv1 = await yargs(hideBin(process.argv)).argv;
   const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
-  const owners = argv1.OWNERS as string[];
-  const threshold = argv1.THRESHOLD as number;
   const initiator = argv1.INITIATOR as string;
   const accountsSpecPath =
-    (argv1.ACCOUNTS_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
-
-  // TODO: validate args
+    (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNT_SPECS_PATH;
 
   return {
     rpcUrl,
-    owners,
     initiator,
     accountsSpecPath,
-    threshold,
   };
 };
 
@@ -464,7 +453,7 @@ export async function parseExecuteMultisigTxArgsFromCLI() {
   const TX_INDEX = argv1.TX_INDEX as number;
   const rpcUrl = (argv1.RPC_URL as string) || RPC_URL;
   const accountsSpecPath =
-    (argv1.ACCOUNTS_SPECS_PATH as string) || ACCOUNTS_SPECS_PATH;
+    (argv1.ACCOUNT_SPECS_PATH as string) || ACCOUNT_SPECS_PATH;
 
   if (!executor || !TX_INDEX) {
     throw new Error('executor and txIndex must be provided');
@@ -523,23 +512,27 @@ export const parseVerifyArgsFromCLI = async () => {
 export const saveMultisigAddressToAccountsSpec = async (
   newSafeAddress: string,
   accountsSpecPath: string,
-  ownerName: string, // Used to find which owner to write to
-  chainId: BigNumberish
+  ownerName: string // Used to find which owner to write to
 ) => {
   // TODO: Currently this yaml lib doesn't include comments - we need to figure out a way to preserve comments / whitespaces, etc
   const yamlFile = readYamlFile(accountsSpecPath);
 
-  const owner = yamlFile.find((account: any) => account.name === ownerName);
-  if (!owner) {
-    throw new Error(`Could not find owner ${ownerName} in accounts spec`);
-  }
-
-  yamlFile.push({
-    ...owner,
-    safeAddress: newSafeAddress,
-    chainId: chainId,
-    name: `${ownerName}_MULTISIG`,
+  let matchFound = false;
+  const newYamlFile = yamlFile.map((account: any) => {
+    if (account.name !== ownerName) {
+      return account;
+    }
+    matchFound = true;
+    return {
+      name: `${account.name}_MULTISIG`,
+      chainId: account.chainId,
+      safeAddress: newSafeAddress,
+      privateKey: account.privateKey,
+    };
   });
 
-  await writeYamlFile(accountsSpecPath, yamlFile);
+  if (!matchFound) {
+    throw new Error(`Could not find owner ${ownerName} in accounts spec`);
+  }
+  await writeYamlFile(accountsSpecPath, newYamlFile);
 };
