@@ -2,6 +2,7 @@ import { fs } from "zx";
 import { Registry } from "../../utils/registry";
 import {
   createWallet,
+  EvmAccountsConfig,
   isEvmAccounts,
   isEvmAccountsConfig,
   isKeyStore,
@@ -9,10 +10,9 @@ import {
 import { isPrivateKey, isSingleSigAccount, Wallet } from "./wallet";
 import {
   InitializedMultisig,
-  isInitializedMultisig,
   isMultisig,
   isMultisigConfig,
-  isUninitializedMultisig,
+  unInitializedMultisig,
   UninitializedMultisig,
 } from "./multisig";
 import path from "path";
@@ -33,7 +33,10 @@ export class SendingAccountRegistry extends Registry<SendingAccount> {
   }
 
   static loadMultiple(registryItems: { name: string; registry: any }[]) {
-    const result = new Registry([] as SendingAccountRegistry[], {
+    const result = new Registry<
+      SendingAccountRegistry,
+      { name: string; registry: any }
+    >([], {
       toObj: (t) => {
         return { name: t.name, registry: t.serialize() };
       },
@@ -78,20 +81,17 @@ export class SendingAccountRegistry extends Registry<SendingAccount> {
     const account = this.mustGet(accountName);
     if (isSingleSigAccount(account) && isPrivateKey(account)) {
       return account.privateKey;
-    } else if (
-      isInitializedMultisig(account) ||
-      isUninitializedMultisig(account)
-    ) {
+    } else if (isMultisig(account)) {
       return account.wallet.privateKey;
     }
     throw new Error(
       `Can't find private key for ${accountName} in this registry`
     );
   };
+
   // Connect all accounts to the provider
   public connectProviderAccounts = (rpc: string) => {
     const provider = ethers.getDefaultProvider(rpc);
-    // const newAccounts = this.subset([]);
     for (const [name, account] of this.entries()) {
       if (isMultisig(account)) {
         const newMultisigWallet = {
@@ -107,10 +107,15 @@ export class SendingAccountRegistry extends Registry<SendingAccount> {
   };
 }
 
-// Load a map of evm accounts from a config through connecting wallets, can either take in sending accounts or not
+// Load a map of evm accounts from a config through connecting wallets, can either take in sending accounts a single sig account
+// This will convert either from MultisigAccountConfig -> MultisigAccount or SingleSigAccountConfig -> Wallet
 export function loadSendingAccounts(config: unknown): Registry<SendingAccount> {
   if (!isEvmAccountsConfig(config)) {
-    throw new Error(`Error parsing schema: ${config}`);
+    throw new Error(
+      `Error parsing schema: ${config} \n ${
+        EvmAccountsConfig.safeParse(config).error
+      }`
+    );
   }
 
   const walletMap = new Registry<SendingAccount>([]);
@@ -118,10 +123,13 @@ export function loadSendingAccounts(config: unknown): Registry<SendingAccount> {
   if (isEvmAccounts(config)) {
     for (const account of config) {
       if (isMultisigConfig(account)) {
-        const wallet = createWallet(account.signer);
-        const multisigAccount: InitializedMultisig = {
+        const wallet = createWallet({
+          name: account.name,
+          privateKey: account.privateKey,
+        });
+        const multisigAccount: InitializedMultisig | UninitializedMultisig = {
           ...account,
-          wallet: wallet,
+          wallet,
         };
         walletMap.set(account.name, multisigAccount);
       } else if (isSingleSigAccount(account)) {

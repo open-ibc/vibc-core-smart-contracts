@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { ethers } from "ethers";
+import { ethers, toBigInt } from "ethers";
 import { SingleSigAccountRegistry, parseObjFromFile } from "..";
 import { newSafeFromOwner } from "../multisig/safe";
 
@@ -7,9 +7,11 @@ import {
   parseMultisigInitArgsFromCLI,
   saveMultisigAddressToAccountsSpec,
 } from "../utils/io";
+import { SendingAccountRegistry } from "../evm/schemas/sendingAccount";
+import { isUninitializedMultisig } from "../evm/schemas/multisig";
 
 async function main() {
-  const { rpcUrl, owners, initiator, accountsSpecPath, threshold } =
+  const { rpcUrl, initiator, accountsSpecPath } =
     await parseMultisigInitArgsFromCLI();
 
   const accountConfigFromYaml = {
@@ -17,30 +19,41 @@ async function main() {
     registry: parseObjFromFile(accountsSpecPath),
   };
 
-  const accounts = SingleSigAccountRegistry.loadMultiple([
+  const accounts = SendingAccountRegistry.loadMultiple([
     accountConfigFromYaml,
   ]).mustGet("multisig-accounts");
+
+  const multisigAccount = accounts.mustGet(initiator);
+  if (!isUninitializedMultisig(multisigAccount)) {
+    throw new Error(
+      "Account read from yaml but isn't a multisig account that needs to be initialized."
+    );
+  }
 
   const senderPrivateKey = accounts.getSinglePrivateKeyFromAccount(initiator);
   if (!senderPrivateKey) {
     throw new Error(`Could not find private key for owner ${initiator}`);
   }
 
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const chainId = (await provider.getNetwork()).chainId;
+  if (!chainId || chainId !== toBigInt(multisigAccount.chainId)) {
+    throw new Error(
+      `Chain id mismatch between multisig account and rpc url. ${multisigAccount.chainId} is specified in accounts spec, but ${chainId} is the chain id of the rpc url`
+    );
+  }
+
   const newSafeAddress = await newSafeFromOwner(
     rpcUrl,
     senderPrivateKey,
-    owners,
-    threshold
+    multisigAccount.owners,
+    multisigAccount.threshold
   );
-
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const chainId = (await provider.getNetwork()).chainId;
 
   await saveMultisigAddressToAccountsSpec(
     newSafeAddress,
     accountsSpecPath,
-    initiator,
-    chainId
+    initiator
   );
 }
 

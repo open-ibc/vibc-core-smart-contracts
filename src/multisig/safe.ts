@@ -17,8 +17,6 @@ export const newSafeFromOwner = async (
   owners: string[],
   threshold: number
 ) => {
-  // TODO: check owners is indeed an array and not a string (for edge case of one address)
-
   const safeFactory = await SafeFactory.init({
     provider: RPC_URL,
     signer: ownerKey,
