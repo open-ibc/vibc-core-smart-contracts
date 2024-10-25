@@ -1,4 +1,4 @@
-import { AccountRegistry } from "./evm/schemas/account";
+import { SingleSigAccountRegistry} from "./evm/schemas/account";
 import { Chain } from "./evm/chain";
 import { Registry } from "./utils/registry";
 import { ContractRegistryLoader } from "./evm/schemas/contract";
@@ -12,6 +12,6 @@ export {
   Registry,
   loadEvmAccounts,
   parseObjFromFile,
-  AccountRegistry,
+  SingleSigAccountRegistry,
   ContractRegistryLoader,
 };
