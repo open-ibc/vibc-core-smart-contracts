@@ -25,7 +25,7 @@ import {
 } from './constants';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
-import { AccountRegistry } from '../evm/schemas/account';
+import { SingleSigAccountRegistry } from '../evm/schemas/account';
 import { ethers } from 'ethers';
 import { BigNumberish } from 'ethers';
 
@@ -204,7 +204,7 @@ export async function readArtifactFile(
     }
   }
 
-  console.error(`error reading from file in extra file ${path}: \n`, );
+  console.error(`error reading from file in extra file ${path}: \n`);
   return '';
 }
 
@@ -272,7 +272,7 @@ export async function writeDeployedContractToFile(
 // Read existing accounts into env
 export async function readAccountsIntoEnv(
   env: any,
-  accountRegistry: AccountRegistry
+  accountRegistry: SingleSigAccountRegistry
 ) {
   accountRegistry.keys().forEach((accountName) => {
     env[accountName] = accountRegistry.mustGet(accountName);
@@ -417,7 +417,7 @@ export async function parseArgsFromCLI() {
     registry: parseObjFromFile(accountSpecs),
   };
 
-  const accounts = AccountRegistry.loadMultiple([accountConfigFromYaml]);
+  const accounts = SingleSigAccountRegistry.loadMultiple([accountConfigFromYaml]);
 
   return {
     chain: chainParse.data,
@@ -432,7 +432,7 @@ export async function parseArgsFromCLI() {
   };
 }
 
-export const parseMultiSigInitArgsFromCLI = async () => {
+export const parseMultisigInitArgsFromCLI = async () => {
   const argv1 = await yargs(hideBin(process.argv)).option('OWNERS', {
     alias: 'o',
     description: 'Owners to init multisig safe with',
