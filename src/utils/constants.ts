@@ -53,3 +53,5 @@ export const EXTRA_BINDINGS_PATH = process.env.EXTRA_BINDINGS_PATH;
 // The path where we access external artifacts for already deployed contracts
 export const EXTRA_ARTIFACTS_PATH = process.env.EXTRA_ARTIFACTS_PATH;
 
+// Path where we can load an existing contract registry from 
+export const EXTERNAL_CONTRACTS_PATH= process.env.EXTERNAL_CONTRACTS_PATH;

@@ -3,133 +3,74 @@ import { ethers } from "ethers";
 import fs from "fs";
 import path from "path";
 import { Registry } from "../../utils/registry";
-import { parseZodSchema, renderString } from "../../utils/io";
+import { renderString } from "../../utils/io";
+import { initializedMultisig } from "./multisig";
+import {
+  isMnemonic,
+  isPrivateKey,
+  isSingleSigAccount,
+  SingleSigAccount,
+  singleSigAccount,
+  Wallet,
+} from "./wallet";
+
 // ethers wallet with encryption
-export type Wallet = ethers.Wallet | ethers.HDNodeWallet;
-
-const privateKey = z
-  .object({
-    name: z.string().min(1),
-    // privateKey should be a hex string prefixed with 0x
-    privateKey: z.string().min(1),
-  })
-  .strict();
-
-const mnemonic = z
-  .object({
-    name: z.string().min(1),
-    // a 12-word mnemonic; or more words per BIP-39 spec
-    mnemonic: z.string().min(1),
-    path: z.optional(z.string().min(1)),
-    index: z.optional(z.number().int().min(0)),
-  })
-  .strict();
-
-const singleSigAccount = z.union([privateKey, mnemonic]);
-
-// Uninitialized User input type
-const multisigConfig = z
-  .object({
-    name: z.string().min(1),
-    privateKey: z.string().min(1),
-    safeAddress: z.string().min(1),
-    chainId: z.number(),
-  })
-  .strict();
-
-// Type that loadEvmAccounts will return for multisig types
-const multisigAccount = z
-  .object({
-    name: z.string().min(1),
-    privateKey: z.string().min(1),
-    safeAddress: z.string().min(1),
-    chainId: z.number(),
-    wallet: z.union([
-      z.instanceof(ethers.Wallet),
-      z.instanceof(ethers.HDNodeWallet),
-    ]),
-  })
-
-  .strict();
-
 // geth compatible keystore
 const keyStore = z.object({
   dir: z.string().min(1),
   password: z.optional(z.string()),
 });
 
-type Privatekey = z.infer<typeof privateKey>;
-type Mnemonic = z.infer<typeof mnemonic>;
-type SingleSigAccount = z.infer<typeof singleSigAccount>;
-type MultiSigConfig = z.infer<typeof multisigConfig>;
-type ParsedMultiSigWallet = z.infer<typeof multisigAccount>;
-export type SendingAccount = Wallet | ParsedMultiSigWallet;
 export type KeyStore = z.infer<typeof keyStore>;
 
-const evmAccounts = z.array(z.union([singleSigAccount, multisigConfig]));
+export const evmAccounts = z.array(
+  z.union([singleSigAccount, initializedMultisig])
+); // Type of account that one can send transactions from
 export type EvmAccounts = z.infer<typeof evmAccounts>;
 export const EvmAccountsConfig = z.union([evmAccounts, keyStore]);
 export type EvmAccountConfig = z.infer<typeof EvmAccountsConfig>;
 
-export const isPrivateKey = (account: any): account is Privatekey => {
-  return privateKey.safeParse(account).success;
-};
-export const isMnemonic = (account: any): account is Mnemonic => {
-  return mnemonic.safeParse(account).success;
-};
-
-export const isSingleSigAccount = (
-  account: any
-): account is SingleSigAccount => {
-  return singleSigAccount.safeParse(account).success;
-};
-
-export const isMultiSigConfig = (account: any): account is MultiSigConfig => {
-  return multisigConfig.safeParse(account).success;
-};
-
-export const isKeyStore = (account: any): account is KeyStore => {
+export const isKeyStore = (account: unknown): account is KeyStore => {
   return keyStore.safeParse(account).success;
 };
 
-export const isEvmAccount = (account: any): account is EvmAccounts => {
+export const isEvmAccounts = (account: unknown): account is EvmAccounts => {
   return evmAccounts.safeParse(account).success;
 };
 export const isEvmAccountsConfig = (
-  account: any
+  account: unknown
 ): account is EvmAccountConfig => {
   return EvmAccountsConfig.safeParse(account).success;
 };
 
-// Note: only use this for already declared accounts.
-export const isParsedMultiSigWallet = (
-  account: any
-): account is ParsedMultiSigWallet => {
-  return multisigAccount.safeParse(account).success;
-};
+// Declare a generic account class which can be either of these. then you can define both generic and non-generic ones
+// - the generic one is only used in inheritance
+// The very single sig account is used in e2e since that does nothing with multisig
+// The slightly less generic (but still initialized one i.e. with sneding acocunts) is used in infra
+// The one with any accounts can be used
+// So you need ones for all 3, only the single sig, and only the sending ones.
 
-export class AccountRegistry extends Registry<SendingAccount> {
-  static load(config: any[], name: string): AccountRegistry {
-    return new AccountRegistry(loadEvmAccounts(config), config, name);
+export class SingleSigAccountRegistry extends Registry<Wallet> {
+  static load(config: unknown[], name: string): SingleSigAccountRegistry {
+    return new SingleSigAccountRegistry(loadEvmAccounts(config), config, name);
   }
 
   static loadMultiple(registryItems: { name: string; registry: any }[]) {
-    const result = new Registry([] as AccountRegistry[], {
+    const result = new Registry([] as SingleSigAccountRegistry[], {
       toObj: (t) => {
         return { name: t.name, registry: t.serialize() };
       },
     });
     for (const item of registryItems) {
-      result.set(item.name, AccountRegistry.load(item.registry, item.name));
+      result.set(
+        item.name,
+        SingleSigAccountRegistry.load(item.registry, item.name)
+      );
     }
     return result;
   }
 
-  constructor(
-    r: Registry<SendingAccount>,
-    private config: any[],
-    name: string
-  ) {
+  constructor(r: Registry<Wallet>, private config: any[], name: string) {
     super([], { nameInParent: name });
     for (const [name, wallet] of r.entries()) {
       this.set(name, wallet);
@@ -143,9 +84,7 @@ export class AccountRegistry extends Registry<SendingAccount> {
       return {
         name: item.name,
         privateKey: wallets[index].privateKey,
-        address: isParsedMultiSigWallet(wallets[index])
-          ? wallets[index].wallet.address
-          : wallets[index].address,
+        address: wallets[index].address,
         ...item,
       };
     });
@@ -153,34 +92,31 @@ export class AccountRegistry extends Registry<SendingAccount> {
 
   public getSinglePrivateKeyFromAccount = (accountName: string) => {
     const account = this.mustGet(accountName);
-    if (isParsedMultiSigWallet(account)) {
-      return account.wallet.privateKey;
+    if (!isMnemonic(account)) {
+      return account.privateKey;
     }
-    return account.privateKey;
+    return account.mnemonic;
+  };
+  // Connect all accounts to the provider
+  public connectProviderAccounts = (rpc: string) => {
+    const provider = ethers.getDefaultProvider(rpc);
+    for (const [name, account] of this.entries()) {
+      this.set(name, account.connect(provider), true);
+    }
+    return this;
   };
 }
 
 // load a Map of { [name: string]: Wallet } from EvmAccountsSchema object
-export function loadEvmAccounts(config: any): Registry<SendingAccount> {
+export function loadEvmAccounts(config: unknown): Registry<Wallet> {
   if (!isEvmAccountsConfig(config)) {
     throw new Error(`Error parsing schema: ${config}`);
   }
+  const walletMap = new Registry<Wallet>([]);
 
-  const walletMap = new Registry<SendingAccount>([]);
-
-  if (isEvmAccount(config)) {
+  if (isEvmAccounts(config)) {
     for (const account of config) {
-      if (isMultiSigConfig(account)) {
-        const wallet = createWallet({
-          privateKey: account.privateKey,
-          name: account.name,
-        });
-        const multisigAccount = {
-          ...account,
-          wallet,
-        };
-        walletMap.set(account.name, multisigAccount);
-      } else if (isSingleSigAccount(account)) {
+      if (isSingleSigAccount(account)) {
         walletMap.set(account.name, createWallet(account));
       }
     }
@@ -198,28 +134,6 @@ export function loadEvmAccounts(config: any): Registry<SendingAccount> {
   }
   return walletMap;
 }
-
-// Connect all accounts to the provider
-export const connectProviderAccounts = (
-  accountRegistry: AccountRegistry,
-  rpc: string
-) => {
-  const provider = ethers.getDefaultProvider(rpc);
-  const newAccounts = accountRegistry.subset([]);
-  for (const [name, account] of accountRegistry.entries()) {
-    if (isParsedMultiSigWallet(account)) {
-      const newMultisigWallet = {
-        ...account,
-        wallet: account.wallet.connect(provider),
-      };
-      newAccounts.set(name, newMultisigWallet);
-    } else {
-      newAccounts.set(name, account.connect(provider));
-    }
-  }
-
-  return newAccounts;
-};
 
 export function createWallet(opt: SingleSigAccount): Wallet {
   if (isPrivateKey(opt)) {
