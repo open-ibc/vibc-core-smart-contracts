@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { Registry } from "../../utils/registry";
 import { renderString } from "../../utils/io";
-import { initializedMultisig } from "./multisig";
+import { initializedMultisigConfig, uninitializedMultisigConfig } from "./multisig";
 import {
   isMnemonic,
   isPrivateKey,
@@ -24,7 +24,7 @@ const keyStore = z.object({
 export type KeyStore = z.infer<typeof keyStore>;
 
 export const evmAccounts = z.array(
-  z.union([singleSigAccount, initializedMultisig])
+  z.union([singleSigAccount, initializedMultisigConfig, uninitializedMultisigConfig])
 ); // Type of account that one can send transactions from
 export type EvmAccounts = z.infer<typeof evmAccounts>;
 export const EvmAccountsConfig = z.union([evmAccounts, keyStore]);
@@ -104,7 +104,7 @@ export class SingleSigAccountRegistry extends Registry<Wallet> {
 // load a Map of { [name: string]: Wallet } from EvmAccountsSchema object
 export function loadEvmAccounts(config: unknown): Registry<Wallet> {
   if (!isEvmAccountsConfig(config)) {
-    throw new Error(`Error parsing schema: ${config}`);
+    throw new Error(`Error parsing schema: ${config}: \n ${EvmAccountsConfig.safeParse(config).error}`);
   }
   const walletMap = new Registry<Wallet>([]);
 
