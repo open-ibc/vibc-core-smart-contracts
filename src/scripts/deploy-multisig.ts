@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 import { ethers } from "ethers";
-import { AccountRegistry, parseObjFromFile } from "..";
+import { SingleSigAccountRegistry, parseObjFromFile } from "..";
 import { newSafeFromOwner } from "../multisig/safe";
 
 import {
-  parseMultiSigInitArgsFromCLI,
+  parseMultisigInitArgsFromCLI,
   saveMultisigAddressToAccountsSpec,
 } from "../utils/io";
 
 async function main() {
   const { rpcUrl, owners, initiator, accountsSpecPath, threshold } =
-    await parseMultiSigInitArgsFromCLI();
+    await parseMultisigInitArgsFromCLI();
 
   const accountConfigFromYaml = {
     name: "multisig-accounts",
     registry: parseObjFromFile(accountsSpecPath),
   };
 
-  const accounts = AccountRegistry.loadMultiple([
+  const accounts = SingleSigAccountRegistry.loadMultiple([
     accountConfigFromYaml,
   ]).mustGet("multisig-accounts");
 

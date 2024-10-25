@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { singleSigAccount, wallet } from './account';
+import {singleSigAccount, wallet} from './wallet';
 
 // defined in an account spec, which will be cconvertedi nto an initialized multisig config once we deploy the multisig contract
 export const uninitializedMultisigConfig = z.object({
   name: z.string().min(1),
   chainId: z.number(),
   owners: z.array(z.string().min(1)), 
-  signer: singleSigAccount,
+  signer: singleSigAccount 
 }) .strict()
 
 // Defined in an account spec, which is not necessarily in a config

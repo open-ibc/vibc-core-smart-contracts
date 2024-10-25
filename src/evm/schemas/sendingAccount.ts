@@ -5,15 +5,13 @@ import {
   isEvmAccounts,
   isEvmAccountsConfig,
   isKeyStore,
-  isPrivateKey,
-  isSingleSigAccount,
-  Wallet,
 } from "./account";
+import { isPrivateKey, isSingleSigAccount, Wallet } from "./wallet";
 import {
   InitializedMultisig,
   isInitializedMultisig,
-  isInitializedMultisigConfig,
   isMultisig,
+  isMultisigConfig,
   isUninitializedMultisig,
   UninitializedMultisig,
 } from "./multisig";
@@ -90,6 +88,23 @@ export class SendingAccountRegistry extends Registry<SendingAccount> {
       `Can't find private key for ${accountName} in this registry`
     );
   };
+  // Connect all accounts to the provider
+  public connectProviderAccounts = (rpc: string) => {
+    const provider = ethers.getDefaultProvider(rpc);
+    // const newAccounts = this.subset([]);
+    for (const [name, account] of this.entries()) {
+      if (isMultisig(account)) {
+        const newMultisigWallet = {
+          ...account,
+          wallet: account.wallet.connect(provider),
+        };
+        this.set(name, newMultisigWallet, true);
+      } else {
+        this.set(name, account.connect(provider), true);
+      }
+    }
+    return this;
+  };
 }
 
 // Load a map of evm accounts from a config through connecting wallets, can either take in sending accounts or not
@@ -102,10 +117,7 @@ export function loadSendingAccounts(config: unknown): Registry<SendingAccount> {
 
   if (isEvmAccounts(config)) {
     for (const account of config) {
-      if (
-        isInitializedMultisigConfig(account) ||
-        isInitializedMultisig(account)
-      ) {
+      if (isMultisigConfig(account)) {
         const wallet = createWallet(account.signer);
         const multisigAccount: InitializedMultisig = {
           ...account,

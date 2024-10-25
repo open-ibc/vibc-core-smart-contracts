@@ -1,29 +1,22 @@
 import { ethers } from "ethers";
-import {
-  AccountRegistry,
-  connectProviderAccounts,
-  isParsedMultiSigWallet,
-} from "./evm/schemas/account";
 import { Chain } from "./evm/chain";
-import { TxItem, TxRegistry, loadTxRegistry } from "./evm/schemas/tx";
+import { TxItem } from "./evm/schemas/tx";
 import { Logger } from "./utils/cli";
-import {
-  StringToStringMap,
-  readDeploymentFilesIntoEnv,
-  readFactoryAbi,
-  readFromDeploymentFile,
-  renderArgs,
-} from "./utils/io";
+import { StringToStringMap, readFactoryAbi, renderArgs } from "./utils/io";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { ContractRegistry } from "./evm/schemas/contract";
 import { updateNoncesForSender } from "./deploy";
 import { fetchNonceFromSafeAddress, proposeTransaction } from "./multisig/safe";
 import * as vibcContractFactories from "./evm/contracts/index";
+import { isInitializedMultisig } from "./evm/schemas/multisig";
+import { SingleSigAccountRegistry } from "./evm/schemas/account";
+import { SendingAccountRegistry } from "./evm/schemas/sendingAccount";
+import { isWallet } from "./evm/schemas/wallet";
 
 export async function readAbiFromDeployedContract(
   existingContractOverrides: ContractRegistry,
   factoryName: string,
-  factories: Record<string, any> = {}
+  factories: Record<string, object> = {}
 ) {
   const existingContractOverride = existingContractOverrides.get(factoryName);
 
@@ -32,19 +25,19 @@ export async function readAbiFromDeployedContract(
     return existingContractOverride.abi;
   }
 
-  return readFactoryAbi(factoryName, factories)
+  return readFactoryAbi(factoryName, factories);
 }
 
 export async function sendTx(
   chain: Chain,
-  accountRegistry: AccountRegistry,
+  accountRegistry: SingleSigAccountRegistry | SendingAccountRegistry,
   existingContractOverrides: ContractRegistry,
   tx: TxItem,
   logger: Logger,
   dryRun: boolean = false,
   nonces: Record<string, number>,
   env: StringToStringMap,
-  extraContractFactories: Record<string, any> = {},
+  extraContractFactories: Record<string, object> = {}
 ) {
   try {
     const factoryName = tx.factoryName ? tx.factoryName : tx.name;
@@ -52,9 +45,12 @@ export async function sendTx(
       ...vibcContractFactories,
       ...extraContractFactories,
     };
-  
 
-    const deployedContractAbi = await readAbiFromDeployedContract(existingContractOverrides, factoryName, contractFactories)
+    const deployedContractAbi = await readAbiFromDeployedContract(
+      existingContractOverrides,
+      factoryName,
+      contractFactories
+    );
     if (!deployedContractAbi) {
       throw new Error(`Could not find ABI for contract ${factoryName}`);
     }
@@ -66,14 +62,13 @@ export async function sendTx(
     const deployedContractAddress = renderArgs([tx.address], tx.init, env)[0];
 
     const args = renderArgs(tx.args, tx.init, env);
-    if (isParsedMultiSigWallet(account)) {
+    if (isInitializedMultisig(account)) {
       const updatedNonces = await updateNoncesForSender(
         nonces,
         account.safeAddress,
         () => fetchNonceFromSafeAddress(chain.rpc, account.safeAddress)
       );
       // If multisig, we don't directly send the tx, but instead propose it to the safe tx service
-      const deployer = account.wallet;
       const contractInterface = new ethers.Interface(deployedContractAbi);
       const callData = contractInterface.encodeFunctionData(
         tx.signature!,
@@ -84,18 +79,18 @@ export async function sendTx(
         account.safeAddress,
         deployedContractAddress,
         callData,
-        deployer.privateKey,
+        account.wallet.privateKey,
         BigInt(chain.chainId),
         chain.rpc,
         updatedNonces[account.safeAddress]
       );
-    } else {
-      // Send from single acount
+    } else if (isWallet(account)) {
+      // Send from single account
       const deployer = account;
       const ethersContract = new ethers.Contract(
         deployedContractAddress,
         deployedContractAbi,
-        deployer
+        account
       );
 
       logger.info(
@@ -123,6 +118,8 @@ export async function sendTx(
           throw err;
         }
       }
+    } else {
+      throw new Error(`Unknown account type: ${account}`);
     }
   } catch (err) {
     logger.error(

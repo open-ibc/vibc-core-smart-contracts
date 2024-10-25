@@ -9,7 +9,7 @@ import {
 } from "./utils/io";
 import assert from "assert";
 import {
-  AccountRegistry,
+  SingleSigAccountRegistry,
   connectProviderAccounts,
   Wallet,
 } from "./evm/schemas/account";
@@ -22,7 +22,8 @@ import { Logger } from "./utils/cli";
 import { DEFAULT_DEPLOYER } from "./utils/constants";
 import { Chain } from "./evm/chain";
 import * as vibcContractFactories from "./evm/contracts/index";
-import { isParsedMultiSigWallet } from "./evm/schemas/account";
+import { isMultisig } from "./evm/schemas/multisig";
+import { SendingAccountRegistry } from "./evm/schemas/sendingAccount";
 
 export async function updateNoncesForSender(
   nonces: Record<string, number>,
@@ -97,12 +98,12 @@ const getDeployData = (
 
 export const deployContract = async (
   chain: Chain,
-  accountRegistry: AccountRegistry,
+  accountRegistry: SingleSigAccountRegistry|SendingAccountRegistry,
   contract: ContractItem,
   logger: Logger,
   dryRun: boolean = false,
   writeContracts: boolean = true, // True if you want to save persisted artifact files.
-  extraContractFactories: Record<string, any> = {},
+  extraContractFactories: Record<string, object> = {},
   nonces: Record<string, number> = {},
   env: StringToStringMap = {}
 ) => {
@@ -139,11 +140,12 @@ export const deployContract = async (
       contract.deployer ? contract.deployer : DEFAULT_DEPLOYER
     );
 
-    if (isParsedMultiSigWallet(deployer)) {
+    if (isMultisig(deployer)) {
       throw new Error(
-        `Contract Deployments not supported for multisig wallets!`
+        "Contract Deployments not supported for multisig wallets!"
       );
     }
+
     const updatedNonces = await updateNoncesForSender(
       nonces,
       deployer.address,
