@@ -1,6 +1,6 @@
 {
   "name": "@open-ibc/vibc-core-smart-contracts",
-  "version": "4.0.7",
+  "version": "4.0.8",
   "main": "dist/index.js",
   "bin": {
     "verify-vibc-core-smart-contracts": "./dist/scripts/verify-contract-script.js",
@@ -103,6 +103,5 @@
       "import": "./dist/utils/constants.js",
       "types": "./dist/utils/constants.d.ts"
     }
-  },
-  "type": "module"
+  }
 }
