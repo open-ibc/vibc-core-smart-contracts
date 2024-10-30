@@ -19,7 +19,7 @@ async function main() {
   let extraContractFactories: Record<string, object> | null = null;
   if (extraBindingsPath) {
     try {
-      extraContractFactories = await import(extraBindingsPath);
+      extraContractFactories = await require(extraBindingsPath);
     } catch (e) {
       throw new Error(
         `Failed to import extra contract factories from ${extraBindingsPath}: ${e}`
