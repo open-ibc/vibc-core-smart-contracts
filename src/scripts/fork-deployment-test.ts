@@ -63,7 +63,9 @@ const startAnvilServer = async (
   port: string,
   outFileName: string
 ) => {
-  const p = $`anvil --port ${port} --fork-url ${rpcUrl}`.pipe(
+  const p = $`anvil --port ${port} --fork-url ${rpcUrl}`
+
+  p.pipe(
     createWriteStream(outFileName)
   );
   await waitForAnvilServer(outFileName);
