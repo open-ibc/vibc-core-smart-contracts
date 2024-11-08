@@ -76,11 +76,9 @@ export async function sendTx(
       );
 
       proposeTransaction(
-        account.safeAddress,
+        account,
         deployedContractAddress,
         callData,
-        account.wallet.privateKey,
-        BigInt(chain.chainId),
         chain.rpc,
         updatedNonces[account.safeAddress]
       );

@@ -20,12 +20,8 @@ async function main() {
     throw new Error("Can only execute transactions on a multisig wallet");
   }
 
-  const privateKey = accounts.getSinglePrivateKeyFromAccount(executor);
-
   executeMultisigTx(
-    multisigAccount.safeAddress,
-    privateKey,
-    BigInt(multisigAccount.chainId),
+    multisigAccount,
     rpcUrl,
     txIndex
   );

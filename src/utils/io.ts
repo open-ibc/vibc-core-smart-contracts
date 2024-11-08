@@ -516,7 +516,6 @@ export const saveMultisigAddressToAccountsSpec = async (
   accountsSpecPath: string,
   chainId: number,
   ownerName: string // Used to find which owner to write to,
-
 ) => {
   // TODO: Currently this yaml lib doesn't include comments - we need to figure out a way to preserve comments / whitespaces, etc
   const yamlFile = readYamlFile(accountsSpecPath);
@@ -532,6 +531,7 @@ export const saveMultisigAddressToAccountsSpec = async (
       chainId,
       safeAddress: newSafeAddress,
       privateKey: account.privateKey,
+      txServiceUrl: account.txServiceUrl
     };
   });
 
