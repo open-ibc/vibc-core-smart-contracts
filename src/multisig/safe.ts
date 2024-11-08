@@ -1,11 +1,11 @@
 import SafeApiKit from "@safe-global/api-kit";
 import Safe, { SafeFactory } from "@safe-global/protocol-kit";
 import {
+  MetaTransactionData,
   OperationType,
-  SafeTransactionDataPartial,
   TransactionResult,
 } from "@safe-global/safe-core-sdk-types";
-import { ethers } from "ethers";
+import { InitializedMultisig } from "../evm/schemas/multisig";
 
 /*
  * Init a safe owner from a given private key to a give RPC's network
@@ -37,36 +37,31 @@ export const newSafeFromOwner = async (
  * @param data Propose a transaction from a signer account
  */
 export async function proposeTransaction(
-  safeAddress: string,
+  initializedMultisig: InitializedMultisig,
   toAddress: string,
   txData: string,
-  proposerPrivateKey: string,
-  chainId: bigint,
   rpcUrl: string,
   nonce: number,
   value = "0",
   operation = OperationType.Call
 ) {
-  const apiKit = new SafeApiKit({ chainId });
+  console.log(
+    `proposing transaction from \n \n @safe ${initializedMultisig.safeAddress} to ${toAddress} with value: ${value} and data: ${txData}, and nonce : ${nonce}`
+  );
 
   const txProposer = await Safe.init({
     provider: rpcUrl,
-    signer: proposerPrivateKey,
-    safeAddress: safeAddress,
+    signer: initializedMultisig.wallet.privateKey,
+    safeAddress: initializedMultisig.safeAddress,
   });
 
-  console.log(
-    `proposing transaction from ${txProposer} @safe ${safeAddress} to ${toAddress} with value: ${value} and data: ${txData}, and nonce : ${nonce}`
-  );
+  const txProposerAddress = initializedMultisig.wallet.address;
 
-  const txProposerAddress = new ethers.Wallet(proposerPrivateKey).address;
-
-  const safeTransactionData: SafeTransactionDataPartial = {
+  const safeTransactionData: MetaTransactionData = {
     to: toAddress,
     value,
     data: txData,
     operation: operation,
-    nonce,
   };
 
   const safeTransaction = await txProposer.createTransaction({
@@ -76,43 +71,86 @@ export async function proposeTransaction(
   const safeTxHash = await txProposer.getTransactionHash(safeTransaction);
 
   const proposerSignature = await txProposer.signHash(safeTxHash);
+  if (initializedMultisig.txServiceUrl) {
+    // For custom tx services, we have to submit our own http request since it seems like the safeApiKit.proposeTransaction method isn't compatible with some tx service urls
 
-  // Propose transaction to the service
-  await apiKit.proposeTransaction({
-    safeAddress,
-    safeTransactionData: safeTransaction.data,
-    safeTxHash,
-    senderAddress: txProposerAddress,
-    senderSignature: proposerSignature.data,
-  });
+    const url = `${initializedMultisig.txServiceUrl}/v1/chains/${initializedMultisig.chainId}/transactions/${initializedMultisig.safeAddress}/propose`;
+    const body = JSON.stringify({
+      ...safeTransaction.data,
+      nonce: nonce.toString(),
+      signature: proposerSignature.data,
+      sender: txProposerAddress,
+      safeTxHash,
+    });
 
-  console.log(
-    `Transaction has been proposed with hash: ${safeTxHash} from address ${txProposerAddress}`
-  );
-  return await apiKit.getTransaction(safeTxHash);
+    console.log(`proposing transaction to tx service:${url} \n `);
+    console.log(`with body${body}`);
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.log(
+          `received non 200 response from tx service ${res.status} ${json.message}`
+        );
+      }
+      return json;
+    } catch (e) {
+      console.log(
+        `error sending pending multisig tx to tx service ${initializedMultisig.txServiceUrl}`,
+        e
+      );
+
+      return;
+    }
+  } else {
+    const apiKit = new SafeApiKit({
+      chainId: BigInt(initializedMultisig.chainId),
+    });
+    // Propose transaction to the service
+    await apiKit.proposeTransaction({
+      safeAddress: initializedMultisig.safeAddress,
+      safeTransactionData: safeTransaction.data,
+      safeTxHash,
+      senderAddress: txProposerAddress,
+      senderSignature: proposerSignature.data,
+    });
+    console.log(
+      `Transaction has been proposed with hash: ${safeTxHash} from address ${txProposerAddress}`
+    );
+    return await apiKit.getTransaction(safeTxHash);
+  }
 }
 
 /**
  * Execute a multisig tx from an account generated from proposeTransaction
  */
 export const executeMultisigTx = async (
-  safeAddress: string,
-  executorPrivateKey: string,
-  chainId: bigint,
+  initializedMultisig: InitializedMultisig,
   rpcUrl: string,
   pendingTransactionIndex: number
-):Promise<TransactionResult> => {
+): Promise<TransactionResult> => {
   const apiKit = new SafeApiKit({
-    chainId,
+    chainId: BigInt(initializedMultisig.chainId),
+    txServiceUrl: initializedMultisig.txServiceUrl,
   });
 
   const executor = await Safe.init({
     provider: rpcUrl,
-    signer: executorPrivateKey,
-    safeAddress,
+    signer: initializedMultisig.wallet.privateKey,
+    safeAddress: initializedMultisig.safeAddress,
   });
 
-  const transactions = await apiKit.getPendingTransactions(safeAddress);
+  const transactions = await apiKit.getPendingTransactions(
+    initializedMultisig.safeAddress
+  );
 
   if (transactions.results.length <= pendingTransactionIndex) {
     throw new Error(

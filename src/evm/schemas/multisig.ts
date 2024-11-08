@@ -8,6 +8,7 @@ export const uninitializedMultisigConfig = z
     privateKey: z.string().min(1),
     owners: z.array(z.string().min(1)),
     threshold: z.number(),
+    txServiceUrl: z.string().optional()
   })
   .strict();
 
@@ -18,6 +19,7 @@ export const initializedMultisigConfig = z
     chainId: z.number(),
     privateKey: z.string().min(1),
     safeAddress: z.string().min(1),
+    txServiceUrl: z.string().optional(),
   })
   .strict();
 
@@ -37,6 +39,7 @@ export const initializedMultisig = z.object({
   privateKey: z.string().min(1),
   safeAddress: z.string().min(1),
   wallet: wallet,
+  txServiceUrl: z.string().optional(),
 });
 
 export type UninitializedMultisigConfig = z.infer<
