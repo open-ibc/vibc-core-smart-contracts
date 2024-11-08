@@ -30,7 +30,7 @@ import {IbcDispatcher} from "../interfaces/IbcDispatcher.sol";
  * integrate with the vibc protocol.
  */
 contract MarsEvil is Mars {
-    constructor(IbcDispatcher _dispatcher) Mars(dispatcher) {}
+    constructor(IbcDispatcher _dispatcher) Mars(_dispatcher){}
 
     /**
      * @notice batch trigger a channelInit to try to grief  
@@ -42,7 +42,7 @@ contract MarsEvil is Mars {
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
         uint256 numCalls
-    ) external onlyOwner {
+    ) external payable onlyOwner {
         _triggerChannelInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
         for (uint256 i = 0; i < numCalls; i++) {
             // Grief calls before event
@@ -60,7 +60,7 @@ contract MarsEvil is Mars {
         string[] calldata connectionHops,
         string calldata counterpartyPortId,
         uint256 numCalls
-    ) external onlyOwner {
+    ) external payable onlyOwner {
         for (uint256 i = 0; i < numCalls; i++) {
             // Grief calls before event
             dispatcher.channelOpenInit(version, ordering, feeEnabled, connectionHops, counterpartyPortId);
