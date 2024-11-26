@@ -27,7 +27,7 @@
     "zx": "^8.1.9"
   },
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
+    "@eslint/js": "^9.15.0",
     "@types/eslint__js": "^8.42.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.5.5",
