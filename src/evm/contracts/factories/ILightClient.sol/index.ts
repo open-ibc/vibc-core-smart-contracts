@@ -3,5 +3,3 @@
 /* eslint-disable */
 export { IClientUpdates__factory } from "./IClientUpdates__factory";
 export { ILightClient__factory } from "./ILightClient__factory";
-export { IMembershipVerifier__factory } from "./IMembershipVerifier__factory";
-export { INonMembershipVerifier__factory } from "./INonMembershipVerifier__factory";

@@ -22,7 +22,7 @@ enum LightClientType {
     SimTestLightClient, // Note: not deployed on any mainnets
     OptimisticLightClient, // Our native opstack light client
     SequencerLightClient, // Our native sequencer light client, which does not check l1 origin check to cut down on
-        // latency
+    // latency
     ReOrgResistantSequencerLightClient // Our native sequencer light client, which checks for l1 origin checks to be
         // re-org resistant
 
@@ -42,25 +42,9 @@ interface IClientUpdates {
 
     /*
     * Returns the type of the light client, useful for relayers to know which light client implementation is at which
-    address. 
+    address.
     */
     function LIGHT_CLIENT_TYPE() external view returns (LightClientType);
-}
-
-interface IMembershipVerifier {
-    /**
-     * @dev Checks if the current trusted optimistic consensus state
-     * can be used to perform the membership test and if so, verifies the proof
-     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
-     */
-    function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes memory expectedValue) external;
-}
-
-interface INonMembershipVerifier {
-    /**
-     * @dev Verifies that the given key is not included in the proof
-     */
-    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external;
 }
 
 /**
@@ -70,7 +54,19 @@ interface INonMembershipVerifier {
  * proof end time for them.
  * @notice This is used for state inclusion proofs
  */
-interface ILightClient is IClientUpdates, IMembershipVerifier, INonMembershipVerifier {
+interface ILightClient is IClientUpdates {
+    /**
+     * @dev Checks if the current trusted optimistic consensus state
+     * can be used to perform the membership test and if so, verifies the proof
+     * @dev reverts if the proof is not valid (i.e. if the key is not included in the proof)
+     */
+    function verifyMembership(Ics23Proof calldata proof, bytes calldata key, bytes memory expectedValue) external;
+
+    /**
+     * @dev Verifies that the given key is not included in the proof
+     */
+    function verifyNonMembership(Ics23Proof calldata proof, bytes calldata key) external;
+
     /**
      * Returns the apphash at a given height
      */
