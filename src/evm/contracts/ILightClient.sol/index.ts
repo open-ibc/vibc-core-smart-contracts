@@ -3,5 +3,3 @@
 /* eslint-disable */
 export type { IClientUpdates } from "./IClientUpdates";
 export type { ILightClient } from "./ILightClient";
-export type { IMembershipVerifier } from "./IMembershipVerifier";
-export type { INonMembershipVerifier } from "./INonMembershipVerifier";
