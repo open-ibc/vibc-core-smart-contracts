@@ -68,7 +68,7 @@ bindings-gen-go: build-contracts
 		type=$$(basename $$abi_file .abi.json); \
 		pkg=$$(basename $$type .sol | tr "[:upper:]" "[:lower:]"); \
 		mkdir -p ./bindings/go/$$pkg; \
-		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/go/$$pkg/$$type.go; \
+		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/go/$$pkg/$$type.go || exit 1; \
 	done; \
 	echo Running sanity check on go bindings ; \
 	go build ./... || exit 1; \
