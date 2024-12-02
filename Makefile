@@ -37,7 +37,12 @@ CONTRACT_JSON_FILES = $(filter-out $(CONTRACT_ABI_FILES),$(CONTRACT_BOTH_FILES))
 
 .PHONY: build-contracts bindings-gen-go bindings-gen-ts
 
-build-contracts:
+version-check:
+	forge --version; \
+	abigen --version; \
+	go version;
+
+build-contracts: version-check
 	echo "Building contracts"; \
 	rm -frd ./out; \
 	forge install; \
@@ -53,7 +58,7 @@ build-contracts:
 # as they are not publicly exposed, but rather used within the contract itself.
 #
 # 	ABIGen issue ref: https://github.com/ethereum/solidity/issues/9278
-bindings-gen-go: build-contracts
+bindings-gen-go: build-contracts 
 	echo "Generating Go vIBC bindings..."; \
 	rm -rfd ./bindings/go/* ; \
 	for abi_file in $(CONTRACT_ABI_FILES); do \
@@ -64,7 +69,7 @@ bindings-gen-go: build-contracts
 		type=$$(basename $$abi_file .abi.json); \
 		pkg=$$(basename $$type .sol | tr "[:upper:]" "[:lower:]"); \
 		mkdir -p ./bindings/go/$$pkg; \
-		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/go/$$pkg/$$type.go; \
+		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/go/$$pkg/$$type.go || exit 1; \
 	done; \
 	go build ./... || exit 1; \
 	echo "Done."
