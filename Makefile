@@ -62,10 +62,11 @@ bindings-gen-go: build-contracts
 			continue; \
 		fi; \
 		type=$$(basename $$abi_file .abi.json); \
-		pkg=$$(basename $$abi_base .sol | tr "[:upper:]" "[:lower:]"); \
+		pkg=$$(basename $$type .sol | tr "[:upper:]" "[:lower:]"); \
 		mkdir -p ./bindings/go/$$pkg; \
 		abigen --abi $$abi_file --pkg $$pkg --type $$type --out ./bindings/go/$$pkg/$$type.go; \
 	done; \
+	go build ./... || exit 1; \
 	echo "Done."
 
 bindings-gen-ts: build-contracts
