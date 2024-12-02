@@ -47,65 +47,76 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     string portPrefix1 = "polyibc.eth1.";
     string portId1 = "polyibc.eth1.71C95911E9a5D330f4D621842EC243EE1343292e";
     string portId2 = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
+    bool skipFork = !vm.envOr("RUN_FORK_TEST", false); // we default to not running tests
 
     function setUp() public override {
-        ChainAddresses memory addresses = ChainAddresses(
-            IDispatcher(vm.envAddress("DispatcherProxy")),
-            IUniversalChannelHandler(vm.envAddress("UCProxy")),
-            ILightClient(vm.envAddress("OptimisticLightClient")),
-            vm.envAddress("OwnerAddress")
-        );
+        if (!skipFork) {
+            ChainAddresses memory addresses = ChainAddresses(
+                IDispatcher(vm.envAddress("DispatcherProxy")),
+                IUniversalChannelHandler(vm.envAddress("UCProxy")),
+                ILightClient(vm.envAddress("OptimisticLightClient")),
+                vm.envAddress("OwnerAddress")
+            );
 
-        opLightClient = addresses.optimisticLightClient; // Need to set this so that when we call load_proof, it loads
-            // the proof to the right address
+            opLightClient = addresses.optimisticLightClient; // Need to set this so that when we call load_proof, it
+                // loads
+                // the proof to the right address
 
-        mars = Mars(payable(targetMarsAddress));
+            mars = Mars(payable(targetMarsAddress));
 
-        dispatcherProxy = addresses.dispatcherProxy;
-        vm.prank(addresses.owner);
+            dispatcherProxy = addresses.dispatcherProxy;
+            vm.prank(addresses.owner);
 
-        // For now, we need to change the portPrefix to that of the one which was used to generate the proof. We also
-        // have to set that for the connectionHop to light client mapping.
-        // Ideally, we can move to eventually automatically generating the proof by querying on chain.
-        dispatcherProxy.setPortPrefix(portPrefix1);
-        // Use legacy mars implementation to test upgrade compatibility
-        deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
+            // For now, we need to change the portPrefix to that of the one which was used to generate the proof. We
+            // also
+            // have to set that for the connectionHop to light client mapping.
+            // Ideally, we can move to eventually automatically generating the proof by querying on chain.
+            dispatcherProxy.setPortPrefix(portPrefix1);
+            // Use legacy mars implementation to test upgrade compatibility
+            deployCodeTo("contracts/examples/Mars.sol:Mars", abi.encode(address(dispatcherProxy)), targetMarsAddress);
 
-        // We have to set the connection hops to hard-coded values since these will be checked in the proof
-        connectionHops0 = ["connection-0", "connection-3"];
-        connectionHops1 = ["connection-2", "connection-1"];
+            // We have to set the connection hops to hard-coded values since these will be checked in the proof
+            connectionHops0 = ["connection-0", "connection-3"];
+            connectionHops1 = ["connection-2", "connection-1"];
 
-        vm.startPrank(addresses.owner); // Only sender should have permission
-        dispatcherProxy.setClientForConnection("connection-0", opLightClient);
+            vm.startPrank(addresses.owner); // Only sender should have permission
+            dispatcherProxy.setClientForConnection("connection-0", opLightClient);
 
-        dispatcherProxy.setClientForConnection("connection-2", opLightClient);
-        vm.stopPrank();
+            dispatcherProxy.setClientForConnection("connection-2", opLightClient);
+            vm.stopPrank();
 
-        _local = LocalEnd(IbcChannelReceiver(targetMarsAddress), portId1, "channel-0", connectionHops0, "1.0", "1.0");
-        _remote = ChannelEnd(portId2, "channel-1", "1.0");
+            _local =
+                LocalEnd(IbcChannelReceiver(targetMarsAddress), portId1, "channel-0", connectionHops0, "1.0", "1.0");
+            _remote = ChannelEnd(portId2, "channel-1", "1.0");
 
-        // Do handshake as if Mars was the sending localparty
-        doSrcProofChannelHandshake(_local, _remote);
+            // Do handshake as if Mars was the sending localparty
+            doSrcProofChannelHandshake(_local, _remote);
 
-        // Do handshake as if Mars was the receiving counterparty
-        doDestProofChannelHandshake(
-            _remote,
-            ChannelEnd(_local.portId, _local.channelId, _local.versionCall),
-            connectionHops1,
-            _local.versionExpected,
-            mars
-        );
+            // Do handshake as if Mars was the receiving counterparty
+            doDestProofChannelHandshake(
+                _remote,
+                ChannelEnd(_local.portId, _local.channelId, _local.versionCall),
+                connectionHops1,
+                _local.versionExpected,
+                mars
+            );
 
-        // State should be initialized correctly & not impacted after any upgrades; used to check for malformatted state
-        uint64 nextSequenceRecvValue =
-            uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceRecv(address(mars), _local.channelId))));
-        uint64 nextSequenceAckValue =
-            uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceAck(address(mars), _local.channelId))));
-        assertEq(1, nextSequenceRecvValue);
-        assertEq(1, nextSequenceAckValue);
+            // State should be initialized correctly & not impacted after any upgrades; used to check for malformatted
+            // state
+            uint64 nextSequenceRecvValue = uint64(
+                uint256(vm.load(address(dispatcherProxy), findNextSequenceRecv(address(mars), _local.channelId)))
+            );
+            uint64 nextSequenceAckValue =
+                uint64(uint256(vm.load(address(dispatcherProxy), findNextSequenceAck(address(mars), _local.channelId))));
+            assertEq(1, nextSequenceRecvValue);
+            assertEq(1, nextSequenceAckValue);
+        } else {
+            console2.log("skipping fork test since RUN_FORK_TEST was not set to true");
+        }
     }
 
     function test_Deployment_SentPacketState_Conserved() public {
+        vm.skip(skipFork); // Skip if we don't opt-in to running fork tests
         // Send a few packets as if mars was sending party
         payload = "packet-1"; // Overwrite these values for inheriting class
         packet = abi.encodePacked(payload);
