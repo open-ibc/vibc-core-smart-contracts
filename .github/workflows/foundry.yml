@@ -41,6 +41,7 @@ jobs:
         env:
           MODULE_ROOT_PATH: "./"                                                                      
           RPC_URL: ${{ secrets.FORK_RPC_URL }}
+          RUN_FORK_TEST: true 
           CHAIN_NAME: "fork-test-ci"
           DUMMY_DEPLOYER_PRIVATE_KEY: ${{ secrets.DUMMY_DEPLOYER_PRIVATE_KEY }}
           DAPP_PRIVATE_KEY_1: ${{ secrets.DAPP_PRIVATE_KEY_1 }}
