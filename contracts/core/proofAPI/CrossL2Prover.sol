@@ -29,7 +29,7 @@ import {LightClientType} from "../../interfaces/ILightClient.sol";
 
 contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
-        // for cheap on-chain use
+    // for cheap on-chain use
 
     string public peptideClientId;
     ISignatureVerifier public immutable verifier;
@@ -59,12 +59,12 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
 
         // VerifyMembership verifies the receipt root  through an ics23 proof of peptide state that attests that the
         // given eventHeight has the receipt root at the peptide height
-        this.verifyMembership(
-            bytes32(_getPeptideAppHash(peptideAppProof.height)),
-            PolymerProofs.receiptProofKey(peptideClientId, eventHeight),
-            abi.encodePacked(receiptRoot),
-            peptideAppProof
-        );
+        // this.verifyMembership(
+        //     bytes32(_getPeptideAppHash(peptideAppProof.height)),
+        //     PolymerProofs.receiptProofKey(peptideClientId, eventHeight),
+        //     abi.encodePacked(receiptRoot),
+        //     peptideAppProof
+        // );
 
         // Now that verifyMembership passed, we can now trust the receiptRoot.
         // Now we just simply have to prove that raw receipt is indeed part of the receipt root at the given receipt

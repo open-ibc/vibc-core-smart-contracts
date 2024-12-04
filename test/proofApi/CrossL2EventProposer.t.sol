@@ -77,14 +77,17 @@ contract CrossL2InboxBase is SigningBase {
         // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
         // address(dummyLightClient));
         // 3.) Run the validate_receipt call below
-        vm.skip(true);
 
-        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/packet_ack_proof.hex"));
+        //vm.skip(true);
+
+        console.log(">>>>>> 1");
+        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/proof.hex"));
+        console.log(">>>>>> 2");
         bytes memory encoded = vm.parseBytes(input);
-        (, Ics23Proof memory peptideProof) = abi.decode(encoded, (bytes32, Ics23Proof));
-
-        // proof will be struct EventProof
-        bytes memory proof = abi.encode(peptideProof, receiptProof, receiptRoot, peptideClientId, peptideBlockNumber);
+        console.log(">>>>>> 3");
+        (bytes memory receiptIdx, bytes memory rlpEncodedReceipt, bytes memory proof) =
+            abi.decode(encoded, (bytes, bytes, bytes));
+        console.log(">>>>>> 4");
 
         crossProver.validateReceipt(receiptIdx, rlpEncodedReceipt, proof);
     }
