@@ -11,17 +11,20 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/ethereum/go-ethereum/triedb"
 )
 
 func main() {
 
 	blockNumber := int64(20221924)
-	logIdx := uint64(1)
+	receiptIdx := uint64(1)
+
 	fmt.Println("blockNumber: ", blockNumber)
 
 	rpcUrl := os.Getenv("OP_SEPOLIA_RPC_URL")
@@ -37,10 +40,6 @@ func main() {
 
 	receipts, err := client.BlockReceipts(ctxWithTimeout, rpc.BlockNumberOrHashWithNumber(rpc.BlockNumber(blockNumber)))
 
-	for i, receipt := range receipts {
-		fmt.Println("receipt: ", i, receipt.TxHash)
-	}
-
 	if err != nil {
 		fmt.Println("error fetching receipts: ", err)
 		return
@@ -54,24 +53,28 @@ func main() {
 		return
 	}
 
-	trieFun := trie.NewEmpty(triedb.NewDatabase(rawdb.NewMemoryDatabase(), nil))
 	derivableReceipts := types.Receipts(receipts)
-	receiptTrieRoot := types.DeriveSha(derivableReceipts, trieFun)
-
-	fmt.Println("receiptTrieRoot: from deriveSha ", receiptTrieRoot.Hex())
-	fmt.Println("receiptTrieRoot from block ", block.ReceiptHash)
-
-	if !bytes.Equal(receiptTrieRoot.Bytes(), block.ReceiptHash.Bytes()) {
-		fmt.Println("derived receipt trie root does not match receipt trie root in eth header")
-		return
-	}
 
 	// check that the receiptTrieRoot matches the one in the ethHeader
 
+	receiptToProve := derivableReceipts[receiptIdx]
+
 	targetReceiptProof := EthProof{}
 
-	if err := trieFun.Prove(rlp.AppendUint64(nil, logIdx), &targetReceiptProof); err != nil {
+	pset := trienode.NewProofSet()
+	rlpEncodedKey := rlp.AppendUint64(nil, receiptIdx)
+
+	tr := trie.NewEmpty(triedb.NewDatabase(rawdb.NewMemoryDatabase(), nil))
+	trieRoot := types.DeriveSha(derivableReceipts, tr)
+
+	if err := tr.Prove(rlpEncodedKey, pset); err != nil {
 		fmt.Println("error proving receipt: ", err)
+		return
+
+	}
+
+	if !bytes.Equal(tr.Hash().Bytes(), block.ReceiptHash.Bytes()) {
+		fmt.Println("derived receipt trie root does not match receipt trie root in eth header")
 		return
 	}
 
@@ -81,7 +84,31 @@ func main() {
 	}
 
 	var buf bytes.Buffer
-	receipts[0].EncodeRLP(&buf)
-	hexStr := hex.EncodeToString(buf.Bytes())
-	fmt.Println("RLP-encoded receipt (hex):", hexStr)
+	receiptToProve.EncodeRLP(&buf)
+	rlpEncodedReceiptStr := hex.EncodeToString(buf.Bytes())
+	plist := pset.List()
+	leaf := plist[len(plist)-1]
+	leafHash := crypto.Keccak256(leaf)
+
+	second := crypto.Keccak256(plist[1])
+	if !bytes.Contains(plist[0], second) {
+		fmt.Println("output proof list not expected")
+		return
+	}
+	if !bytes.Contains(plist[1], leafHash) {
+		fmt.Println("output proof list not expected")
+		return
+
+	}
+
+	fmt.Println("The following are the arguments that need to be passed into the MerkleTrie.verifyInclusionProof contract call: ")
+	fmt.Printf("\n Key: %s \n", hex.EncodeToString(rlpEncodedKey))
+	fmt.Printf("\n Value: %s \n", rlpEncodedReceiptStr)
+	fmt.Printf("\n Proof :")
+	for i, p := range plist {
+		fmt.Printf("Proof array index %d: %s \n", i, hex.EncodeToString(p))
+	}
+
+	fmt.Printf(" \n Root: %s", hex.EncodeToString(trieRoot.Bytes()))
+
 }
