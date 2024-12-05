@@ -81,7 +81,7 @@ contract CrossL2InboxBase is SigningBase {
         //vm.skip(true);
 
         console.log(">>>>>> 1");
-        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/proof.hex"));
+        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/proof-argOnly.hex"));
         console.log(">>>>>> 2");
         bytes memory encoded = vm.parseBytes(input);
         console.log(">>>>>> 3");
@@ -89,7 +89,7 @@ contract CrossL2InboxBase is SigningBase {
             abi.decode(encoded, (bytes, bytes, bytes));
         console.log(">>>>>> 4");
 
-        crossProver.validateReceipt(receiptIdx, rlpEncodedReceipt, proof);
+        assertTrue(crossProver.validateReceipt(receiptIdx, rlpEncodedReceipt, proof));
     }
 
     // Happy path for CrossEventProver.validateEvent()
