@@ -20,7 +20,7 @@ pragma solidity ^0.8.0;
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {MerkleTrie} from "optimism/libraries/trie/MerkleTrie.sol";
 import {Bytes} from "optimism/libraries/Bytes.sol";
-import {PolymerProofs} from "../../libs/PolymerProofs.sol";
+import {Ibc} from "../../libs/Ibc.sol";
 import {AppStateVerifier} from "../../base/AppStateVerifier.sol";
 import {ICrossL2Prover} from "../../interfaces/ICrossL2Prover.sol";
 import {Ics23Proof} from "../../interfaces/IProofVerifier.sol";
@@ -61,7 +61,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // given eventHeight has the receipt root at the peptide height
         this.verifyMembership(
             bytes32(_getPeptideAppHash(peptideAppProof.height)),
-            PolymerProofs.receiptProofKey(peptideClientId, eventHeight),
+            Ibc.receiptRootKey(peptideClientId, eventHeight),
             abi.encodePacked(receiptRoot),
             peptideAppProof
         );

@@ -17,11 +17,11 @@
 
 pragma solidity ^0.8.0;
 
+// import {Ibc} from "./Ibc.sol";
+
 /**
  * A library for helpers for proving peptide state
  */
-library PolymerProofs {
-    function receiptProofKey(string memory clientId, uint64 height) internal pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked("polyibc/client/", clientId, "/receiptRoot/", height);
-    }
-}
+// library PolymerProofs {
+
+// }

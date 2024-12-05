@@ -285,4 +285,8 @@ library Ibc {
 
         outStr = string(buffer);
     }
+
+    function receiptRootKey(string memory clientId, uint256 height) internal pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked("client/", clientId, "/receiptRoot/", toStr(height));
+    }
 }
