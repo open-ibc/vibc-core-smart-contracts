@@ -28,6 +28,7 @@ export type { OptimisticProofVerifier } from "./OptimisticProofVerifier";
 export type { SequencerSignatureVerifier } from "./SequencerSignatureVerifier";
 export type { SequencerSoloClient } from "./SequencerSoloClient";
 export type { UniversalChannelHandler } from "./UniversalChannelHandler";
+export type { Venus } from "./Venus";
 export * as factories from "./factories";
 export { CrossL2Prover__factory } from "./factories/CrossL2Prover__factory";
 export { Dispatcher__factory } from "./factories/Dispatcher__factory";
@@ -69,6 +70,7 @@ export { RevertingStringCloseChannelMars__factory } from "./factories/Mars.sol/R
 export type { RevertingStringMars } from "./Mars.sol/RevertingStringMars";
 export { RevertingStringMars__factory } from "./factories/Mars.sol/RevertingStringMars__factory";
 export { Moon__factory } from "./factories/Moon__factory";
+export { Venus__factory } from "./factories/Venus__factory";
 export { OptimisticLightClient__factory } from "./factories/OptimisticLightClient__factory";
 export { OptimisticProofVerifier__factory } from "./factories/OptimisticProofVerifier__factory";
 export { SequencerSoloClient__factory } from "./factories/SequencerSoloClient__factory";

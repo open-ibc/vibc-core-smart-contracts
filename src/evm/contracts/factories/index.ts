@@ -24,3 +24,4 @@ export { OptimisticProofVerifier__factory } from "./OptimisticProofVerifier__fac
 export { SequencerSignatureVerifier__factory } from "./SequencerSignatureVerifier__factory";
 export { SequencerSoloClient__factory } from "./SequencerSoloClient__factory";
 export { UniversalChannelHandler__factory } from "./UniversalChannelHandler__factory";
+export { Venus__factory } from "./Venus__factory";
