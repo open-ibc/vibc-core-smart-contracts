@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.15;
 
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {MerkleTrie} from "optimism/libraries/trie/MerkleTrie.sol";
@@ -60,7 +60,9 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // VerifyMembership verifies the receipt root  through an ics23 proof of peptide state that attests that the
         // given eventHeight has the receipt root at the peptide height
         this.verifyMembership(
-            bytes32(_getPeptideAppHash(peptideAppProof.height)),
+            bytes32(_getPeptideAppHash(peptideAppProof.height - 1)), // a proof generated at height H can only be
+                // verified against state root (app hash) from block H - 1. this means the relayer must have updated the
+                // contract with the app hash from the previous block and that is why we use proof.height - 1 here.
             Ibc.receiptRootKey(peptideClientId, eventHeight),
             abi.encodePacked(receiptRoot),
             peptideAppProof
