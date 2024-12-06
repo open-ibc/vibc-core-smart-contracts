@@ -31,7 +31,7 @@ Accounts can either be normal evm accounts or multisig accounts.
 
 Normal accounts contain the following fields:
 - name - the name of the account, this can be referenced in the contracts update spec file in the `deployer` attribute. 
-- private key - the pivate key of the account. To avoid having to persist private keys in this account spec, you can also reference env variables through enclosing them in double brackets. For example, if there is a `DEPLOYER_PRIVATE_KEY` variable set in the environment that runs a command that references this account spec, you can set the private key attribute to `{{DEPLOYER_PRIVATE_KEY}}` and this will be rendered to the environment value during runtime. 
+- private key - the private key of the account. To avoid having to persist private keys in this account spec, you can also reference env variables through enclosing them in double brackets. For example, if there is a `DEPLOYER_PRIVATE_KEY` variable set in the environment that runs a command that references this account spec, you can set the private key attribute to `{{DEPLOYER_PRIVATE_KEY}}` and this will be rendered to the environment value during runtime. 
 
 Multisig accounts contain the following fields: 
 - name: The name of the account similar to normal accounts
@@ -42,7 +42,7 @@ Multisig accounts contain the following fields:
 You can create a multisig account from a normal account using the `npx vibc-core-deploy-multisig` command. This will modify the account spec file you run the command with to add the `safeAddress` and `chainId` fields. 
 
 ## Contract Update Spec
-A contract update spec is a yaml file that describe a set of transactions to deploy and update contracts. Instead of having to reference all contracts by addresses, you can reference previously deployed addresses by name.
+A contract update spec is a yaml file that describes a set of transactions to deploy and update contracts. Instead of having to reference all contracts by addresses, you can reference previously deployed addresses by name.
 
 Update transactions can be one of either a contract deployment, or a contract update.
 
