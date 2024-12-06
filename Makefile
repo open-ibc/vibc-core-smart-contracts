@@ -20,6 +20,7 @@ CONTRACT_NAMES = channel \
 				 IUniversalChannelHandler \
 				 Mars \
 				 Moon \
+				 Venus \
 				 OptimisticLightClient \
 				 OptimisticProofVerifier \
 				 SequencerSoloClient \
