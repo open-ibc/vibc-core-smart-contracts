@@ -13,7 +13,7 @@ The Universal Channel (UC) is designed to simplify the process of sending and re
 
 The UC abstracts away these complexities by providing a single, universal channel between *two chains* that all dApps can use to send and receive IBC packets. The UC handles the channel handshake and IBC core authentication, so dApp users do not need to worry about it. See caveat below. 
 
-You can see the implementation of the Universal Channel in the [UniversalChannelHandler.sol](../contracts/UniversalChannelHandler.sol) contract.
+You can see the implementation of the Universal Channel in the [UniversalChannelHandler.sol](https://github.com/open-ibc/vibc-core-smart-contracts/blob/b9f269e0d51d1696723f95bf61fab101596514a0/contracts/core/UniversalChannelHandler.sol#L4) contract.
 
 ### IBC packets vs. Universal Packets
 
@@ -30,7 +30,7 @@ On the receiver side, The Universal Channel Middleware contract unpacks the regu
 
 The Universal Channel Middleware works by packing and unpacking a UniversalPacket into a regular IBC packet's data field. This allows the Middleware to handle the contents of the packet in a generic way, without needing to know the specifics of the packet's format.
 
-The Universal Channel Middleware is defined in the [UniversalChannelHandler.sol](../contracts/UniversalChannelHandler.sol) contract, and it implements the `IbcUniversalChannelMW` interface defined in [IbcMiddleware.sol](../contracts/IbcMiddleware.sol).
+The Universal Channel Middleware is defined in the [UniversalChannelHandler.sol](https://github.com/open-ibc/vibc-core-smart-contracts/blob/b9f269e0d51d1696723f95bf61fab101596514a0/contracts/core/UniversalChannelHandler.sol#L4) contract, and it implements the `IbcUniversalChannelMW` interface defined in [IbcMiddleware.sol](https://github.com/open-ibc/vibc-core-smart-contracts/blob/b9f269e0d51d1696723f95bf61fab101596514a0/contracts/interfaces/IbcMiddleware.sol#L4).
 
 ### Using Universal Channel to Send and Receive Packets 
 
@@ -74,13 +74,13 @@ contract MyContract is IbcUniversalPacketReceiver {
 }
 ```
 
-You can also check out the [Earth contract](../contracts/Earth.sol) for a more complete example of how to use the Universal Channel or a MW stack to send and receive packets.
+You can also check out the [Earth contract](https://github.com/open-ibc/vibc-core-smart-contracts/blob/b9f269e0d51d1696723f95bf61fab101596514a0/contracts/examples/Earth.sol#L4) for a more complete example of how to use the Universal Channel or a MW stack to send and receive packets.
 
 ## Creating a Middleware Stack
 
 A Middleware stack is a sequence of Middleware contracts that a packet passes through in order. Each Middleware in the stack can inspect and potentially modify the packet before passing it on to the next Middleware.
 
-To create a Middleware stack, you need to register the Middleware contracts with the Universal Channel Middleware. This is done using the registerMwStack function in the [UniversalChannelHandler.sol](../contracts/UniversalChannelHandler.sol) contract. The Middleware contracts are identified by a bitmap and an array of addresses.
+To create a Middleware stack, you need to register the Middleware contracts with the Universal Channel Middleware. This is done using the registerMwStack function in the [UniversalChannelHandler.sol](https://github.com/open-ibc/vibc-core-smart-contracts/blob/b9f269e0d51d1696723f95bf61fab101596514a0/contracts/core/UniversalChannelHandler.sol#L4) contract. The Middleware contracts are identified by a bitmap and an array of addresses.
 
 Check out tests in [Universal channel and MW tests](../test/universal.channel.t.sol) for full examples of how to register a Middleware stack.
 
