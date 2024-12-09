@@ -31,11 +31,11 @@ Accounts can either be normal evm accounts or multisig accounts.
 
 Normal accounts contain the following fields:
 - name - the name of the account, this can be referenced in the contracts update spec file in the `deployer` attribute. 
-- private key - the pivate key of the account. To avoid having to persist private keys in this account spec, you can also reference env variables through enclosing them in double brackets. For example, if there is a `DEPLOYER_PRIVATE_KEY` variable set in the environment that runs a command that references this account spec, you can set the private key attribute to `{{DEPLOYER_PRIVATE_KEY}}` and this will be rendered to the environment value during runtime. 
+- private key - the private key of the account. To avoid having to persist private keys in this account spec, you can also reference env variables through enclosing them in double brackets. For example, if there is a `DEPLOYER_PRIVATE_KEY` variable set in the environment that runs a command that references this account spec, you can set the private key attribute to `{{DEPLOYER_PRIVATE_KEY}}` and this will be rendered to the environment value during runtime. 
 
 Multisig accounts contain the following fields: 
 - name: The name of the account similar to normal accounts
-- private key: Private key of an owner account associated with the multsig account at the safeAddress.  Similar to normal accounts, you can reference env variables through enclosing them in double brackets.
+- private key: Private key of an owner account associated with the multisig account at the safeAddress.  Similar to normal accounts, you can reference env variables through enclosing them in double brackets.
 - safeAddress: The address of the multisig contract 
 - chainId : The chainId this multisig account exists on.
 
