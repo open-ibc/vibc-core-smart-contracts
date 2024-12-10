@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
-contract SimpleTransaction {
+contract ProofAPIEventGenerator {
     address public owner;
 
     // Event to log the transaction
-    event EtherTransferred(address indexed to, uint256 amount);
+    event ProofAPIEventHealthCheck(address indexed to, uint256 amount, uint256 srcChainID, uint256 destChainID);
 
     // Constructor to set the contract owner
     constructor() {
@@ -13,7 +13,10 @@ contract SimpleTransaction {
     }
 
     // Function to receive Ether
-    receive() external payable {}
+    receive(uint256 amount uint256 srcChainID, uint256 destChainID) external payable {
+        
+       emit ProofAPIEventHealthCheck(msg.sender, msg.value, srcChainID, destChainID) 
+    }
 
     // Function to send Ether from the contract to a specified address
     function sendEther(address payable recipient, uint256 amount) public {
