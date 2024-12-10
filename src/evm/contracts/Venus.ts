@@ -25,13 +25,20 @@ import type {
 
 export interface VenusInterface extends Interface {
   getFunction(
-    nameOrSignature: "prover" | "receiveEvent" | "receiveReceipt"
+    nameOrSignature: "emitEvent" | "prover" | "receiveEvent" | "receiveReceipt"
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "SuccessfulEvent" | "SuccessfulReceipt"
+    nameOrSignatureOrTopic:
+      | "SendHealthCheckEvent"
+      | "SuccessfulEvent"
+      | "SuccessfulReceipt"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "emitEvent",
+    values: [BigNumberish, BigNumberish]
+  ): string;
   encodeFunctionData(functionFragment: "prover", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "receiveEvent",
@@ -42,6 +49,7 @@ export interface VenusInterface extends Interface {
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
 
+  decodeFunctionResult(functionFragment: "emitEvent", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "prover", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "receiveEvent",
@@ -51,6 +59,28 @@ export interface VenusInterface extends Interface {
     functionFragment: "receiveReceipt",
     data: BytesLike
   ): Result;
+}
+
+export namespace SendHealthCheckEventEvent {
+  export type InputTuple = [
+    id: BytesLike,
+    sourceChainID: BigNumberish,
+    destChainID: BigNumberish
+  ];
+  export type OutputTuple = [
+    id: string,
+    sourceChainID: bigint,
+    destChainID: bigint
+  ];
+  export interface OutputObject {
+    id: string;
+    sourceChainID: bigint;
+    destChainID: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace SuccessfulEventEvent {
@@ -122,6 +152,12 @@ export interface Venus extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  emitEvent: TypedContractMethod<
+    [sourceChainID: BigNumberish, destinationChainID: BigNumberish],
+    [void],
+    "payable"
+  >;
+
   prover: TypedContractMethod<[], [string], "view">;
 
   receiveEvent: TypedContractMethod<
@@ -151,6 +187,13 @@ export interface Venus extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "emitEvent"
+  ): TypedContractMethod<
+    [sourceChainID: BigNumberish, destinationChainID: BigNumberish],
+    [void],
+    "payable"
+  >;
+  getFunction(
     nameOrSignature: "prover"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -179,6 +222,13 @@ export interface Venus extends BaseContract {
   >;
 
   getEvent(
+    key: "SendHealthCheckEvent"
+  ): TypedContractEvent<
+    SendHealthCheckEventEvent.InputTuple,
+    SendHealthCheckEventEvent.OutputTuple,
+    SendHealthCheckEventEvent.OutputObject
+  >;
+  getEvent(
     key: "SuccessfulEvent"
   ): TypedContractEvent<
     SuccessfulEventEvent.InputTuple,
@@ -194,6 +244,17 @@ export interface Venus extends BaseContract {
   >;
 
   filters: {
+    "SendHealthCheckEvent(bytes32,uint256,uint256)": TypedContractEvent<
+      SendHealthCheckEventEvent.InputTuple,
+      SendHealthCheckEventEvent.OutputTuple,
+      SendHealthCheckEventEvent.OutputObject
+    >;
+    SendHealthCheckEvent: TypedContractEvent<
+      SendHealthCheckEventEvent.InputTuple,
+      SendHealthCheckEventEvent.OutputTuple,
+      SendHealthCheckEventEvent.OutputObject
+    >;
+
     "SuccessfulEvent(uint256,address)": TypedContractEvent<
       SuccessfulEventEvent.InputTuple,
       SuccessfulEventEvent.OutputTuple,

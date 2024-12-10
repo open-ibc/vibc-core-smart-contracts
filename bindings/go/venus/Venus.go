@@ -31,7 +31,7 @@ var (
 
 // VenusMetaData contains all meta data concerning the Venus contract.
 var VenusMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_prover\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"prover\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"receiveEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"logBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"SuccessfulEvent\",\"inputs\":[{\"name\":\"eventIndex\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SuccessfulReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"invalidEventProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidProverAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidReceiptProof\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_prover\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"emitEvent\",\"inputs\":[{\"name\":\"sourceChainID\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"destinationChainID\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"prover\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"receiveEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"logBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"SendHealthCheckEvent\",\"inputs\":[{\"name\":\"id\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"sourceChainID\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"destChainID\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SuccessfulEvent\",\"inputs\":[{\"name\":\"eventIndex\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SuccessfulReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"invalidEventProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidProverAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidReceiptProof\",\"inputs\":[]}]",
 }
 
 // VenusABI is the input ABI used to generate the binding from.
@@ -211,6 +211,27 @@ func (_Venus *VenusCallerSession) Prover() (common.Address, error) {
 	return _Venus.Contract.Prover(&_Venus.CallOpts)
 }
 
+// EmitEvent is a paid mutator transaction binding the contract method 0x1a9c5187.
+//
+// Solidity: function emitEvent(uint256 sourceChainID, uint256 destinationChainID) payable returns()
+func (_Venus *VenusTransactor) EmitEvent(opts *bind.TransactOpts, sourceChainID *big.Int, destinationChainID *big.Int) (*types.Transaction, error) {
+	return _Venus.contract.Transact(opts, "emitEvent", sourceChainID, destinationChainID)
+}
+
+// EmitEvent is a paid mutator transaction binding the contract method 0x1a9c5187.
+//
+// Solidity: function emitEvent(uint256 sourceChainID, uint256 destinationChainID) payable returns()
+func (_Venus *VenusSession) EmitEvent(sourceChainID *big.Int, destinationChainID *big.Int) (*types.Transaction, error) {
+	return _Venus.Contract.EmitEvent(&_Venus.TransactOpts, sourceChainID, destinationChainID)
+}
+
+// EmitEvent is a paid mutator transaction binding the contract method 0x1a9c5187.
+//
+// Solidity: function emitEvent(uint256 sourceChainID, uint256 destinationChainID) payable returns()
+func (_Venus *VenusTransactorSession) EmitEvent(sourceChainID *big.Int, destinationChainID *big.Int) (*types.Transaction, error) {
+	return _Venus.Contract.EmitEvent(&_Venus.TransactOpts, sourceChainID, destinationChainID)
+}
+
 // ReceiveEvent is a paid mutator transaction binding the contract method 0x163be0d8.
 //
 // Solidity: function receiveEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns()
@@ -251,6 +272,142 @@ func (_Venus *VenusSession) ReceiveReceipt(receiptIndex []byte, receiptRLPEncode
 // Solidity: function receiveReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns()
 func (_Venus *VenusTransactorSession) ReceiveReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
 	return _Venus.Contract.ReceiveReceipt(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, proof)
+}
+
+// VenusSendHealthCheckEventIterator is returned from FilterSendHealthCheckEvent and is used to iterate over the raw logs and unpacked data for SendHealthCheckEvent events raised by the Venus contract.
+type VenusSendHealthCheckEventIterator struct {
+	Event *VenusSendHealthCheckEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *VenusSendHealthCheckEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(VenusSendHealthCheckEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(VenusSendHealthCheckEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *VenusSendHealthCheckEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *VenusSendHealthCheckEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// VenusSendHealthCheckEvent represents a SendHealthCheckEvent event raised by the Venus contract.
+type VenusSendHealthCheckEvent struct {
+	Id            [32]byte
+	SourceChainID *big.Int
+	DestChainID   *big.Int
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterSendHealthCheckEvent is a free log retrieval operation binding the contract event 0x2aa5701af4665db6d0d94b04beb302db15e10382304fe5195aeefb9c7dd1808b.
+//
+// Solidity: event SendHealthCheckEvent(bytes32 id, uint256 sourceChainID, uint256 destChainID)
+func (_Venus *VenusFilterer) FilterSendHealthCheckEvent(opts *bind.FilterOpts) (*VenusSendHealthCheckEventIterator, error) {
+
+	logs, sub, err := _Venus.contract.FilterLogs(opts, "SendHealthCheckEvent")
+	if err != nil {
+		return nil, err
+	}
+	return &VenusSendHealthCheckEventIterator{contract: _Venus.contract, event: "SendHealthCheckEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchSendHealthCheckEvent is a free log subscription operation binding the contract event 0x2aa5701af4665db6d0d94b04beb302db15e10382304fe5195aeefb9c7dd1808b.
+//
+// Solidity: event SendHealthCheckEvent(bytes32 id, uint256 sourceChainID, uint256 destChainID)
+func (_Venus *VenusFilterer) WatchSendHealthCheckEvent(opts *bind.WatchOpts, sink chan<- *VenusSendHealthCheckEvent) (event.Subscription, error) {
+
+	logs, sub, err := _Venus.contract.WatchLogs(opts, "SendHealthCheckEvent")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(VenusSendHealthCheckEvent)
+				if err := _Venus.contract.UnpackLog(event, "SendHealthCheckEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseSendHealthCheckEvent is a log parse operation binding the contract event 0x2aa5701af4665db6d0d94b04beb302db15e10382304fe5195aeefb9c7dd1808b.
+//
+// Solidity: event SendHealthCheckEvent(bytes32 id, uint256 sourceChainID, uint256 destChainID)
+func (_Venus *VenusFilterer) ParseSendHealthCheckEvent(log types.Log) (*VenusSendHealthCheckEvent, error) {
+	event := new(VenusSendHealthCheckEvent)
+	if err := _Venus.contract.UnpackLog(event, "SendHealthCheckEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }
 
 // VenusSuccessfulEventIterator is returned from FilterSuccessfulEvent and is used to iterate over the raw logs and unpacked data for SuccessfulEvent events raised by the Venus contract.
