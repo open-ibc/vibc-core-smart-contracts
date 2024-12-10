@@ -90,6 +90,6 @@ contract Venus {
             abi.encodePacked(sourceChainID, destinationChainID, block.timestamp, block.number)
         );
 
-        emit SendHealthCheckEvent(uniqueID, sourceChain, destinationChain, msg.value);
+        emit SendHealthCheckEvent(uniqueID, sourceChainID, destinationChainID);
     }
 }
