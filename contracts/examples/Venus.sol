@@ -86,9 +86,7 @@ contract Venus {
     }
 
     function emitEvent(uint256 sourceChainID, uint256 destinationChainID) external payable {
-        bytes32 uniqueID = keccak256(
-            abi.encodePacked(sourceChainID, destinationChainID, block.timestamp, block.number)
-        );
+        bytes32 uniqueID = keccak256(abi.encodePacked(sourceChainID, destinationChainID, block.timestamp, block.number));
 
         emit SendHealthCheckEvent(uniqueID, sourceChainID, destinationChainID);
     }
