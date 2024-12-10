@@ -30,6 +30,7 @@ contract Venus {
 
     event SuccessfulReceipt(bytes receiptIndex, bytes receiptRLP);
     event SuccessfulEvent(uint256 eventIndex, address sender);
+    event SendHealthCheckEvent(bytes32 id, uint256 sourceChainID, uint256 destChainID);
 
     error invalidProverAddress();
     error invalidReceiptProof();
@@ -82,5 +83,13 @@ contract Venus {
         }
 
         emit SuccessfulEvent(logIndex, msg.sender);
+    }
+
+    function emitEvent(uint256 sourceChainID, uint256 destinationChainID) external payable {
+        bytes32 uniqueID = keccak256(
+            abi.encodePacked(sourceChainID, destinationChainID, block.timestamp, block.number)
+        );
+
+        emit SendHealthCheckEvent(uniqueID, sourceChain, destinationChain, msg.value);
     }
 }
