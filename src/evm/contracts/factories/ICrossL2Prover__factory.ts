@@ -69,24 +69,9 @@ const _abi = [
     name: "validateEvent",
     inputs: [
       {
-        name: "receiptIndex",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
-        name: "receiptRLPEncodedBytes",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
         name: "logIndex",
         type: "uint256",
         internalType: "uint256",
-      },
-      {
-        name: "logBytes",
-        type: "bytes",
-        internalType: "bytes",
       },
       {
         name: "proof",
@@ -96,28 +81,33 @@ const _abi = [
     ],
     outputs: [
       {
-        name: "",
-        type: "bool",
-        internalType: "bool",
+        name: "chainId",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+      {
+        name: "emittingContract",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "topics",
+        type: "bytes[]",
+        internalType: "bytes[]",
+      },
+      {
+        name: "unindexedData",
+        type: "bytes",
+        internalType: "bytes",
       },
     ],
-    stateMutability: "nonpayable",
+    stateMutability: "view",
   },
   {
     type: "function",
     name: "validateReceipt",
     inputs: [
       {
-        name: "receiptIndex",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
-        name: "receiptRLPEncodedBytes",
-        type: "bytes",
-        internalType: "bytes",
-      },
-      {
         name: "proof",
         type: "bytes",
         internalType: "bytes",
@@ -125,12 +115,17 @@ const _abi = [
     ],
     outputs: [
       {
-        name: "",
-        type: "bool",
-        internalType: "bool",
+        name: "srcChainId",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+      {
+        name: "receiptRLP",
+        type: "bytes",
+        internalType: "bytes",
       },
     ],
-    stateMutability: "nonpayable",
+    stateMutability: "view",
   },
 ] as const;
 

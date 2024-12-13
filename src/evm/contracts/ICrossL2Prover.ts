@@ -44,11 +44,11 @@ export interface ICrossL2ProverInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "validateEvent",
-    values: [BytesLike, BytesLike, BigNumberish, BytesLike, BytesLike]
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "validateReceipt",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [BytesLike]
   ): string;
 
   decodeFunctionResult(
@@ -124,25 +124,22 @@ export interface ICrossL2Prover extends BaseContract {
   >;
 
   validateEvent: TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
-    "nonpayable"
+    "view"
   >;
 
   validateReceipt: TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
-    "nonpayable"
+    [proof: BytesLike],
+    [[string, string] & { srcChainId: string; receiptRLP: string }],
+    "view"
   >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -165,26 +162,23 @@ export interface ICrossL2Prover extends BaseContract {
   getFunction(
     nameOrSignature: "validateEvent"
   ): TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
-    "nonpayable"
+    "view"
   >;
   getFunction(
     nameOrSignature: "validateReceipt"
   ): TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
-    "nonpayable"
+    [proof: BytesLike],
+    [[string, string] & { srcChainId: string; receiptRLP: string }],
+    "view"
   >;
 
   filters: {};
