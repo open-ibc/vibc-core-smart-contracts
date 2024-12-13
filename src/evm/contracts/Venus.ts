@@ -25,13 +25,31 @@ import type {
 
 export interface VenusInterface extends Interface {
   getFunction(
-    nameOrSignature: "prover" | "receiveEvent" | "receiveReceipt"
+    nameOrSignature:
+      | "counterParty"
+      | "lastReceivedTransmission"
+      | "prover"
+      | "receiveEvent"
+      | "receiveReceipt"
+      | "receiveTransmissionEvent"
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "SuccessfulEvent" | "SuccessfulReceipt"
+    nameOrSignatureOrTopic:
+      | "SuccessfulEvent"
+      | "SuccessfulReceipt"
+      | "TransmissionReceived"
+      | "TransmitToHouston"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "counterParty",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lastReceivedTransmission",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "prover", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "receiveEvent",
@@ -41,7 +59,19 @@ export interface VenusInterface extends Interface {
     functionFragment: "receiveReceipt",
     values: [BytesLike, BytesLike, BytesLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "receiveTransmissionEvent",
+    values: [BytesLike, BytesLike, BigNumberish, BytesLike]
+  ): string;
 
+  decodeFunctionResult(
+    functionFragment: "counterParty",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "lastReceivedTransmission",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "prover", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "receiveEvent",
@@ -49,6 +79,10 @@ export interface VenusInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "receiveReceipt",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "receiveTransmissionEvent",
     data: BytesLike
   ): Result;
 }
@@ -72,6 +106,32 @@ export namespace SuccessfulReceiptEvent {
   export interface OutputObject {
     receiptIndex: string;
     receiptRLP: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TransmissionReceivedEvent {
+  export type InputTuple = [message: BytesLike, timestamp: BigNumberish];
+  export type OutputTuple = [message: string, timestamp: bigint];
+  export interface OutputObject {
+    message: string;
+    timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TransmitToHoustonEvent {
+  export type InputTuple = [message: BytesLike, timestamp: BigNumberish];
+  export type OutputTuple = [message: string, timestamp: bigint];
+  export interface OutputObject {
+    message: string;
+    timestamp: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -122,6 +182,10 @@ export interface Venus extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  counterParty: TypedContractMethod<[], [string], "view">;
+
+  lastReceivedTransmission: TypedContractMethod<[], [string], "view">;
+
   prover: TypedContractMethod<[], [string], "view">;
 
   receiveEvent: TypedContractMethod<
@@ -146,10 +210,27 @@ export interface Venus extends BaseContract {
     "nonpayable"
   >;
 
+  receiveTransmissionEvent: TypedContractMethod<
+    [
+      receiptIndex: BytesLike,
+      receiptRLPEncodedBytes: BytesLike,
+      logIndex: BigNumberish,
+      proof: BytesLike
+    ],
+    [void],
+    "nonpayable"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "counterParty"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "lastReceivedTransmission"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "prover"
   ): TypedContractMethod<[], [string], "view">;
@@ -177,6 +258,18 @@ export interface Venus extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "receiveTransmissionEvent"
+  ): TypedContractMethod<
+    [
+      receiptIndex: BytesLike,
+      receiptRLPEncodedBytes: BytesLike,
+      logIndex: BigNumberish,
+      proof: BytesLike
+    ],
+    [void],
+    "nonpayable"
+  >;
 
   getEvent(
     key: "SuccessfulEvent"
@@ -191,6 +284,20 @@ export interface Venus extends BaseContract {
     SuccessfulReceiptEvent.InputTuple,
     SuccessfulReceiptEvent.OutputTuple,
     SuccessfulReceiptEvent.OutputObject
+  >;
+  getEvent(
+    key: "TransmissionReceived"
+  ): TypedContractEvent<
+    TransmissionReceivedEvent.InputTuple,
+    TransmissionReceivedEvent.OutputTuple,
+    TransmissionReceivedEvent.OutputObject
+  >;
+  getEvent(
+    key: "TransmitToHouston"
+  ): TypedContractEvent<
+    TransmitToHoustonEvent.InputTuple,
+    TransmitToHoustonEvent.OutputTuple,
+    TransmitToHoustonEvent.OutputObject
   >;
 
   filters: {
@@ -214,6 +321,28 @@ export interface Venus extends BaseContract {
       SuccessfulReceiptEvent.InputTuple,
       SuccessfulReceiptEvent.OutputTuple,
       SuccessfulReceiptEvent.OutputObject
+    >;
+
+    "TransmissionReceived(bytes32,uint64)": TypedContractEvent<
+      TransmissionReceivedEvent.InputTuple,
+      TransmissionReceivedEvent.OutputTuple,
+      TransmissionReceivedEvent.OutputObject
+    >;
+    TransmissionReceived: TypedContractEvent<
+      TransmissionReceivedEvent.InputTuple,
+      TransmissionReceivedEvent.OutputTuple,
+      TransmissionReceivedEvent.OutputObject
+    >;
+
+    "TransmitToHouston(bytes32,uint64)": TypedContractEvent<
+      TransmitToHoustonEvent.InputTuple,
+      TransmitToHoustonEvent.OutputTuple,
+      TransmitToHoustonEvent.OutputObject
+    >;
+    TransmitToHouston: TypedContractEvent<
+      TransmitToHoustonEvent.InputTuple,
+      TransmitToHoustonEvent.OutputTuple,
+      TransmitToHoustonEvent.OutputObject
     >;
   };
 }
