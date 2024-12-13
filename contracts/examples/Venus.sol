@@ -24,53 +24,62 @@ import {Bytes} from "optimism/libraries/Bytes.sol";
  * @title Venus
  * @notice Venus is a simple polymer proof api contract that proves an event happened on another chain.
  * @dev This contract is used for only testing and as an example for dapp developers on how to
- * integrate with polymer's proof api.
+ * integrate with polymer's proof api. And some necessary validation which needs to occur
  */
 contract Venus {
     ICrossL2Prover public immutable prover;
+    address public immutable counterParty; // The dapp on the counter party chain we wish to prove on this local chain
+    bytes32 public lastReceivedTransmission; // Last received arguments from transmitted event
+    bytes32 public immutable chainId;
 
-    event SuccessfulReceipt(bytes receiptIndex, bytes receiptRLP);
-    event SuccessfulEvent(uint256 eventIndex, address sender);
+    // The event that we emit on source chain to be proven on this local chain
+    event TransmitToHouston(bytes32 message, uint64 timestamp);
+
+    // Event that we emit on this local chain to indicate that we have received an event from the source chain
+    event TransmissionReceived(bytes32 message, uint64 timestamp);
+
+    event SuccessfulReceipt(bytes32 srcChainId, bytes receiptRLP);
+    event ValidCounterpartyEvent(address counterParty, bytes[] topics, bytes unindexed);
 
     error invalidProverAddress();
     error invalidReceiptProof();
+    error invalidChainId(); // The chain id of the proof is not the expected chain id. It might be a valid event, but is
+        // on a different chain than we were expecting.
     error invalidEventProof();
+    error invalidEventSender();
+    error invalidCounterpartyEvent();
 
-    constructor(ICrossL2Prover _prover) {
+    constructor(ICrossL2Prover _prover, address _counterParty, bytes32 _chainId) {
         if (address(_prover) == address(0)) {
             revert invalidProverAddress();
         }
         prover = _prover;
+        counterParty = _counterParty;
+        chainId = _chainId;
     }
 
     /**
      * * @notice Validates a receipt proof using the ICrossL2Prover contract
-     * * @param receiptIndex The index of the receipt
-     * * @param receiptRLPEncodedBytes The RLP encoded receipt
-     * * @param proof The proof to validate
+     * @param proof The proof to validate
+     * @notice emits the src chain and receipt rlp encoded bytes and the receipt index if the proof is valid, reverts
+     * otherwise.
      */
-    function receiveReceipt(bytes calldata receiptIndex, bytes calldata receiptRLPEncodedBytes, bytes calldata proof)
-        external
-    {
-        if (!prover.validateReceipt(receiptIndex, receiptRLPEncodedBytes, proof)) {
-            revert invalidReceiptProof();
-        }
-
-        emit SuccessfulReceipt(receiptIndex, receiptRLPEncodedBytes);
+    function receiveReceipt(bytes calldata proof) external {
+        (bytes32 srcChainId, bytes memory receiptRLP) = prover.validateReceipt(proof);
+        emit SuccessfulReceipt(srcChainId, receiptRLP);
     }
 
     /**
-     * * @notice Validates an event within a receipt proof using the ICrossL2Prover contract
-     * * @param receiptIndex The index of the receipt
-     * * @param receiptRLPEncodedBytes The RLP encoded receipt
-     * * @param proof The proof to validate
+     * * @notice Validates a generic event within a receipt proof using the ICrossL2Prover contract
+     * @notice reverts if the
+     * * @param proof The proof to validate, from which the rlp encoded bytes are fetched
      */
     function receiveEvent(
-        bytes calldata receiptIndex,
-        bytes calldata receiptRLPEncodedBytes,
         uint256 logIndex,
-        bytes calldata logBytes,
-        bytes calldata proof
+        bytes calldata proof,
+        address expectedEmitter,
+        bytes[] memory expectedTopics,
+        bytes calldata expectedUnindexedData
     ) external {
         // First we validate receipt to have a more helpful error message if the receipt itself is incorrect
 
@@ -86,8 +95,11 @@ contract Venus {
             revert invalidEventSender();
         }
 
-        if (!prover.validateEvent(receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)) {
-            revert invalidEventProof();
+        if (!Bytes.equal(abi.encode(topics), abi.encode(expectedTopics))) {
+            revert invalidCounterpartyEvent();
+        }
+        if (!Bytes.equal(unindexedData, expectedUnindexedData)) {
+            revert invalidCounterpartyEvent();
         }
 
         emit ValidCounterpartyEvent(emittingContract, topics, expectedUnindexedData);
