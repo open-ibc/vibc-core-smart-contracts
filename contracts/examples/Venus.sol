@@ -18,6 +18,7 @@
 pragma solidity ^0.8.9;
 
 import {ICrossL2Prover} from "../interfaces/ICrossL2Prover.sol";
+import {Bytes} from "optimism/libraries/Bytes.sol";
 
 /**
  * @title Venus
@@ -73,14 +74,68 @@ contract Venus {
     ) external {
         // First we validate receipt to have a more helpful error message if the receipt itself is incorrect
 
-        if (!prover.validateReceipt(receiptIndex, receiptRLPEncodedBytes, proof)) {
-            revert invalidReceiptProof();
+        // Now that we have validated the receipt, we can trust the rlp encoded receipt bytes. Now we unpack the event
+        // data from these rlp encoded receipt bytes and validate it.
+        (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
+            prover.validateEvent(logIndex, proof);
+
+        if (chainId != proofChainId) {
+            revert invalidChainId();
+        }
+        if (emittingContract != expectedEmitter) {
+            revert invalidEventSender();
         }
 
         if (!prover.validateEvent(receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)) {
             revert invalidEventProof();
         }
 
-        emit SuccessfulEvent(logIndex, msg.sender);
+        emit ValidCounterpartyEvent(emittingContract, topics, expectedUnindexedData);
+    }
+
+    /**
+     * * @notice  Receive a specific houston transmission method. This is a useful example to illustrate how to
+     * deconstruct the event type and arguments within the evm layer
+     * @param logIndex The index within the tx of where the hello earth is logged in the transaction. Note: this is
+     * different than the index of the log within the block
+     * @param proof The proof to validate - returned by polymer proof api. This contains the proof to fetch a rlp
+     * encoded byte at a given index.
+     */
+    function receiveTransmissionEvent(uint256 logIndex, bytes calldata proof) external {
+        // First, we validate the proof and log in one go, but have to validate the counterparty chain id.
+        (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
+            prover.validateEvent(logIndex, proof);
+
+        // Once we validate the chain id, we can Now we unpack the event
+        if (chainId != proofChainId) {
+            revert invalidChainId();
+        }
+
+        if (emittingContract != counterParty) {
+            // If this triggers, we have received a valid event from the source chain with a valid proof,
+            // but it was emitted from a wrong address. This would likely be someone trying to spoof another contract's
+            // event.
+            // This validation is important since any contract can emit any event.
+            revert invalidEventSender();
+        }
+
+        // First bytes of topics is always the 32-byte selector calculated by hash of the log string. We want to make
+        // sure it is the right type of event before we try to decode the data.
+        if (bytes32(topics[0]) != TransmitToHouston.selector) {
+            revert invalidCounterpartyEvent();
+        }
+
+        // Now that we have verified the event type and the sender is correct, we can trust the log itself occured from
+        // a smart contract we are familiar with. All that is left to do is to unpack the args and use them.
+
+        // The abi encoded string is the only indexed arg, it will be the second arg in the topics, we can store it in
+        // this local contract
+        bytes32 transmission = bytes32(topics[2]);
+        lastReceivedTransmission = transmission;
+
+        // We get the unindexed arguments from the generic data property of the log
+        uint64 transmissionTime = abi.decode(unindexedData, (uint64));
+
+        emit TransmissionReceived(transmission, transmissionTime);
     }
 }
