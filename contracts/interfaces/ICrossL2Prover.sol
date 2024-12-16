@@ -36,21 +36,32 @@ interface ICrossL2Prover is IClientUpdates {
             // receiptRoot of the block at this eight should be the the same as the receipt root given in this struct
     }
 
+    // An event decoded from a counterparty chain.
+    struct DecodedEvent {
+        address emittingContractAddress;
+        bytes[] topics; // The topics of the event. First topic is the event signature that can be calculated by
+            // Event.selector. The remaining elements in this array are the indexed parameters of the event.
+        bytes data; // The data of the event. This is the abi encoded non-indexed parameters of the event.
+    }
+
     /**
      *   @notice Validates a cross chain receipt from a couterparty chain
      *   @notice Some of the data needed to call this method will be returned by polymer's proof api. This method should
      * only be
      * called after we are certain that polymer's relayer has called updateClient on this contract to update this light
      * client
+     * @notice This method reverts if a proof is invalid.
      * @param receiptIndex: The index of the receipt in the block.  This is the same as the key the receipt bytes are
      * stored in the MMPT.
-     * @param receiptRLPEncodedBytes: The raw rlp encoded bytes of the whole receipt object we are trying to prove, this
-     * is the value stored in the MMPT
      * @param proof: The proof data needed to prove the receipt. This is returned from Polymer's proof API and should
      * be passed in as is. This is generally an opaque bytes object but it is constructed through abi encoding the proof
      * fields from the above EventProof struct in this interface. See the struct for per-property documentation.
-     * @return valid A boolean indicating if the proof was successful and can be trusted on this chain or not. Once the
-     * raw receipt has been proven, logs can be fetched from the raw receipt:
+     * @return chainId The source chain id the proof was for. Dapps which call this method should always validate this
+     * chain id is indeed expected to prevent spoofing source chains (e.g. a proof might be valid for an event occurring
+     * on another chain, but not for the chain you expect)
+     * @return ReceiptRLP The raw rlp encoded bytes for the receipt, which can further be parsed to extract all logs for
+     * the given receipt. This is equivalent to the leaf value stored in the receipt MMPT and is just an RLP encoded
+     * object of the type:
      * type ReceiptRLP struct {
      *     PostStateOrStatus []byte
      *     CumulativeGasUsed uint64
@@ -58,9 +69,9 @@ interface ICrossL2Prover is IClientUpdates {
      *     Logs              []*Log
      *     }
      */
-    function validateReceipt(bytes calldata receiptIndex, bytes calldata receiptRLPEncodedBytes, bytes calldata proof)
+    function validateReceipt(bytes calldata receiptIndex, bytes calldata proof)
         external
-        returns (bool);
+        returns (bytes calldata chainId, bytes calldata receiptRLPEncodedBytes);
 
     /**
      *   @notice Validates a cross chain event from a couterparty chain
@@ -78,13 +89,9 @@ interface ICrossL2Prover is IClientUpdates {
      * be passed in as is. This is generally an opaque bytes object but it is constructed through abi encoding the proof
      * fields from the above EventProof struct in this interface. See the struct for per-property documentation.
      */
-    function validateEvent(
-        bytes calldata receiptIndex,
-        bytes calldata receiptRLPEncodedBytes,
-        uint256 logIndex,
-        bytes calldata logBytes,
-        bytes calldata proof
-    ) external returns (bool);
+    function validateEvent(bytes calldata receiptIndex, uint256 logIndex, bytes calldata proof)
+        external
+        returns (bytes calldata chainId, bytes calldata DecodedEvent);
 
     /**
      * Returns the peptide at a given apphash at a given height,
