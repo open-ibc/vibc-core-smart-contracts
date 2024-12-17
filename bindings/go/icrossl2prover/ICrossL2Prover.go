@@ -31,7 +31,7 @@ var (
 
 // ICrossL2ProverMetaData contains all meta data concerning the ICrossL2Prover contract.
 var ICrossL2ProverMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"logBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateLog\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"srcChainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"}]",
 }
 
 // ICrossL2ProverABI is the input ABI used to generate the binding from.
@@ -242,6 +242,106 @@ func (_ICrossL2Prover *ICrossL2ProverCallerSession) GetState(height *big.Int) (*
 	return _ICrossL2Prover.Contract.GetState(&_ICrossL2Prover.CallOpts, height)
 }
 
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
+//
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateLog(opts *bind.CallOpts, logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
+	var out []interface{}
+	err := _ICrossL2Prover.contract.Call(opts, &out, "validateLog", logIndex, proof)
+
+	outstruct := new(struct {
+		ChainId          [32]byte
+		EmittingContract common.Address
+		Topics           [][]byte
+		UnindexedData    []byte
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.ChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.EmittingContract = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
+	outstruct.Topics = *abi.ConvertType(out[2], new([][]byte)).(*[][]byte)
+	outstruct.UnindexedData = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
+
+	return *outstruct, err
+
+}
+
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
+//
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_ICrossL2Prover *ICrossL2ProverSession) ValidateLog(logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
+	return _ICrossL2Prover.Contract.ValidateLog(&_ICrossL2Prover.CallOpts, logIndex, proof)
+}
+
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
+//
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_ICrossL2Prover *ICrossL2ProverCallerSession) ValidateLog(logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
+	return _ICrossL2Prover.Contract.ValidateLog(&_ICrossL2Prover.CallOpts, logIndex, proof)
+}
+
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
+//
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, proof []byte) (struct {
+	SrcChainId [32]byte
+	ReceiptRLP []byte
+}, error) {
+	var out []interface{}
+	err := _ICrossL2Prover.contract.Call(opts, &out, "validateReceipt", proof)
+
+	outstruct := new(struct {
+		SrcChainId [32]byte
+		ReceiptRLP []byte
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.SrcChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.ReceiptRLP = *abi.ConvertType(out[1], new([]byte)).(*[]byte)
+
+	return *outstruct, err
+
+}
+
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
+//
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+func (_ICrossL2Prover *ICrossL2ProverSession) ValidateReceipt(proof []byte) (struct {
+	SrcChainId [32]byte
+	ReceiptRLP []byte
+}, error) {
+	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.CallOpts, proof)
+}
+
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
+//
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+func (_ICrossL2Prover *ICrossL2ProverCallerSession) ValidateReceipt(proof []byte) (struct {
+	SrcChainId [32]byte
+	ReceiptRLP []byte
+}, error) {
+	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.CallOpts, proof)
+}
+
 // UpdateClient is a paid mutator transaction binding the contract method 0x49ff245e.
 //
 // Solidity: function updateClient(bytes proof, uint256 height, uint256 appHash) returns()
@@ -261,46 +361,4 @@ func (_ICrossL2Prover *ICrossL2ProverSession) UpdateClient(proof []byte, height 
 // Solidity: function updateClient(bytes proof, uint256 height, uint256 appHash) returns()
 func (_ICrossL2Prover *ICrossL2ProverTransactorSession) UpdateClient(proof []byte, height *big.Int, appHash *big.Int) (*types.Transaction, error) {
 	return _ICrossL2Prover.Contract.UpdateClient(&_ICrossL2Prover.TransactOpts, proof, height, appHash)
-}
-
-// ValidateEvent is a paid mutator transaction binding the contract method 0x81ce4d34.
-//
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverTransactor) ValidateEvent(opts *bind.TransactOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.contract.Transact(opts, "validateEvent", receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
-}
-
-// ValidateEvent is a paid mutator transaction binding the contract method 0x81ce4d34.
-//
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverSession) ValidateEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.Contract.ValidateEvent(&_ICrossL2Prover.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
-}
-
-// ValidateEvent is a paid mutator transaction binding the contract method 0x81ce4d34.
-//
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverTransactorSession) ValidateEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.Contract.ValidateEvent(&_ICrossL2Prover.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
-}
-
-// ValidateReceipt is a paid mutator transaction binding the contract method 0x85532872.
-//
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverTransactor) ValidateReceipt(opts *bind.TransactOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.contract.Transact(opts, "validateReceipt", receiptIndex, receiptRLPEncodedBytes, proof)
-}
-
-// ValidateReceipt is a paid mutator transaction binding the contract method 0x85532872.
-//
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverSession) ValidateReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.TransactOpts, receiptIndex, receiptRLPEncodedBytes, proof)
-}
-
-// ValidateReceipt is a paid mutator transaction binding the contract method 0x85532872.
-//
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns(bool)
-func (_ICrossL2Prover *ICrossL2ProverTransactorSession) ValidateReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.TransactOpts, receiptIndex, receiptRLPEncodedBytes, proof)
 }

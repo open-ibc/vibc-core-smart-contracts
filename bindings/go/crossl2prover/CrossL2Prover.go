@@ -51,7 +51,7 @@ type OpIcs23ProofPath struct {
 
 // CrossL2ProverMetaData contains all meta data concerning the CrossL2Prover contract.
 var CrossL2ProverMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"},{\"name\":\"peptideClientId_\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"peptideAppHashes\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"peptideClientId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"logBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"valid\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"appHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proofs\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"CannotUpdateClientWithDifferentAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidIbcStateProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidPacketProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofKey\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofValue\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1StateRoot\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MethodNotImplemented\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"},{\"name\":\"clientType_\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"clientType\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"peptideAppHashes\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateLog\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"srcChainID\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"appHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proofs\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"CannotUpdateClientWithDifferentAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidIbcStateProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidPacketProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofKey\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofValue\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1StateRoot\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MethodNotImplemented\",\"inputs\":[]}]",
 }
 
 // CrossL2ProverABI is the input ABI used to generate the binding from.
@@ -231,6 +231,37 @@ func (_CrossL2Prover *CrossL2ProverCallerSession) LIGHTCLIENTTYPE() (uint8, erro
 	return _CrossL2Prover.Contract.LIGHTCLIENTTYPE(&_CrossL2Prover.CallOpts)
 }
 
+// ClientType is a free data retrieval call binding the contract method 0xb3768f0d.
+//
+// Solidity: function clientType() view returns(string)
+func (_CrossL2Prover *CrossL2ProverCaller) ClientType(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _CrossL2Prover.contract.Call(opts, &out, "clientType")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// ClientType is a free data retrieval call binding the contract method 0xb3768f0d.
+//
+// Solidity: function clientType() view returns(string)
+func (_CrossL2Prover *CrossL2ProverSession) ClientType() (string, error) {
+	return _CrossL2Prover.Contract.ClientType(&_CrossL2Prover.CallOpts)
+}
+
+// ClientType is a free data retrieval call binding the contract method 0xb3768f0d.
+//
+// Solidity: function clientType() view returns(string)
+func (_CrossL2Prover *CrossL2ProverCallerSession) ClientType() (string, error) {
+	return _CrossL2Prover.Contract.ClientType(&_CrossL2Prover.CallOpts)
+}
+
 // GetState is a free data retrieval call binding the contract method 0x44c9af28.
 //
 // Solidity: function getState(uint256 height) view returns(uint256)
@@ -293,97 +324,104 @@ func (_CrossL2Prover *CrossL2ProverCallerSession) PeptideAppHashes(arg0 *big.Int
 	return _CrossL2Prover.Contract.PeptideAppHashes(&_CrossL2Prover.CallOpts, arg0)
 }
 
-// PeptideClientId is a free data retrieval call binding the contract method 0xa2198c95.
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
 //
-// Solidity: function peptideClientId() view returns(string)
-func (_CrossL2Prover *CrossL2ProverCaller) PeptideClientId(opts *bind.CallOpts) (string, error) {
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_CrossL2Prover *CrossL2ProverCaller) ValidateLog(opts *bind.CallOpts, logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
 	var out []interface{}
-	err := _CrossL2Prover.contract.Call(opts, &out, "peptideClientId")
+	err := _CrossL2Prover.contract.Call(opts, &out, "validateLog", logIndex, proof)
 
+	outstruct := new(struct {
+		ChainId          [32]byte
+		EmittingContract common.Address
+		Topics           [][]byte
+		UnindexedData    []byte
+	})
 	if err != nil {
-		return *new(string), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+	outstruct.ChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.EmittingContract = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
+	outstruct.Topics = *abi.ConvertType(out[2], new([][]byte)).(*[][]byte)
+	outstruct.UnindexedData = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
 
-	return out0, err
+	return *outstruct, err
 
 }
 
-// PeptideClientId is a free data retrieval call binding the contract method 0xa2198c95.
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
 //
-// Solidity: function peptideClientId() view returns(string)
-func (_CrossL2Prover *CrossL2ProverSession) PeptideClientId() (string, error) {
-	return _CrossL2Prover.Contract.PeptideClientId(&_CrossL2Prover.CallOpts)
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_CrossL2Prover *CrossL2ProverSession) ValidateLog(logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
+	return _CrossL2Prover.Contract.ValidateLog(&_CrossL2Prover.CallOpts, logIndex, proof)
 }
 
-// PeptideClientId is a free data retrieval call binding the contract method 0xa2198c95.
+// ValidateLog is a free data retrieval call binding the contract method 0xfc396ddb.
 //
-// Solidity: function peptideClientId() view returns(string)
-func (_CrossL2Prover *CrossL2ProverCallerSession) PeptideClientId() (string, error) {
-	return _CrossL2Prover.Contract.PeptideClientId(&_CrossL2Prover.CallOpts)
+// Solidity: function validateLog(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateLog(logIndex *big.Int, proof []byte) (struct {
+	ChainId          [32]byte
+	EmittingContract common.Address
+	Topics           [][]byte
+	UnindexedData    []byte
+}, error) {
+	return _CrossL2Prover.Contract.ValidateLog(&_CrossL2Prover.CallOpts, logIndex, proof)
 }
 
-// ValidateEvent is a free data retrieval call binding the contract method 0x81ce4d34.
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) view returns(bool)
-func (_CrossL2Prover *CrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (bool, error) {
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
+func (_CrossL2Prover *CrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, proof []byte) (struct {
+	SrcChainID [32]byte
+	ReceiptRLP []byte
+}, error) {
 	var out []interface{}
-	err := _CrossL2Prover.contract.Call(opts, &out, "validateEvent", receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
+	err := _CrossL2Prover.contract.Call(opts, &out, "validateReceipt", proof)
 
+	outstruct := new(struct {
+		SrcChainID [32]byte
+		ReceiptRLP []byte
+	})
 	if err != nil {
-		return *new(bool), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+	outstruct.SrcChainID = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.ReceiptRLP = *abi.ConvertType(out[1], new([]byte)).(*[]byte)
 
-	return out0, err
-
-}
-
-// ValidateEvent is a free data retrieval call binding the contract method 0x81ce4d34.
-//
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) view returns(bool)
-func (_CrossL2Prover *CrossL2ProverSession) ValidateEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (bool, error) {
-	return _CrossL2Prover.Contract.ValidateEvent(&_CrossL2Prover.CallOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
-}
-
-// ValidateEvent is a free data retrieval call binding the contract method 0x81ce4d34.
-//
-// Solidity: function validateEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) view returns(bool)
-func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (bool, error) {
-	return _CrossL2Prover.Contract.ValidateEvent(&_CrossL2Prover.CallOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
-}
-
-// ValidateReceipt is a free data retrieval call binding the contract method 0x85532872.
-//
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) view returns(bool valid)
-func (_CrossL2Prover *CrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (bool, error) {
-	var out []interface{}
-	err := _CrossL2Prover.contract.Call(opts, &out, "validateReceipt", receiptIndex, receiptRLPEncodedBytes, proof)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
+	return *outstruct, err
 
 }
 
-// ValidateReceipt is a free data retrieval call binding the contract method 0x85532872.
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) view returns(bool valid)
-func (_CrossL2Prover *CrossL2ProverSession) ValidateReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (bool, error) {
-	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, receiptIndex, receiptRLPEncodedBytes, proof)
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
+func (_CrossL2Prover *CrossL2ProverSession) ValidateReceipt(proof []byte) (struct {
+	SrcChainID [32]byte
+	ReceiptRLP []byte
+}, error) {
+	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, proof)
 }
 
-// ValidateReceipt is a free data retrieval call binding the contract method 0x85532872.
+// ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) view returns(bool valid)
-func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (bool, error) {
-	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, receiptIndex, receiptRLPEncodedBytes, proof)
+// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
+func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateReceipt(proof []byte) (struct {
+	SrcChainID [32]byte
+	ReceiptRLP []byte
+}, error) {
+	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, proof)
 }
 
 // Verifier is a free data retrieval call binding the contract method 0x2b7ac3f3.

@@ -31,7 +31,7 @@ var (
 
 // VenusMetaData contains all meta data concerning the Venus contract.
 var VenusMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_prover\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"},{\"name\":\"_counterParty\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"counterParty\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastReceivedTransmission\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"prover\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"receiveEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"logBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveTransmissionEvent\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"receiptRLPEncodedBytes\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"SuccessfulEvent\",\"inputs\":[{\"name\":\"eventIndex\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"sender\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SuccessfulReceipt\",\"inputs\":[{\"name\":\"receiptIndex\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransmissionReceived\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransmitToHouston\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"invalidCounterpartyEvent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidEventProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidEventSender\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidProverAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidReceiptProof\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"_prover\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"},{\"name\":\"_counterParty\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"_chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"chainId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"counterParty\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"lastReceivedTransmission\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"prover\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractICrossL2Prover\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"receiveEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"expectedEmitter\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"expectedTopics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"expectedUnindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"receiveTransmissionEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"SuccessfulReceipt\",\"inputs\":[{\"name\":\"srcChainId\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransmissionReceived\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"TransmitToHouston\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes32\",\"indexed\":false,\"internalType\":\"bytes32\"},{\"name\":\"timestamp\",\"type\":\"uint64\",\"indexed\":false,\"internalType\":\"uint64\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ValidCounterpartyEvent\",\"inputs\":[{\"name\":\"counterParty\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"indexed\":false,\"internalType\":\"bytes[]\"},{\"name\":\"unindexed\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"invalidChainId\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidCounterpartyEvent\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidEventProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidEventSender\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidProverAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"invalidReceiptProof\",\"inputs\":[]}]",
 }
 
 // VenusABI is the input ABI used to generate the binding from.
@@ -180,6 +180,37 @@ func (_Venus *VenusTransactorRaw) Transact(opts *bind.TransactOpts, method strin
 	return _Venus.Contract.contract.Transact(opts, method, params...)
 }
 
+// ChainId is a free data retrieval call binding the contract method 0x9a8a0592.
+//
+// Solidity: function chainId() view returns(bytes32)
+func (_Venus *VenusCaller) ChainId(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _Venus.contract.Call(opts, &out, "chainId")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// ChainId is a free data retrieval call binding the contract method 0x9a8a0592.
+//
+// Solidity: function chainId() view returns(bytes32)
+func (_Venus *VenusSession) ChainId() ([32]byte, error) {
+	return _Venus.Contract.ChainId(&_Venus.CallOpts)
+}
+
+// ChainId is a free data retrieval call binding the contract method 0x9a8a0592.
+//
+// Solidity: function chainId() view returns(bytes32)
+func (_Venus *VenusCallerSession) ChainId() ([32]byte, error) {
+	return _Venus.Contract.ChainId(&_Venus.CallOpts)
+}
+
 // CounterParty is a free data retrieval call binding the contract method 0x2c453bdf.
 //
 // Solidity: function counterParty() view returns(address)
@@ -273,202 +304,67 @@ func (_Venus *VenusCallerSession) Prover() (common.Address, error) {
 	return _Venus.Contract.Prover(&_Venus.CallOpts)
 }
 
-// ReceiveEvent is a paid mutator transaction binding the contract method 0x163be0d8.
+// ReceiveEvent is a paid mutator transaction binding the contract method 0x932e6cb2.
 //
-// Solidity: function receiveEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns()
-func (_Venus *VenusTransactor) ReceiveEvent(opts *bind.TransactOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.contract.Transact(opts, "receiveEvent", receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
+// Solidity: function receiveEvent(uint256 logIndex, bytes proof, address expectedEmitter, bytes[] expectedTopics, bytes expectedUnindexedData) returns()
+func (_Venus *VenusTransactor) ReceiveEvent(opts *bind.TransactOpts, logIndex *big.Int, proof []byte, expectedEmitter common.Address, expectedTopics [][]byte, expectedUnindexedData []byte) (*types.Transaction, error) {
+	return _Venus.contract.Transact(opts, "receiveEvent", logIndex, proof, expectedEmitter, expectedTopics, expectedUnindexedData)
 }
 
-// ReceiveEvent is a paid mutator transaction binding the contract method 0x163be0d8.
+// ReceiveEvent is a paid mutator transaction binding the contract method 0x932e6cb2.
 //
-// Solidity: function receiveEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns()
-func (_Venus *VenusSession) ReceiveEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveEvent(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
+// Solidity: function receiveEvent(uint256 logIndex, bytes proof, address expectedEmitter, bytes[] expectedTopics, bytes expectedUnindexedData) returns()
+func (_Venus *VenusSession) ReceiveEvent(logIndex *big.Int, proof []byte, expectedEmitter common.Address, expectedTopics [][]byte, expectedUnindexedData []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveEvent(&_Venus.TransactOpts, logIndex, proof, expectedEmitter, expectedTopics, expectedUnindexedData)
 }
 
-// ReceiveEvent is a paid mutator transaction binding the contract method 0x163be0d8.
+// ReceiveEvent is a paid mutator transaction binding the contract method 0x932e6cb2.
 //
-// Solidity: function receiveEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes logBytes, bytes proof) returns()
-func (_Venus *VenusTransactorSession) ReceiveEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, logBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveEvent(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, logBytes, proof)
+// Solidity: function receiveEvent(uint256 logIndex, bytes proof, address expectedEmitter, bytes[] expectedTopics, bytes expectedUnindexedData) returns()
+func (_Venus *VenusTransactorSession) ReceiveEvent(logIndex *big.Int, proof []byte, expectedEmitter common.Address, expectedTopics [][]byte, expectedUnindexedData []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveEvent(&_Venus.TransactOpts, logIndex, proof, expectedEmitter, expectedTopics, expectedUnindexedData)
 }
 
-// ReceiveReceipt is a paid mutator transaction binding the contract method 0x2004bbf0.
+// ReceiveReceipt is a paid mutator transaction binding the contract method 0x273533e1.
 //
-// Solidity: function receiveReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns()
-func (_Venus *VenusTransactor) ReceiveReceipt(opts *bind.TransactOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.contract.Transact(opts, "receiveReceipt", receiptIndex, receiptRLPEncodedBytes, proof)
+// Solidity: function receiveReceipt(bytes proof) returns()
+func (_Venus *VenusTransactor) ReceiveReceipt(opts *bind.TransactOpts, proof []byte) (*types.Transaction, error) {
+	return _Venus.contract.Transact(opts, "receiveReceipt", proof)
 }
 
-// ReceiveReceipt is a paid mutator transaction binding the contract method 0x2004bbf0.
+// ReceiveReceipt is a paid mutator transaction binding the contract method 0x273533e1.
 //
-// Solidity: function receiveReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns()
-func (_Venus *VenusSession) ReceiveReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveReceipt(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, proof)
+// Solidity: function receiveReceipt(bytes proof) returns()
+func (_Venus *VenusSession) ReceiveReceipt(proof []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveReceipt(&_Venus.TransactOpts, proof)
 }
 
-// ReceiveReceipt is a paid mutator transaction binding the contract method 0x2004bbf0.
+// ReceiveReceipt is a paid mutator transaction binding the contract method 0x273533e1.
 //
-// Solidity: function receiveReceipt(bytes receiptIndex, bytes receiptRLPEncodedBytes, bytes proof) returns()
-func (_Venus *VenusTransactorSession) ReceiveReceipt(receiptIndex []byte, receiptRLPEncodedBytes []byte, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveReceipt(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, proof)
+// Solidity: function receiveReceipt(bytes proof) returns()
+func (_Venus *VenusTransactorSession) ReceiveReceipt(proof []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveReceipt(&_Venus.TransactOpts, proof)
 }
 
-// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0x10f7b4c1.
+// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0xa17d42d4.
 //
-// Solidity: function receiveTransmissionEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes proof) returns()
-func (_Venus *VenusTransactor) ReceiveTransmissionEvent(opts *bind.TransactOpts, receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, proof []byte) (*types.Transaction, error) {
-	return _Venus.contract.Transact(opts, "receiveTransmissionEvent", receiptIndex, receiptRLPEncodedBytes, logIndex, proof)
+// Solidity: function receiveTransmissionEvent(uint256 logIndex, bytes proof) returns()
+func (_Venus *VenusTransactor) ReceiveTransmissionEvent(opts *bind.TransactOpts, logIndex *big.Int, proof []byte) (*types.Transaction, error) {
+	return _Venus.contract.Transact(opts, "receiveTransmissionEvent", logIndex, proof)
 }
 
-// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0x10f7b4c1.
+// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0xa17d42d4.
 //
-// Solidity: function receiveTransmissionEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes proof) returns()
-func (_Venus *VenusSession) ReceiveTransmissionEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveTransmissionEvent(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, proof)
+// Solidity: function receiveTransmissionEvent(uint256 logIndex, bytes proof) returns()
+func (_Venus *VenusSession) ReceiveTransmissionEvent(logIndex *big.Int, proof []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveTransmissionEvent(&_Venus.TransactOpts, logIndex, proof)
 }
 
-// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0x10f7b4c1.
+// ReceiveTransmissionEvent is a paid mutator transaction binding the contract method 0xa17d42d4.
 //
-// Solidity: function receiveTransmissionEvent(bytes receiptIndex, bytes receiptRLPEncodedBytes, uint256 logIndex, bytes proof) returns()
-func (_Venus *VenusTransactorSession) ReceiveTransmissionEvent(receiptIndex []byte, receiptRLPEncodedBytes []byte, logIndex *big.Int, proof []byte) (*types.Transaction, error) {
-	return _Venus.Contract.ReceiveTransmissionEvent(&_Venus.TransactOpts, receiptIndex, receiptRLPEncodedBytes, logIndex, proof)
-}
-
-// VenusSuccessfulEventIterator is returned from FilterSuccessfulEvent and is used to iterate over the raw logs and unpacked data for SuccessfulEvent events raised by the Venus contract.
-type VenusSuccessfulEventIterator struct {
-	Event *VenusSuccessfulEvent // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *VenusSuccessfulEventIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(VenusSuccessfulEvent)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(VenusSuccessfulEvent)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *VenusSuccessfulEventIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *VenusSuccessfulEventIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// VenusSuccessfulEvent represents a SuccessfulEvent event raised by the Venus contract.
-type VenusSuccessfulEvent struct {
-	EventIndex *big.Int
-	Sender     common.Address
-	Raw        types.Log // Blockchain specific contextual infos
-}
-
-// FilterSuccessfulEvent is a free log retrieval operation binding the contract event 0x49a61a3517534657df66eaaaef62f55a830c07d22ca1760e0eff4a2c823e0bc9.
-//
-// Solidity: event SuccessfulEvent(uint256 eventIndex, address sender)
-func (_Venus *VenusFilterer) FilterSuccessfulEvent(opts *bind.FilterOpts) (*VenusSuccessfulEventIterator, error) {
-
-	logs, sub, err := _Venus.contract.FilterLogs(opts, "SuccessfulEvent")
-	if err != nil {
-		return nil, err
-	}
-	return &VenusSuccessfulEventIterator{contract: _Venus.contract, event: "SuccessfulEvent", logs: logs, sub: sub}, nil
-}
-
-// WatchSuccessfulEvent is a free log subscription operation binding the contract event 0x49a61a3517534657df66eaaaef62f55a830c07d22ca1760e0eff4a2c823e0bc9.
-//
-// Solidity: event SuccessfulEvent(uint256 eventIndex, address sender)
-func (_Venus *VenusFilterer) WatchSuccessfulEvent(opts *bind.WatchOpts, sink chan<- *VenusSuccessfulEvent) (event.Subscription, error) {
-
-	logs, sub, err := _Venus.contract.WatchLogs(opts, "SuccessfulEvent")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(VenusSuccessfulEvent)
-				if err := _Venus.contract.UnpackLog(event, "SuccessfulEvent", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseSuccessfulEvent is a log parse operation binding the contract event 0x49a61a3517534657df66eaaaef62f55a830c07d22ca1760e0eff4a2c823e0bc9.
-//
-// Solidity: event SuccessfulEvent(uint256 eventIndex, address sender)
-func (_Venus *VenusFilterer) ParseSuccessfulEvent(log types.Log) (*VenusSuccessfulEvent, error) {
-	event := new(VenusSuccessfulEvent)
-	if err := _Venus.contract.UnpackLog(event, "SuccessfulEvent", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
+// Solidity: function receiveTransmissionEvent(uint256 logIndex, bytes proof) returns()
+func (_Venus *VenusTransactorSession) ReceiveTransmissionEvent(logIndex *big.Int, proof []byte) (*types.Transaction, error) {
+	return _Venus.Contract.ReceiveTransmissionEvent(&_Venus.TransactOpts, logIndex, proof)
 }
 
 // VenusSuccessfulReceiptIterator is returned from FilterSuccessfulReceipt and is used to iterate over the raw logs and unpacked data for SuccessfulReceipt events raised by the Venus contract.
@@ -540,14 +436,14 @@ func (it *VenusSuccessfulReceiptIterator) Close() error {
 
 // VenusSuccessfulReceipt represents a SuccessfulReceipt event raised by the Venus contract.
 type VenusSuccessfulReceipt struct {
-	ReceiptIndex []byte
-	ReceiptRLP   []byte
-	Raw          types.Log // Blockchain specific contextual infos
+	SrcChainId [32]byte
+	ReceiptRLP []byte
+	Raw        types.Log // Blockchain specific contextual infos
 }
 
-// FilterSuccessfulReceipt is a free log retrieval operation binding the contract event 0xd6728eaf25dd1431eb8afabc6f371b3379a6c7beb972e468f5bf992fc6e822d5.
+// FilterSuccessfulReceipt is a free log retrieval operation binding the contract event 0xf771e200728f07a661e482ccfec772812dfe16ba618778746183c6622500118b.
 //
-// Solidity: event SuccessfulReceipt(bytes receiptIndex, bytes receiptRLP)
+// Solidity: event SuccessfulReceipt(bytes32 srcChainId, bytes receiptRLP)
 func (_Venus *VenusFilterer) FilterSuccessfulReceipt(opts *bind.FilterOpts) (*VenusSuccessfulReceiptIterator, error) {
 
 	logs, sub, err := _Venus.contract.FilterLogs(opts, "SuccessfulReceipt")
@@ -557,9 +453,9 @@ func (_Venus *VenusFilterer) FilterSuccessfulReceipt(opts *bind.FilterOpts) (*Ve
 	return &VenusSuccessfulReceiptIterator{contract: _Venus.contract, event: "SuccessfulReceipt", logs: logs, sub: sub}, nil
 }
 
-// WatchSuccessfulReceipt is a free log subscription operation binding the contract event 0xd6728eaf25dd1431eb8afabc6f371b3379a6c7beb972e468f5bf992fc6e822d5.
+// WatchSuccessfulReceipt is a free log subscription operation binding the contract event 0xf771e200728f07a661e482ccfec772812dfe16ba618778746183c6622500118b.
 //
-// Solidity: event SuccessfulReceipt(bytes receiptIndex, bytes receiptRLP)
+// Solidity: event SuccessfulReceipt(bytes32 srcChainId, bytes receiptRLP)
 func (_Venus *VenusFilterer) WatchSuccessfulReceipt(opts *bind.WatchOpts, sink chan<- *VenusSuccessfulReceipt) (event.Subscription, error) {
 
 	logs, sub, err := _Venus.contract.WatchLogs(opts, "SuccessfulReceipt")
@@ -594,9 +490,9 @@ func (_Venus *VenusFilterer) WatchSuccessfulReceipt(opts *bind.WatchOpts, sink c
 	}), nil
 }
 
-// ParseSuccessfulReceipt is a log parse operation binding the contract event 0xd6728eaf25dd1431eb8afabc6f371b3379a6c7beb972e468f5bf992fc6e822d5.
+// ParseSuccessfulReceipt is a log parse operation binding the contract event 0xf771e200728f07a661e482ccfec772812dfe16ba618778746183c6622500118b.
 //
-// Solidity: event SuccessfulReceipt(bytes receiptIndex, bytes receiptRLP)
+// Solidity: event SuccessfulReceipt(bytes32 srcChainId, bytes receiptRLP)
 func (_Venus *VenusFilterer) ParseSuccessfulReceipt(log types.Log) (*VenusSuccessfulReceipt, error) {
 	event := new(VenusSuccessfulReceipt)
 	if err := _Venus.contract.UnpackLog(event, "SuccessfulReceipt", log); err != nil {
@@ -870,6 +766,142 @@ func (_Venus *VenusFilterer) WatchTransmitToHouston(opts *bind.WatchOpts, sink c
 func (_Venus *VenusFilterer) ParseTransmitToHouston(log types.Log) (*VenusTransmitToHouston, error) {
 	event := new(VenusTransmitToHouston)
 	if err := _Venus.contract.UnpackLog(event, "TransmitToHouston", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// VenusValidCounterpartyEventIterator is returned from FilterValidCounterpartyEvent and is used to iterate over the raw logs and unpacked data for ValidCounterpartyEvent events raised by the Venus contract.
+type VenusValidCounterpartyEventIterator struct {
+	Event *VenusValidCounterpartyEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *VenusValidCounterpartyEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(VenusValidCounterpartyEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(VenusValidCounterpartyEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *VenusValidCounterpartyEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *VenusValidCounterpartyEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// VenusValidCounterpartyEvent represents a ValidCounterpartyEvent event raised by the Venus contract.
+type VenusValidCounterpartyEvent struct {
+	CounterParty common.Address
+	Topics       [][]byte
+	Unindexed    []byte
+	Raw          types.Log // Blockchain specific contextual infos
+}
+
+// FilterValidCounterpartyEvent is a free log retrieval operation binding the contract event 0xe683aa4424de0611da9ae18b5fc355ae68fc1dca14a14c5d7e2ad9ba3711d446.
+//
+// Solidity: event ValidCounterpartyEvent(address counterParty, bytes[] topics, bytes unindexed)
+func (_Venus *VenusFilterer) FilterValidCounterpartyEvent(opts *bind.FilterOpts) (*VenusValidCounterpartyEventIterator, error) {
+
+	logs, sub, err := _Venus.contract.FilterLogs(opts, "ValidCounterpartyEvent")
+	if err != nil {
+		return nil, err
+	}
+	return &VenusValidCounterpartyEventIterator{contract: _Venus.contract, event: "ValidCounterpartyEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchValidCounterpartyEvent is a free log subscription operation binding the contract event 0xe683aa4424de0611da9ae18b5fc355ae68fc1dca14a14c5d7e2ad9ba3711d446.
+//
+// Solidity: event ValidCounterpartyEvent(address counterParty, bytes[] topics, bytes unindexed)
+func (_Venus *VenusFilterer) WatchValidCounterpartyEvent(opts *bind.WatchOpts, sink chan<- *VenusValidCounterpartyEvent) (event.Subscription, error) {
+
+	logs, sub, err := _Venus.contract.WatchLogs(opts, "ValidCounterpartyEvent")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(VenusValidCounterpartyEvent)
+				if err := _Venus.contract.UnpackLog(event, "ValidCounterpartyEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseValidCounterpartyEvent is a log parse operation binding the contract event 0xe683aa4424de0611da9ae18b5fc355ae68fc1dca14a14c5d7e2ad9ba3711d446.
+//
+// Solidity: event ValidCounterpartyEvent(address counterParty, bytes[] topics, bytes unindexed)
+func (_Venus *VenusFilterer) ParseValidCounterpartyEvent(log types.Log) (*VenusValidCounterpartyEvent, error) {
+	event := new(VenusValidCounterpartyEvent)
+	if err := _Venus.contract.UnpackLog(event, "ValidCounterpartyEvent", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

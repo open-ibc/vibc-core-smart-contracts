@@ -26,6 +26,7 @@ import type {
 export interface VenusInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "chainId"
       | "counterParty"
       | "lastReceivedTransmission"
       | "prover"
@@ -36,12 +37,13 @@ export interface VenusInterface extends Interface {
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "SuccessfulEvent"
       | "SuccessfulReceipt"
       | "TransmissionReceived"
       | "TransmitToHouston"
+      | "ValidCounterpartyEvent"
   ): EventFragment;
 
+  encodeFunctionData(functionFragment: "chainId", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "counterParty",
     values?: undefined
@@ -53,17 +55,18 @@ export interface VenusInterface extends Interface {
   encodeFunctionData(functionFragment: "prover", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "receiveEvent",
-    values: [BytesLike, BytesLike, BigNumberish, BytesLike, BytesLike]
+    values: [BigNumberish, BytesLike, AddressLike, BytesLike[], BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "receiveReceipt",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "receiveTransmissionEvent",
-    values: [BytesLike, BytesLike, BigNumberish, BytesLike]
+    values: [BigNumberish, BytesLike]
   ): string;
 
+  decodeFunctionResult(functionFragment: "chainId", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "counterParty",
     data: BytesLike
@@ -87,24 +90,11 @@ export interface VenusInterface extends Interface {
   ): Result;
 }
 
-export namespace SuccessfulEventEvent {
-  export type InputTuple = [eventIndex: BigNumberish, sender: AddressLike];
-  export type OutputTuple = [eventIndex: bigint, sender: string];
-  export interface OutputObject {
-    eventIndex: bigint;
-    sender: string;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace SuccessfulReceiptEvent {
-  export type InputTuple = [receiptIndex: BytesLike, receiptRLP: BytesLike];
-  export type OutputTuple = [receiptIndex: string, receiptRLP: string];
+  export type InputTuple = [srcChainId: BytesLike, receiptRLP: BytesLike];
+  export type OutputTuple = [srcChainId: string, receiptRLP: string];
   export interface OutputObject {
-    receiptIndex: string;
+    srcChainId: string;
     receiptRLP: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -132,6 +122,28 @@ export namespace TransmitToHoustonEvent {
   export interface OutputObject {
     message: string;
     timestamp: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ValidCounterpartyEventEvent {
+  export type InputTuple = [
+    counterParty: AddressLike,
+    topics: BytesLike[],
+    unindexed: BytesLike
+  ];
+  export type OutputTuple = [
+    counterParty: string,
+    topics: string[],
+    unindexed: string
+  ];
+  export interface OutputObject {
+    counterParty: string;
+    topics: string[];
+    unindexed: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -182,6 +194,8 @@ export interface Venus extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  chainId: TypedContractMethod<[], [string], "view">;
+
   counterParty: TypedContractMethod<[], [string], "view">;
 
   lastReceivedTransmission: TypedContractMethod<[], [string], "view">;
@@ -190,33 +204,20 @@ export interface Venus extends BaseContract {
 
   receiveEvent: TypedContractMethod<
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
       logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      proof: BytesLike,
+      expectedEmitter: AddressLike,
+      expectedTopics: BytesLike[],
+      expectedUnindexedData: BytesLike
     ],
     [void],
     "nonpayable"
   >;
 
-  receiveReceipt: TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
+  receiveReceipt: TypedContractMethod<[proof: BytesLike], [void], "nonpayable">;
 
   receiveTransmissionEvent: TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      proof: BytesLike
-    ],
+    [logIndex: BigNumberish, proof: BytesLike],
     [void],
     "nonpayable"
   >;
@@ -225,6 +226,9 @@ export interface Venus extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "chainId"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "counterParty"
   ): TypedContractMethod<[], [string], "view">;
@@ -238,46 +242,26 @@ export interface Venus extends BaseContract {
     nameOrSignature: "receiveEvent"
   ): TypedContractMethod<
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
       logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      proof: BytesLike,
+      expectedEmitter: AddressLike,
+      expectedTopics: BytesLike[],
+      expectedUnindexedData: BytesLike
     ],
     [void],
     "nonpayable"
   >;
   getFunction(
     nameOrSignature: "receiveReceipt"
-  ): TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [void],
-    "nonpayable"
-  >;
+  ): TypedContractMethod<[proof: BytesLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "receiveTransmissionEvent"
   ): TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      proof: BytesLike
-    ],
+    [logIndex: BigNumberish, proof: BytesLike],
     [void],
     "nonpayable"
   >;
 
-  getEvent(
-    key: "SuccessfulEvent"
-  ): TypedContractEvent<
-    SuccessfulEventEvent.InputTuple,
-    SuccessfulEventEvent.OutputTuple,
-    SuccessfulEventEvent.OutputObject
-  >;
   getEvent(
     key: "SuccessfulReceipt"
   ): TypedContractEvent<
@@ -299,20 +283,16 @@ export interface Venus extends BaseContract {
     TransmitToHoustonEvent.OutputTuple,
     TransmitToHoustonEvent.OutputObject
   >;
+  getEvent(
+    key: "ValidCounterpartyEvent"
+  ): TypedContractEvent<
+    ValidCounterpartyEventEvent.InputTuple,
+    ValidCounterpartyEventEvent.OutputTuple,
+    ValidCounterpartyEventEvent.OutputObject
+  >;
 
   filters: {
-    "SuccessfulEvent(uint256,address)": TypedContractEvent<
-      SuccessfulEventEvent.InputTuple,
-      SuccessfulEventEvent.OutputTuple,
-      SuccessfulEventEvent.OutputObject
-    >;
-    SuccessfulEvent: TypedContractEvent<
-      SuccessfulEventEvent.InputTuple,
-      SuccessfulEventEvent.OutputTuple,
-      SuccessfulEventEvent.OutputObject
-    >;
-
-    "SuccessfulReceipt(bytes,bytes)": TypedContractEvent<
+    "SuccessfulReceipt(bytes32,bytes)": TypedContractEvent<
       SuccessfulReceiptEvent.InputTuple,
       SuccessfulReceiptEvent.OutputTuple,
       SuccessfulReceiptEvent.OutputObject
@@ -343,6 +323,17 @@ export interface Venus extends BaseContract {
       TransmitToHoustonEvent.InputTuple,
       TransmitToHoustonEvent.OutputTuple,
       TransmitToHoustonEvent.OutputObject
+    >;
+
+    "ValidCounterpartyEvent(address,bytes[],bytes)": TypedContractEvent<
+      ValidCounterpartyEventEvent.InputTuple,
+      ValidCounterpartyEventEvent.OutputTuple,
+      ValidCounterpartyEventEvent.OutputObject
+    >;
+    ValidCounterpartyEvent: TypedContractEvent<
+      ValidCounterpartyEventEvent.InputTuple,
+      ValidCounterpartyEventEvent.OutputTuple,
+      ValidCounterpartyEventEvent.OutputObject
     >;
   };
 }

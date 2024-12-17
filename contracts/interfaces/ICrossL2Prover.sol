@@ -83,7 +83,7 @@ interface ICrossL2Prover is IClientUpdates {
      */
     function validateLog(uint256 logIndex, bytes calldata proof)
         external
-        pure
+        view
         returns (bytes32 chainId, address emittingContract, bytes[] calldata topics, bytes calldata unindexedData);
 
     /**

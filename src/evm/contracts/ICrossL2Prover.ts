@@ -26,7 +26,7 @@ export interface ICrossL2ProverInterface extends Interface {
       | "LIGHT_CLIENT_TYPE"
       | "getState"
       | "updateClient"
-      | "validateEvent"
+      | "validateLog"
       | "validateReceipt"
   ): FunctionFragment;
 
@@ -43,12 +43,12 @@ export interface ICrossL2ProverInterface extends Interface {
     values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "validateEvent",
-    values: [BytesLike, BytesLike, BigNumberish, BytesLike, BytesLike]
+    functionFragment: "validateLog",
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "validateReceipt",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [BytesLike]
   ): string;
 
   decodeFunctionResult(
@@ -61,7 +61,7 @@ export interface ICrossL2ProverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "validateEvent",
+    functionFragment: "validateLog",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -123,26 +123,23 @@ export interface ICrossL2Prover extends BaseContract {
     "nonpayable"
   >;
 
-  validateEvent: TypedContractMethod<
+  validateLog: TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
-    "nonpayable"
+    "view"
   >;
 
   validateReceipt: TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
-    "nonpayable"
+    [proof: BytesLike],
+    [[string, string] & { srcChainId: string; receiptRLP: string }],
+    "view"
   >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -163,28 +160,25 @@ export interface ICrossL2Prover extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "validateEvent"
+    nameOrSignature: "validateLog"
   ): TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
-    "nonpayable"
+    "view"
   >;
   getFunction(
     nameOrSignature: "validateReceipt"
   ): TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
-    "nonpayable"
+    [proof: BytesLike],
+    [[string, string] & { srcChainId: string; receiptRLP: string }],
+    "view"
   >;
 
   filters: {};
