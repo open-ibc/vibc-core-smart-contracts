@@ -26,7 +26,7 @@ contract CrossL2InboxBase is SigningBase {
     bytes[] receiptProof;
     bytes32 logHash;
     uint256 logIdx;
-    bytes32 peptideClientId;
+    string peptideClientId;
 
     function setUp() public {
         crossProver = new CrossL2Prover(sigVerifier, peptideClientId);

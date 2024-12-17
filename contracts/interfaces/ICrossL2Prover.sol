@@ -81,7 +81,7 @@ interface ICrossL2Prover is IClientUpdates {
      * Event.selector. The remaining elements in this array are the indexed parameters of the event.
      * @return unindexedData // The abi encoded non-indexed parameters of the event.
      */
-    function validateLog(uint256 logIndex, bytes calldata proof)
+    function validateEvent(uint256 logIndex, bytes calldata proof)
         external
         view
         returns (bytes32 chainId, address emittingContract, bytes[] calldata topics, bytes calldata unindexedData);

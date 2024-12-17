@@ -86,7 +86,7 @@ contract Venus {
         // Now that we have validated the receipt, we can trust the rlp encoded receipt bytes. Now we unpack the event
         // data from these rlp encoded receipt bytes and validate it.
         (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
-            prover.validateLog(logIndex, proof);
+            prover.validateEvent(logIndex, proof);
 
         if (chainId != proofChainId) {
             revert invalidChainId();
@@ -116,7 +116,7 @@ contract Venus {
     function receiveTransmissionEvent(uint256 logIndex, bytes calldata proof) external {
         // First, we validate the proof and log in one go, but have to validate the counterparty chain id.
         (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
-            prover.validateLog(logIndex, proof);
+            prover.validateEvent(logIndex, proof);
 
         // Once we validate the chain id, we can Now we unpack the event
         if (chainId != proofChainId) {
