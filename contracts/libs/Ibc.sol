@@ -286,7 +286,7 @@ library Ibc {
         outStr = string(buffer);
     }
 
-    function receiptRootKey(bytes32 chainId, bytes32 clientType, uint256 height)
+    function receiptRootKey(string memory chainId, string memory clientType, uint256 height)
         internal
         pure
         returns (bytes memory proofKey)

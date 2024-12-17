@@ -31,7 +31,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
         // for cheap on-chain use
 
-    bytes32 public clientType;
+    string public clientType;
     ISignatureVerifier public immutable verifier;
 
     // Store peptide apphashes for a given height
@@ -39,7 +39,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
 
     error CannotUpdateClientWithDifferentAppHash();
 
-    constructor(ISignatureVerifier verifier_, bytes32 clientType_) {
+    constructor(ISignatureVerifier verifier_, string memory clientType_) {
         verifier = verifier_;
         clientType = clientType_;
     }
@@ -53,9 +53,9 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
             bytes[] memory receiptMMPTProof,
             bytes32 receiptRoot,
             uint64 eventHeight,
-            bytes32 srcChainId,
+            string memory srcChainId,
             bytes memory receiptIndex
-        ) = abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64, bytes32, bytes));
+        ) = abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64, string, bytes));
         // Before we can trust the receipt root, we first need to verify that the receipt root is indeed stored
         // on peptide at the given clientID and height.
 

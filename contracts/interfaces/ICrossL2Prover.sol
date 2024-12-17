@@ -34,7 +34,7 @@ interface ICrossL2Prover is IClientUpdates {
         bytes32 receiptRoot; // The receipt root that is is proven against in the MMPT proof
         uint64 eventHeight; // The source L2 block the receipt or event we are trying to prove was emitted in. The
             // receiptRoot of the block at this eight should be the the same as the receipt root given in this struct
-        bytes32 srcChainId; // The chain id of the source chain the event was emitted on
+        string srcChainId; // The chain id of the source chain the event was emitted on
         bytes receiptIdx; // The rlp encoded index of the receipt within the block. This is the same as the key of the
             // receipt MMPT
     }
