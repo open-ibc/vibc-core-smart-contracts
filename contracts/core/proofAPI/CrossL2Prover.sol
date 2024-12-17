@@ -31,7 +31,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
     LightClientType public constant LIGHT_CLIENT_TYPE = LightClientType.SequencerLightClient; // Stored as a constant
         // for cheap on-chain use
 
-    string public peptideClientId;
+    bytes32 public clientType;
     ISignatureVerifier public immutable verifier;
 
     // Store peptide apphashes for a given height
@@ -39,21 +39,23 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
 
     error CannotUpdateClientWithDifferentAppHash();
 
-    constructor(ISignatureVerifier verifier_, string memory peptideClientId_) {
+    constructor(ISignatureVerifier verifier_, bytes32 clientType_) {
         verifier = verifier_;
-        peptideClientId = peptideClientId_;
+        clientType = clientType_;
     }
 
     /**
      * @inheritdoc ICrossL2Prover
      */
-    function validateReceipt(bytes calldata receiptIndex, bytes calldata receiptRLPEncodedBytes, bytes calldata proof)
-        public
-        view
-        returns (bool valid)
-    {
-        (Ics23Proof memory peptideAppProof, bytes[] memory receiptMMPTProof, bytes32 receiptRoot, uint64 eventHeight) =
-            abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64));
+    function validateReceipt(bytes calldata proof) public view returns (bytes32 srcChainID, bytes memory receiptRLP) {
+        (
+            Ics23Proof memory peptideAppProof,
+            bytes[] memory receiptMMPTProof,
+            bytes32 receiptRoot,
+            uint64 eventHeight,
+            bytes32 srcChainId,
+            bytes memory receiptIndex
+        ) = abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64, bytes32, bytes));
         // Before we can trust the receipt root, we first need to verify that the receipt root is indeed stored
         // on peptide at the given clientID and height.
 
@@ -63,7 +65,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
             bytes32(_getPeptideAppHash(peptideAppProof.height - 1)), // a proof generated at height H can only be
                 // verified against state root (app hash) from block H - 1. this means the relayer must have updated the
                 // contract with the app hash from the previous block and that is why we use proof.height - 1 here.
-            Ibc.receiptRootKey(peptideClientId, eventHeight),
+            Ibc.receiptRootKey(srcChainId, clientType, eventHeight),
             abi.encodePacked(receiptRoot),
             peptideAppProof
         );
@@ -72,26 +74,19 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // Now we just simply have to prove that raw receipt is indeed part of the receipt root at the given receipt
         // index.
         // This is done through a Merkle proof.
-        valid = MerkleTrie.verifyInclusionProof(
-            abi.encodePacked(receiptIndex), receiptRLPEncodedBytes, receiptMMPTProof, receiptRoot
-        );
+
+        receiptRLP = MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot);
     }
 
-    function validateEvent(
-        bytes calldata receiptIndex,
-        bytes calldata receiptRLPEncodedBytes,
-        uint256 logIndex,
-        bytes calldata logBytes,
-        bytes calldata proof
-    ) external view returns (bool) {
-        // First we validate an event by validating the receipt
-        if (!validateReceipt(receiptIndex, receiptRLPEncodedBytes, proof)) {
-            return false;
-        }
-
+    function validateLog(uint256 logIndex, bytes calldata proof)
+        external
+        pure
+        returns (bytes32 chainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData)
+    {
+        bytes memory receiptRLP;
+        (chainId, receiptRLP) = validateReceipt(proof);
         // The first byte is a RLP encoded receipt type so slice it off.
-        RLPReader.RLPItem[] memory receipt =
-            RLPReader.readList(Bytes.slice(receiptRLPEncodedBytes, 1, receiptRLPEncodedBytes.length - 1));
+        RLPReader.RLPItem[] memory receipt = RLPReader.readList(Bytes.slice(receiptRLP, 1, receiptRLP.length - 1));
         /*
             // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
             type ReceiptRLP struct {
@@ -101,10 +96,25 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
                     Logs              []*Log
             }
         */
-        RLPReader.RLPItem[] memory logs = RLPReader.readList(receipt[3]);
 
-        // Then we decode the rlp bytes and check that the logBytes is the same as the log at the given index
-        return keccak256(RLPReader.readRawBytes(logs[logIndex])) == keccak256(logBytes);
+        // Each log itself is an rlp encoded datatype of 3 properties:
+        // type Log struct {
+        //         senderAddress bytes // contract address where this log was emitted from
+        //         topics bytes        // Array of indexed topics. The first element is the 32-byte selector of the
+        // event (can use TransmitToHouston.selector), and the following  elements in this array are the abi encoded
+        // arguments individually
+        //         topics data         // abi encoded raw bytes of unindexed data
+        // }
+        RLPReader.RLPItem[] memory log = RLPReader.readList(RLPReader.readList(receipt[3])[logIndex]);
+
+        emittingContract = address(uint160(uint256(bytes32(RLPReader.readBytes(log[0])))));
+        RLPReader.RLPItem[] memory encodedTopics = RLPReader.readList(log[1]);
+        unindexedData = (RLPReader.readBytes(log[2])); // This is the raw unindexed data. in this case it's
+            // just an abi encoded uint64
+
+        for (uint256 i = 0; i < encodedTopics.length; i++) {
+            topics[i] = RLPReader.readBytes(encodedTopics[i]);
+        }
     }
 
     /**
