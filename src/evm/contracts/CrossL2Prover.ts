@@ -60,11 +60,11 @@ export interface CrossL2ProverInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "LIGHT_CLIENT_TYPE"
+      | "clientType"
       | "getState"
       | "peptideAppHashes"
-      | "peptideClientId"
       | "updateClient"
-      | "validateEvent"
+      | "validateLog"
       | "validateReceipt"
       | "verifier"
       | "verifyMembership"
@@ -76,6 +76,10 @@ export interface CrossL2ProverInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "clientType",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getState",
     values: [BigNumberish]
   ): string;
@@ -84,20 +88,16 @@ export interface CrossL2ProverInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "peptideClientId",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "updateClient",
     values: [BytesLike, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "validateEvent",
-    values: [BytesLike, BytesLike, BigNumberish, BytesLike, BytesLike]
+    functionFragment: "validateLog",
+    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "validateReceipt",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [BytesLike]
   ): string;
   encodeFunctionData(functionFragment: "verifier", values?: undefined): string;
   encodeFunctionData(
@@ -113,13 +113,10 @@ export interface CrossL2ProverInterface extends Interface {
     functionFragment: "LIGHT_CLIENT_TYPE",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "clientType", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getState", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "peptideAppHashes",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "peptideClientId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -127,7 +124,7 @@ export interface CrossL2ProverInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "validateEvent",
+    functionFragment: "validateLog",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -190,11 +187,11 @@ export interface CrossL2Prover extends BaseContract {
 
   LIGHT_CLIENT_TYPE: TypedContractMethod<[], [bigint], "view">;
 
+  clientType: TypedContractMethod<[], [string], "view">;
+
   getState: TypedContractMethod<[height: BigNumberish], [bigint], "view">;
 
   peptideAppHashes: TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
-
-  peptideClientId: TypedContractMethod<[], [string], "view">;
 
   updateClient: TypedContractMethod<
     [
@@ -206,25 +203,22 @@ export interface CrossL2Prover extends BaseContract {
     "nonpayable"
   >;
 
-  validateEvent: TypedContractMethod<
+  validateLog: TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
     "view"
   >;
 
   validateReceipt: TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
+    [proof: BytesLike],
+    [[string, string] & { srcChainID: string; receiptRLP: string }],
     "view"
   >;
 
@@ -255,14 +249,14 @@ export interface CrossL2Prover extends BaseContract {
     nameOrSignature: "LIGHT_CLIENT_TYPE"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "clientType"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "getState"
   ): TypedContractMethod<[height: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "peptideAppHashes"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "peptideClientId"
-  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "updateClient"
   ): TypedContractMethod<
@@ -275,27 +269,24 @@ export interface CrossL2Prover extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "validateEvent"
+    nameOrSignature: "validateLog"
   ): TypedContractMethod<
+    [logIndex: BigNumberish, proof: BytesLike],
     [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      logIndex: BigNumberish,
-      logBytes: BytesLike,
-      proof: BytesLike
+      [string, string, string[], string] & {
+        chainId: string;
+        emittingContract: string;
+        topics: string[];
+        unindexedData: string;
+      }
     ],
-    [boolean],
     "view"
   >;
   getFunction(
     nameOrSignature: "validateReceipt"
   ): TypedContractMethod<
-    [
-      receiptIndex: BytesLike,
-      receiptRLPEncodedBytes: BytesLike,
-      proof: BytesLike
-    ],
-    [boolean],
+    [proof: BytesLike],
+    [[string, string] & { srcChainID: string; receiptRLP: string }],
     "view"
   >;
   getFunction(

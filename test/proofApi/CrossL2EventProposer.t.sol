@@ -26,7 +26,7 @@ contract CrossL2InboxBase is SigningBase {
     bytes[] receiptProof;
     bytes32 logHash;
     uint256 logIdx;
-    string peptideClientId;
+    bytes32 peptideClientId;
 
     function setUp() public {
         crossProver = new CrossL2Prover(sigVerifier, peptideClientId);
@@ -86,7 +86,7 @@ contract CrossL2InboxBase is SigningBase {
         // proof will be struct EventProof
         bytes memory proof = abi.encode(peptideProof, receiptProof, receiptRoot, peptideClientId, peptideBlockNumber);
 
-        crossProver.validateReceipt(receiptIdx, rlpEncodedReceipt, proof);
+        crossProver.validateReceipt(proof);
     }
 
     // Happy path for CrossEventProver.validateEvent()
@@ -127,7 +127,7 @@ contract CrossL2InboxBase is SigningBase {
         bytes memory proof = abi.encode(peptideProof, receiptProof, receiptRoot, peptideClientId, peptideBlockNumber);
 
         vm.expectRevert();
-        crossProver.validateReceipt(receiptIdx, rlpEncodedReceipt, proof);
+        crossProver.validateReceipt(proof);
     }
 
     // Test revert to prove a peptide apphash which has been seen but which doesn't prove the MPT receipt root given

@@ -75,12 +75,12 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // index.
         // This is done through a Merkle proof.
 
-        receiptRLP = MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot);
+        return (srcChainID, MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot));
     }
 
     function validateLog(uint256 logIndex, bytes calldata proof)
         external
-        pure
+        view
         returns (bytes32 chainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData)
     {
         bytes memory receiptRLP;
