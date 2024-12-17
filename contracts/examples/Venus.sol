@@ -18,7 +18,6 @@
 pragma solidity ^0.8.9;
 
 import {ICrossL2Prover} from "../interfaces/ICrossL2Prover.sol";
-import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {Bytes} from "optimism/libraries/Bytes.sol";
 
 /**
