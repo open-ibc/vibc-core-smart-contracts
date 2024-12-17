@@ -85,36 +85,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
     {
         bytes memory receiptRLP;
         (chainId, receiptRLP) = validateReceipt(proof);
-        // The first byte is a RLP encoded receipt type so slice it off.
-        RLPReader.RLPItem[] memory receipt = RLPReader.readList(Bytes.slice(receiptRLP, 1, receiptRLP.length - 1));
-        /*
-            // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
-            type ReceiptRLP struct {
-                    PostStateOrStatus []byte
-                    CumulativeGasUsed uint64
-                    Bloom             Bloom
-                    Logs              []*Log
-            }
-        */
-
-        // Each log itself is an rlp encoded datatype of 3 properties:
-        // type Log struct {
-        //         senderAddress bytes // contract address where this log was emitted from
-        //         topics bytes        // Array of indexed topics. The first element is the 32-byte selector of the
-        // event (can use TransmitToHouston.selector), and the following  elements in this array are the abi encoded
-        // arguments individually
-        //         topics data         // abi encoded raw bytes of unindexed data
-        // }
-        RLPReader.RLPItem[] memory log = RLPReader.readList(RLPReader.readList(receipt[3])[logIndex]);
-
-        emittingContract = address(uint160(uint256(bytes32(RLPReader.readBytes(log[0])))));
-        RLPReader.RLPItem[] memory encodedTopics = RLPReader.readList(log[1]);
-        unindexedData = (RLPReader.readBytes(log[2])); // This is the raw unindexed data. in this case it's
-            // just an abi encoded uint64
-
-        for (uint256 i = 0; i < encodedTopics.length; i++) {
-            topics[i] = RLPReader.readBytes(encodedTopics[i]);
-        }
+        (emittingContract, topics, unindexedData) = Ibc.parseLog(logIndex, receiptRLP);
     }
 
     /**
