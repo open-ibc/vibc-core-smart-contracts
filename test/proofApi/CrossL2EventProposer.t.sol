@@ -85,7 +85,7 @@ contract CrossL2InboxBase is SigningBase {
         // // proof will be struct EventProof
         // bytes memory proof = abi.encode(peptideProof, proof, receiptRoot, peptideClientId, peptideBlockNumber);
 
-        (bytes32 chainId, bytes memory rlpBytes) = crossProver.validateReceipt(proof);
+        (string memory chainId, bytes memory rlpBytes) = crossProver.validateReceipt(proof);
         assertEq(keccak256(abi.encode(rlpBytes)), keccak256(abi.encode(rlpEncodedReceipt)));
     }
 
