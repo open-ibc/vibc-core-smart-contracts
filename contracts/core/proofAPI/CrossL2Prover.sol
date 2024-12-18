@@ -17,6 +17,7 @@
 
 pragma solidity 0.8.15;
 
+import "forge-std/Test.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {MerkleTrie} from "optimism/libraries/trie/MerkleTrie.sol";
 import {Bytes} from "optimism/libraries/Bytes.sol";
@@ -74,6 +75,9 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // Now we just simply have to prove that raw receipt is indeed part of the receipt root at the given receipt
         // index.
         // This is done through a Merkle proof.
+        console2.log("comparison");
+        console2.logBytes(receiptIndex);
+        console2.logBytes(abi.encodePacked(receiptIndex));
 
         return (srcChainId, MerkleTrie.get(abi.encodePacked(receiptIndex), receiptMMPTProof, receiptRoot));
     }
