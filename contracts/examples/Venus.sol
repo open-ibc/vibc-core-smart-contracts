@@ -28,9 +28,8 @@ import {Bytes} from "optimism/libraries/Bytes.sol";
  */
 contract Venus {
     ICrossL2Prover public immutable prover;
-    address public immutable counterParty; // The dapp on the counter party chain we wish to prove on this local chain
     bytes32 public lastReceivedTransmission; // Last received arguments from transmitted event
-    bytes32 public immutable chainId;
+    string public chainId;
 
     // The event that we emit on source chain to be proven on this local chain
     event TransmitToHouston(bytes32 message, uint64 timestamp);
@@ -38,7 +37,7 @@ contract Venus {
     // Event that we emit on this local chain to indicate that we have received an event from the source chain
     event TransmissionReceived(bytes32 message, uint64 timestamp);
 
-    event SuccessfulReceipt(bytes32 srcChainId, bytes receiptRLP);
+    event SuccessfulReceipt(string srcChainId, bytes receiptRLP);
     event ValidCounterpartyEvent(address counterParty, bytes[] topics, bytes unindexed);
 
     error invalidProverAddress();
@@ -49,12 +48,11 @@ contract Venus {
     error invalidEventSender();
     error invalidCounterpartyEvent();
 
-    constructor(ICrossL2Prover _prover, address _counterParty, bytes32 _chainId) {
+    constructor(ICrossL2Prover _prover, string memory _chainId) {
         if (address(_prover) == address(0)) {
             revert invalidProverAddress();
         }
         prover = _prover;
-        counterParty = _counterParty;
         chainId = _chainId;
     }
 
@@ -65,7 +63,7 @@ contract Venus {
      * otherwise.
      */
     function receiveReceipt(bytes calldata proof) external {
-        (bytes32 srcChainId, bytes memory receiptRLP) = prover.validateReceipt(proof);
+        (string memory srcChainId, bytes memory receiptRLP) = prover.validateReceipt(proof);
         emit SuccessfulReceipt(srcChainId, receiptRLP);
     }
 
@@ -85,10 +83,10 @@ contract Venus {
 
         // Now that we have validated the receipt, we can trust the rlp encoded receipt bytes. Now we unpack the event
         // data from these rlp encoded receipt bytes and validate it.
-        (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
+        (string memory proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
             prover.validateEvent(logIndex, proof);
 
-        if (chainId != proofChainId) {
+        if (!Bytes.equal(bytes(chainId), bytes(proofChainId))) {
             revert invalidChainId();
         }
         if (emittingContract != expectedEmitter) {
@@ -113,17 +111,17 @@ contract Venus {
      * @param proof The proof to validate - returned by polymer proof api. This contains the proof to fetch a rlp
      * encoded byte at a given index.
      */
-    function receiveTransmissionEvent(uint256 logIndex, bytes calldata proof) external {
+    function receiveTransmissionEvent(uint256 logIndex, bytes calldata proof, address expectedEmitter) external {
         // First, we validate the proof and log in one go, but have to validate the counterparty chain id.
-        (bytes32 proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
+        (string memory proofChainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData) =
             prover.validateEvent(logIndex, proof);
 
         // Once we validate the chain id, we can Now we unpack the event
-        if (chainId != proofChainId) {
+        if (!Bytes.equal(bytes(chainId), bytes(proofChainId))) {
             revert invalidChainId();
         }
 
-        if (emittingContract != counterParty) {
+        if (emittingContract != expectedEmitter) {
             // If this triggers, we have received a valid event from the source chain with a valid proof,
             // but it was emitted from a wrong address. This would likely be someone trying to spoof another contract's
             // event.

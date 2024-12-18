@@ -47,7 +47,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
     /**
      * @inheritdoc ICrossL2Prover
      */
-    function validateReceipt(bytes calldata proof) public view returns (bytes32 srcChainID, bytes memory receiptRLP) {
+    function validateReceipt(bytes calldata proof) public view returns (string memory, bytes memory) {
         (
             Ics23Proof memory peptideAppProof,
             bytes[] memory receiptMMPTProof,
@@ -75,13 +75,13 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // index.
         // This is done through a Merkle proof.
 
-        return (srcChainID, MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot));
+        return (srcChainId, MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot));
     }
 
     function validateEvent(uint256 logIndex, bytes calldata proof)
         external
         view
-        returns (bytes32 chainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData)
+        returns (string memory chainId, address emittingContract, bytes[] memory topics, bytes memory unindexedData)
     {
         bytes memory receiptRLP;
         (chainId, receiptRLP) = validateReceipt(proof);

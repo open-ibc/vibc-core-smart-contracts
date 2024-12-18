@@ -51,7 +51,7 @@ type OpIcs23ProofPath struct {
 
 // CrossL2ProverMetaData contains all meta data concerning the CrossL2Prover contract.
 var CrossL2ProverMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"},{\"name\":\"clientType_\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"clientType\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"peptideAppHashes\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"srcChainID\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"appHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proofs\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"CannotUpdateClientWithDifferentAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidIbcStateProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidPacketProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofKey\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofValue\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1StateRoot\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MethodNotImplemented\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"verifier_\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"},{\"name\":\"clientType_\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"clientType\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"peptideAppHashes\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"peptideHeight\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"peptideAppHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifier\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractISignatureVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"verifyMembership\",\"inputs\":[{\"name\":\"appHash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"proofs\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"function\",\"name\":\"verifyNonMembership\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIcs23Proof\",\"components\":[{\"name\":\"proof\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23Proof[]\",\"components\":[{\"name\":\"path\",\"type\":\"tuple[]\",\"internalType\":\"structOpIcs23ProofPath[]\",\"components\":[{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"suffix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"key\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"value\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"prefix\",\"type\":\"bytes\",\"internalType\":\"bytes\"}]},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]}],\"outputs\":[],\"stateMutability\":\"pure\"},{\"type\":\"error\",\"name\":\"CannotUpdateClientWithDifferentAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidAppHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidIbcStateProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockHash\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidPacketProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofKey\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProofValue\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1BlockNumber\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidRLPEncodedL1StateRoot\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"MethodNotImplemented\",\"inputs\":[]}]",
 }
 
 // CrossL2ProverABI is the input ABI used to generate the binding from.
@@ -326,9 +326,9 @@ func (_CrossL2Prover *CrossL2ProverCallerSession) PeptideAppHashes(arg0 *big.Int
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_CrossL2Prover *CrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -337,7 +337,7 @@ func (_CrossL2Prover *CrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, lo
 	err := _CrossL2Prover.contract.Call(opts, &out, "validateEvent", logIndex, proof)
 
 	outstruct := new(struct {
-		ChainId          [32]byte
+		ChainId          string
 		EmittingContract common.Address
 		Topics           [][]byte
 		UnindexedData    []byte
@@ -346,7 +346,7 @@ func (_CrossL2Prover *CrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, lo
 		return *outstruct, err
 	}
 
-	outstruct.ChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.ChainId = *abi.ConvertType(out[0], new(string)).(*string)
 	outstruct.EmittingContract = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
 	outstruct.Topics = *abi.ConvertType(out[2], new([][]byte)).(*[][]byte)
 	outstruct.UnindexedData = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
@@ -357,9 +357,9 @@ func (_CrossL2Prover *CrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, lo
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_CrossL2Prover *CrossL2ProverSession) ValidateEvent(logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -369,9 +369,9 @@ func (_CrossL2Prover *CrossL2ProverSession) ValidateEvent(logIndex *big.Int, pro
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateEvent(logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -381,46 +381,33 @@ func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateEvent(logIndex *big.In
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
-func (_CrossL2Prover *CrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, proof []byte) (struct {
-	SrcChainID [32]byte
-	ReceiptRLP []byte
-}, error) {
+// Solidity: function validateReceipt(bytes proof) view returns(string, bytes)
+func (_CrossL2Prover *CrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, proof []byte) (string, []byte, error) {
 	var out []interface{}
 	err := _CrossL2Prover.contract.Call(opts, &out, "validateReceipt", proof)
 
-	outstruct := new(struct {
-		SrcChainID [32]byte
-		ReceiptRLP []byte
-	})
 	if err != nil {
-		return *outstruct, err
+		return *new(string), *new([]byte), err
 	}
 
-	outstruct.SrcChainID = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-	outstruct.ReceiptRLP = *abi.ConvertType(out[1], new([]byte)).(*[]byte)
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+	out1 := *abi.ConvertType(out[1], new([]byte)).(*[]byte)
 
-	return *outstruct, err
+	return out0, out1, err
 
 }
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
-func (_CrossL2Prover *CrossL2ProverSession) ValidateReceipt(proof []byte) (struct {
-	SrcChainID [32]byte
-	ReceiptRLP []byte
-}, error) {
+// Solidity: function validateReceipt(bytes proof) view returns(string, bytes)
+func (_CrossL2Prover *CrossL2ProverSession) ValidateReceipt(proof []byte) (string, []byte, error) {
 	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, proof)
 }
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainID, bytes receiptRLP)
-func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateReceipt(proof []byte) (struct {
-	SrcChainID [32]byte
-	ReceiptRLP []byte
-}, error) {
+// Solidity: function validateReceipt(bytes proof) view returns(string, bytes)
+func (_CrossL2Prover *CrossL2ProverCallerSession) ValidateReceipt(proof []byte) (string, []byte, error) {
 	return _CrossL2Prover.Contract.ValidateReceipt(&_CrossL2Prover.CallOpts, proof)
 }
 

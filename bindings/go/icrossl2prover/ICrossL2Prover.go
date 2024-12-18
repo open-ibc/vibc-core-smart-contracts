@@ -31,7 +31,7 @@ var (
 
 // ICrossL2ProverMetaData contains all meta data concerning the ICrossL2Prover contract.
 var ICrossL2ProverMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"srcChainId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"LIGHT_CLIENT_TYPE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"enumLightClientType\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getState\",\"inputs\":[{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"updateClient\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"height\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"appHash\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"validateEvent\",\"inputs\":[{\"name\":\"logIndex\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"chainId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"emittingContract\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"topics\",\"type\":\"bytes[]\",\"internalType\":\"bytes[]\"},{\"name\":\"unindexedData\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"validateReceipt\",\"inputs\":[{\"name\":\"proof\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[{\"name\":\"srcChainId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"receiptRLP\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"}]",
 }
 
 // ICrossL2ProverABI is the input ABI used to generate the binding from.
@@ -244,9 +244,9 @@ func (_ICrossL2Prover *ICrossL2ProverCallerSession) GetState(height *big.Int) (*
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -255,7 +255,7 @@ func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, 
 	err := _ICrossL2Prover.contract.Call(opts, &out, "validateEvent", logIndex, proof)
 
 	outstruct := new(struct {
-		ChainId          [32]byte
+		ChainId          string
 		EmittingContract common.Address
 		Topics           [][]byte
 		UnindexedData    []byte
@@ -264,7 +264,7 @@ func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, 
 		return *outstruct, err
 	}
 
-	outstruct.ChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.ChainId = *abi.ConvertType(out[0], new(string)).(*string)
 	outstruct.EmittingContract = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
 	outstruct.Topics = *abi.ConvertType(out[2], new([][]byte)).(*[][]byte)
 	outstruct.UnindexedData = *abi.ConvertType(out[3], new([]byte)).(*[]byte)
@@ -275,9 +275,9 @@ func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateEvent(opts *bind.CallOpts, 
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_ICrossL2Prover *ICrossL2ProverSession) ValidateEvent(logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -287,9 +287,9 @@ func (_ICrossL2Prover *ICrossL2ProverSession) ValidateEvent(logIndex *big.Int, p
 
 // ValidateEvent is a free data retrieval call binding the contract method 0x25dc9f2b.
 //
-// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(bytes32 chainId, address emittingContract, bytes[] topics, bytes unindexedData)
+// Solidity: function validateEvent(uint256 logIndex, bytes proof) view returns(string chainId, address emittingContract, bytes[] topics, bytes unindexedData)
 func (_ICrossL2Prover *ICrossL2ProverCallerSession) ValidateEvent(logIndex *big.Int, proof []byte) (struct {
-	ChainId          [32]byte
+	ChainId          string
 	EmittingContract common.Address
 	Topics           [][]byte
 	UnindexedData    []byte
@@ -299,23 +299,23 @@ func (_ICrossL2Prover *ICrossL2ProverCallerSession) ValidateEvent(logIndex *big.
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+// Solidity: function validateReceipt(bytes proof) view returns(string srcChainId, bytes receiptRLP)
 func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts, proof []byte) (struct {
-	SrcChainId [32]byte
+	SrcChainId string
 	ReceiptRLP []byte
 }, error) {
 	var out []interface{}
 	err := _ICrossL2Prover.contract.Call(opts, &out, "validateReceipt", proof)
 
 	outstruct := new(struct {
-		SrcChainId [32]byte
+		SrcChainId string
 		ReceiptRLP []byte
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.SrcChainId = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	outstruct.SrcChainId = *abi.ConvertType(out[0], new(string)).(*string)
 	outstruct.ReceiptRLP = *abi.ConvertType(out[1], new([]byte)).(*[]byte)
 
 	return *outstruct, err
@@ -324,9 +324,9 @@ func (_ICrossL2Prover *ICrossL2ProverCaller) ValidateReceipt(opts *bind.CallOpts
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+// Solidity: function validateReceipt(bytes proof) view returns(string srcChainId, bytes receiptRLP)
 func (_ICrossL2Prover *ICrossL2ProverSession) ValidateReceipt(proof []byte) (struct {
-	SrcChainId [32]byte
+	SrcChainId string
 	ReceiptRLP []byte
 }, error) {
 	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.CallOpts, proof)
@@ -334,9 +334,9 @@ func (_ICrossL2Prover *ICrossL2ProverSession) ValidateReceipt(proof []byte) (str
 
 // ValidateReceipt is a free data retrieval call binding the contract method 0x2cd78e77.
 //
-// Solidity: function validateReceipt(bytes proof) view returns(bytes32 srcChainId, bytes receiptRLP)
+// Solidity: function validateReceipt(bytes proof) view returns(string srcChainId, bytes receiptRLP)
 func (_ICrossL2Prover *ICrossL2ProverCallerSession) ValidateReceipt(proof []byte) (struct {
-	SrcChainId [32]byte
+	SrcChainId string
 	ReceiptRLP []byte
 }, error) {
 	return _ICrossL2Prover.Contract.ValidateReceipt(&_ICrossL2Prover.CallOpts, proof)

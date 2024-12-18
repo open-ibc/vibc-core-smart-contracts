@@ -27,7 +27,6 @@ export interface VenusInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "chainId"
-      | "counterParty"
       | "lastReceivedTransmission"
       | "prover"
       | "receiveEvent"
@@ -45,10 +44,6 @@ export interface VenusInterface extends Interface {
 
   encodeFunctionData(functionFragment: "chainId", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "counterParty",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "lastReceivedTransmission",
     values?: undefined
   ): string;
@@ -63,14 +58,10 @@ export interface VenusInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "receiveTransmissionEvent",
-    values: [BigNumberish, BytesLike]
+    values: [BigNumberish, BytesLike, AddressLike]
   ): string;
 
   decodeFunctionResult(functionFragment: "chainId", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "counterParty",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "lastReceivedTransmission",
     data: BytesLike
@@ -91,7 +82,7 @@ export interface VenusInterface extends Interface {
 }
 
 export namespace SuccessfulReceiptEvent {
-  export type InputTuple = [srcChainId: BytesLike, receiptRLP: BytesLike];
+  export type InputTuple = [srcChainId: string, receiptRLP: BytesLike];
   export type OutputTuple = [srcChainId: string, receiptRLP: string];
   export interface OutputObject {
     srcChainId: string;
@@ -196,8 +187,6 @@ export interface Venus extends BaseContract {
 
   chainId: TypedContractMethod<[], [string], "view">;
 
-  counterParty: TypedContractMethod<[], [string], "view">;
-
   lastReceivedTransmission: TypedContractMethod<[], [string], "view">;
 
   prover: TypedContractMethod<[], [string], "view">;
@@ -217,7 +206,7 @@ export interface Venus extends BaseContract {
   receiveReceipt: TypedContractMethod<[proof: BytesLike], [void], "nonpayable">;
 
   receiveTransmissionEvent: TypedContractMethod<
-    [logIndex: BigNumberish, proof: BytesLike],
+    [logIndex: BigNumberish, proof: BytesLike, expectedEmitter: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -228,9 +217,6 @@ export interface Venus extends BaseContract {
 
   getFunction(
     nameOrSignature: "chainId"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "counterParty"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "lastReceivedTransmission"
@@ -257,7 +243,7 @@ export interface Venus extends BaseContract {
   getFunction(
     nameOrSignature: "receiveTransmissionEvent"
   ): TypedContractMethod<
-    [logIndex: BigNumberish, proof: BytesLike],
+    [logIndex: BigNumberish, proof: BytesLike, expectedEmitter: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -292,7 +278,7 @@ export interface Venus extends BaseContract {
   >;
 
   filters: {
-    "SuccessfulReceipt(bytes32,bytes)": TypedContractEvent<
+    "SuccessfulReceipt(string,bytes)": TypedContractEvent<
       SuccessfulReceiptEvent.InputTuple,
       SuccessfulReceiptEvent.OutputTuple,
       SuccessfulReceiptEvent.OutputObject
