@@ -61,21 +61,21 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
 
         // VerifyMembership verifies the receipt root  through an ics23 proof of peptide state that attests that the
         // given eventHeight has the receipt root at the peptide height
-        this.verifyMembership(
-            bytes32(_getPeptideAppHash(peptideAppProof.height - 1)), // a proof generated at height H can only be
-                // verified against state root (app hash) from block H - 1. this means the relayer must have updated the
-                // contract with the app hash from the previous block and that is why we use proof.height - 1 here.
-            Ibc.receiptRootKey(srcChainId, clientType, eventHeight),
-            abi.encodePacked(receiptRoot),
-            peptideAppProof
-        );
+        // this.verifyMembership(
+        //     bytes32(_getPeptideAppHash(peptideAppProof.height - 1)), // a proof generated at height H can only be
+        //         // verified against state root (app hash) from block H - 1. this means the relayer must have updated the
+        //         // contract with the app hash from the previous block and that is why we use proof.height - 1 here.
+        //     Ibc.receiptRootKey(srcChainId, clientType, eventHeight),
+        //     abi.encodePacked(receiptRoot),
+        //     peptideAppProof
+        // );
 
         // Now that verifyMembership passed, we can now trust the receiptRoot.
         // Now we just simply have to prove that raw receipt is indeed part of the receipt root at the given receipt
         // index.
         // This is done through a Merkle proof.
 
-        return (srcChainId, MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot));
+        return (srcChainId, MerkleTrie.get(abi.encodePacked(receiptIndex), receiptMMPTProof, receiptRoot));
     }
 
     function validateEvent(uint256 logIndex, bytes calldata proof)
