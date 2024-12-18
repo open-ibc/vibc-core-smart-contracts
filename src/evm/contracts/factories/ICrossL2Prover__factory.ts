@@ -82,8 +82,8 @@ const _abi = [
     outputs: [
       {
         name: "chainId",
-        type: "bytes32",
-        internalType: "bytes32",
+        type: "string",
+        internalType: "string",
       },
       {
         name: "emittingContract",
@@ -116,8 +116,8 @@ const _abi = [
     outputs: [
       {
         name: "srcChainId",
-        type: "bytes32",
-        internalType: "bytes32",
+        type: "string",
+        internalType: "string",
       },
       {
         name: "receiptRLP",

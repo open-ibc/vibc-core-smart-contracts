@@ -66,7 +66,7 @@ interface ICrossL2Prover is IClientUpdates {
     function validateReceipt(bytes calldata proof)
         external
         view
-        returns (bytes32 srcChainId, bytes calldata receiptRLP);
+        returns (string memory srcChainId, bytes calldata receiptRLP);
 
     /**
      * @notice A a log at a given raw rlp encoded receipt at a given logIndex within the receipt.
@@ -84,7 +84,7 @@ interface ICrossL2Prover is IClientUpdates {
     function validateEvent(uint256 logIndex, bytes calldata proof)
         external
         view
-        returns (bytes32 chainId, address emittingContract, bytes[] calldata topics, bytes calldata unindexedData);
+        returns (string memory chainId, address emittingContract, bytes[] calldata topics, bytes calldata unindexedData);
 
     /**
      * Returns the peptide at a given apphash at a given height,

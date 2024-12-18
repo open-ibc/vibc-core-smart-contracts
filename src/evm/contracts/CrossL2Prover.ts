@@ -218,7 +218,7 @@ export interface CrossL2Prover extends BaseContract {
 
   validateReceipt: TypedContractMethod<
     [proof: BytesLike],
-    [[string, string] & { srcChainID: string; receiptRLP: string }],
+    [[string, string]],
     "view"
   >;
 
@@ -284,11 +284,7 @@ export interface CrossL2Prover extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "validateReceipt"
-  ): TypedContractMethod<
-    [proof: BytesLike],
-    [[string, string] & { srcChainID: string; receiptRLP: string }],
-    "view"
-  >;
+  ): TypedContractMethod<[proof: BytesLike], [[string, string]], "view">;
   getFunction(
     nameOrSignature: "verifier"
   ): TypedContractMethod<[], [string], "view">;
