@@ -64,7 +64,8 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         // given eventHeight has the receipt root at the peptide height
         // this.verifyMembership(
         //     bytes32(_getPeptideAppHash(peptideAppProof.height - 1)), // a proof generated at height H can only be
-        //         // verified against state root (app hash) from block H - 1. this means the relayer must have updated the
+        //         // verified against state root (app hash) from block H - 1. this means the relayer must have updated
+        // the
         //         // contract with the app hash from the previous block and that is why we use proof.height - 1 here.
         //     Ibc.receiptRootKey(srcChainId, clientType, eventHeight),
         //     abi.encodePacked(receiptRoot),
@@ -79,7 +80,7 @@ contract CrossL2Prover is AppStateVerifier, ICrossL2Prover {
         console2.logBytes(receiptIndex);
         console2.logBytes(abi.encodePacked(receiptIndex));
 
-        return (srcChainId, MerkleTrie.get(abi.encodePacked(receiptIndex), receiptMMPTProof, receiptRoot));
+        return (srcChainId, MerkleTrie.get(receiptIndex, receiptMMPTProof, receiptRoot));
     }
 
     function validateEvent(uint256 logIndex, bytes calldata proof)

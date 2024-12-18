@@ -44,18 +44,29 @@ contract CrossL2InboxBase is SigningBase {
         (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(notSequencerPkey, ancestorHashToSign);
         invalidSignature = abi.encodePacked(r1, s1, v1); // Annoingly, v, r, s are in a different order than those
 
-        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/proof-api.hex"));
+        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/proof.hex"));
         proof = vm.parseBytes(input);
         // (proof) = abi.decode(encoded, (bytes));
 
         // (receiptIdx, rlpEncodedReceipt, proof) = (receiptIdxM, rlpEncodedReceiptM, receiptProofM);
+        (
+            Ics23Proof memory iavlProofM,
+            bytes[] memory receiptMMPTProofM,
+            bytes32 receiptRootM,
+            uint64 height,
+            string memory srcChainId,
+            bytes memory receiptIndex,
+            bytes memory receipt
+        ) = abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64, string, bytes, bytes));
 
-        (Ics23Proof memory iavlProofM, bytes[] memory receiptMMPTProofM,, uint64 height,,) =
-            abi.decode(proof, (Ics23Proof, bytes[], bytes32, uint64, bytes32, bytes));
+        rlpEncodedReceipt = receipt;
 
+        console2.logBytes32(receiptRootM);
+        console2.log("srcChainId", srcChainId);
         console2.log("height", height);
         console2.logBytes(proof);
-        // console2.logBytes(receiptIdxM);
+        console2.log("receipt");
+        console2.logBytes(rlpEncodedReceipt);
 
         do_client_update(proofPeptideAppHash, iavlProofM.height - 1);
     }
@@ -85,14 +96,7 @@ contract CrossL2InboxBase is SigningBase {
         // bytes memory proof = abi.encode(peptideProof, proof, receiptRoot, peptideClientId, peptideBlockNumber);
 
         (string memory chainId, bytes memory rlpBytes) = crossProver.validateReceipt(proof);
-        bytes memory expectedReceipt =
-            hex"b9042802f904240183028f07b9010000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000200000000000000000100000000400000040000100001002000000000000001000000000000000000000000000000020000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000480000000000000000000000000000000001000000000000000000000000000000000000000800000000000000000000000000000020000004000020000024000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000f90319f901dc9456a43eb56da12c0dc1d972acb089c06a5def8e69f842a0f6a97944f31ea060dfde0566e4167c1a1082551e64b60ecb14d599a9d023d451a00000000000000000000000000000000000000000000000000000000000018fccb90180000000000000000000000000000000000000000000000000000000042dd526ab000000000000000000000000ea1c859797599b47b7c6cff59e1a3cbe9fd0c2bd00000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000001400000000000000000000000fd26636b88f82af90289a759d4cf414e00067844060000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000042d865ed0000000000000000000000000000000000000000000000000000000042da19acb000000000000000000000000000000000000000000000000000000042dd526ab000000000000000000000000000000000000000000000000000000042e157f7000000000000000000000000000000000000000000000000000000000000000040002030100000000000000000000000000000000000000000000000000000000f89b9456a43eb56da12c0dc1d972acb089c06a5def8e69f863a00109fc6f55cf40689f02fbaad7af7fe7bbac8a3d2186600afc7d3e10cac60271a00000000000000000000000000000000000000000000000000000000000018fcca00000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000006744c8a6f89b9456a43eb56da12c0dc1d972acb089c06a5def8e69f863a00559884fd3a460db3073b7fc896cc77986f16e378210ded43186175bf646fc5fa0000000000000000000000000000000000000000000000000000000042dd526aba00000000000000000000000000000000000000000000000000000000000018fcca0000000000000000000000000000000000000000000000000000000006744c8a6";
-
-        console2.log("expected receipt:");
-        console2.logBytes(expectedReceipt);
-        console2.log("received receipt:");
-        console2.logBytes(rlpBytes);
-        assertEq(keccak256(abi.encode(rlpBytes)), keccak256(abi.encode(expectedReceipt)));
+        assertEq(keccak256(abi.encode(rlpBytes)), keccak256(abi.encode(rlpEncodedReceipt)));
     }
 
     // Happy path for CrossEventProver.validateEvent()
