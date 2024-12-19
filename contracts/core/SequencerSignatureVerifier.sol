@@ -17,6 +17,7 @@
 
 pragma solidity 0.8.15;
 
+import "forge-std/Test.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {ISignatureVerifier} from "../interfaces/ISignatureVerifier.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -69,6 +70,22 @@ contract SequencerSignatureVerifier is AppStateVerifier, ISignatureVerifier {
         // Signature will be the keccak256 hash of a + b, where:
         // a =  (empty bytes 32 corresponding to the Domain) + ( peptide chain Id )
         // b = keccak((l2 block number ) + ( l2 apphash) + ( l1 origin hash))
+        
+        console2.log("in verify sequencer signature", l2BlockNumber);
+        console2.logBytes32(appHash);
+        console2.logBytes32(l1BlockHash);
+
+        console2.log(ECDSA.recover(
+                keccak256(
+                    bytes.concat(
+                        bytes32(0), CHAIN_ID, keccak256(bytes.concat(bytes32(l2BlockNumber), appHash, l1BlockHash))
+                    )
+                ),
+                signature
+            ));
+        console2.log(SEQUENCER);
+
+
         if (
             ECDSA.recover(
                 keccak256(
