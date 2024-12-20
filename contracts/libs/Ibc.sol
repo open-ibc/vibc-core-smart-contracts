@@ -153,28 +153,16 @@ library Ibc {
     error invalidAddressBytes();
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
-    function channelProofKey(
-        string calldata portId,
-        bytes32 channelId
-    ) external pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked(
-            "channelEnds/ports/",
-            portId,
-            "/channels/",
-            toStr(channelId)
-        );
+    function channelProofKey(string calldata portId, bytes32 channelId) external pure returns (bytes memory proofKey) {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
     }
 
-    function channelProofKeyMemory(
-        string memory portId,
-        bytes32 channelId
-    ) external pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked(
-            "channelEnds/ports/",
-            portId,
-            "/channels/",
-            toStr(channelId)
-        );
+    function channelProofKeyMemory(string memory portId, bytes32 channelId)
+        external
+        pure
+        returns (bytes memory proofKey)
+    {
+        proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
     }
 
     // protobuf encoding of a channel object
@@ -191,10 +179,7 @@ library Ibc {
             ProtoChannel.Data(
                 int32(uint32(state)),
                 int32(uint32(ordering)),
-                ProtoCounterparty.Data(
-                    counterpartyPortId,
-                    toStr(counterpartyChannelId)
-                ),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
                 connectionHops,
                 version
             )
@@ -213,10 +198,7 @@ library Ibc {
             ProtoChannel.Data(
                 int32(uint32(state)),
                 int32(uint32(ordering)),
-                ProtoCounterparty.Data(
-                    counterpartyPortId,
-                    toStr(counterpartyChannelId)
-                ),
+                ProtoCounterparty.Data(counterpartyPortId, toStr(counterpartyChannelId)),
                 connectionHops,
                 version
             )
@@ -224,9 +206,7 @@ library Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L185
-    function packetCommitmentProofKey(
-        IbcPacket calldata packet
-    ) external pure returns (bytes memory proofKey) {
+    function packetCommitmentProofKey(IbcPacket calldata packet) external pure returns (bytes memory proofKey) {
         proofKey = abi.encodePacked(
             "commitments/ports/",
             packet.src.portId,
@@ -238,9 +218,7 @@ library Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L19
-    function packetCommitmentProofValue(
-        IbcPacket calldata packet
-    ) external pure returns (bytes32 proofValue) {
+    function packetCommitmentProofValue(IbcPacket calldata packet) external pure returns (bytes32 proofValue) {
         proofValue = sha256(
             abi.encodePacked(
                 packet.timeoutTimestamp,
@@ -252,9 +230,7 @@ library Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L201
-    function ackProofKey(
-        IbcPacket calldata packet
-    ) external pure returns (bytes memory proofKey) {
+    function ackProofKey(IbcPacket calldata packet) external pure returns (bytes memory proofKey) {
         proofKey = abi.encodePacked(
             "acks/ports/",
             packet.dest.portId,
@@ -266,15 +242,11 @@ library Ibc {
     }
 
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/04-channel/types/packet.go#L38
-    function ackProofValue(
-        bytes calldata ack
-    ) external pure returns (bytes32 proofValue) {
+    function ackProofValue(bytes calldata ack) external pure returns (bytes32 proofValue) {
         proofValue = sha256(ack);
     }
 
-    function parseAckData(
-        bytes calldata ack
-    ) external pure returns (AckPacket memory ackData) {
+    function parseAckData(bytes calldata ack) external pure returns (AckPacket memory ackData) {
         // this hex value is '"result"'
         ackData = (keccak256(ack[1:9]) == keccak256(hex"22726573756c7422"))
             ? AckPacket(true, Base64.decode(string(ack[11:ack.length - 2]))) // result success
@@ -327,17 +299,10 @@ library Ibc {
         }
     }
 
-    function parseLog(
-        uint256 logIndex,
-        bytes memory receiptRLP
-    )
+    function parseLog(uint256 logIndex, bytes memory receiptRLP)
         internal
         pure
-        returns (
-            address emittingContract,
-            bytes[] memory topics,
-            bytes memory unindexedData
-        )
+        returns (address emittingContract, bytes[] memory topics, bytes memory unindexedData)
     {
         // The first byte is a RLP encoded receipt type so slice it off.
         uint8 typeByte;
@@ -368,9 +333,7 @@ library Ibc {
         // arguments individually
         //         topics data         // abi encoded raw bytes of unindexed data
         // }
-        RLPReader.RLPItem[] memory log = RLPReader.readList(
-            RLPReader.readList(receipt[3])[logIndex]
-        );
+        RLPReader.RLPItem[] memory log = RLPReader.readList(RLPReader.readList(receipt[3])[logIndex]);
 
         emittingContract = bytesToAddr(RLPReader.readBytes(log[0]));
 
@@ -384,18 +347,11 @@ library Ibc {
         }
     }
 
-    function receiptRootKey(
-        string memory chainId,
-        string memory clientType,
-        uint256 height
-    ) internal pure returns (bytes memory proofKey) {
-        proofKey = abi.encodePacked(
-            "chain/",
-            chainId,
-            "/storedReceipts/",
-            clientType,
-            "/receiptRoot/",
-            toStr(height)
-        );
+    function receiptRootKey(string memory chainId, string memory clientType, uint256 height)
+        internal
+        pure
+        returns (bytes memory proofKey)
+    {
+        proofKey = abi.encodePacked("chain/", chainId, "/storedReceipts/", clientType, "/receiptRoot/", toStr(height));
     }
 }
