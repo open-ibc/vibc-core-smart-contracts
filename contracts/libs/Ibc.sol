@@ -314,7 +314,7 @@ library Ibc {
             receiptRLP = Bytes.slice(receiptRLP, 1, receiptRLP.length - 1);
         }
 
-        receipt = RLPReader.readList(receiptRLP);
+        RLPReader.RLPItem[] memory receipt = RLPReader.readList(receiptRLP);
         /*
             // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
             type ReceiptRLP struct {
