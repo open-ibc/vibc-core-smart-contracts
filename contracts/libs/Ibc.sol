@@ -305,7 +305,13 @@ library Ibc {
         returns (address emittingContract, bytes[] memory topics, bytes memory unindexedData)
     {
         // The first byte is a RLP encoded receipt type so slice it off.
-        RLPReader.RLPItem[] memory receipt = RLPReader.readList(Bytes.slice(receiptRLP, 1, receiptRLP.length - 1));
+        RLPReader.RLPItem[] memory receipt;
+        if (receiptRLP.length % 2 == 0) {
+            // If even, we don't clip bytes
+            receipt = RLPReader.readList(receiptRLP);
+        } else {
+            receipt = RLPReader.readList(Bytes.slice(receiptRLP, 1, receiptRLP.length - 1));
+        }
         /*
             // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
             type ReceiptRLP struct {
