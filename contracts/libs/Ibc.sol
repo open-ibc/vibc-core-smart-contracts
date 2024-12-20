@@ -17,6 +17,7 @@
 
 pragma solidity ^0.8.9;
 
+import "forge-std/Test.sol";
 import {RLPReader} from "optimism/libraries/rlp/RLPReader.sol";
 import {Bytes} from "optimism/libraries/Bytes.sol";
 import {ProtoChannel, ProtoCounterparty} from "proto/channel.sol";
@@ -305,7 +306,7 @@ library Ibc {
         returns (address emittingContract, bytes[] memory topics, bytes memory unindexedData)
     {
         // The first byte is a RLP encoded receipt type so slice it off.
-        RLPReader.RLPItem[] memory receipt = RLPReader.readList(Bytes.slice(receiptRLP, 1, receiptRLP.length - 1));
+        RLPReader.RLPItem[] memory receipt = RLPReader.readList(receiptRLP);
         /*
             // RLP encoded receipt has the following structure. Logs are the 4th RLP list item.
             type ReceiptRLP struct {
