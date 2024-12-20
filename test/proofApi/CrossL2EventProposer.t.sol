@@ -6,7 +6,6 @@ import {SigningBase} from "../utils/Signing.base.t.sol";
 import {CrossL2Prover} from "contracts/core/proofAPI/CrossL2Prover.sol";
 import {SequencerSignatureVerifier} from "contracts/core/SequencerSignatureVerifier.sol";
 
-import "forge-std/Test.sol";
 import {ISignatureVerifier} from "contracts/interfaces/ISignatureVerifier.sol";
 import {ICrossL2Prover} from "contracts/interfaces/ICrossL2Prover.sol";
 import {Ics23Proof} from "contracts/interfaces/IProofVerifier.sol";
@@ -103,9 +102,9 @@ contract CrossL2InboxBase is SigningBase {
         // );
 
         CrossL2Prover cpI = new CrossL2Prover(sigV, "proof_api");
-        address(cpI).call(updateD);
-        address(cpI).call(updateD1);
-        // cpI.validateReceipt(cdata);
+        _ = address(cpI).call(updateD);
+        _ = address(cpI).call(updateD1);
+        cpI.validateReceipt(cdata);
         cpI.validateEvent(0, cdata);
         cpI.validateEvent(0, cdataI);
     }
