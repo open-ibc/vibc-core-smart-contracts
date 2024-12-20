@@ -102,87 +102,86 @@ contract CrossL2InboxBase is SigningBase {
         // );
 
         CrossL2Prover cpI = new CrossL2Prover(sigV, "proof_api");
-        _ = address(cpI).call(updateD);
-        _ = address(cpI).call(updateD1);
+        address(cpI).call(updateD);
+        address(cpI).call(updateD1);
         cpI.validateReceipt(cdata);
         cpI.validateEvent(0, cdata);
         cpI.validateEvent(0, cdataI);
     }
 
-    // // Happy path for CrossEventProver.validateEvent()
-    // function test_validate_event_success() public {
-    //     // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
-    //     // using this tool in relayer code at polymerase/
-    //     // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
-    //     // modified to work with receipt proofs instead of channel/packet proofs)
-    //     // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
-    //     // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
-    //     // address(dummyLightClient));
-    //     // 3.) Call the crossProver.validateEvent method to test
+    // Happy path for CrossEventProver.validateEvent()
+    function test_validate_event_success() public {
+        // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
+        // using this tool in relayer code at polymerase/
+        // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
+        // modified to work with receipt proofs instead of channel/packet proofs)
+        // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
+        // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
+        // address(dummyLightClient));
+        // 3.) Call the crossProver.validateEvent method to test
 
-    //     vm.skip(true);
-    // }
+        vm.skip(true);
+    }
 
-    // // Test valid peptide proof but invalid MMPT receipt proof
-    // function test_revert_invalidReceiptProof() public {
-    //     // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
-    //     // using this tool in relayer code at polymerase/
-    //     // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
-    //     // modified to work with receipt proofs instead of channel/packet proofs)
-    //     // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
-    //     // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
-    //     // address(dummyLightClient));
-    //     // 3.) Call the crossProver.validateReceipt method to test
+    // Test valid peptide proof but invalid MMPT receipt proof
+    function test_revert_invalidReceiptProof() public {
+        // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
+        // using this tool in relayer code at polymerase/
+        // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
+        // modified to work with receipt proofs instead of channel/packet proofs)
+        // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
+        // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
+        // address(dummyLightClient));
+        // 3.) Call the crossProver.validateReceipt method to test
 
-    //     vm.skip(true);
-    // }
+        vm.skip(true);
+    }
 
-    // // Test trying to prove with a non-existent peptideApphash that hasn't yet been seen
-    // function test_revert_nonexistingPeptideAppHash() public {
-    //     string memory input = vm.readFile(string.concat(rootDir, "/test/payload/packet_ack_proof.hex"));
-    //     bytes memory encoded = vm.parseBytes(input);
-    //     (, Ics23Proof memory peptideProof) = abi.decode(encoded, (bytes32, Ics23Proof));
+    // Test trying to prove with a non-existent peptideApphash that hasn't yet been seen
+    function test_revert_nonexistingPeptideAppHash() public {
+        string memory input = vm.readFile(string.concat(rootDir, "/test/payload/packet_ack_proof.hex"));
+        bytes memory encoded = vm.parseBytes(input);
+        (, Ics23Proof memory peptideProof) = abi.decode(encoded, (bytes32, Ics23Proof));
 
-    //     // proof will be struct EventProof
-    //     bytes memory proof = abi.encode(peptideProof, receiptProof, receiptRoot, peptideClientId,
-    // peptideBlockNumber);
+        // proof will be struct EventProof
+        bytes memory proof = abi.encode(peptideProof, receiptProof, receiptRoot, peptideClientId, peptideBlockNumber);
 
-    //     vm.expectRevert();
-    //     crossProver.validateReceipt(proof);
-    // }
+        vm.expectRevert();
+        crossProver.validateReceipt(proof);
+    }
 
-    // // Test revert to prove a peptide apphash which has been seen but which doesn't prove the MPT receipt root given
-    // function test_revert_invalidReceiptRoot() public {
-    //     // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
-    //     // using this tool in relayer code at polymerase/
-    //     // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
-    //     // modified to work with receipt proofs instead of channel/packet proofs)
-    //     // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
-    //     // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
-    //     // address(dummyLightClient));
-    //     // 3.) Call the crossProver.validateReceipt method to test revert
-    // }
+    // Test revert to prove a peptide apphash which has been seen but which doesn't prove the MPT receipt root given
+    function test_revert_invalidReceiptRoot() public {
+        // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
+        // using this tool in relayer code at polymerase/
+        // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
+        // modified to work with receipt proofs instead of channel/packet proofs)
+        // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
+        // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
+        // address(dummyLightClient));
+        // 3.) Call the crossProver.validateReceipt method to test revert
+    }
 
-    // // Test that a client update will fail if it doesn't have a valid sequencer signature
-    // function test_revert_invalidClentUpdateSignature() public {
-    //     vm.expectRevert(ISignatureVerifier.InvalidSequencerSignature.selector);
-    //     crossProver.updateClient(
-    //         abi.encodePacked(l1AncestorBlockHash, invalidSignature), peptideBlockNumber, uint256(peptideAppHash)
-    //     );
-    //     assertEq(crossProver.getState(peptideBlockNumber), 0);
-    // }
+    // Test that a client update will fail if it doesn't have a valid sequencer signature
+    function test_revert_invalidClentUpdateSignature() public {
+        vm.expectRevert(ISignatureVerifier.InvalidSequencerSignature.selector);
+        crossProver.updateClient(
+            abi.encodePacked(l1AncestorBlockHash, invalidSignature), peptideBlockNumber, uint256(peptideAppHash)
+        );
+        assertEq(crossProver.getState(peptideBlockNumber), 0);
+    }
 
-    // // Test valid receipt proof but invalid event in receipt
-    // function test_invalidEvent() public {
-    //     // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
-    //     // using this tool in relayer code at polymerase/
-    //     // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
-    //     // modified to work with receipt proofs instead of channel/packet proofs)
-    //     // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
-    //     // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
-    //     // address(dummyLightClient));
-    //     // 3.) Call the crossProver.validateEvent method to test revert
+    // Test valid receipt proof but invalid event in receipt
+    function test_invalidEvent() public {
+        // TODO: Fill this in once we have relaying to peptide working and that we can generate peptide state proof
+        // using this tool in relayer code at polymerase/
+        // 1.) Run the oprelayer/pkg/encoder/cmd/main.go command to generate hex files  (note: this will need to be
+        // modified to work with receipt proofs instead of channel/packet proofs)
+        // 2.) load these proof files into the test contracts using the load_proof util, e.g. using something like
+        // Ics23Proof memory testProof = load_proof("/test/payload/channel_confirm_pending_proof.hex",
+        // address(dummyLightClient));
+        // 3.) Call the crossProver.validateEvent method to test revert
 
-    //     vm.skip(true);
-    // }
+        vm.skip(true);
+    }
 }
