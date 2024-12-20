@@ -16,7 +16,7 @@
     "@safe-global/protocol-kit": "^4.0.3",
     "@safe-global/safe-core-sdk-types": "^5.1.0",
     "@typechain/ethers-v6": "^0.5.1",
-    "ethers": "^6.13.2",
+    "ethers": "^6.13.4",
     "nunjucks": "^3.2.4",
     "solhint": "^5.0.3",
     "typechain": "^8.3.2",
