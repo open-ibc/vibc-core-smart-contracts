@@ -74,6 +74,7 @@ export interface IbcInterface extends Interface {
     nameOrSignature:
       | "ackProofKey"
       | "ackProofValue"
+      | "bytesToAddr"
       | "channelProofKey"
       | "channelProofKeyMemory"
       | "channelProofValue"
@@ -91,6 +92,10 @@ export interface IbcInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "ackProofValue",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "bytesToAddr",
     values: [BytesLike]
   ): string;
   encodeFunctionData(
@@ -136,6 +141,10 @@ export interface IbcInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "ackProofValue",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "bytesToAddr",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -223,6 +232,8 @@ export interface Ibc extends BaseContract {
 
   ackProofValue: TypedContractMethod<[ack: BytesLike], [string], "view">;
 
+  bytesToAddr: TypedContractMethod<[a: BytesLike], [string], "view">;
+
   channelProofKey: TypedContractMethod<
     [portId: string, channelId: BytesLike],
     [string],
@@ -297,6 +308,9 @@ export interface Ibc extends BaseContract {
   getFunction(
     nameOrSignature: "ackProofValue"
   ): TypedContractMethod<[ack: BytesLike], [string], "view">;
+  getFunction(
+    nameOrSignature: "bytesToAddr"
+  ): TypedContractMethod<[a: BytesLike], [string], "view">;
   getFunction(
     nameOrSignature: "channelProofKey"
   ): TypedContractMethod<

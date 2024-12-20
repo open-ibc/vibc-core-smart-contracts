@@ -150,6 +150,8 @@ struct Proof {
 }
 
 library Ibc {
+    error invalidAddressBytes();
+
     // https://github.com/open-ibc/ibcx-go/blob/ef80dd6784fd/modules/core/24-host/keys.go#L135
     function channelProofKey(string calldata portId, bytes32 channelId) external pure returns (bytes memory proofKey) {
         proofKey = abi.encodePacked("channelEnds/ports/", portId, "/channels/", toStr(channelId));
@@ -288,6 +290,15 @@ library Ibc {
         outStr = string(buffer);
     }
 
+    function bytesToAddr(bytes memory a) public pure returns (address addr) {
+        if (a.length != 20) {
+            revert invalidAddressBytes();
+        }
+        assembly {
+            addr := mload(add(a, 20))
+        }
+    }
+
     function parseLog(uint256 logIndex, bytes memory receiptRLP)
         internal
         pure
@@ -315,11 +326,13 @@ library Ibc {
         // }
         RLPReader.RLPItem[] memory log = RLPReader.readList(RLPReader.readList(receipt[3])[logIndex]);
 
-        emittingContract = address(uint160(uint256(bytes32(RLPReader.readBytes(log[0])))));
+        emittingContract = bytesToAddr(RLPReader.readBytes(log[0]));
+
         RLPReader.RLPItem[] memory encodedTopics = RLPReader.readList(log[1]);
         unindexedData = (RLPReader.readBytes(log[2])); // This is the raw unindexed data. in this case it's
             // just an abi encoded uint64
 
+        topics = new bytes[](encodedTopics.length);
         for (uint256 i = 0; i < encodedTopics.length; i++) {
             topics[i] = RLPReader.readBytes(encodedTopics[i]);
         }
