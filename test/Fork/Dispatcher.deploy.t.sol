@@ -56,6 +56,10 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
         // those preconditions are not met so that a plain `forge test`
         // stays green (fixes #263): no env vars, or vars pointing at
         // addresses with no code (i.e. no fork with deployed contracts).
+        // An explicit fork-deployment run must fail loudly instead of
+        // skipping: the runner marks such runs with FORK_DEPLOY_TEST, and
+        // a silent skip there would exit green without executing any
+        // assertion.
         address dispatcherProxyAddress = vm.envOr("DispatcherProxy", address(0));
         address ucProxyAddress = vm.envOr("UCProxy", address(0));
         address opLightClientAddress = vm.envOr("OptimisticLightClient", address(0));
@@ -65,6 +69,9 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
                 || ownerAddress == address(0) || dispatcherProxyAddress.code.length == 0
                 || ucProxyAddress.code.length == 0 || opLightClientAddress.code.length == 0
         ) {
+            if (vm.envOr("FORK_DEPLOY_TEST", false)) {
+                revert("DispatcherDeployTest: missing fork-deployment prerequisite");
+            }
             vm.skip(true);
         }
 
