@@ -23,7 +23,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
 
       - name: Tests
-        run: forge test --no-match-contract DispatcherDeployTest
+        run: forge test
 
       - name: Check contract sizes
         run: rm -rf out && forge build contracts/ --sizes --deny-warnings

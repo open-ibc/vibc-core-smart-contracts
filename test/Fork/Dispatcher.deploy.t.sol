@@ -49,15 +49,34 @@ contract DispatcherDeployTest is ChannelHandShakeUpgradeUtil, UpgradeTestUtils {
     string portId2 = "polyibc.eth2.71C95911E9a5D330f4D621842EC243EE1343292e";
 
     function setUp() public override {
+        // This is a fork-deployment test, not a unit test. It only runs via
+        // `npx vibc-core-deploy-test`, which starts an anvil fork, deploys
+        // the contracts onto it and exports their addresses as env vars
+        // (see src/scripts/fork-deployment-test.ts). Skip cleanly when
+        // those preconditions are not met so that a plain `forge test`
+        // stays green (fixes #263): no env vars, or vars pointing at
+        // addresses with no code (i.e. no fork with deployed contracts).
+        address dispatcherProxyAddress = vm.envOr("DispatcherProxy", address(0));
+        address ucProxyAddress = vm.envOr("UCProxy", address(0));
+        address opLightClientAddress = vm.envOr("OptimisticLightClient", address(0));
+        address ownerAddress = vm.envOr("OwnerAddress", address(0));
+        if (
+            dispatcherProxyAddress == address(0) || ucProxyAddress == address(0) || opLightClientAddress == address(0)
+                || ownerAddress == address(0) || dispatcherProxyAddress.code.length == 0
+                || ucProxyAddress.code.length == 0 || opLightClientAddress.code.length == 0
+        ) {
+            vm.skip(true);
+        }
+
         ChainAddresses memory addresses = ChainAddresses(
-            IDispatcher(vm.envAddress("DispatcherProxy")),
-            IUniversalChannelHandler(vm.envAddress("UCProxy")),
-            ILightClient(vm.envAddress("OptimisticLightClient")),
-            vm.envAddress("OwnerAddress")
+            IDispatcher(dispatcherProxyAddress),
+            IUniversalChannelHandler(ucProxyAddress),
+            ILightClient(opLightClientAddress),
+            ownerAddress
         );
 
         opLightClient = addresses.optimisticLightClient; // Need to set this so that when we call load_proof, it loads
-            // the proof to the right address
+        // the proof to the right address
 
         mars = Mars(payable(targetMarsAddress));
 
