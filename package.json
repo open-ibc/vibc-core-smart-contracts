@@ -46,7 +46,7 @@
   },
   "scripts": {
     "lint": "solhint contracts/**/*.sol",
-    "test": "forge test --no-match-contract DispatcherDeployTest",
+    "test": "forge test",
     "build": "make bindings-gen-go bindings-gen-ts && tsup",
     "build-contracts": "make build-contracts",
     "deploy-contracts": "npm run build && node dist/deploy.js",

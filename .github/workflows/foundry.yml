@@ -33,7 +33,7 @@ jobs:
         run: forge build --sizes --deny-warnings
 
       - name: Tests
-        run: forge test --no-match-contract DispatcherDeployTest
+        run: forge test
       - name: set Owner Address
         run: echo "OwnerAddress=$(cast wallet address ${{ secrets.DUMMY_DEPLOYER_PRIVATE_KEY }})" >> $GITHUB_ENV
       - name: Fork Deploy Test

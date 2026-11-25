@@ -48,6 +48,10 @@ const main = async () => {
   $.env = {
     ...process.env,
     ...env,
+    // Marks an explicit fork-deployment run: DispatcherDeployTest reverts
+    // instead of skipping when a prerequisite is missing, so a broken run
+    // cannot exit green without executing any assertion.
+    FORK_DEPLOY_TEST: "true",
   };
 
   await $`cd ${MODULE_ROOT_PATH} && forge test --match-contract DispatcherDeployTest --fork-url ${anvilUrl} -vvvv `.pipe(
